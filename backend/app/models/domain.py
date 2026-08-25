@@ -31,6 +31,9 @@ from app.models.base import (
 from app.models.enums import (
     CompetitionType,
     EntityStatus,
+    LineupRole,
+    MatchEventSide,
+    MatchEventType,
     MatchStatus,
     MatchVenueType,
     MediaType,
@@ -193,12 +196,75 @@ class MatchBase(AppBaseModel):
     # Prepared relationship placeholders for the Match Center phase
     lineup_ready: bool = False
     result_summary: Optional[str] = Field(default=None, max_length=1000)
+    # Match Center V1 — optional tactical formation (e.g. "4-3-3").
+    # Kept as plain text: the pitch/formation visualisation is a later phase.
+    formation: Optional[str] = Field(default=None, max_length=20)
+    opponent_formation: Optional[str] = Field(default=None, max_length=20)
+    attendance: Optional[int] = Field(default=None, ge=0, le=500000)
+    referee: Optional[str] = Field(default=None, max_length=160)
 
 
 MatchUpdate = make_update_model("MatchUpdate", MatchBase)
 
 
 class Match(MatchBase, DBModel):
+    pass
+
+
+# --------------------------------------------------- Match Center (V1)
+class MatchLineupBase(AppBaseModel):
+    """One document per player per match (no Player data duplication).
+
+    Relationship keys: match_id + team_id + player_id.
+    The frontend groups documents into Starting XI / Substitutes via `role`.
+    `pitch_slot` is reserved so a formation visual can be added later
+    without a data migration.
+    """
+
+    match_id: str
+    team_id: str
+    player_id: str
+    role: LineupRole = LineupRole.STARTING
+    position: Optional[PlayerPosition] = None
+    position_label: Optional[str] = Field(default=None, max_length=20)
+    pitch_slot: Optional[str] = Field(default=None, max_length=20)
+    shirt_number: Optional[int] = Field(default=None, ge=0, le=99)
+    is_captain: bool = False
+    minutes_played: Optional[int] = Field(default=None, ge=0, le=200)
+    display_order: int = Field(default=0, ge=0, le=999)
+    note: Optional[str] = Field(default=None, max_length=500)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+MatchLineupUpdate = make_update_model("MatchLineupUpdate", MatchLineupBase)
+
+
+class MatchLineup(MatchLineupBase, DBModel):
+    pass
+
+
+class MatchEventBase(AppBaseModel):
+    """A single timeline event of a match (goal, card, substitution, ...)."""
+
+    match_id: str
+    team_id: Optional[str] = None
+    side: MatchEventSide = MatchEventSide.CLUB
+    type: MatchEventType = MatchEventType.GOAL
+    minute: Optional[int] = Field(default=None, ge=0, le=200)
+    minute_extra: Optional[int] = Field(default=None, ge=0, le=30)
+    player_id: Optional[str] = None
+    related_player_id: Optional[str] = None
+    player_name: Optional[str] = Field(default=None, max_length=160)
+    related_player_name: Optional[str] = Field(default=None, max_length=160)
+    description: Optional[str] = Field(default=None, max_length=500)
+    display_order: int = Field(default=0, ge=0, le=999)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+MatchEventUpdate = make_update_model("MatchEventUpdate", MatchEventBase)
+
+
+class MatchEvent(MatchEventBase, DBModel):
     pass
 
 

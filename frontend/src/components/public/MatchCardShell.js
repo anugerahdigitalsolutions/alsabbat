@@ -1,5 +1,6 @@
 import React from 'react';
-import { CalendarDays, Clock, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CalendarDays, ChevronRight, Clock, MapPin } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { useClub } from '../../context/ClubContext';
 
@@ -30,7 +31,13 @@ export const MatchCardShell = ({ match, testId }) => {
   const showScore = match.home_score !== null && match.home_score !== undefined;
 
   return (
-    <article className="als-card p-5 transition-shadow duration-300 hover:shadow-[var(--shadow-md)]" data-testid={testId}>
+    <Link
+      to={`/matches/${match.id}`}
+      className="als-card block p-5 transition-shadow duration-300 hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+      style={{ '--tw-ring-color': 'var(--focus-ring)' }}
+      data-testid={testId}
+      aria-label={`Detail pertandingan melawan ${match.opponent?.name || 'lawan'}`}
+    >
       <div className="mb-4 flex items-center justify-between gap-2">
         <Badge
           variant="outline"
@@ -40,8 +47,12 @@ export const MatchCardShell = ({ match, testId }) => {
         >
           {match.status}
         </Badge>
-        <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+        <span
+          className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider"
+          style={{ color: 'var(--muted-fg)' }}
+        >
           {match.venue_type}
+          <ChevronRight className="h-3.5 w-3.5" />
         </span>
       </div>
 
@@ -74,7 +85,7 @@ export const MatchCardShell = ({ match, testId }) => {
           </span>
         ) : null}
       </div>
-    </article>
+    </Link>
   );
 };
 

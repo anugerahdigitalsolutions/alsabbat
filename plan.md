@@ -1,14 +1,15 @@
-# FASE 1 Plan — ALSABBAT Football Club Digital Platform (Foundation) — UPDATED (FASE 1 SELESAI)
+# FASE 1 Plan — ALSABBAT Football Club Digital Platform (Foundation) — UPDATED (FASE 1–3 SELESAI)
 
 ## 1) Objectives (final state)
 - Establish **football-club-first** domain architecture (**Club → Teams/Players/Staff/Seasons/Competitions/Matches/Content/Gallery/Media/Sponsors**) with **MongoDB Atlas-ready** modeling + indexes.
 - Deliver **secure, modular, deployment-ready** monorepo: **FastAPI (Railway-ready)** + **React (Vercel-ready)** with strict **environment-based configuration**.
 - Implement **Admin auth (JWT) + RBAC** enforced on backend; protected admin routes on frontend.
-- Implement **ALSABBAT design system** using design tokens (Primary `#FCCF2B`, Secondary `#012891`, Tertiary `#222222`, Light `#FEFEFE`) and responsive public/admin shells.
+- Implement **ALSABBAT design system** using design tokens (Primary `#FCCF2B`, Secondary `#012891`, Tertiary `#222222`, Light `#FEFEFE`) and **Poppins** as the **only** font.
 - Prepare **media architecture** (metadata in DB + pluggable storage provider; validation; no large files in DB) and provide minimal working upload path.
 - Add foundations: **SEO/OG + analytics hooks**, health checks, logging, error handling.
+- Deliver **Match Center V1** (Match Detail, Lineups, Timeline Events) as additive modules with **professional empty states** and **backward-compatible relationships**.
 
-**Status:** All objectives completed in Phase 1.
+**Status:** Phase 1, Phase 2, and **Phase 3** objectives completed.
 
 ---
 
@@ -22,7 +23,7 @@ User stories (delivered):
 4. As a content admin, I’m blocked from forbidden actions so RBAC is proven server-side.
 5. As an admin, I can create a Match linked to season+competition+team so relationships are validated.
 
-Steps (implemented + verified in POC script `/app/tests/test_core_phase1.py`):
+Steps (implemented + verified in POC script `/app/tests/test_core_phase1.py`):
 - Seed idempotent super admin (`admin@alsabbat.com`) + roles/permissions.
 - Health check + DB connectivity (`/api/health`).
 - Login (`/api/auth/login`) + `me` + invalid/missing token rejection.
@@ -73,83 +74,127 @@ Backend (implemented):
 - Health checks + system status + meta enums endpoints.
 
 Frontend (implemented):
-- **Design tokens** centralized in `frontend/src/index.css` (ALSABBAT palette enforced).
+- **Design tokens** centralized in `frontend/src/index.css` (ALSABBAT palette enforced) + **Poppins** loaded and used for all typography.
 - Public website shell:
   - Pages: `/`, `/news`, `/matches`, `/gallery`, `/club`, `404`
   - Components: header/footer/hero + section shells + loading/empty/error.
 - Admin area:
   - `/admin/login` + protected `/admin/*`
   - Dashboard + System Status
-  - 12 modules with CRUD via **generic `ResourceManager`**
+  - CRUD modules via **generic `ResourceManager`**
   - Media library includes upload panel + metadata external URL
   - Role/permission matrix view.
 
 ---
 
-### Phase 3 — Hardening, Security Baseline, and Deployment Readiness — ✅ COMPLETED
-User stories (delivered):
-1. As an operator, I can deploy backend to Railway with correct start commands and health checks.
-2. As an operator, I can deploy frontend to Vercel and it points to the API via env var (no hard-coded URLs).
-3. As a security reviewer, I can confirm no secrets are committed and rate limiting exists on auth endpoints.
-4. As an admin, I get clear validation errors (400/422) instead of server crashes.
-5. As a developer, I can run a single core regression script to catch foundation regressions.
+### Phase 3 — Match Center V1 (Match Detail + Lineups + Events) — ✅ COMPLETED (additive, backward-compatible)
+**Scope rules / constraints (as implemented):**
+- **Additive only**: Phase 1/2 architecture unchanged.
+- **No fake seed/demo data**: no invented opponents/players/scores/events; empty DB → professional empty states.
+- **Media/gallery/video/news/social**: preserved **relationship/reference** approach (Match → GalleryAlbum, Match → Media, Match → Post, Match → Social Content). **No media arrays embedded in Match**.
+- **Formation**: optional field supported; **no pitch visual** in Phase 3; architecture prepared for later.
+- **No Testing Agent**: verification performed manually + lightweight scripts.
+- Brand: **Poppins-only**, colors `#FCCF2B`, `#012891`, `#222222`, `#FEFEFE`.
 
-Implemented deliverables:
-- Deployment readiness:
-  - `backend/Procfile`, `backend/railway.json`
-  - `frontend/vercel.json` (SPA rewrites + basic headers)
-- Environment examples:
-  - `backend/.env.example`, `frontend/.env.example`
-- Git readiness:
-  - Root `.gitignore` updated (no `.env` committed, media storage ignored)
-- Documentation:
-  - `README.md`
-  - `docs/ARCHITECTURE.md`, `docs/DATABASE.md`, `docs/ENVIRONMENT.md`, `docs/DEPLOYMENT.md`, `docs/SECURITY.md`, `docs/DESIGN_SYSTEM.md`
-  - `docs/PHASE_1_REPORT.md` (A–K report)
-- Security baseline:
-  - bcrypt password hashing
-  - JWT sessions + logout revocation
-  - RBAC enforcement in API
-  - rate limiting
-  - file type/size validation
-  - CORS via env
-  - consistent error envelope.
+Implementation reference: `/app/docs/PHASE_3_REPORT.md`.
 
-Verification policy update (per user instruction):
-- **Only minimal critical verification** executed for Phase 1 completion:
-  - frontend production build
-  - backend startup + health
-  - db config via env vars
-  - authentication + protected routes
-  - env safety (no hard-coded secrets/URIs)
-  - fatal error scan.
+#### Phase 3A — Backend (domain + API) — ✅ DONE
+Delivered:
+- Enums in `app/models/enums.py`:
+  - `LineupRole` (STARTING, SUBSTITUTE, UNUSED_SUBSTITUTE)
+  - `MatchEventType` (GOAL, OWN_GOAL, ASSIST, PENALTY_SCORED, PENALTY_MISSED, YELLOW_CARD, SECOND_YELLOW_CARD, RED_CARD, SUBSTITUTION, OTHER)
+  - `MatchEventSide` (CLUB, OPPONENT)
+- Domain models in `app/models/domain.py`:
+  - `MatchLineup` as **1 doc per player per match**: `match_id`, `team_id`, `player_id` + role/position/shirt_number/captain/minutes/display_order/note, plus `pitch_slot` reserved for future formation visual.
+  - `MatchEvent` timeline docs with player references and manual name fallbacks (for opponent players not in DB).
+  - `Match` extended with optional fields: `formation`, `opponent_formation`, `attendance`, `referee` (no breaking changes).
+- Database (`app/core/database.py`):
+  - Collections `MATCH_LINEUPS`, `MATCH_EVENTS`
+  - Indexes including **unique index on (match_id, player_id)** to prevent duplicate lineup player entries.
+- RBAC (`app/core/rbac.py`): permissions added:
+  - `lineup:write`, `event:write`
+- API routes:
+  - `/api/match-lineups` CRUD (public read, protected write)
+  - `/api/match-events` CRUD (public read, protected write)
+- `/api/matches/{match_id}/relations` now returns:
+  - `match`, `team`, `competition`, `season`
+  - `lineups`, `events`, plus `players` joined map (minimal projection) to avoid Player duplication
+  - integration points preserved: `news`, `gallery_albums`, `images`, `videos`, `social_content`, `integration_points` metadata.
+- `/api/system/meta` updated: `lineup_roles`, `match_event_types`, `match_event_sides`.
+- `/api/system/status` counts include `match_lineups` + `match_events`.
+
+Verification:
+- `tests/test_match_center_phase3.py` → **20/20 passed**, self-cleaning (creates then deletes temporary records).
+
+#### Phase 3B — Frontend Public (Match Detail) — ✅ DONE
+Delivered:
+- Route `/matches/:matchId` → `frontend/src/pages/public/MatchDetailPage.js`.
+- `MatchCardShell` now navigates to match detail (Link + keyboard focus ring).
+- Match Center UI sections:
+  - Scoreboard header (status, competition/season, score/VS, date/time/venue).
+  - Tabs: **Susunan Pemain** (Starting XI + Cadangan), **Timeline**, **Media & Konten**.
+  - Match Information panel (team/competition/season/venue/status, optional formation/referee/attendance).
+  - Related News (empty state if none).
+  - Integration points (Gallery / Videos / Social) with **empty states**; no publishing/upload.
+- Professional empty states when lineup/events/media/news absent.
+
+Verification:
+- Manual UI screenshots captured for match detail (data + empty), timeline empty state, navigation from `/matches`.
+
+#### Phase 3C — Frontend Admin (Lineups + Events CRUD) — ✅ DONE
+Delivered:
+- Admin pages using `ResourceManager`:
+  - `/admin/match-lineups` (`AdminMatchLineupsPage.js`)
+  - `/admin/match-events` (`AdminMatchEventsPage.js`)
+- Admin navigation updated (sidebar entries under “Kompetisi”).
+- Uses backend meta enums for select options.
+
+Verification:
+- Manual UI screenshots captured: admin login, lineups/events empty states, lineup form dialog.
+
+#### Phase 3D — Polish + Manual Verification — ✅ DONE
+Delivered:
+- `frontend/public/index.html` updated:
+  - ALSABBAT title/meta (description + OG + twitter)
+  - `lang="id"`, theme color `#012891`
+  - Poppins font link; removed Inter reference
+  - Favicon: **not changed** (no asset available; none invented)
+
+Verification performed (no Testing Agent):
+- `npx esbuild ...` → OK
+- `GET /api/health` → OK
+- `python tests/test_core_phase1.py` → **60/60 passed** (no regression)
+- `python tests/test_match_center_phase3.py` → **20/20 passed**
+- Confirmed: no permanent dev-only seed data remains.
 
 ---
 
 ## 3) Next Actions (immediate) — UPDATED
-Phase 1 is finished. Do **not** start Phase 2 without instruction.
+**Current target:** Begin Phase 4 planning (post-Phase 3).
 
-1. (Optional operational hardening before real production)
-   - Set `ENVIRONMENT=production` in Railway.
-   - Ensure `JWT_SECRET` is strong and unique.
-   - Set `CORS_ORIGINS` to exact Vercel domains (avoid `*` in production).
-   - Rotate/remove `BOOTSTRAP_ADMIN_PASSWORD` after initial setup.
-2. (Optional infra)
-   - Configure S3/R2 + CDN (`MEDIA_STORAGE_PROVIDER=S3`, `MEDIA_CDN_BASE_URL`, `S3_*`) when ready.
-3. Await user instruction for the next phase:
-   - **FASE 2 — OFFICIAL ALSABBAT FOOTBALL CLUB WEBSITE** (public website expansion on top of this foundation).
+Suggested next actions (out of scope for Phase 3, kept modular/backward-compatible):
+1. **Formation pitch visual** using `Match.formation` + `MatchLineup.pitch_slot` (no migration required).
+2. **Gallery/video workflows** (admin publishing/upload) using existing `Media` + `GalleryAlbum` relations.
+3. **Social publishing module** (reserved architecture) using separate Social Content resources.
+4. **Player/match statistics** (aggregation endpoints + UI), derived from events/lineups rather than duplicating player data.
 
 ---
 
-## 4) Success Criteria (Phase 1 exit) — ✅ MET
-- ✅ POC script passes: login works, JWT works, RBAC blocks unauthorized actions, core domain relations persist in Mongo (**60/60**).
-- ✅ Repo is GitHub-ready: clean structure, `.gitignore`, docs, no secrets committed, env-driven config.
-- ✅ Frontend is Vercel-ready: `yarn build` compiles successfully, env-based API URL, responsive shells, loading/empty/error/404.
-- ✅ Backend is Railway-ready: start commands, `/api/health`, CORS, logging, env-based Mongo connection.
-- ✅ MongoDB Atlas-ready schema: consistent references + indexes for matches/content/slugs.
-- ✅ Media architecture ready: metadata in DB + storage abstraction + validation + working upload path.
-- ✅ Design system tokens applied with mandatory ALSABBAT colors; no scattered hard-coded brand hex.
-- ✅ Delivered Phase-1 report A–K: `docs/PHASE_1_REPORT.md`.
-- ✅ Explicitly **not built**: e-commerce/ticketing/membership/live match/advanced stats/social publishing (reserved for later phases).
+## 4) Success Criteria (Phase 3 exit) — ✅ ACHIEVED
+- ✅ Backend provides additive endpoints:
+  - `/api/match-lineups` and `/api/match-events` CRUD with RBAC enforcement.
+  - `/api/matches/{id}/relations` returns `match`, `team`, `competition`, `season`, `news`, `gallery_albums`, `images`, `videos`, `lineups`, `events`, `players` join map, and integration placeholders; empty arrays when no data.
+  - `/api/system/meta` includes lineup/event enums.
+- ✅ Frontend public:
+  - Match cards navigate to `/matches/:matchId`.
+  - Match detail renders match info, lineup groups, timeline events, and integration-point placeholders.
+  - Professional empty states (no fake data).
+- ✅ Frontend admin:
+  - Admin pages for lineups/events available and permissions respected.
+- ✅ Branding:
+  - `public/index.html` updated to ALSABBAT title/description and Poppins-only.
+  - Favicon unchanged due to missing asset (no invented files).
+- ✅ Verification (manual only):
+  - build check OK, `/api/health` OK, match detail + empty states OK, `/matches` navigation OK, admin auth OK, Phase 1 regression OK.
 
-**FASE 1 — FOUNDATION complete.**
+**Note:** Publishing/upload for gallery/video/social content, formation pitch visual, and statistics remain out of scope for Phase 3 and are candidates for a future phase.

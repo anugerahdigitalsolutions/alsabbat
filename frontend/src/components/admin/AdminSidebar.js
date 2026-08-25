@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   Activity,
   Calendar,
+  ClipboardList,
   Handshake,
   Images,
   LayoutDashboard,
@@ -38,6 +39,8 @@ export const ADMIN_NAV = [
       { id: 'seasons', to: '/admin/seasons', label: 'Seasons', Icon: Calendar },
       { id: 'competitions', to: '/admin/competitions', label: 'Competitions', Icon: Trophy },
       { id: 'matches', to: '/admin/matches', label: 'Matches', Icon: Swords },
+      { id: 'match-lineups', to: '/admin/match-lineups', label: 'Match Lineups', Icon: ClipboardList },
+      { id: 'match-events', to: '/admin/match-events', label: 'Match Events', Icon: Activity },
     ],
   },
   {
@@ -110,7 +113,7 @@ export const AdminSidebar = ({ onNavigate }) => (
     </nav>
 
     <div className="px-5 py-4 text-[11px]" style={{ borderTop: '1px solid rgba(254,254,254,0.10)', color: 'rgba(254,254,254,0.45)' }}>
-      Fase 1 — Foundation
+      Fase 3 — Match Center
     </div>
   </div>
 );

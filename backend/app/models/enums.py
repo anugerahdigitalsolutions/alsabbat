@@ -76,6 +76,36 @@ class MatchVenueType(str, Enum):
     NEUTRAL = "NEUTRAL"
 
 
+class LineupRole(str, Enum):
+    """Role of a player inside a single match lineup (one doc per player)."""
+
+    STARTING = "STARTING"
+    SUBSTITUTE = "SUBSTITUTE"
+    UNUSED_SUBSTITUTE = "UNUSED_SUBSTITUTE"
+
+
+class MatchEventType(str, Enum):
+    """Match timeline event types (Match Center V1)."""
+
+    GOAL = "GOAL"
+    OWN_GOAL = "OWN_GOAL"
+    ASSIST = "ASSIST"
+    PENALTY_SCORED = "PENALTY_SCORED"
+    PENALTY_MISSED = "PENALTY_MISSED"
+    YELLOW_CARD = "YELLOW_CARD"
+    SECOND_YELLOW_CARD = "SECOND_YELLOW_CARD"
+    RED_CARD = "RED_CARD"
+    SUBSTITUTION = "SUBSTITUTION"
+    OTHER = "OTHER"
+
+
+class MatchEventSide(str, Enum):
+    """Which side an event belongs to (club team or opponent)."""
+
+    CLUB = "CLUB"
+    OPPONENT = "OPPONENT"
+
+
 class PostStatus(str, Enum):
     DRAFT = "DRAFT"
     SCHEDULED = "SCHEDULED"

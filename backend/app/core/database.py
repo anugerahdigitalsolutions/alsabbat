@@ -25,6 +25,8 @@ class Collections:
     SEASONS = "seasons"
     COMPETITIONS = "competitions"
     MATCHES = "matches"
+    MATCH_LINEUPS = "match_lineups"
+    MATCH_EVENTS = "match_events"
     POSTS = "posts"
     CATEGORIES = "categories"
     TAGS = "tags"
@@ -91,6 +93,8 @@ async def ensure_indexes() -> None:
             Collections.SEASONS,
             Collections.COMPETITIONS,
             Collections.MATCHES,
+            Collections.MATCH_LINEUPS,
+            Collections.MATCH_EVENTS,
             Collections.POSTS,
             Collections.CATEGORIES,
             Collections.TAGS,
@@ -118,6 +122,21 @@ async def ensure_indexes() -> None:
             [("season_id", ASCENDING), ("competition_id", ASCENDING), ("date", DESCENDING)]
         )
         await db[Collections.MATCHES].create_index([("team_id", ASCENDING), ("status", ASCENDING)])
+
+        # Match Center (Phase 3) — lineups & events lookups
+        await db[Collections.MATCH_LINEUPS].create_index(
+            [("match_id", ASCENDING), ("player_id", ASCENDING)], unique=True
+        )
+        await db[Collections.MATCH_LINEUPS].create_index(
+            [("match_id", ASCENDING), ("role", ASCENDING), ("display_order", ASCENDING)]
+        )
+        await db[Collections.MATCH_LINEUPS].create_index([("team_id", ASCENDING)])
+        await db[Collections.MATCH_LINEUPS].create_index([("player_id", ASCENDING)])
+        await db[Collections.MATCH_EVENTS].create_index(
+            [("match_id", ASCENDING), ("minute", ASCENDING), ("display_order", ASCENDING)]
+        )
+        await db[Collections.MATCH_EVENTS].create_index([("player_id", ASCENDING)])
+        await db[Collections.MATCH_EVENTS].create_index([("type", ASCENDING)])
 
         # Content lookups
         await db[Collections.POSTS].create_index([("slug", ASCENDING)], unique=True)

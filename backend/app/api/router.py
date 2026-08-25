@@ -9,6 +9,8 @@ from app.api.routes import (
     competitions,
     content,
     gallery,
+    match_events,
+    match_lineups,
     matches,
     media,
     players,
@@ -34,6 +36,8 @@ api_router.include_router(staff.router, prefix="/staff")
 api_router.include_router(seasons.router, prefix="/seasons")
 api_router.include_router(competitions.router, prefix="/competitions")
 api_router.include_router(matches.router, prefix="/matches")
+api_router.include_router(match_lineups.router, prefix="/match-lineups")
+api_router.include_router(match_events.router, prefix="/match-events")
 api_router.include_router(content.router, prefix="/content")
 api_router.include_router(gallery.router, prefix="/gallery")
 api_router.include_router(media.router, prefix="/media")

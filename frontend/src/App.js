@@ -10,6 +10,7 @@ import { ProtectedRoute } from './components/admin/ProtectedRoute';
 import HomePage from './pages/public/HomePage';
 import NewsPage from './pages/public/NewsPage';
 import MatchesPage from './pages/public/MatchesPage';
+import MatchDetailPage from './pages/public/MatchDetailPage';
 import GalleryPage from './pages/public/GalleryPage';
 import ClubPage from './pages/public/ClubPage';
 import TeamsPage from './pages/public/TeamsPage';
@@ -30,6 +31,8 @@ import AdminStaffPage from './pages/admin/AdminStaffPage';
 import AdminSeasonsPage from './pages/admin/AdminSeasonsPage';
 import AdminCompetitionsPage from './pages/admin/AdminCompetitionsPage';
 import AdminMatchesPage from './pages/admin/AdminMatchesPage';
+import AdminMatchLineupsPage from './pages/admin/AdminMatchLineupsPage';
+import AdminMatchEventsPage from './pages/admin/AdminMatchEventsPage';
 import AdminContentPage from './pages/admin/AdminContentPage';
 import AdminGalleryPage from './pages/admin/AdminGalleryPage';
 import AdminMediaPage from './pages/admin/AdminMediaPage';
@@ -57,6 +60,7 @@ function App() {
               <Route path="/sponsors" element={<SponsorsPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/matches" element={<MatchesPage />} />
+              <Route path="/matches/:matchId" element={<MatchDetailPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
               <Route path="/club" element={<ClubPage />} />
             </Route>
@@ -78,6 +82,8 @@ function App() {
               <Route path="seasons" element={<AdminSeasonsPage />} />
               <Route path="competitions" element={<AdminCompetitionsPage />} />
               <Route path="matches" element={<AdminMatchesPage />} />
+              <Route path="match-lineups" element={<AdminMatchLineupsPage />} />
+              <Route path="match-events" element={<AdminMatchEventsPage />} />
               <Route path="content" element={<AdminContentPage />} />
               <Route path="gallery" element={<AdminGalleryPage />} />
               <Route path="media" element={<AdminMediaPage />} />
