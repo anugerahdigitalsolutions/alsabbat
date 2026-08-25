@@ -3,6 +3,7 @@ import { Swords } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { MatchCardShell } from '../../components/public/MatchCardShell';
+import { Reveal } from '../../components/public/Reveal';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
@@ -29,12 +30,19 @@ export default function MatchesPage() {
     <div data-testid="page-matches">
       <PublicPageHeader
         label="Matchday"
-        title="Jadwal &amp; Hasil Pertandingan"
-        description="Jadwal, hasil, dan Match Center pertandingan ALSABBAT."
+        title="Fixtures &amp; Results"
+        description="Jadwal, hasil, dan Match Center pertandingan ALSABBAT Football Club."
+        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Matches' }]}
+        meta={
+          <>
+            <span data-testid="matches-meta-upcoming">{upcoming.length} pertandingan akan datang</span>
+            <span data-testid="matches-meta-results">{results.length} hasil pertandingan</span>
+          </>
+        }
       />
-      <div className="als-container py-10">
+      <div className="als-container py-10 sm:py-14">
         <Tabs value={tab} onValueChange={setTab}>
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <TabsList data-testid="matches-tabs">
               <TabsTrigger value="upcoming" data-testid="matches-tab-upcoming">
                 Akan Datang ({upcoming.length})
@@ -72,9 +80,11 @@ export default function MatchesPage() {
                 testId="matches-empty"
               />
             ) : (
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                {shown.map((match) => (
-                  <MatchCardShell key={match.id} match={match} testId={`match-card-${match.id}`} />
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {shown.map((match, index) => (
+                  <Reveal key={match.id} delay={Math.min(index, 6) * 70}>
+                    <MatchCardShell match={match} testId={`match-card-${match.id}`} />
+                  </Reveal>
                 ))}
               </div>
             )}

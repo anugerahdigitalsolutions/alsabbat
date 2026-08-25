@@ -218,6 +218,78 @@
   .als-reveal-shown {
     animation: als-reveal-in 620ms var(--ease-out) both;
   }
+
+  /* -------- Phase 5B: inner page visual language ------- */
+  .als-inner-header {
+    min-height: 220px;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  @media (min-width: 640px) {
+    .als-inner-header {
+      min-height: 280px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .als-inner-header {
+      min-height: 330px;
+    }
+  }
+
+  .als-gold-rule {
+    display: block;
+    height: 3px;
+    width: 54px;
+    border-radius: 999px;
+    background-image: linear-gradient(90deg, var(--club-primary), rgba(252, 207, 43, 0));
+  }
+
+  .als-scrim {
+    background-image: linear-gradient(
+      180deg,
+      rgba(34, 34, 34, 0.55) 0%,
+      rgba(34, 34, 34, 0.72) 45%,
+      rgba(34, 34, 34, 0.94) 100%
+    );
+  }
+
+  .als-zoom {
+    overflow: hidden;
+  }
+
+  .als-zoom img {
+    transition-property: transform;
+    transition-duration: 600ms;
+    transition-timing-function: var(--ease-out);
+  }
+
+  .als-zoom:hover img,
+  .als-zoom:focus-visible img,
+  .als-zoom:focus-within img {
+    transform: scale(1.06);
+  }
+
+  .als-jersey-ghost {
+    font-weight: 800;
+    line-height: 0.8;
+    color: transparent;
+    -webkit-text-stroke: 2px rgba(252, 207, 43, 0.32);
+  }
+
+  .als-live-dot {
+    animation: als-pulse 1.6s ease-in-out infinite;
+  }
+
+  .als-prose p {
+    margin-bottom: 1.15rem;
+  }
+
+  .als-prose p:first-of-type {
+    font-size: 1.0625rem;
+    font-weight: 500;
+  }
 }
 
 @keyframes als-kenburns {
@@ -226,6 +298,18 @@
   }
   to {
     transform: scale(1.12);
+  }
+}
+
+@keyframes als-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
   }
 }
 

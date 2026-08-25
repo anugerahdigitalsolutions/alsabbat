@@ -6,6 +6,7 @@ import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { NewsCardShell } from '../../components/public/NewsCardShell';
+import { Reveal } from '../../components/public/Reveal';
 import { Badge } from '../../components/ui/badge';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
@@ -66,72 +67,112 @@ export default function NewsDetailPage() {
 
   return (
     <div data-testid="page-news-detail">
-      <PublicPageHeader label="Newsroom" title={post?.title || 'Berita'} description={post?.excerpt} />
-      <div className="als-container py-10">
+      <PublicPageHeader
+        label={category?.name || 'Newsroom'}
+        title={post?.title || 'Berita'}
+        description={post?.excerpt}
+        backgroundImage={post?.thumbnail}
+        imageAlt={post?.title}
+        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'News', to: '/news' }, { label: 'Artikel' }]}
+        meta={
+          post ? (
+            <>
+              <span className="inline-flex items-center gap-1.5" data-testid="news-detail-date">
+                <CalendarDays className="h-4 w-4" />
+                {fmt(post.published_at || post.created_at) || 'Tanggal belum diatur'}
+              </span>
+              {author ? (
+                <span className="inline-flex items-center gap-1.5" data-testid="news-detail-author">
+                  <User className="h-4 w-4" />
+                  {author.name}
+                </span>
+              ) : null}
+            </>
+          ) : null
+        }
+      />
+      <div className="als-container py-10 sm:py-14">
         {loading ? (
           <LoadingState variant="text" testId="news-detail-loading" />
         ) : error ? (
           <ErrorState message={error} onRetry={load} testId="news-detail-error" />
         ) : (
-          <article className="mx-auto max-w-3xl">
-            <div className="mb-6 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--muted-fg)' }}>
-              {category ? (
-                <Badge className="border-0 font-semibold" style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }} data-testid="news-detail-category">
-                  {category.name}
-                </Badge>
-              ) : null}
-              <span className="inline-flex items-center gap-1.5" data-testid="news-detail-date">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {fmt(post?.published_at || post?.created_at) || 'Tanggal belum diatur'}
-              </span>
-              {author ? (
-                <span className="inline-flex items-center gap-1.5" data-testid="news-detail-author">
-                  <User className="h-3.5 w-3.5" />
-                  {author.name}
-                </span>
-              ) : null}
-            </div>
-
-            {post?.thumbnail ? (
-              <img
-                src={post.thumbnail}
-                alt={post.title}
-                className="mb-8 w-full rounded-[var(--radius-lg)] object-cover"
-                loading="lazy"
-              />
+          <article className="mx-auto max-w-[46rem]">
+            {category ? (
+              <Badge
+                className="mb-6 border-0 font-semibold"
+                style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                data-testid="news-detail-category"
+              >
+                {category.name}
+              </Badge>
             ) : null}
 
-            <div className="whitespace-pre-line text-base leading-relaxed" style={{ color: 'var(--fg)' }} data-testid="news-detail-content">
+            {post?.thumbnail ? (
+              <Reveal className="als-card als-zoom mb-10 block overflow-hidden">
+                <img
+                  src={post.thumbnail}
+                  alt={post.title}
+                  className="h-auto max-h-[520px] w-full object-cover"
+                  loading="eager"
+                />
+              </Reveal>
+            ) : null}
+
+            <div
+              className="als-prose whitespace-pre-line text-base leading-[1.85]"
+              style={{ color: 'var(--fg)' }}
+              data-testid="news-detail-content"
+            >
               {post?.content || 'Isi berita belum tersedia.'}
             </div>
 
             {match ? (
               <Link
-                to="/matches"
-                className="als-card mt-8 flex items-center gap-3 p-4"
+                to={`/matches/${match.id}`}
+                className="als-card als-lift als-focus mt-10 flex items-center gap-3 p-5"
                 data-testid="news-detail-related-match"
               >
-                <Swords className="h-5 w-5" style={{ color: 'var(--club-secondary)' }} />
-                <span className="text-sm font-semibold">
-                  Terkait pertandingan vs {match.opponent?.name} · {match.date}
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                  style={{ backgroundColor: 'rgba(1,40,145,0.07)' }}
+                >
+                  <Swords className="h-5 w-5" style={{ color: 'var(--club-secondary)' }} />
+                </span>
+                <span className="min-w-0">
+                  <span className="als-section-label block">Terkait Pertandingan</span>
+                  <span className="mt-1 block truncate text-sm font-semibold">
+                    vs {match.opponent?.name} · {match.date}
+                  </span>
                 </span>
               </Link>
             ) : null}
 
-            <Link to="/news" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--club-secondary)' }} data-testid="news-detail-back">
+            <Link
+              to="/news"
+              className="mt-10 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold"
+              style={{ color: 'var(--club-secondary)' }}
+              data-testid="news-detail-back"
+            >
               <ArrowLeft className="h-4 w-4" /> Kembali ke Berita
             </Link>
           </article>
         )}
 
         {related.length ? (
-          <div className="mt-14">
-            <p className="als-section-label mb-4">Berita Lainnya</p>
+          <div className="mt-16 border-t pt-12" style={{ borderColor: 'var(--border-soft)' }}>
+            <p className="als-section-label mb-6">Berita Lainnya</p>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {related.map((item) => (
-                <Link key={item.id} to={`/news/${item.slug}`} data-testid={`news-related-${item.id}`}>
-                  <NewsCardShell post={item} testId={`news-related-card-${item.id}`} />
-                </Link>
+              {related.map((item, index) => (
+                <Reveal key={item.id} delay={Math.min(index, 4) * 70} className="h-full">
+                  <Link
+                    to={`/news/${item.slug}`}
+                    className="als-focus block h-full"
+                    data-testid={`news-related-${item.id}`}
+                  >
+                    <NewsCardShell post={item} testId={`news-related-card-${item.id}`} />
+                  </Link>
+                </Reveal>
               ))}
             </div>
           </div>

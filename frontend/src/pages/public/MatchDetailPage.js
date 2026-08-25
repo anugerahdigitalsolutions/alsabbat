@@ -12,6 +12,8 @@ import { MatchLineupSection } from '../../components/public/matchcenter/MatchLin
 import { MatchTimeline } from '../../components/public/matchcenter/MatchTimeline';
 import { MatchMediaPanel } from '../../components/public/matchcenter/MatchMediaPanel';
 import { MatchGallerySection } from '../../components/public/matchcenter/MatchGallerySection';
+import { Reveal } from '../../components/public/Reveal';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { useClub } from '../../context/ClubContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
@@ -41,6 +43,8 @@ export default function MatchDetailPage() {
 
   const match = data.match;
   const opponentName = match?.opponent?.name;
+  const coverMedia = (data.match_media || []).find((m) => m.file_type === 'IMAGE');
+  const heroImage = coverMedia ? resolveMediaUrl(coverMedia.url || coverMedia.thumbnail_url) : null;
 
   usePageSeo({
     title: opponentName ? `${shortName || 'ALSABBAT'} vs ${opponentName}` : 'Match Center',
@@ -108,12 +112,13 @@ export default function MatchDetailPage() {
         clubLogo={club?.logo}
         competition={data.competition}
         season={data.season}
+        heroImage={heroImage}
       />
 
-      <div className="als-container py-8 sm:py-10">
+      <div className="als-container py-8 sm:py-12">
         <Link
           to="/matches"
-          className="mb-6 inline-flex items-center gap-2 text-sm font-semibold transition-colors duration-200 hover:underline"
+          className="mb-6 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold transition-colors duration-200 hover:underline"
           style={{ color: 'var(--club-secondary)' }}
           data-testid="match-detail-back"
         >
@@ -122,7 +127,7 @@ export default function MatchDetailPage() {
         </Link>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+          <Reveal className="lg:col-span-2">
             <Tabs defaultValue="lineup">
               <TabsList data-testid="match-detail-tabs">
                 <TabsTrigger value="lineup" data-testid="match-tab-lineup">
@@ -165,9 +170,9 @@ export default function MatchDetailPage() {
                 />
               </TabsContent>
             </Tabs>
-          </div>
+          </Reveal>
 
-          <div className="space-y-6">
+          <Reveal className="space-y-6" delay={120}>
             <MatchInfoPanel
               match={match}
               team={data.team}
@@ -204,7 +209,7 @@ export default function MatchDetailPage() {
                 />
               )}
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
     </div>
