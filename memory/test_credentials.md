@@ -15,6 +15,9 @@ If the password env var is unset, the seed is skipped (no default password is ba
 
 ## Additional roles for RBAC testing
 
+> Catatan Fase 5E (25 Jun 2026): seluruh akun test `content<timestamp>@alsabbat.com` (CONTENT_ADMIN)
+> sudah DIHAPUS. Saat ini hanya ada satu akun: `admin@alsabbat.com` (SUPER_ADMIN).
+
 Create via `POST /api/users` while logged in as the Super Admin, e.g.:
 
 ```json

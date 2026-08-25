@@ -57,7 +57,7 @@ class ClubBase(AppBaseModel):
     logo: Optional[str] = None
     primary_color: str = Field(default="#FCCF2B", pattern=HEX_COLOR)
     secondary_color: str = Field(default="#012891", pattern=HEX_COLOR)
-    tertiary_color: str = Field(default="#222222", pattern=HEX_COLOR)
+    tertiary_color: str = Field(default="#000000", pattern=HEX_COLOR)
     light_color: str = Field(default="#FEFEFE", pattern=HEX_COLOR)
     description: Optional[str] = Field(default=None, max_length=4000)
     founded_date: Optional[_dt.date] = None

@@ -8,7 +8,7 @@ const ClubContext = createContext(null);
 export const BRAND_DEFAULTS = {
   primary_color: '#FCCF2B',
   secondary_color: '#012891',
-  tertiary_color: '#222222',
+  tertiary_color: '#000000',
   light_color: '#FEFEFE',
 };
 

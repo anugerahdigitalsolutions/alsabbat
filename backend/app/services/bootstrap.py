@@ -17,12 +17,9 @@ DEFAULT_CLUB = {
     "logo": None,
     "primary_color": "#FCCF2B",
     "secondary_color": "#012891",
-    "tertiary_color": "#222222",
+    "tertiary_color": "#000000",
     "light_color": "#FEFEFE",
-    "description": (
-        "ALSABBAT Football Club — official digital platform. "
-        "Built for multiple teams, seasons, competitions and matches."
-    ),
+    "description": "Official website of ALSABBAT Football Club.",
     "founded_date": None,
     "location": None,
     "stadium": None,

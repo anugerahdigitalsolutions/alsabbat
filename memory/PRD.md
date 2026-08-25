@@ -28,7 +28,8 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 5A | Cinematic UI homepage | SELESAI |
 | 5B | Inner Page Visual Polish | SELESAI |
 | 5C | Single-Team Data Cleanup | SELESAI |
-| 5D | Production Data Cleanup | **SELESAI (25 Jun 2026)** |
+| 5D | Production Data Cleanup | SELESAI |
+| 5E | Production Identity & Auth Cleanup | **SELESAI (25 Jun 2026)** — Fase 5 tuntas |
 
 ## Fase 5B — yang diimplementasikan (2026-06-25)
 - `index.css`: token/utility baru `als-inner-header`, `als-gold-rule`, `als-scrim`, `als-zoom`,
@@ -52,6 +53,18 @@ secara bertahap per fase, dengan identitas brand ketat:
 - `PlayerDetailPage.js`: hero cinematic khusus (portrait besar, ghost jersey number, gold rule, breadcrumb),
   fact grid, biografi, status panel.
 - Backend changes: **0**.
+
+## Fase 5E — Production Identity & Auth Cleanup (2026-06-25)
+- Auth: 6 akun test `content<timestamp>@alsabbat.com` (CONTENT_ADMIN) dihapus + 6 session miliknya direvoke.
+  Tersisa 1 akun resmi `admin@alsabbat.com` (SUPER_ADMIN). JWT/bcrypt/RBAC/middleware TIDAK diubah.
+  Sessions: 36 → 30 (hanya session akun test yang dihapus). Analytics tidak disentuh (259 events).
+- Club identity: description → "Official website of ALSABBAT Football Club.";
+  `stadium`/`location` yang di-inject test ("ALSABBAT Arena"/"Indonesia") dikosongkan (tidak mengarang fakta).
+- Brand: dark resmi kini **#000000** (bukan #222222) — `index.css` `--club-tertiary`, `ClubContext.js`,
+  `AdminClubPage.js` default, `models/domain.py` default, `services/bootstrap.py`, dan dokumen club di DB.
+- Copy multi-team: `AdminTeamsPage.js` ("beberapa tim: first team, reserve, youth…") diganti wording single-team;
+  `bootstrap.py` DEFAULT_CLUB tidak lagi menyebut "multiple teams". Public UI bersih dari teks multi-team.
+- Skrip: `scripts/phase5e_cleanup.py` (dry-run + `--apply`).
 
 ## Fase 5D — Production Data Cleanup (2026-06-25)
 Setiap kandidat dicocokkan dengan signature test eksplisit (nama/slug bertimestamp, `cdn.example.com`,
