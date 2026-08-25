@@ -1,4 +1,4 @@
-# FASE 1 Plan — ALSABBAT Football Club Digital Platform (Foundation) — UPDATED (FASE 1–4 SELESAI)
+# FASE 1 Plan — ALSABBAT Football Club Digital Platform (Foundation) — UPDATED (FASE 1–5A SELESAI)
 
 ## 1) Objectives (final state)
 - Establish **football-club-first** domain architecture (**Club → Team/Squad → Players/Staff → Seasons/Competitions → Matches → Content/News → Gallery/Media → Sponsors**) with **MongoDB Atlas-ready** modeling + indexes.
@@ -9,8 +9,9 @@
 - Add foundations: **SEO/OG + analytics hooks**, health checks, logging, error handling.
 - Deliver **Match Center V1** (Match Detail, Lineups, Timeline Events) as additive modules with **professional empty states** and **backward-compatible relationships**.
 - Deliver **Match Gallery & Media Management** (upload photo/video, multiple upload, media library, album publish workflow, album-media ordering, public gallery + lightbox/video player, match integration) **without creating a second media system**.
+- Deliver **Cinematic UI & Visual Enhancement (Phase 5A)**: premium, dynamic, animated homepage experience with cinematic hero slider, micro-interactions, scroll reveal, and gallery highlight using existing published data.
 
-**Status:** Phase 1, Phase 2, Phase 3, and **Phase 4** objectives completed.
+**Status:** Phase 1, Phase 2, Phase 3, Phase 4, and **Phase 5A** objectives completed.
 
 ---
 
@@ -136,9 +137,6 @@ Delivered:
   - Tabs: **Susunan Pemain**, **Timeline**, **Media & Konten**.
   - Match Information panel, Related News, integration point placeholders.
 
-Verification:
-- Manual UI screenshots.
-
 #### Phase 3C — Frontend Admin (Lineups + Events CRUD) — ✅ DONE
 Delivered:
 - `/admin/match-lineups`, `/admin/match-events` using `ResourceManager`.
@@ -187,7 +185,7 @@ Delivered (additive):
     - `PATCH /api/gallery/albums/{id}/media/order` reorder via ordered id list
     - `DELETE /api/gallery/albums/{id}/media/{media_id}` detach (file stays in library)
     - `POST /api/gallery/albums/{id}/publish?publish=` publish/unpublish toggle
-  - Existing `GET /api/gallery/albums/{id}/media` now returns ordered items.
+  - Existing `GET /api/gallery/albums/{id}/media` returns ordered items.
 - Match relations enhancement:
   - `/api/matches/{id}/relations` additive keys:
     - `published_gallery_albums`
@@ -217,18 +215,9 @@ Delivered:
 
 #### Phase 4C — Public Website (Published gallery + album detail + match integration) — ✅ DONE
 Delivered:
-- `/gallery`:
-  - Uses `GET /api/gallery/public/albums`
-  - Shows only PUBLISHED albums (cover, title, match, date, total, photo/video indicators)
-  - “Load more” pagination (lightweight)
-- `/gallery/:albumId`:
-  - Uses `GET /api/gallery/public/albums/{id}`
-  - Photo grid + lightweight lightbox (prev/next/close + keyboard)
-  - HTML5 video cards (`controls`, `preload="none"`, no autoplay)
-- `/matches/:matchId`:
-  - Tab “Media & Konten” now includes **MATCH MEDIA** section + CTA “View Full Gallery”
-  - Empty state when no published album exists
-  - Phase 3 sections remain intact.
+- `/gallery` uses `GET /api/gallery/public/albums` (PUBLISHED only) + “Load more” pagination.
+- `/gallery/:albumId` detail + photo lightbox + HTML5 video player (no autoplay, `preload="none"`).
+- `/matches/:matchId` tab “Media & Konten” includes **MATCH MEDIA** section + CTA “View Full Gallery”.
 
 #### Phase 4D — Polish (Brand + access rules + motion) — ✅ DONE
 Delivered:
@@ -238,20 +227,9 @@ Delivered:
 
 #### Phase 4E — Minimal Critical Verification (no Testing Agent) — ✅ DONE
 Performed:
-- Frontend production build: `yarn build` PASS.
-- Backend health: `GET /api/health` PASS.
-- Verified workflow:
-  - Upload one photo
-  - Upload one video
-  - Create one album (DRAFT)
-  - Attach existing media
-  - Cover + order
-  - Publish
-  - Public gallery shows only PUBLISHED
-  - DRAFT hidden / not accessible
-  - Match Detail shows MATCH MEDIA
-  - Admin auth still works
-  - Phase 3 match detail still works
+- `yarn build` PASS.
+- `/api/health` PASS.
+- Verified upload (photo/video), album creation, attach/order/cover, publish, public visibility, match detail integration.
 - Regression:
   - `tests/test_core_phase1.py` **60/60**
   - `tests/test_match_center_phase3.py` **20/20**
@@ -260,29 +238,88 @@ All dev-only verification data removed afterward.
 
 ---
 
-## 3) Next Actions (immediate) — UPDATED
-**Current target:** Plan Phase 5 (post-Phase 4).
+### Phase 5A — Cinematic UI & Visual Enhancement — ✅ COMPLETED (frontend-only)
+**Scope rules / constraints (as implemented):**
+- **Frontend-only**: backend not refactored/changed for Phase 5A.
+- No Social Publishing, no Merchandise, no Match Statistics/Formation.
+- No Testing Agent.
+- **Poppins-only** and ALSABBAT color tokens preserved.
+- No fake match/gallery data; hero uses real match/news/published gallery when available.
 
-Recommended next actions (NOT started; keep modular/backward-compatible):
-1. **UI/Visual Enhancement**: cinematic rotating hero banner (5–7s autoplay, 700–1000ms transition, pagination, prev/next, swipe).
-2. **Formation pitch visual** using `Match.formation` + `MatchLineup.pitch_slot`.
-3. **Match statistics** aggregated from events/lineups.
-4. **Social publishing module** on top of existing Media architecture (Instagram/TikTok/YouTube) — future phase.
+Implementation reference: `/app/docs/PHASE_5A_REPORT.md`.
+
+#### Phase 5A1 — Homepage cinematic hero (priority) — ✅ DONE
+Delivered:
+- New component `CinematicHero`:
+  - Full-width cinematic slider.
+  - Autoplay **6s** per slide.
+  - Transition crossfade **800ms**.
+  - Prev/next, pause/play, pagination dots, counter (01/03).
+  - Mobile swipe + keyboard arrow support.
+  - Ken-burns image zoom on active slide (disabled under reduced motion).
+  - Safe fallback when no suitable media.
+  - Media priority: `match_cover` → published gallery album cover (`cover_url_resolved`) → latest news thumbnail.
+- Hero slides (real data only):
+  - Matchday (upcoming match)
+  - Latest Result (finished match)
+  - Latest News
+  - Match Moments (published gallery highlight)
+
+#### Phase 5A2 — Scroll reveal & micro interactions — ✅ DONE
+Delivered:
+- Hook: `useScrollReveal` + `usePrefersReducedMotion` (IntersectionObserver, no heavy deps).
+- `SectionShell` enhanced with per-section reveal animations.
+- Motion tokens added to `index.css`:
+  - `.als-hero-slide`, `.als-kenburns`, `.als-lift`, `.als-reveal-hidden`, `.als-reveal-shown`
+  - All animations are `transform/opacity` only; reduced motion respected.
+- Micro interactions on cards/buttons (lift, subtle scale/overlay for media tiles).
+
+#### Phase 5A3 — Homepage section upgrades (lightweight, data-driven) — ✅ DONE
+Delivered:
+- Premium **Matchday** cards (`MatchFeatureCard`) for Next Match and Full Time with CTA to match detail.
+- Gallery highlight uses Phase 4 public albums via `/api/gallery/public/albums` + `AlbumCard`.
+- Premium touches for News and Squad cards (lift + overlay + jersey badge), keeping existing data flows.
+
+#### Phase 5A4 — Minimal critical verification (no Testing Agent) — ✅ DONE
+Performed:
+- `yarn build` PASS.
+- `/api/health` ok.
+- Homepage renders; hero controls verified: dots/next/prev/pause/counter.
+- Mobile swipe works; keyboard arrows work.
+- Gallery highlight uses published endpoint.
+- Match card routes to `/matches/:matchId`.
+- `/gallery` and `/news` render normally.
+- Admin login still works (200).
+- Regression:
+  - `tests/test_core_phase1.py` **60/60**
+  - `tests/test_match_center_phase3.py` **20/20**
+  - `tests/test_gallery_phase4.py` **25/25**
+- Dev-only verification data removed afterward.
 
 ---
 
-## 4) Success Criteria (Phase 4 exit) — ✅ ACHIEVED
-- ✅ Existing Media system reused; no second media system created.
-- ✅ Admin can upload photo and video; multiple upload supported with progress + partial failure.
-- ✅ Media Library supports browse/filter and metadata updates (caption/alt).
-- ✅ Gallery albums support DRAFT/PUBLISHED and match relationship via `match_id`.
-- ✅ Album cover uses `cover_media_id`; no re-upload required.
-- ✅ Existing media can be attached/detached and ordered via `display_order`.
-- ✅ Public `/gallery` shows PUBLISHED only; DRAFT is hidden.
-- ✅ Public album detail provides photo grid + lightbox and video player.
-- ✅ Match detail shows MATCH MEDIA + CTA; Phase 3 content not broken.
-- ✅ Poppins-only font and brand colors preserved; motion respects reduced-motion.
-- ✅ Storage remains Local → S3/CDN ready; binaries never stored in MongoDB.
-- ✅ Minimal verification completed; Testing Agent not used.
+## 3) Next Actions (immediate) — UPDATED
+**Current target:** Plan Phase 5B (post-Phase 5A).
 
-**Note:** Social publishing, merchandise/payment/ticketing, video transcoding/streaming remain out of scope and were not implemented.
+Recommended next actions (NOT started; keep modular/backward-compatible):
+1. **Phase 5B — Inner Page Polish**: apply the cinematic visual language to inner pages (Matches, News detail, Club, Team/Player, Sponsors) without changing backend.
+2. **Formation pitch visual** using `Match.formation` + `MatchLineup.pitch_slot` (later phase).
+3. **Match statistics** aggregated from events/lineups (later phase).
+4. **Social publishing module** on top of existing Media architecture (Instagram/TikTok/YouTube) — later phase.
+
+---
+
+## 4) Success Criteria (Phase 5A exit) — ✅ ACHIEVED
+- ✅ Homepage hero full-width cinematic.
+- ✅ Rotating slides with autoplay ~6s and smooth 800ms crossfade.
+- ✅ Prev/next, pause/play, pagination dots, counter.
+- ✅ Mobile swipe + keyboard support.
+- ✅ Hero uses ALSABBAT data/media when available; safe fallback; no fake match data.
+- ✅ Scroll reveal animation per section; micro interactions on cards/buttons.
+- ✅ Matchday section feels premium (Next Match + Latest Result CTA to Match Detail).
+- ✅ Gallery highlight uses published gallery data (Phase 4), not a new system.
+- ✅ Admin remains hidden from header; Staff Access remains subtle in footer.
+- ✅ Poppins-only; brand colors preserved; reduced motion respected.
+- ✅ Performance preserved (lazy images where applicable; no video autoplay).
+- ✅ Backward compatible: Phase 1–4 not broken.
+- ✅ Minimal verification PASS; Testing Agent not used.

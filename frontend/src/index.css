@@ -186,6 +186,47 @@
   .als-media-tile:focus-within .als-media-overlay {
     opacity: 1;
   }
+
+  /* -------- Phase 5A: cinematic hero + micro interactions ------- */
+  .als-hero-slide {
+    transition-property: opacity, transform;
+    transition-duration: 800ms;
+    transition-timing-function: var(--ease-out);
+  }
+
+  .als-kenburns {
+    animation: als-kenburns 9s var(--ease-out) forwards;
+  }
+
+  .als-lift {
+    transition-property: transform, box-shadow;
+    transition-duration: var(--dur-2);
+    transition-timing-function: var(--ease-out);
+  }
+
+  .als-lift:hover,
+  .als-lift:focus-visible {
+    transform: translate3d(0, -3px, 0);
+    box-shadow: var(--shadow-md);
+  }
+
+  .als-reveal-hidden {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+
+  .als-reveal-shown {
+    animation: als-reveal-in 620ms var(--ease-out) both;
+  }
+}
+
+@keyframes als-kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.12);
+  }
 }
 
 @keyframes als-reveal-in {
