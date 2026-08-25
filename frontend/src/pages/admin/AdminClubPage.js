@@ -80,6 +80,8 @@ export default function AdminClubPage() {
         { name: 'social_media.facebook', label: 'Facebook', type: 'text' },
         { name: 'social_media.youtube', label: 'YouTube', type: 'text' },
         { name: 'social_media.tiktok', label: 'TikTok', type: 'text' },
+        { name: 'social_media.twitter', label: 'X / Twitter', type: 'text' },
+        { name: 'social_media.website', label: 'Website Lain', type: 'text' },
         { name: 'seo.title', label: 'SEO Title', type: 'text', full: true },
         { name: 'seo.description', label: 'SEO Description', type: 'textarea', full: true },
         { name: 'seo.keywords', label: 'SEO Keywords', type: 'multiselect', full: true, help: 'Pisahkan dengan koma.' },

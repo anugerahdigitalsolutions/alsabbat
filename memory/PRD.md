@@ -30,7 +30,26 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 5C | Single-Team Data Cleanup | SELESAI |
 | 5D | Production Data Cleanup | SELESAI |
 | 5E | Production Identity & Auth Cleanup | SELESAI — Fase 5 tuntas |
-| 6 | Match Intelligence (Formation, Statistics, Countdown, Spotlight) | **SELESAI (25 Jun 2026)** |
+| 6 | Match Intelligence (Formation, Statistics, Countdown, Spotlight) | SELESAI |
+| 7 | Real Data & Content Readiness | **SELESAI (25 Jun 2026)** — STOP GATE 7 |
+
+## Fase 7 — Real Data & Content Readiness (2026-06-25)
+Audit kesiapan Admin Panel untuk menerima data ALSABBAT yang nyata. **Tidak ada data dummy dibuat.**
+- Gap ditemukan & ditutup: form Admin → Matches belum punya field `formation` (padahal Visual Formation Fase 6
+  membacanya), `opponent_formation`, `referee`, `attendance` → ditambahkan (backend `MatchBase` sudah mendukung,
+  0 perubahan backend). Admin → Club ditambah `social_media.twitter` & `social_media.website`.
+- Terverifikasi sudah siap tanpa perubahan: Club profile (nama, short name, deskripsi, logo URL, kontak,
+  email/telp/WA/alamat, website, sosial, lokasi, stadion, 4 brand color, SEO), Media Library (`POST /api/media/upload`
+  auth-protected), logo klub otomatis dipakai Header/Footer/Hero/Admin sidebar via `ClubCrestMark`,
+  scoreboard & match card (`club.logo`), SEO/OG (`usePageSeo` fallback ke `club.logo`);
+  Players (nama, foto, nomor, posisi, bio, status, sosial), Staff, Seasons, Competitions (+relasi season),
+  Matches, Match Lineups (role/position/pitch_slot/shirt_number/is_captain/display_order → siap untuk pitch),
+  Match Events, Content/News (judul, slug, thumbnail, konten, kategori, penulis, status, tanggal, match terkait,
+  SEO), Gallery (album + match + cover + publish) & Media, Sponsors.
+- Single-team: teams = 1 (ALSABBAT), public UI tanpa teks multi-team.
+- Empty state profesional di semua halaman publik & modul admin (dashboard menampilkan 1 team, sisanya 0).
+
+
 
 ## Fase 5B — yang diimplementasikan (2026-06-25)
 - `index.css`: token/utility baru `als-inner-header`, `als-gold-rule`, `als-scrim`, `als-zoom`,

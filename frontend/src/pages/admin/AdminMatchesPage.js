@@ -74,6 +74,16 @@ export default function AdminMatchesPage() {
         { name: 'home_score', label: 'Skor Home', type: 'number' },
         { name: 'away_score', label: 'Skor Away', type: 'number' },
         { name: 'match_cover', label: 'Match Cover (URL)', type: 'text', full: true },
+        {
+          name: 'formation',
+          label: 'Formasi ALSABBAT',
+          type: 'text',
+          placeholder: '4-3-3',
+          help: 'Dipakai untuk Visual Formation di Match Center. Kosongkan bila belum ditentukan.',
+        },
+        { name: 'opponent_formation', label: 'Formasi Lawan', type: 'text', placeholder: '4-4-2' },
+        { name: 'referee', label: 'Wasit', type: 'text' },
+        { name: 'attendance', label: 'Jumlah Penonton', type: 'number' },
         { name: 'result_summary', label: 'Ringkasan Hasil', type: 'textarea', full: true },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
