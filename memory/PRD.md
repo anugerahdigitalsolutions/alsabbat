@@ -27,7 +27,8 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 4 | Match Gallery & Media Management | SELESAI |
 | 5A | Cinematic UI homepage | SELESAI |
 | 5B | Inner Page Visual Polish | SELESAI |
-| 5C | Single-Team Data Cleanup | **SELESAI (25 Jun 2026)** |
+| 5C | Single-Team Data Cleanup | SELESAI |
+| 5D | Production Data Cleanup | **SELESAI (25 Jun 2026)** |
 
 ## Fase 5B — yang diimplementasikan (2026-06-25)
 - `index.css`: token/utility baru `als-inner-header`, `als-gold-rule`, `als-scrim`, `als-zoom`,
@@ -51,6 +52,21 @@ secara bertahap per fase, dengan identitas brand ketat:
 - `PlayerDetailPage.js`: hero cinematic khusus (portrait besar, ghost jersey number, gold rule, breadcrumb),
   fact grid, biografi, status panel.
 - Backend changes: **0**.
+
+## Fase 5D — Production Data Cleanup (2026-06-25)
+Setiap kandidat dicocokkan dengan signature test eksplisit (nama/slug bertimestamp, `cdn.example.com`,
+`pitch.png` 67 byte). Tidak ada record di luar signature yang dihapus.
+- BEFORE → AFTER: teams 1→1, players 7→0, staff 7→0, matches 7→0, lineups 0→0, events 0→0,
+  posts 13→0, albums 6→0, media 20→0, seasons 7→0, competitions 7→0, categories 7→0, authors 7→0,
+  tags 7→0, sponsors 6→0, clubs 1→1 (config ALSABBAT dipertahankan).
+- Storage: 7 file `*-pitch.png` (67 byte, artefak upload test) dihapus; `media_storage` kini 0 file.
+  Tidak ada direktori/bucket yang dihapus.
+- Integrity check: 0 orphan pada player→team, staff→team, match→team, lineup, event, post→match,
+  album→match, album→cover, media→album.
+- Skrip: `scripts/phase5d_audit.py` (read-only), `scripts/phase5d_cleanup.py` (dry-run + `--apply`).
+- UNRESOLVED (sengaja dipertahankan): 6 user CONTENT_ADMIN test `content<timestamp>@alsabbat.com`
+  (auth/RBAC — butuh persetujuan user), 35 session, 259 analytics_events (data runtime, bukan konten).
+- Catatan copy: deskripsi club masih "Built for multiple teams…" — perlu diperbarui user via Admin Panel.
 
 ## Fase 5C — Single-Team Data Cleanup (2026-06-25)
 Aturan bisnis: **ALSABBAT = 1 club, 1 team, 1 squad.** Entity `Team` tetap dipertahankan untuk relasi/scalability,
