@@ -16,6 +16,7 @@ from app.api.routes import (
     players,
     seasons,
     seo,
+    social,
     sponsors,
     staff,
     system,
@@ -45,3 +46,4 @@ api_router.include_router(sponsors.router, prefix="/sponsors")
 api_router.include_router(achievements.router, prefix="/achievements")
 api_router.include_router(analytics.router, prefix="/analytics")
 api_router.include_router(seo.router, prefix="/seo")
+api_router.include_router(social.router, prefix="/social")

@@ -95,8 +95,9 @@ class Settings:
     S3_ACCESS_KEY_ID: str = os.environ.get("S3_ACCESS_KEY_ID", "")
     S3_SECRET_ACCESS_KEY: str = os.environ.get("S3_SECRET_ACCESS_KEY", "")
 
-    # ------------------------------------------- future phase integrations
-    # Declared for architecture readiness only. NOT activated in Phase 1.
+    # ------------------------------------- social publishing (Phase 8)
+    # Values are read from the environment/secret manager ONLY. Empty value =>
+    # the platform reports NOT_CONFIGURED (never a fake publish).
     INSTAGRAM_APP_ID: str = os.environ.get("INSTAGRAM_APP_ID", "")
     INSTAGRAM_APP_SECRET: str = os.environ.get("INSTAGRAM_APP_SECRET", "")
     TIKTOK_CLIENT_KEY: str = os.environ.get("TIKTOK_CLIENT_KEY", "")

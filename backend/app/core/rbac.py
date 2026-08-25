@@ -43,6 +43,8 @@ P = {
     "analytics_read": "analytics:read",
     "system_read": "system:read",
     # Reserved for later phases (architecture ready, features not built)
+    # Social publishing (Phase 8)
+    "social_read": "social:read",
     "social_publish": "social:publish",
     "store_manage": "store:manage",
     "order_manage": "order:manage",
@@ -73,6 +75,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         P["content_read"],
         P["media_read"],
         P["gallery_read"],
+        P["social_read"],
         P["social_publish"],
         P["analytics_read"],
     ],

@@ -36,6 +36,7 @@ class Collections:
     SPONSORS = "sponsors"
     ACHIEVEMENTS = "achievements"
     ANALYTICS_EVENTS = "analytics_events"
+    SOCIAL_PUBLICATIONS = "social_publications"
     SETTINGS = "site_settings"
 
 

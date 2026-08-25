@@ -31,7 +31,27 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 5D | Production Data Cleanup | SELESAI |
 | 5E | Production Identity & Auth Cleanup | SELESAI — Fase 5 tuntas |
 | 6 | Match Intelligence (Formation, Statistics, Countdown, Spotlight) | SELESAI |
-| 7 | Real Data & Content Readiness | **SELESAI (25 Jun 2026)** — STOP GATE 7 |
+| 7 | Real Data & Content Readiness | SELESAI — STOP GATE 7 |
+| 8 | Social Publishing | **SELESAI (25 Jun 2026)** — STOP GATE 8 |
+
+## Fase 8 — Social Publishing (2026-06-25)
+Dokumentasi lengkap: `/app/docs/SOCIAL_PUBLISHING.md`.
+- Backend additive: `models/social.py`, `services/social/{base,validation,website,instagram,tiktok,youtube,registry}.py`,
+  `api/routes/social.py` (prefix `/api/social`), collection `social_publications`,
+  permission baru `social:read` (+ `social:publish` existing) untuk role SOCIAL_MEDIA_ADMIN.
+- Adapter API resmi: Website (CMS existing), Instagram Graph API (container → status poll → media_publish),
+  TikTok Content Posting API v2 (PULL_FROM_URL; Direct Post bila `TIKTOK_DIRECT_POST_APPROVED=true`,
+  jika tidak → inbox upload), YouTube Data API v3 (refresh token → resumable upload), YouTube Shorts
+  (endpoint YouTube yang sama + validasi ≤180 detik & vertikal/persegi).
+- Satu dokumen publikasi per platform → status independen (DRAFT/QUEUED/PUBLISHING/PUBLISHED/FAILED/CANCELLED),
+  idempotency (tidak bisa publish dua kali), batas 5 attempt, retry manual, cancel, audit log tanpa kredensial.
+- Frontend: `pages/admin/AdminSocialPage.js` (dashboard status platform, composer: post + media library +
+  caption + judul/visibility/tags, platform checkbox tanpa default, preview, publish/retry/hapus) +
+  route `/admin/social` + item sidebar. Publik tidak berubah.
+- Semua kredensial hanya dari environment; tanpa kredensial platform melaporkan NOT_CONFIGURED
+  (tidak pernah fake success). Bundle frontend bersih dari secret.
+
+
 
 ## Fase 7 — Real Data & Content Readiness (2026-06-25)
 Audit kesiapan Admin Panel untuk menerima data ALSABBAT yang nyata. **Tidak ada data dummy dibuat.**

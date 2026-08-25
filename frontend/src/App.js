@@ -39,6 +39,7 @@ import AdminGalleryPage from './pages/admin/AdminGalleryPage';
 import AdminAlbumMediaPage from './pages/admin/AdminAlbumMediaPage';
 import AdminMediaPage from './pages/admin/AdminMediaPage';
 import AdminSponsorsPage from './pages/admin/AdminSponsorsPage';
+import AdminSocialPage from './pages/admin/AdminSocialPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminSystemPage from './pages/admin/AdminSystemPage';
 import AdminAchievementsPage from './pages/admin/AdminAchievementsPage';
@@ -92,6 +93,7 @@ function App() {
               <Route path="gallery/:albumId" element={<AdminAlbumMediaPage />} />
               <Route path="media" element={<AdminMediaPage />} />
               <Route path="sponsors" element={<AdminSponsorsPage />} />
+              <Route path="social" element={<AdminSocialPage />} />
               <Route path="achievements" element={<AdminAchievementsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="system" element={<AdminSystemPage />} />
