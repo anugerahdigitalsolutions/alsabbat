@@ -1,0 +1,55 @@
+# ================== ALSABBAT Football Club Platform ==================
+# Never commit secrets, credentials, build output or dependencies.
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Builds
+/build
+frontend/build/
+dist/
+*.tsbuildinfo
+
+# Environment & secrets (NEVER commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets.json
+service-account*.json
+
+# Media storage (local provider only — real files belong in object storage/CDN)
+backend/media_storage/
+
+# Logs & temp
+*.log
+logs/
+tmp/
+temp/
+coverage/
+.cache/
+
+# Test artifacts
+test_reports/

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+# Dynamic sitemap is served by the API: <BACKEND_URL>/api/seo/sitemap.xml

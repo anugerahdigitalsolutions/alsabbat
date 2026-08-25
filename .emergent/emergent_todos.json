@@ -1,0 +1,46 @@
+[
+  {
+    "content": "Phase 1: Backend modular foundation (config, db, security, RBAC, domain models/routers)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 1: POC script — auth + RBAC + Club/Team/Season/Competition/Match relationships",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 1: POC passes (60/60 assertions)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Design system tokens + public website shell (header/nav/footer/404/states)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Admin dashboard + auth-protected CRUD for all foundation entities",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Media architecture UI + System Status page",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 3: Deployment configs (vercel.json, railway.json/Procfile, .env.example), .gitignore, README, docs/",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 3: Security baseline (rate limiting, validation, CORS, file validation)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 3: Minimal critical verification (build, health, DB config, auth/protected routes, env safety, fatal errors)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 3: Phase-1 report A–K in docs/PHASE_1_REPORT.md",
+    "status": "completed"
+  },
+  {
+    "content": "Comprehensive E2E testing via testing agent — stopped per user instruction",
+    "status": "cancelled"
+  }
+]

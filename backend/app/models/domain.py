@@ -1,0 +1,417 @@
+"""ALSABBAT football club domain models.
+
+Relationship map (all references are string UUIDs):
+
+    Club
+     |-- Team (club_id)          -> Player (team_id), Staff (team_id)
+     |-- Season (club_id)
+     |-- Competition (season_id)
+     |-- Match (team_id, competition_id, season_id)
+     |-- Post (category_id, author_id, tag_ids, match_id, team_id, player_id)
+     |-- GalleryAlbum (match_id)
+     |-- Media (album_id, match_id, team_id, player_id, post_id)
+     |-- Sponsor
+"""
+from __future__ import annotations
+
+import datetime as _dt
+from typing import List, Optional
+
+from pydantic import Field, field_validator, model_validator
+
+from app.models.base import (
+    AppBaseModel,
+    ContactInformation,
+    DBModel,
+    SeoMeta,
+    SocialLinks,
+    make_update_model,
+    slugify,
+)
+from app.models.enums import (
+    CompetitionType,
+    EntityStatus,
+    MatchStatus,
+    MatchVenueType,
+    MediaType,
+    PlayerPosition,
+    PlayerStatus,
+    PostStatus,
+    SeasonStatus,
+    StaffRole,
+    StorageProvider,
+    TeamCategory,
+)
+
+HEX_COLOR = r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+
+
+# ----------------------------------------------------------------- Club
+class ClubBase(AppBaseModel):
+    name: str = Field(min_length=2, max_length=160)
+    short_name: str = Field(min_length=1, max_length=40)
+    logo: Optional[str] = None
+    primary_color: str = Field(default="#FCCF2B", pattern=HEX_COLOR)
+    secondary_color: str = Field(default="#012891", pattern=HEX_COLOR)
+    tertiary_color: str = Field(default="#222222", pattern=HEX_COLOR)
+    light_color: str = Field(default="#FEFEFE", pattern=HEX_COLOR)
+    description: Optional[str] = Field(default=None, max_length=4000)
+    founded_date: Optional[_dt.date] = None
+    location: Optional[str] = Field(default=None, max_length=200)
+    stadium: Optional[str] = Field(default=None, max_length=200)
+    contact: ContactInformation = Field(default_factory=ContactInformation)
+    official_website: Optional[str] = None
+    social_media: SocialLinks = Field(default_factory=SocialLinks)
+    seo: SeoMeta = Field(default_factory=SeoMeta)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+ClubUpdate = make_update_model("ClubUpdate", ClubBase)
+
+
+class Club(ClubBase, DBModel):
+    pass
+
+
+# ----------------------------------------------------------------- Team
+class TeamBase(AppBaseModel):
+    club_id: str
+    name: str = Field(min_length=2, max_length=160)
+    short_name: Optional[str] = Field(default=None, max_length=40)
+    logo: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
+    category: TeamCategory = TeamCategory.FIRST_TEAM
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+TeamUpdate = make_update_model("TeamUpdate", TeamBase)
+
+
+class Team(TeamBase, DBModel):
+    pass
+
+
+# --------------------------------------------------------------- Player
+class PlayerBase(AppBaseModel):
+    team_id: str
+    full_name: str = Field(min_length=2, max_length=160)
+    display_name: Optional[str] = Field(default=None, max_length=80)
+    photo: Optional[str] = None
+    jersey_number: Optional[int] = Field(default=None, ge=0, le=99)
+    position: PlayerPosition = PlayerPosition.MIDFIELDER
+    date_of_birth: Optional[_dt.date] = None
+    nationality: Optional[str] = Field(default=None, max_length=80)
+    height_cm: Optional[int] = Field(default=None, ge=100, le=250)
+    weight_kg: Optional[int] = Field(default=None, ge=30, le=180)
+    bio: Optional[str] = Field(default=None, max_length=4000)
+    status: PlayerStatus = PlayerStatus.ACTIVE
+    social_media: SocialLinks = Field(default_factory=SocialLinks)
+
+
+PlayerUpdate = make_update_model("PlayerUpdate", PlayerBase)
+
+
+class Player(PlayerBase, DBModel):
+    pass
+
+
+# ---------------------------------------------------------------- Staff
+class StaffBase(AppBaseModel):
+    team_id: str
+    name: str = Field(min_length=2, max_length=160)
+    photo: Optional[str] = None
+    role: StaffRole = StaffRole.HEAD_COACH
+    role_label: Optional[str] = Field(default=None, max_length=120)
+    bio: Optional[str] = Field(default=None, max_length=4000)
+    social_media: SocialLinks = Field(default_factory=SocialLinks)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+StaffUpdate = make_update_model("StaffUpdate", StaffBase)
+
+
+class Staff(StaffBase, DBModel):
+    pass
+
+
+# --------------------------------------------------------------- Season
+class SeasonBase(AppBaseModel):
+    club_id: str
+    name: str = Field(min_length=2, max_length=80)
+    start_date: Optional[_dt.date] = None
+    end_date: Optional[_dt.date] = None
+    description: Optional[str] = Field(default=None, max_length=1000)
+    status: SeasonStatus = SeasonStatus.UPCOMING
+
+
+SeasonUpdate = make_update_model("SeasonUpdate", SeasonBase)
+
+
+class Season(SeasonBase, DBModel):
+    pass
+
+
+# ---------------------------------------------------------- Competition
+class CompetitionBase(AppBaseModel):
+    season_id: str
+    name: str = Field(min_length=2, max_length=160)
+    logo: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
+    type: CompetitionType = CompetitionType.LEAGUE
+    organizer: Optional[str] = Field(default=None, max_length=160)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+CompetitionUpdate = make_update_model("CompetitionUpdate", CompetitionBase)
+
+
+class Competition(CompetitionBase, DBModel):
+    pass
+
+
+# ---------------------------------------------------------------- Match
+class Opponent(AppBaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    logo: Optional[str] = None
+    short_name: Optional[str] = Field(default=None, max_length=40)
+
+
+class MatchBase(AppBaseModel):
+    team_id: str
+    season_id: Optional[str] = None
+    competition_id: Optional[str] = None
+    opponent: Opponent
+    date: _dt.date
+    time: Optional[str] = Field(default=None, max_length=10)
+    venue: Optional[str] = Field(default=None, max_length=200)
+    venue_type: MatchVenueType = MatchVenueType.HOME
+    status: MatchStatus = MatchStatus.SCHEDULED
+    home_score: Optional[int] = Field(default=None, ge=0, le=99)
+    away_score: Optional[int] = Field(default=None, ge=0, le=99)
+    match_cover: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=4000)
+    # Prepared relationship placeholders for the Match Center phase
+    lineup_ready: bool = False
+    result_summary: Optional[str] = Field(default=None, max_length=1000)
+
+
+MatchUpdate = make_update_model("MatchUpdate", MatchBase)
+
+
+class Match(MatchBase, DBModel):
+    pass
+
+
+# -------------------------------------------------------------- Content
+class CategoryBase(AppBaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    slug: Optional[str] = Field(default=None, max_length=140)
+    description: Optional[str] = Field(default=None, max_length=1000)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+    @field_validator("slug", mode="before")
+    @classmethod
+    def _slug(cls, v, info):
+        return slugify(v) if v else v
+
+    @model_validator(mode="after")
+    def _ensure_slug(self):
+        if not getattr(self, "slug", None):
+            source = getattr(self, "name", None) or getattr(self, "title", None) or ""
+            object.__setattr__(self, "slug", slugify(source))
+        return self
+
+
+CategoryUpdate = make_update_model("CategoryUpdate", CategoryBase)
+
+
+class Category(CategoryBase, DBModel):
+    pass
+
+
+class TagBase(AppBaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    slug: Optional[str] = Field(default=None, max_length=100)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+    @field_validator("slug", mode="before")
+    @classmethod
+    def _slug(cls, v, info):
+        return slugify(v) if v else v
+
+    @model_validator(mode="after")
+    def _ensure_slug(self):
+        if not getattr(self, "slug", None):
+            source = getattr(self, "name", None) or getattr(self, "title", None) or ""
+            object.__setattr__(self, "slug", slugify(source))
+        return self
+
+
+TagUpdate = make_update_model("TagUpdate", TagBase)
+
+
+class Tag(TagBase, DBModel):
+    pass
+
+
+class AuthorBase(AppBaseModel):
+    name: str = Field(min_length=2, max_length=160)
+    slug: Optional[str] = Field(default=None, max_length=180)
+    photo: Optional[str] = None
+    bio: Optional[str] = Field(default=None, max_length=2000)
+    user_id: Optional[str] = None
+    social_media: SocialLinks = Field(default_factory=SocialLinks)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+    @field_validator("slug", mode="before")
+    @classmethod
+    def _slug(cls, v, info):
+        return slugify(v) if v else v
+
+    @model_validator(mode="after")
+    def _ensure_slug(self):
+        if not getattr(self, "slug", None):
+            source = getattr(self, "name", None) or getattr(self, "title", None) or ""
+            object.__setattr__(self, "slug", slugify(source))
+        return self
+
+
+AuthorUpdate = make_update_model("AuthorUpdate", AuthorBase)
+
+
+class Author(AuthorBase, DBModel):
+    pass
+
+
+class PostBase(AppBaseModel):
+    title: str = Field(min_length=3, max_length=240)
+    slug: Optional[str] = Field(default=None, max_length=260)
+    thumbnail: Optional[str] = None
+    excerpt: Optional[str] = Field(default=None, max_length=500)
+    content: Optional[str] = None
+    category_id: Optional[str] = None
+    tag_ids: List[str] = Field(default_factory=list)
+    author_id: Optional[str] = None
+    status: PostStatus = PostStatus.DRAFT
+    published_at: Optional[_dt.datetime] = None
+    seo: SeoMeta = Field(default_factory=SeoMeta)
+    # Optional relations to football domain
+    match_id: Optional[str] = None
+    team_id: Optional[str] = None
+    player_id: Optional[str] = None
+    competition_id: Optional[str] = None
+
+    @field_validator("slug", mode="before")
+    @classmethod
+    def _slug(cls, v, info):
+        return slugify(v) if v else v
+
+    @model_validator(mode="after")
+    def _ensure_slug(self):
+        if not getattr(self, "slug", None):
+            source = getattr(self, "name", None) or getattr(self, "title", None) or ""
+            object.__setattr__(self, "slug", slugify(source))
+        return self
+
+
+PostUpdate = make_update_model("PostUpdate", PostBase)
+
+
+class Post(PostBase, DBModel):
+    pass
+
+
+# ---------------------------------------------------------------- Media
+class MediaBase(AppBaseModel):
+    file_name: str = Field(min_length=1, max_length=260)
+    file_type: MediaType = MediaType.IMAGE
+    mime_type: str = Field(min_length=3, max_length=120)
+    file_size: int = Field(default=0, ge=0)
+    url: str = Field(min_length=1)
+    storage_provider: StorageProvider = StorageProvider.EXTERNAL
+    storage_key: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    width: Optional[int] = Field(default=None, ge=0)
+    height: Optional[int] = Field(default=None, ge=0)
+    duration: Optional[float] = Field(default=None, ge=0)
+    alt_text: Optional[str] = Field(default=None, max_length=300)
+    caption: Optional[str] = Field(default=None, max_length=600)
+    # Relations
+    album_id: Optional[str] = None
+    match_id: Optional[str] = None
+    team_id: Optional[str] = None
+    player_id: Optional[str] = None
+    post_id: Optional[str] = None
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+MediaUpdate = make_update_model("MediaUpdate", MediaBase)
+
+
+class Media(MediaBase, DBModel):
+    uploaded_by: Optional[str] = None
+
+
+# -------------------------------------------------------------- Gallery
+class GalleryAlbumBase(AppBaseModel):
+    title: str = Field(min_length=2, max_length=200)
+    slug: Optional[str] = Field(default=None, max_length=220)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    cover_url: Optional[str] = None
+    cover_media_id: Optional[str] = None
+    match_id: Optional[str] = None
+    team_id: Optional[str] = None
+    date: Optional[_dt.date] = None
+    status: EntityStatus = EntityStatus.ACTIVE
+
+    @field_validator("slug", mode="before")
+    @classmethod
+    def _slug(cls, v, info):
+        return slugify(v) if v else v
+
+    @model_validator(mode="after")
+    def _ensure_slug(self):
+        if not getattr(self, "slug", None):
+            source = getattr(self, "name", None) or getattr(self, "title", None) or ""
+            object.__setattr__(self, "slug", slugify(source))
+        return self
+
+
+GalleryAlbumUpdate = make_update_model("GalleryAlbumUpdate", GalleryAlbumBase)
+
+
+class GalleryAlbum(GalleryAlbumBase, DBModel):
+    media_count: int = 0
+
+
+# -------------------------------------------------------------- Sponsor
+class SponsorBase(AppBaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    logo: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=1000)
+    website: Optional[str] = None
+    tier: Optional[str] = Field(default=None, max_length=60)
+    display_order: int = Field(default=0, ge=0, le=9999)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+SponsorUpdate = make_update_model("SponsorUpdate", SponsorBase)
+
+
+class Sponsor(SponsorBase, DBModel):
+    pass
+
+
+# ------------------------------------------------------------ Analytics
+class AnalyticsEventCreate(AppBaseModel):
+    event_type: str = Field(min_length=2, max_length=60)
+    path: Optional[str] = Field(default=None, max_length=400)
+    referrer: Optional[str] = Field(default=None, max_length=400)
+    entity_type: Optional[str] = Field(default=None, max_length=60)
+    entity_id: Optional[str] = Field(default=None, max_length=80)
+    metadata: dict = Field(default_factory=dict)
+
+
+class AnalyticsEvent(AnalyticsEventCreate, DBModel):
+    session_id: Optional[str] = None
+    user_agent: Optional[str] = None
