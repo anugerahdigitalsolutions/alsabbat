@@ -46,11 +46,13 @@ export default function AdminMediaPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [albums, setAlbums] = useState([]);
 
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [altText, setAltText] = useState('');
+  const [caption, setCaption] = useState('');
   const [albumId, setAlbumId] = useState(NONE);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [queue, setQueue] = useState([]);
 
   const [externalOpen, setExternalOpen] = useState(false);
   const [external, setExternal] = useState({ file_name: '', url: '', mime_type: 'image/jpeg', file_type: 'IMAGE' });
@@ -87,36 +89,56 @@ export default function AdminMediaPage() {
       .catch(() => setStorage(null));
   }, [hasPermission]);
 
+  /**
+   * Multiple upload: files are sent one by one through the existing
+   * /api/media/upload endpoint. A failing file never aborts the rest.
+   */
   const upload = async () => {
-    if (!file) {
-      toast.error('Pilih file terlebih dahulu');
+    if (!files.length) {
+      toast.error('Pilih minimal satu file terlebih dahulu');
       return;
     }
     setUploading(true);
-    setProgress(0);
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      if (altText) form.append('alt_text', altText);
-      if (albumId !== NONE) form.append('album_id', albumId);
-      await api.post('/media/upload', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (event) => {
-          if (event.total) setProgress(Math.round((event.loaded / event.total) * 100));
-        },
-      });
-      toast.success('File berhasil diunggah');
-      setFile(null);
-      setAltText('');
-      setAlbumId(NONE);
-      if (fileRef.current) fileRef.current.value = '';
-      await load();
-    } catch (e) {
-      toast.error(apiErrorMessage(e, 'Gagal mengunggah file'));
-    } finally {
-      setUploading(false);
+    setQueue(files.map((f) => ({ name: f.name, state: 'pending', message: '' })));
+    let done = 0;
+    let failed = 0;
+
+    for (let index = 0; index < files.length; index += 1) {
+      const current = files[index];
+      setQueue((prev) => prev.map((q, i) => (i === index ? { ...q, state: 'uploading' } : q)));
       setProgress(0);
+      try {
+        const form = new FormData();
+        form.append('file', current);
+        if (altText) form.append('alt_text', altText);
+        if (caption) form.append('caption', caption);
+        if (albumId !== NONE) form.append('album_id', albumId);
+        // eslint-disable-next-line no-await-in-loop
+        await api.post('/media/upload', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (event) => {
+            if (event.total) setProgress(Math.round((event.loaded / event.total) * 100));
+          },
+        });
+        done += 1;
+        setQueue((prev) => prev.map((q, i) => (i === index ? { ...q, state: 'done' } : q)));
+      } catch (e) {
+        failed += 1;
+        const message = apiErrorMessage(e, 'Gagal diunggah');
+        setQueue((prev) => prev.map((q, i) => (i === index ? { ...q, state: 'error', message } : q)));
+      }
     }
+
+    if (done) toast.success(`${done} file berhasil diunggah`);
+    if (failed) toast.error(`${failed} file gagal diunggah — lihat detail pada daftar unggahan`);
+    setFiles([]);
+    setAltText('');
+    setCaption('');
+    setAlbumId(NONE);
+    if (fileRef.current) fileRef.current.value = '';
+    setUploading(false);
+    setProgress(0);
+    await load();
   };
 
   const saveExternal = async () => {
@@ -194,13 +216,20 @@ export default function AdminMediaPage() {
                 <Input
                   ref={fileRef}
                   type="file"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={(e) => setFiles(Array.from(e.target.files || []))}
                   className="bg-white"
                   data-testid="media-file-input"
                 />
                 <p className="mt-1 text-xs" style={{ color: 'var(--muted-fg)' }}>
-                  Tipe file dan ukuran divalidasi di backend.
+                  Bisa memilih beberapa foto/video sekaligus. Tipe file dan ukuran divalidasi di backend.
                 </p>
+                {files.length ? (
+                  <p className="mt-1 text-xs font-medium" style={{ color: 'var(--club-secondary)' }} data-testid="media-file-count">
+                    {files.length} file dipilih
+                  </p>
+                ) : null}
               </div>
 
               <div>
@@ -235,7 +264,52 @@ export default function AdminMediaPage() {
                 </Select>
               </div>
 
+              <div>
+                <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+                  Caption
+                </Label>
+                <Input
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  placeholder="Keterangan foto/video"
+                  className="bg-white"
+                  data-testid="media-caption-input"
+                />
+              </div>
+
               {uploading ? <Progress value={progress} data-testid="media-upload-progress" /> : null}
+
+              {queue.length ? (
+                <ul className="space-y-1 text-xs" data-testid="media-upload-queue">
+                  {queue.map((q) => (
+                    <li key={q.name} className="flex items-start justify-between gap-2">
+                      <span className="truncate" title={q.name}>
+                        {q.name}
+                      </span>
+                      <span
+                        className="shrink-0 font-semibold"
+                        style={{
+                          color:
+                            q.state === 'done'
+                              ? 'var(--success)'
+                              : q.state === 'error'
+                              ? 'var(--error)'
+                              : 'var(--muted-fg)',
+                        }}
+                        title={q.message}
+                      >
+                        {q.state === 'done'
+                          ? 'Selesai'
+                          : q.state === 'error'
+                          ? 'Gagal'
+                          : q.state === 'uploading'
+                          ? 'Mengunggah…'
+                          : 'Menunggu'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
 
               <Button
                 onClick={upload}
@@ -361,6 +435,9 @@ export default function AdminMediaPage() {
                         alt={item.alt_text || item.file_name}
                         className="h-full w-full object-cover"
                         loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                     ) : item.file_type === 'VIDEO' ? (
                       <FileVideo className="h-7 w-7" style={{ color: 'var(--club-secondary)' }} />

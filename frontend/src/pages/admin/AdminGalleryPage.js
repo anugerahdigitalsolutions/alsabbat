@@ -1,10 +1,18 @@
 import React from 'react';
-import { Images } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Images, Settings2 } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import { useClub } from '../../context/ClubContext';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
+
+const PUBLISH_STYLE = {
+  PUBLISHED: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#166534' },
+  DRAFT: { backgroundColor: 'rgba(245,158,11,0.14)', color: '#92400E' },
+  ARCHIVED: { backgroundColor: 'rgba(34,34,34,0.08)', color: '#3F3F46' },
+};
 
 export default function AdminGalleryPage() {
   const { meta } = useClub();
@@ -12,32 +20,60 @@ export default function AdminGalleryPage() {
   return (
     <ResourceManager
       title="Gallery Album"
-      description="Struktur Gallery Album → Media Items. Album dapat dikaitkan ke pertandingan."
+      description="Match → Gallery Album → Media. Album DRAFT tidak tampil di website; publikasikan setelah media dan cover siap."
       endpoint="/gallery/albums"
       writePermission="gallery:write"
       testPrefix="admin-gallery"
       emptyIcon={Images}
       emptyTitle="Belum ada album"
-      emptyDescription="Unggah foto pertandingan atau latihan setelah membuat album."
-      defaults={{ status: 'ACTIVE' }}
+      emptyDescription="Buat album, hubungkan ke pertandingan, lalu pilih media dari Media Library."
+      defaults={{ status: 'ACTIVE', publish_status: 'DRAFT' }}
       filters={[
-        { name: 'status', label: 'Status', options: opts(meta?.entity_status) },
-        { name: 'match_id', label: 'Match', optionsFrom: { endpoint: '/matches', labelKey: 'id' } },
+        { name: 'publish_status', label: 'Publikasi', options: opts(meta?.gallery_status) },
+        { name: 'match_id', label: 'Match', optionsFrom: { endpoint: '/matches', labelKey: 'date' } },
       ]}
+      rowActions={(row) => (
+        <Link to={`/admin/gallery/${row.id}`} data-testid={`admin-gallery-manage-${row.id}`}>
+          <Button variant="ghost" size="icon" aria-label="Kelola media album">
+            <Settings2 className="h-4 w-4" style={{ color: 'var(--club-secondary)' }} />
+          </Button>
+        </Link>
+      )}
       columns={[
         { key: 'title', label: 'Judul Album' },
-        { key: 'slug', label: 'Slug', className: 'font-mono text-xs' },
         { key: 'date', label: 'Tanggal' },
+        { key: 'media_count', label: 'Media' },
+        {
+          key: 'publish_status',
+          label: 'Publikasi',
+          render: (r) => (
+            <Badge variant="outline" style={PUBLISH_STYLE[r.publish_status || 'DRAFT']}>
+              {r.publish_status || 'DRAFT'}
+            </Badge>
+          ),
+        },
         { key: 'status', label: 'Status', render: (r) => <Badge variant="outline">{r.status}</Badge> },
       ]}
       fields={[
         { name: 'title', label: 'Judul Album', type: 'text', required: true, full: true },
         { name: 'slug', label: 'Slug', type: 'text', help: 'Kosongkan untuk otomatis.' },
-        { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
+        {
+          name: 'publish_status',
+          label: 'Publikasi',
+          type: 'select',
+          required: true,
+          options: opts(meta?.gallery_status),
+          help: 'Hanya PUBLISHED yang tampil di website publik.',
+        },
         { name: 'date', label: 'Tanggal', type: 'date' },
-        { name: 'match_id', label: 'Terkait Match', type: 'select', optionsFrom: { endpoint: '/matches', labelKey: 'id' } },
-        { name: 'team_id', label: 'Terkait Tim', type: 'select', optionsFrom: { endpoint: '/teams', labelKey: 'name' } },
-        { name: 'cover_url', label: 'Cover URL', type: 'text', full: true },
+        {
+          name: 'match_id',
+          label: 'Terkait Match',
+          type: 'select',
+          optionsFrom: { endpoint: '/matches', labelKey: 'date' },
+        },
+        { name: 'status', label: 'Status Entitas', type: 'select', options: opts(meta?.entity_status), required: true },
+        { name: 'cover_url', label: 'Cover URL (opsional)', type: 'text', full: true, help: 'Cover utama sebaiknya dipilih dari Media Library pada halaman kelola album.' },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
     />

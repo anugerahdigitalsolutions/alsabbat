@@ -1,18 +1,22 @@
 [
   {
-    "content": "Phase 3A: Backend enums, models, DB collections/indexes, RBAC, routers, relations, meta",
+    "content": "Phase 4A Backend: GalleryStatus enum, media display_order, album publish fields, public gallery endpoints, album-media management endpoints, image dimensions on upload, match_media in relations, meta",
     "status": "completed"
   },
   {
-    "content": "Phase 3B: Public MatchDetailPage + route + clickable MatchCardShell",
+    "content": "Phase 4B Admin: multi-photo/video upload, gallery publish/cover fields, album media manager page, ResourceManager rowActions",
     "status": "completed"
   },
   {
-    "content": "Phase 3C: Admin lineups & events pages + sidebar + routes",
+    "content": "Phase 4C Public: GalleryPage published albums, GalleryDetailPage lightbox + video player, Match Detail MATCH MEDIA section",
     "status": "completed"
   },
   {
-    "content": "Phase 3D: index.html metadata polish + manual verification (build, curl, screenshots)",
+    "content": "Phase 4D Polish: admin removed from header, Staff Access in footer, motion tokens honoring reduced motion",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 4E Minimal critical verification + Phase 4 report",
     "status": "completed"
   }
 ]

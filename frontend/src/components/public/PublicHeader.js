@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, ShieldCheck } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { ClubCrestMark } from '../shared/ClubCrestMark';
@@ -74,17 +74,6 @@ export const PublicHeader = () => {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link to="/admin" className="hidden lg:inline-flex" data-testid="public-header-admin-link">
-            <Button
-              size="sm"
-              className="font-medium"
-              style={{ backgroundColor: 'var(--club-secondary)', color: '#fff' }}
-            >
-              <ShieldCheck className="mr-2 h-4 w-4" />
-              Admin
-            </Button>
-          </Link>
-
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button
@@ -122,15 +111,6 @@ export const PublicHeader = () => {
                     {item.label}
                   </NavLink>
                 ))}
-                <Link
-                  to="/admin"
-                  onClick={() => setOpen(false)}
-                  className="mt-4 rounded-[var(--radius-sm)] px-3 py-3 text-base font-semibold"
-                  style={{ backgroundColor: 'var(--club-secondary)', color: '#fff' }}
-                  data-testid="public-mobile-nav-admin"
-                >
-                  Admin Panel
-                </Link>
               </div>
             </SheetContent>
           </Sheet>

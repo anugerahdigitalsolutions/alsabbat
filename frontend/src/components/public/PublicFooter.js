@@ -107,9 +107,14 @@ export const PublicFooter = () => {
           <span style={{ color: 'rgba(254,254,254,0.6)' }}>
             &copy; {new Date().getFullYear()} {clubName}. Seluruh hak cipta dilindungi.
           </span>
-          <span style={{ color: 'rgba(254,254,254,0.45)' }} data-testid="footer-phase-note">
-            Fase 1 — Foundation Platform
-          </span>
+          <Link
+            to="/admin/login"
+            className="transition-colors duration-200 hover:text-[color:var(--club-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ color: 'rgba(254,254,254,0.42)', '--tw-ring-color': 'var(--focus-ring)' }}
+            data-testid="footer-staff-access"
+          >
+            Staff Access
+          </Link>
         </div>
       </div>
     </footer>

@@ -12,6 +12,7 @@ import NewsPage from './pages/public/NewsPage';
 import MatchesPage from './pages/public/MatchesPage';
 import MatchDetailPage from './pages/public/MatchDetailPage';
 import GalleryPage from './pages/public/GalleryPage';
+import GalleryDetailPage from './pages/public/GalleryDetailPage';
 import ClubPage from './pages/public/ClubPage';
 import TeamsPage from './pages/public/TeamsPage';
 import TeamDetailPage from './pages/public/TeamDetailPage';
@@ -35,6 +36,7 @@ import AdminMatchLineupsPage from './pages/admin/AdminMatchLineupsPage';
 import AdminMatchEventsPage from './pages/admin/AdminMatchEventsPage';
 import AdminContentPage from './pages/admin/AdminContentPage';
 import AdminGalleryPage from './pages/admin/AdminGalleryPage';
+import AdminAlbumMediaPage from './pages/admin/AdminAlbumMediaPage';
 import AdminMediaPage from './pages/admin/AdminMediaPage';
 import AdminSponsorsPage from './pages/admin/AdminSponsorsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
@@ -62,6 +64,7 @@ function App() {
               <Route path="/matches" element={<MatchesPage />} />
               <Route path="/matches/:matchId" element={<MatchDetailPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/gallery/:albumId" element={<GalleryDetailPage />} />
               <Route path="/club" element={<ClubPage />} />
             </Route>
 
@@ -86,6 +89,7 @@ function App() {
               <Route path="match-events" element={<AdminMatchEventsPage />} />
               <Route path="content" element={<AdminContentPage />} />
               <Route path="gallery" element={<AdminGalleryPage />} />
+              <Route path="gallery/:albumId" element={<AdminAlbumMediaPage />} />
               <Route path="media" element={<AdminMediaPage />} />
               <Route path="sponsors" element={<AdminSponsorsPage />} />
               <Route path="achievements" element={<AdminAchievementsPage />} />

@@ -31,6 +31,7 @@ from app.models.base import (
 from app.models.enums import (
     CompetitionType,
     EntityStatus,
+    GalleryStatus,
     LineupRole,
     MatchEventSide,
     MatchEventType,
@@ -408,6 +409,8 @@ class MediaBase(AppBaseModel):
     team_id: Optional[str] = None
     player_id: Optional[str] = None
     post_id: Optional[str] = None
+    # Phase 4 — ordering of media inside a gallery album
+    display_order: int = Field(default=0, ge=0, le=9999)
     status: EntityStatus = EntityStatus.ACTIVE
 
 
@@ -429,6 +432,11 @@ class GalleryAlbumBase(AppBaseModel):
     team_id: Optional[str] = None
     date: Optional[_dt.date] = None
     status: EntityStatus = EntityStatus.ACTIVE
+    # Phase 4 — publication workflow (DRAFT -> PUBLISHED). Public endpoints only
+    # ever expose PUBLISHED albums.
+    publish_status: GalleryStatus = GalleryStatus.DRAFT
+    published_at: Optional[_dt.datetime] = None
+    display_order: int = Field(default=0, ge=0, le=9999)
 
     @field_validator("slug", mode="before")
     @classmethod

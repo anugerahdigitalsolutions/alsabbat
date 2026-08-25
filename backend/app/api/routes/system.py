@@ -16,6 +16,7 @@ from app.models.enums import (
     AnalyticsEventType,
     CompetitionType,
     EntityStatus,
+    GalleryStatus,
     LineupRole,
     MatchEventSide,
     MatchEventType,
@@ -69,6 +70,7 @@ async def meta():
         "match_event_sides": opts(MatchEventSide),
         "post_status": opts(PostStatus),
         "media_types": opts(MediaType),
+        "gallery_status": opts(GalleryStatus),
         "storage_providers": opts(StorageProvider),
         "analytics_event_types": opts(AnalyticsEventType),
         "roles": [

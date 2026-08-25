@@ -59,6 +59,18 @@ async def match_relations(match_id: str):
     images, _ = await media.list({"match_id": match_id, "file_type": "IMAGE"}, limit=100)
     videos, _ = await media.list({"match_id": match_id, "file_type": "VIDEO"}, limit=100)
 
+    # Phase 4 — Match Gallery: media that belongs to PUBLISHED albums of this match.
+    published_albums = [a for a in gallery if a.get("publish_status") == "PUBLISHED"]
+    match_media: List[Dict[str, Any]] = []
+    for album in published_albums:
+        items, _ = await media.list(
+            {"album_id": album["id"], "status": "ACTIVE"},
+            limit=60,
+            sort=(("display_order", 1), ("created_at", 1)),
+        )
+        for item in items:
+            match_media.append({**item, "album_id": album["id"], "album_title": album.get("title")})
+
     lineup_items, _ = await lineups.list(
         {"match_id": match_id},
         limit=200,
@@ -96,6 +108,8 @@ async def match_relations(match_id: str):
         # Integration points (referenced resources, never embedded arrays)
         "news": news,
         "gallery_albums": gallery,
+        "published_gallery_albums": published_albums,
+        "match_media": match_media,
         "images": images,
         "videos": videos,
         "social_content": [],

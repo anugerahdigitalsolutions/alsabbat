@@ -30,6 +30,19 @@ MAX_UPLOAD_BYTES = (
 )
 
 
+def _image_dimensions(content: bytes):
+    """Best-effort image dimensions (Pillow). Never blocks an upload."""
+    try:
+        import io
+
+        from PIL import Image
+
+        with Image.open(io.BytesIO(content)) as img:
+            return img.width, img.height
+    except Exception:  # pragma: no cover - optional enhancement
+        return None, None
+
+
 @router.get("/storage/status", summary="Media storage architecture status")
 async def storage_status(_user: AuthContext = Depends(require_permission("media:read"))):
     return media_service.status()
@@ -55,6 +68,7 @@ async def upload_media(
     stored, media_type = await media_service.store(
         file.filename or "upload", content, file.content_type or "application/octet-stream"
     )
+    width, height = _image_dimensions(content) if media_type.value == "IMAGE" else (None, None)
     doc = {
         "file_name": file.filename or "upload",
         "file_type": media_type.value,
@@ -64,8 +78,8 @@ async def upload_media(
         "storage_provider": stored.provider.value,
         "storage_key": stored.storage_key,
         "thumbnail_url": stored.url if media_type.value == "IMAGE" else None,
-        "width": None,
-        "height": None,
+        "width": width,
+        "height": height,
         "duration": None,
         "alt_text": alt_text,
         "caption": caption,

@@ -153,6 +153,50 @@
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
     --tw-ring-color: var(--focus-ring);
   }
+
+  /* -------- Phase 4: gallery / media motion (transform+opacity only) ------- */
+  .als-reveal {
+    animation: als-reveal-in 420ms var(--ease-out) both;
+  }
+
+  .als-media-tile {
+    overflow: hidden;
+  }
+
+  .als-media-tile img,
+  .als-media-tile video {
+    transition-property: transform;
+    transition-duration: var(--dur-3);
+    transition-timing-function: var(--ease-out);
+  }
+
+  .als-media-tile:hover img,
+  .als-media-tile:focus-visible img {
+    transform: scale(1.05);
+  }
+
+  .als-media-overlay {
+    transition-property: opacity;
+    transition-duration: var(--dur-2);
+    transition-timing-function: var(--ease-out);
+    opacity: 0;
+  }
+
+  .als-media-tile:hover .als-media-overlay,
+  .als-media-tile:focus-within .als-media-overlay {
+    opacity: 1;
+  }
+}
+
+@keyframes als-reveal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

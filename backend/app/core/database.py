@@ -157,6 +157,12 @@ async def ensure_indexes() -> None:
         await db[Collections.MEDIA].create_index([("post_id", ASCENDING)])
         await db[Collections.GALLERY_ALBUMS].create_index([("slug", ASCENDING)], unique=True)
         await db[Collections.GALLERY_ALBUMS].create_index([("match_id", ASCENDING)])
+        await db[Collections.GALLERY_ALBUMS].create_index(
+            [("publish_status", ASCENDING), ("published_at", DESCENDING)]
+        )
+        await db[Collections.MEDIA].create_index(
+            [("album_id", ASCENDING), ("display_order", ASCENDING)]
+        )
 
         await db[Collections.SPONSORS].create_index([("display_order", ASCENDING)])
         await db[Collections.ACHIEVEMENTS].create_index([("year", DESCENDING)])

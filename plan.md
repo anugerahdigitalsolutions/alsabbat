@@ -1,15 +1,16 @@
-# FASE 1 Plan — ALSABBAT Football Club Digital Platform (Foundation) — UPDATED (FASE 1–3 SELESAI)
+# FASE 1 Plan — ALSABBAT Football Club Digital Platform (Foundation) — UPDATED (FASE 1–4 SELESAI)
 
 ## 1) Objectives (final state)
-- Establish **football-club-first** domain architecture (**Club → Teams/Players/Staff/Seasons/Competitions/Matches/Content/Gallery/Media/Sponsors**) with **MongoDB Atlas-ready** modeling + indexes.
+- Establish **football-club-first** domain architecture (**Club → Team/Squad → Players/Staff → Seasons/Competitions → Matches → Content/News → Gallery/Media → Sponsors**) with **MongoDB Atlas-ready** modeling + indexes.
 - Deliver **secure, modular, deployment-ready** monorepo: **FastAPI (Railway-ready)** + **React (Vercel-ready)** with strict **environment-based configuration**.
 - Implement **Admin auth (JWT) + RBAC** enforced on backend; protected admin routes on frontend.
 - Implement **ALSABBAT design system** using design tokens (Primary `#FCCF2B`, Secondary `#012891`, Tertiary `#222222`, Light `#FEFEFE`) and **Poppins** as the **only** font.
-- Prepare **media architecture** (metadata in DB + pluggable storage provider; validation; no large files in DB) and provide minimal working upload path.
+- Prepare and use a single **Media architecture** (metadata in DB + pluggable storage provider; validation; no large files in DB; Local → S3/CDN ready).
 - Add foundations: **SEO/OG + analytics hooks**, health checks, logging, error handling.
 - Deliver **Match Center V1** (Match Detail, Lineups, Timeline Events) as additive modules with **professional empty states** and **backward-compatible relationships**.
+- Deliver **Match Gallery & Media Management** (upload photo/video, multiple upload, media library, album publish workflow, album-media ordering, public gallery + lightbox/video player, match integration) **without creating a second media system**.
 
-**Status:** Phase 1, Phase 2, and **Phase 3** objectives completed.
+**Status:** Phase 1, Phase 2, Phase 3, and **Phase 4** objectives completed.
 
 ---
 
@@ -29,7 +30,7 @@ Steps (implemented + verified in POC script `/app/tests/test_core_phase1.py`):
 - Login (`/api/auth/login`) + `me` + invalid/missing token rejection.
 - Create and validate relationships:
   - Club centralized config + brand colors
-  - Multi-teams
+  - Multi-teams (architecture)
   - Player + Staff
   - Season → Competition → Match chain
   - Match filtering
@@ -116,85 +117,172 @@ Delivered:
 - API routes:
   - `/api/match-lineups` CRUD (public read, protected write)
   - `/api/match-events` CRUD (public read, protected write)
-- `/api/matches/{match_id}/relations` now returns:
+- `/api/matches/{match_id}/relations` returns:
   - `match`, `team`, `competition`, `season`
-  - `lineups`, `events`, plus `players` joined map (minimal projection) to avoid Player duplication
-  - integration points preserved: `news`, `gallery_albums`, `images`, `videos`, `social_content`, `integration_points` metadata.
+  - `lineups`, `events`, plus `players` joined map (minimal projection)
+  - integration points preserved: `news`, `gallery_albums`, `images`, `videos`, `social_content`, `integration_points`.
 - `/api/system/meta` updated: `lineup_roles`, `match_event_types`, `match_event_sides`.
 - `/api/system/status` counts include `match_lineups` + `match_events`.
 
 Verification:
-- `tests/test_match_center_phase3.py` → **20/20 passed**, self-cleaning (creates then deletes temporary records).
+- `tests/test_match_center_phase3.py` → **20/20 passed**, self-cleaning.
 
 #### Phase 3B — Frontend Public (Match Detail) — ✅ DONE
 Delivered:
 - Route `/matches/:matchId` → `frontend/src/pages/public/MatchDetailPage.js`.
-- `MatchCardShell` now navigates to match detail (Link + keyboard focus ring).
+- `MatchCardShell` navigates to match detail (Link + keyboard focus ring).
 - Match Center UI sections:
   - Scoreboard header (status, competition/season, score/VS, date/time/venue).
-  - Tabs: **Susunan Pemain** (Starting XI + Cadangan), **Timeline**, **Media & Konten**.
-  - Match Information panel (team/competition/season/venue/status, optional formation/referee/attendance).
-  - Related News (empty state if none).
-  - Integration points (Gallery / Videos / Social) with **empty states**; no publishing/upload.
-- Professional empty states when lineup/events/media/news absent.
+  - Tabs: **Susunan Pemain**, **Timeline**, **Media & Konten**.
+  - Match Information panel, Related News, integration point placeholders.
 
 Verification:
-- Manual UI screenshots captured for match detail (data + empty), timeline empty state, navigation from `/matches`.
+- Manual UI screenshots.
 
 #### Phase 3C — Frontend Admin (Lineups + Events CRUD) — ✅ DONE
 Delivered:
-- Admin pages using `ResourceManager`:
-  - `/admin/match-lineups` (`AdminMatchLineupsPage.js`)
-  - `/admin/match-events` (`AdminMatchEventsPage.js`)
-- Admin navigation updated (sidebar entries under “Kompetisi”).
-- Uses backend meta enums for select options.
-
-Verification:
-- Manual UI screenshots captured: admin login, lineups/events empty states, lineup form dialog.
+- `/admin/match-lineups`, `/admin/match-events` using `ResourceManager`.
+- Sidebar entries under “Kompetisi”.
 
 #### Phase 3D — Polish + Manual Verification — ✅ DONE
 Delivered:
-- `frontend/public/index.html` updated:
-  - ALSABBAT title/meta (description + OG + twitter)
-  - `lang="id"`, theme color `#012891`
-  - Poppins font link; removed Inter reference
-  - Favicon: **not changed** (no asset available; none invented)
+- `frontend/public/index.html` updated: ALSABBAT title/meta, OG/Twitter, `lang="id"`, theme color `#012891`, Poppins.
+- No favicon invented.
 
-Verification performed (no Testing Agent):
-- `npx esbuild ...` → OK
-- `GET /api/health` → OK
-- `python tests/test_core_phase1.py` → **60/60 passed** (no regression)
-- `python tests/test_match_center_phase3.py` → **20/20 passed**
-- Confirmed: no permanent dev-only seed data remains.
+Verification:
+- `npx esbuild ...` OK
+- `/api/health` OK
+- `tests/test_core_phase1.py` **60/60**
+- `tests/test_match_center_phase3.py` **20/20**
+
+---
+
+### Phase 4 — Match Gallery & Media Management — ✅ COMPLETED (additive, backward-compatible)
+**Guiding rules enforced (as implemented):**
+- **Existing Media system reused** (MediaService + Media Library + existing upload endpoint). No second media system.
+- **No media arrays embedded in Match**; relationship is Match → GalleryAlbum → Media.
+- **Admin upload protected** by auth + RBAC, and existing validation (MIME + size limits).
+- **Public only sees published albums**; DRAFT hidden.
+- **No fake production data**; any verification data was development-only and removed.
+- **No Testing Agent** used.
+
+Implementation reference: `/app/docs/PHASE_4_REPORT.md`.
+
+#### Phase 4A — Backend (Gallery publication + ordering + public endpoints) — ✅ DONE
+Delivered (additive):
+- Enums:
+  - `GalleryStatus` (DRAFT, PUBLISHED, ARCHIVED) exposed via `/api/system/meta` as `gallery_status`.
+- Domain extensions:
+  - `GalleryAlbum`: `publish_status`, `published_at`, `display_order` (existing `match_id`, `cover_media_id`, etc. reused).
+  - `Media`: `display_order` + auto-capture `width`/`height` on image upload (Pillow, best-effort).
+- Indexes:
+  - `gallery_albums`: `(publish_status, published_at)`
+  - `media`: `(album_id, display_order)`
+- Gallery API (additive):
+  - Public:
+    - `GET /api/gallery/public/albums` (published only; cover resolved; photo/video counts; match summary)
+    - `GET /api/gallery/public/albums/{id}` (published only; ordered media)
+  - Admin album-media management:
+    - `POST /api/gallery/albums/{id}/media` attach existing Media IDs
+    - `PATCH /api/gallery/albums/{id}/media/order` reorder via ordered id list
+    - `DELETE /api/gallery/albums/{id}/media/{media_id}` detach (file stays in library)
+    - `POST /api/gallery/albums/{id}/publish?publish=` publish/unpublish toggle
+  - Existing `GET /api/gallery/albums/{id}/media` now returns ordered items.
+- Match relations enhancement:
+  - `/api/matches/{id}/relations` additive keys:
+    - `published_gallery_albums`
+    - `match_media` (only media from PUBLISHED albums, ordered, includes album context)
+
+Verification:
+- `tests/test_gallery_phase4.py` → **25/25 passed**, self-cleaning.
+
+#### Phase 4B — Admin (Upload → Library → Album → Publish) — ✅ DONE
+Delivered:
+- `/admin/media`:
+  - Multiple file selection upload (simple sequential queue)
+  - Upload progress + per-file queue status
+  - Partial failure supported (one file fails doesn’t abort others)
+  - Caption input added (alt text already supported)
+- `/admin/gallery`:
+  - `publish_status` field (DRAFT/PUBLISHED)
+  - Row action to manage album media
+- New `/admin/gallery/:albumId` page:
+  - Pick existing media from Media Library (multi-select)
+  - Order controls (up/down) persisted to backend
+  - Set cover via `cover_media_id`
+  - Edit caption + alt text (updates existing Media docs)
+  - Detach media (keeps file in library)
+  - Publish toggle
+- `ResourceManager` additive enhancement: `rowActions` prop.
+
+#### Phase 4C — Public Website (Published gallery + album detail + match integration) — ✅ DONE
+Delivered:
+- `/gallery`:
+  - Uses `GET /api/gallery/public/albums`
+  - Shows only PUBLISHED albums (cover, title, match, date, total, photo/video indicators)
+  - “Load more” pagination (lightweight)
+- `/gallery/:albumId`:
+  - Uses `GET /api/gallery/public/albums/{id}`
+  - Photo grid + lightweight lightbox (prev/next/close + keyboard)
+  - HTML5 video cards (`controls`, `preload="none"`, no autoplay)
+- `/matches/:matchId`:
+  - Tab “Media & Konten” now includes **MATCH MEDIA** section + CTA “View Full Gallery”
+  - Empty state when no published album exists
+  - Phase 3 sections remain intact.
+
+#### Phase 4D — Polish (Brand + access rules + motion) — ✅ DONE
+Delivered:
+- Admin access removed from header/navigation.
+- Subtle “Staff Access” link placed at the bottom of the footer.
+- Motion tokens/classes added using only `transform`/`opacity`, honoring `prefers-reduced-motion`.
+
+#### Phase 4E — Minimal Critical Verification (no Testing Agent) — ✅ DONE
+Performed:
+- Frontend production build: `yarn build` PASS.
+- Backend health: `GET /api/health` PASS.
+- Verified workflow:
+  - Upload one photo
+  - Upload one video
+  - Create one album (DRAFT)
+  - Attach existing media
+  - Cover + order
+  - Publish
+  - Public gallery shows only PUBLISHED
+  - DRAFT hidden / not accessible
+  - Match Detail shows MATCH MEDIA
+  - Admin auth still works
+  - Phase 3 match detail still works
+- Regression:
+  - `tests/test_core_phase1.py` **60/60**
+  - `tests/test_match_center_phase3.py` **20/20**
+
+All dev-only verification data removed afterward.
 
 ---
 
 ## 3) Next Actions (immediate) — UPDATED
-**Current target:** Begin Phase 4 planning (post-Phase 3).
+**Current target:** Plan Phase 5 (post-Phase 4).
 
-Suggested next actions (out of scope for Phase 3, kept modular/backward-compatible):
-1. **Formation pitch visual** using `Match.formation` + `MatchLineup.pitch_slot` (no migration required).
-2. **Gallery/video workflows** (admin publishing/upload) using existing `Media` + `GalleryAlbum` relations.
-3. **Social publishing module** (reserved architecture) using separate Social Content resources.
-4. **Player/match statistics** (aggregation endpoints + UI), derived from events/lineups rather than duplicating player data.
+Recommended next actions (NOT started; keep modular/backward-compatible):
+1. **UI/Visual Enhancement**: cinematic rotating hero banner (5–7s autoplay, 700–1000ms transition, pagination, prev/next, swipe).
+2. **Formation pitch visual** using `Match.formation` + `MatchLineup.pitch_slot`.
+3. **Match statistics** aggregated from events/lineups.
+4. **Social publishing module** on top of existing Media architecture (Instagram/TikTok/YouTube) — future phase.
 
 ---
 
-## 4) Success Criteria (Phase 3 exit) — ✅ ACHIEVED
-- ✅ Backend provides additive endpoints:
-  - `/api/match-lineups` and `/api/match-events` CRUD with RBAC enforcement.
-  - `/api/matches/{id}/relations` returns `match`, `team`, `competition`, `season`, `news`, `gallery_albums`, `images`, `videos`, `lineups`, `events`, `players` join map, and integration placeholders; empty arrays when no data.
-  - `/api/system/meta` includes lineup/event enums.
-- ✅ Frontend public:
-  - Match cards navigate to `/matches/:matchId`.
-  - Match detail renders match info, lineup groups, timeline events, and integration-point placeholders.
-  - Professional empty states (no fake data).
-- ✅ Frontend admin:
-  - Admin pages for lineups/events available and permissions respected.
-- ✅ Branding:
-  - `public/index.html` updated to ALSABBAT title/description and Poppins-only.
-  - Favicon unchanged due to missing asset (no invented files).
-- ✅ Verification (manual only):
-  - build check OK, `/api/health` OK, match detail + empty states OK, `/matches` navigation OK, admin auth OK, Phase 1 regression OK.
+## 4) Success Criteria (Phase 4 exit) — ✅ ACHIEVED
+- ✅ Existing Media system reused; no second media system created.
+- ✅ Admin can upload photo and video; multiple upload supported with progress + partial failure.
+- ✅ Media Library supports browse/filter and metadata updates (caption/alt).
+- ✅ Gallery albums support DRAFT/PUBLISHED and match relationship via `match_id`.
+- ✅ Album cover uses `cover_media_id`; no re-upload required.
+- ✅ Existing media can be attached/detached and ordered via `display_order`.
+- ✅ Public `/gallery` shows PUBLISHED only; DRAFT is hidden.
+- ✅ Public album detail provides photo grid + lightbox and video player.
+- ✅ Match detail shows MATCH MEDIA + CTA; Phase 3 content not broken.
+- ✅ Poppins-only font and brand colors preserved; motion respects reduced-motion.
+- ✅ Storage remains Local → S3/CDN ready; binaries never stored in MongoDB.
+- ✅ Minimal verification completed; Testing Agent not used.
 
-**Note:** Publishing/upload for gallery/video/social content, formation pitch visual, and statistics remain out of scope for Phase 3 and are candidates for a future phase.
+**Note:** Social publishing, merchandise/payment/ticketing, video transcoding/streaming remain out of scope and were not implemented.

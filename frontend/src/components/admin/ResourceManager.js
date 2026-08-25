@@ -240,6 +240,7 @@ export const ResourceManager = ({
   allowCreate = true,
   allowDelete = true,
   extraActions = null,
+  rowActions = null,
   onChanged,
 }) => {
   const { hasPermission } = useAuth();
@@ -462,7 +463,7 @@ export const ResourceManager = ({
                         {column.label}
                       </TableHead>
                     ))}
-                    <TableHead className="w-[110px] text-right">Aksi</TableHead>
+                    <TableHead className="w-[160px] text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -475,6 +476,7 @@ export const ResourceManager = ({
                       ))}
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          {rowActions ? rowActions(row) : null}
                           {canWrite ? (
                             <Button
                               variant="ghost"

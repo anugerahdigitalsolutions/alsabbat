@@ -48,7 +48,7 @@ export const MatchMediaPanel = ({ galleryAlbums = [], images = [], videos = [], 
           {galleryAlbums.map((album) => (
             <Link
               key={album.id}
-              to="/gallery"
+              to={`/gallery/${album.id}`}
               className="flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2 transition-colors duration-200 hover:bg-[var(--surface-2)]"
               data-testid={`match-gallery-album-${album.id}`}
             >

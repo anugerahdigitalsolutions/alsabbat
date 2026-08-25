@@ -30,7 +30,7 @@ export default function MatchesPage() {
       <PublicPageHeader
         label="Matchday"
         title="Jadwal &amp; Hasil Pertandingan"
-        description="Struktur pertandingan mendukung banyak tim, musim, dan kompetisi."
+        description="Jadwal, hasil, dan Match Center pertandingan ALSABBAT."
       />
       <div className="als-container py-10">
         <Tabs value={tab} onValueChange={setTab}>

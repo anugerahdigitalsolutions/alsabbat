@@ -113,6 +113,14 @@ class PostStatus(str, Enum):
     ARCHIVED = "ARCHIVED"
 
 
+class GalleryStatus(str, Enum):
+    """Publication state of a gallery album (Phase 4)."""
+
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
+    ARCHIVED = "ARCHIVED"
+
+
 class MediaType(str, Enum):
     IMAGE = "IMAGE"
     VIDEO = "VIDEO"

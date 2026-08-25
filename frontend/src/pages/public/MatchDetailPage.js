@@ -11,6 +11,7 @@ import { MatchInfoPanel } from '../../components/public/matchcenter/MatchInfoPan
 import { MatchLineupSection } from '../../components/public/matchcenter/MatchLineupSection';
 import { MatchTimeline } from '../../components/public/matchcenter/MatchTimeline';
 import { MatchMediaPanel } from '../../components/public/matchcenter/MatchMediaPanel';
+import { MatchGallerySection } from '../../components/public/matchcenter/MatchGallerySection';
 import { useClub } from '../../context/ClubContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
@@ -24,6 +25,8 @@ const EMPTY = {
   players: {},
   news: [],
   gallery_albums: [],
+  published_gallery_albums: [],
+  match_media: [],
   images: [],
   videos: [],
   social_content: [],
@@ -149,9 +152,13 @@ export default function MatchDetailPage() {
                 />
               </TabsContent>
 
-              <TabsContent value="media" className="mt-6">
+              <TabsContent value="media" className="mt-6 space-y-8">
+                <MatchGallerySection
+                  matchMedia={data.match_media}
+                  albums={data.published_gallery_albums}
+                />
                 <MatchMediaPanel
-                  galleryAlbums={data.gallery_albums}
+                  galleryAlbums={data.published_gallery_albums}
                   images={data.images}
                   videos={data.videos}
                   socialContent={data.social_content}
