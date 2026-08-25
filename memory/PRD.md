@@ -26,7 +26,8 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 3 | Match Center V1 (lineup, events, detail) | SELESAI |
 | 4 | Match Gallery & Media Management | SELESAI |
 | 5A | Cinematic UI homepage | SELESAI |
-| 5B | Inner Page Visual Polish | **SELESAI (25 Jun 2026)** |
+| 5B | Inner Page Visual Polish | SELESAI |
+| 5C | Single-Team Data Cleanup | **SELESAI (25 Jun 2026)** |
 
 ## Fase 5B — yang diimplementasikan (2026-06-25)
 - `index.css`: token/utility baru `als-inner-header`, `als-gold-rule`, `als-scrim`, `als-zoom`,
@@ -51,7 +52,21 @@ secara bertahap per fase, dengan identitas brand ketat:
   fact grid, biografi, status panel.
 - Backend changes: **0**.
 
-## Verification (Fase 5B)
+## Fase 5C — Single-Team Data Cleanup (2026-06-25)
+Aturan bisnis: **ALSABBAT = 1 club, 1 team, 1 squad.** Entity `Team` tetap dipertahankan untuk relasi/scalability,
+tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
+- Audit: 14 team (semua hasil test-run berulang: `First Team <timestamp>`, `Youth Team <timestamp>`).
+- Konsolidasi: relasi di-repoint ke team kanonik `fa1680d3…` (players 6, staff 6, matches 6, posts 6),
+  lalu 13 team dev dihapus. Team kanonik di-rename `ALSABBAT` / short `ALSABBAT`.
+- Bootstrap backend (`services/bootstrap.py`) TIDAK pernah membuat team → tidak ada auto-generation saat restart/deploy.
+  Sumber polusi = `/app/tests/test_core_phase1.py`; test kini memakai team existing + membuat & MENGHAPUS
+  satu "QA Temp Team" saja (idempotent, tidak meninggalkan team dev).
+- Frontend: label kategori `FIRST_TEAM` dihilangkan dari UI publik (`/teams` → "Football Club", `/teams/:id` → "Squad").
+- Skrip: `scripts/phase5c_audit.py` (read-only), `scripts/phase5c_cleanup.py` (dry-run + `--apply`).
+- Unresolved (TIDAK dihapus, butuh keputusan user): 7 player duplikat "A. Sabbat #10", 7 staf, 7 match vs "Rival FC",
+  13 post, 6 album galeri, 20 media — semuanya artefak test-run, bukan data produksi nyata.
+
+
 - `yarn build` → Compiled successfully (221 kB gz).
 - `/api/health` → ok, database connected.
 - Render OK: `/matches`, `/matches/:id` (+ 3 tab), `/news`, `/news/:slug`, `/teams`, `/teams/:id`, `/players/:id`, `/gallery`.

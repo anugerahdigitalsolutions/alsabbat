@@ -107,25 +107,25 @@ def main() -> int:
 
     stamp = str(int(time.time()))
 
-    # 4. Teams (multi-team)
-    created_teams = []
-    for name, category in (
-        (f"First Team {stamp}", "FIRST_TEAM"),
-        (f"Youth Team {stamp}", "YOUTH_TEAM"),
-    ):
-        r = requests.post(
-            f"{BASE}/teams",
-            headers=hdr(token),
-            json={"club_id": club_id, "name": name, "short_name": "ALS", "category": category},
-            timeout=15,
-        )
-        if check(f"create team ({category})", r.status_code == 201, r.text[:300]):
-            created_teams.append(r.json())
-    if len(created_teams) < 2:
+    # 4. Teams — ALSABBAT is a SINGLE-TEAM club: reuse the existing team,
+    #    exercise create/delete with a temporary team that is removed again.
+    r = requests.get(f"{BASE}/teams?club_id={club_id}&status=ACTIVE", timeout=15)
+    existing_teams = r.json().get("items", []) if r.status_code == 200 else []
+    check("list teams filtered by club_id", r.status_code == 200 and existing_teams, r.text[:200])
+    if not existing_teams:
         return 1
-    team_id = created_teams[0]["id"]
-    r = requests.get(f"{BASE}/teams?club_id={club_id}", timeout=15)
-    check("list teams filtered by club_id", r.status_code == 200 and r.json()["total"] >= 2, r.text[:200])
+    team_id = existing_teams[0]["id"]
+
+    r = requests.post(
+        f"{BASE}/teams",
+        headers=hdr(token),
+        json={"club_id": club_id, "name": f"QA Temp Team {stamp}", "short_name": "QA", "category": "FIRST_TEAM"},
+        timeout=15,
+    )
+    if check("create team (temporary)", r.status_code == 201, r.text[:300]):
+        temp_team_id = r.json()["id"]
+        d = requests.delete(f"{BASE}/teams/{temp_team_id}", headers=hdr(token), timeout=15)
+        check("delete temporary team (no leftover dev teams)", d.status_code in (200, 204), d.text[:200])
 
     # 5. Player + Staff
     r = requests.post(

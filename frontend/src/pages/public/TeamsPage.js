@@ -73,7 +73,7 @@ export default function TeamsPage() {
                       className="font-display text-[11px] font-semibold uppercase tracking-[0.26em]"
                       style={{ color: 'var(--club-primary)' }}
                     >
-                      {single.category}
+                      Football Club
                     </p>
                     <h2
                       className="font-display mt-2 text-2xl font-bold sm:text-3xl"

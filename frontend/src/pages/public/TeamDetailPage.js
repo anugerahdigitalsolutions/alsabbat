@@ -120,7 +120,7 @@ export default function TeamDetailPage() {
   return (
     <div data-testid="page-team-detail">
       <PublicPageHeader
-        label={team?.category || 'Squad'}
+        label="Squad"
         title={team?.name || 'Detail Tim'}
         description={team?.description || 'Skuad, posisi, dan staf pendukung tim.'}
         backgroundImage={team?.cover_image}
