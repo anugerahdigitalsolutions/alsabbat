@@ -96,6 +96,7 @@ async def status(_user: AuthContext = Depends(require_permission("system:read"))
         ("gallery_albums", Collections.GALLERY_ALBUMS),
         ("media", Collections.MEDIA),
         ("sponsors", Collections.SPONSORS),
+        ("achievements", Collections.ACHIEVEMENTS),
         ("users", Collections.USERS),
         ("analytics_events", Collections.ANALYTICS_EVENTS),
     ):

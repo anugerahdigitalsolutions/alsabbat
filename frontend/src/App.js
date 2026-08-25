@@ -12,6 +12,13 @@ import NewsPage from './pages/public/NewsPage';
 import MatchesPage from './pages/public/MatchesPage';
 import GalleryPage from './pages/public/GalleryPage';
 import ClubPage from './pages/public/ClubPage';
+import TeamsPage from './pages/public/TeamsPage';
+import TeamDetailPage from './pages/public/TeamDetailPage';
+import PlayerDetailPage from './pages/public/PlayerDetailPage';
+import NewsDetailPage from './pages/public/NewsDetailPage';
+import AchievementsPage from './pages/public/AchievementsPage';
+import SponsorsPage from './pages/public/SponsorsPage';
+import ContactPage from './pages/public/ContactPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 
 import AdminLoginPage from './pages/admin/AdminLoginPage';
@@ -29,6 +36,7 @@ import AdminMediaPage from './pages/admin/AdminMediaPage';
 import AdminSponsorsPage from './pages/admin/AdminSponsorsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminSystemPage from './pages/admin/AdminSystemPage';
+import AdminAchievementsPage from './pages/admin/AdminAchievementsPage';
 
 import './App.css';
 
@@ -41,6 +49,13 @@ function App() {
             <Route element={<PublicLayout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/news" element={<NewsPage />} />
+              <Route path="/news/:slug" element={<NewsDetailPage />} />
+              <Route path="/teams" element={<TeamsPage />} />
+              <Route path="/teams/:teamId" element={<TeamDetailPage />} />
+              <Route path="/players/:playerId" element={<PlayerDetailPage />} />
+              <Route path="/achievements" element={<AchievementsPage />} />
+              <Route path="/sponsors" element={<SponsorsPage />} />
+              <Route path="/contact" element={<ContactPage />} />
               <Route path="/matches" element={<MatchesPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
               <Route path="/club" element={<ClubPage />} />
@@ -67,6 +82,7 @@ function App() {
               <Route path="gallery" element={<AdminGalleryPage />} />
               <Route path="media" element={<AdminMediaPage />} />
               <Route path="sponsors" element={<AdminSponsorsPage />} />
+              <Route path="achievements" element={<AdminAchievementsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="system" element={<AdminSystemPage />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />

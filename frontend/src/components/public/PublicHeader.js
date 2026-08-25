@@ -8,10 +8,14 @@ import { useClub } from '../../context/ClubContext';
 
 export const PUBLIC_NAV = [
   { to: '/', label: 'Beranda', id: 'home' },
+  { to: '/club', label: 'Klub', id: 'club' },
+  { to: '/teams', label: 'Tim', id: 'teams' },
   { to: '/news', label: 'Berita', id: 'news' },
   { to: '/matches', label: 'Pertandingan', id: 'matches' },
   { to: '/gallery', label: 'Galeri', id: 'gallery' },
-  { to: '/club', label: 'Klub', id: 'club' },
+  { to: '/achievements', label: 'Prestasi', id: 'achievements' },
+  { to: '/sponsors', label: 'Sponsor', id: 'sponsors' },
+  { to: '/contact', label: 'Kontak', id: 'contact' },
 ];
 
 export const PublicHeader = () => {
@@ -44,7 +48,7 @@ export const PublicHeader = () => {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-7 md:flex" data-testid="public-header-primary-nav">
+        <nav className="hidden items-center gap-5 lg:flex" data-testid="public-header-primary-nav">
           {PUBLIC_NAV.map((item) => (
             <NavLink
               key={item.id}
@@ -70,7 +74,7 @@ export const PublicHeader = () => {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link to="/admin" className="hidden md:inline-flex" data-testid="public-header-admin-link">
+          <Link to="/admin" className="hidden lg:inline-flex" data-testid="public-header-admin-link">
             <Button
               size="sm"
               className="font-medium"
@@ -86,7 +90,7 @@ export const PublicHeader = () => {
               <Button
                 variant="outline"
                 size="icon"
-                className="md:hidden"
+                className="lg:hidden"
                 aria-label="Buka menu"
                 data-testid="public-header-mobile-menu-button"
               >

@@ -34,6 +34,7 @@ P = {
     "media_read": "media:read",
     "media_write": "media:write",
     "sponsor_write": "sponsor:write",
+    "achievement_write": "achievement:write",
     "user_read": "user:read",
     "user_write": "user:write",
     "analytics_read": "analytics:read",

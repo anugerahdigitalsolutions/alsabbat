@@ -39,7 +39,7 @@ export const PublicFooter = () => {
             Navigasi
           </h4>
           <ul className="space-y-2">
-            {PUBLIC_NAV.map((item) => (
+            {PUBLIC_NAV.slice(0, 6).map((item) => (
               <li key={item.id}>
                 <Link
                   to={item.to}

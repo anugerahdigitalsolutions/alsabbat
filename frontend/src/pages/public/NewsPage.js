@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Newspaper, Search } from 'lucide-react';
 import { Input } from '../../components/ui/input';
+import { Link } from 'react-router-dom';
 import { NewsCardShell } from '../../components/public/NewsCardShell';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
@@ -57,7 +58,9 @@ export default function NewsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((post) => (
-              <NewsCardShell key={post.id} post={post} testId={`news-card-${post.id}`} />
+              <Link key={post.id} to={`/news/${post.slug}`} data-testid={`news-link-${post.id}`}>
+                <NewsCardShell post={post} testId={`news-card-${post.id}`} />
+              </Link>
             ))}
           </div>
         )}

@@ -2,6 +2,7 @@
 from fastapi import APIRouter
 
 from app.api.routes import (
+    achievements,
     analytics,
     auth,
     club,
@@ -37,5 +38,6 @@ api_router.include_router(content.router, prefix="/content")
 api_router.include_router(gallery.router, prefix="/gallery")
 api_router.include_router(media.router, prefix="/media")
 api_router.include_router(sponsors.router, prefix="/sponsors")
+api_router.include_router(achievements.router, prefix="/achievements")
 api_router.include_router(analytics.router, prefix="/analytics")
 api_router.include_router(seo.router, prefix="/seo")

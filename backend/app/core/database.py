@@ -32,6 +32,7 @@ class Collections:
     MEDIA = "media"
     GALLERY_ALBUMS = "gallery_albums"
     SPONSORS = "sponsors"
+    ACHIEVEMENTS = "achievements"
     ANALYTICS_EVENTS = "analytics_events"
     SETTINGS = "site_settings"
 
@@ -97,6 +98,7 @@ async def ensure_indexes() -> None:
             Collections.MEDIA,
             Collections.GALLERY_ALBUMS,
             Collections.SPONSORS,
+            Collections.ACHIEVEMENTS,
         ):
             await db[coll].create_index([("id", ASCENDING)], unique=True)
             await db[coll].create_index([("status", ASCENDING)])
@@ -138,6 +140,8 @@ async def ensure_indexes() -> None:
         await db[Collections.GALLERY_ALBUMS].create_index([("match_id", ASCENDING)])
 
         await db[Collections.SPONSORS].create_index([("display_order", ASCENDING)])
+        await db[Collections.ACHIEVEMENTS].create_index([("year", DESCENDING)])
+        await db[Collections.ACHIEVEMENTS].create_index([("display_order", ASCENDING)])
         await db[Collections.ANALYTICS_EVENTS].create_index([("created_at", DESCENDING)])
         await db[Collections.ANALYTICS_EVENTS].create_index([("event_type", ASCENDING)])
         await db[Collections.ANALYTICS_EVENTS].create_index(

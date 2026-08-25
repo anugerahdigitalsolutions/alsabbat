@@ -415,3 +415,25 @@ class AnalyticsEventCreate(AppBaseModel):
 class AnalyticsEvent(AnalyticsEventCreate, DBModel):
     session_id: Optional[str] = None
     user_agent: Optional[str] = None
+
+
+# ---------------------------------------------------------- Achievement
+class AchievementBase(AppBaseModel):
+    title: str = Field(min_length=2, max_length=200)
+    competition_name: Optional[str] = Field(default=None, max_length=200)
+    competition_id: Optional[str] = None
+    season_id: Optional[str] = None
+    team_id: Optional[str] = None
+    year: Optional[int] = Field(default=None, ge=1900, le=2200)
+    level: Optional[str] = Field(default=None, max_length=80)
+    trophy_image: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
+    display_order: int = Field(default=0, ge=0, le=9999)
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+AchievementUpdate = make_update_model("AchievementUpdate", AchievementBase)
+
+
+class Achievement(AchievementBase, DBModel):
+    pass

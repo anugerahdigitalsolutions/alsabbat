@@ -47,6 +47,7 @@ export const ADMIN_NAV = [
       { id: 'gallery', to: '/admin/gallery', label: 'Gallery', Icon: Images },
       { id: 'media', to: '/admin/media', label: 'Media', Icon: Upload },
       { id: 'sponsors', to: '/admin/sponsors', label: 'Sponsors', Icon: Handshake },
+      { id: 'achievements', to: '/admin/achievements', label: 'Achievements', Icon: Trophy },
     ],
   },
   {
