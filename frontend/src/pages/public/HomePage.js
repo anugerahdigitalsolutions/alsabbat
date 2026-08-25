@@ -7,6 +7,8 @@ import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { SectionShell } from '../../components/public/SectionShell';
 import { NewsCardShell } from '../../components/public/NewsCardShell';
 import { SponsorsStrip } from '../../components/public/SponsorsStrip';
+import { MatchdayCountdown } from '../../components/public/MatchdayCountdown';
+import { PlayerSpotlight, pickSpotlightPlayer } from '../../components/public/PlayerSpotlight';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
@@ -114,6 +116,7 @@ export default function HomePage() {
   const finished = matches.items.filter((m) => m.status === 'FINISHED');
   const nextMatch = upcoming[upcoming.length - 1] || null;
   const lastMatch = finished[0] || null;
+  const spotlightPlayer = useMemo(() => pickSpotlightPlayer(players.items), [players.items]);
 
   const stats = [
     { id: 'teams', label: 'Tim Aktif', value: teams.loading ? '—' : teams.total },
@@ -244,11 +247,14 @@ export default function HomePage() {
             <div>
               <p className="als-section-label mb-3">Next Match</p>
               {nextMatch ? (
-                <MatchFeatureCard match={nextMatch} shortName={shortName || 'ALSABBAT'} kind="next" testId="home-next-match" />
+                <div className="space-y-5">
+                  <MatchdayCountdown match={nextMatch} clubName={shortName || 'ALSABBAT'} />
+                  <MatchFeatureCard match={nextMatch} shortName={shortName || 'ALSABBAT'} kind="next" testId="home-next-match" />
+                </div>
               ) : (
                 <EmptyState
                   icon={Swords}
-                  title="Belum ada jadwal pertandingan"
+                  title="Jadwal pertandingan berikutnya belum tersedia"
                   description="Jadwal akan tampil di sini setelah pertandingan dibuat."
                   testId="home-next-match-empty"
                 />
@@ -310,7 +316,9 @@ export default function HomePage() {
         ) : players.items.length === 0 ? (
           <EmptyState icon={Users} title="Belum ada pemain" description="Skuad akan tampil setelah pemain ditambahkan." testId="home-squad-empty" />
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="space-y-8">
+            {spotlightPlayer ? <PlayerSpotlight player={spotlightPlayer} /> : null}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {players.items.slice(0, 8).map((player) => (
               <Link
                 key={player.id}
@@ -325,7 +333,7 @@ export default function HomePage() {
                       <img src={player.photo} alt={player.full_name} className="h-full w-full object-cover" loading="lazy" />
                       <span
                         className="als-media-overlay absolute inset-0"
-                        style={{ background: 'linear-gradient(to top, rgba(34,34,34,0.8), rgba(34,34,34,0))' }}
+                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))' }}
                       />
                     </>
                   ) : (
@@ -351,6 +359,7 @@ export default function HomePage() {
                 </div>
               </Link>
             ))}
+            </div>
           </div>
         )}
       </SectionShell>

@@ -29,7 +29,8 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 5B | Inner Page Visual Polish | SELESAI |
 | 5C | Single-Team Data Cleanup | SELESAI |
 | 5D | Production Data Cleanup | SELESAI |
-| 5E | Production Identity & Auth Cleanup | **SELESAI (25 Jun 2026)** — Fase 5 tuntas |
+| 5E | Production Identity & Auth Cleanup | SELESAI — Fase 5 tuntas |
+| 6 | Match Intelligence (Formation, Statistics, Countdown, Spotlight) | **SELESAI (25 Jun 2026)** |
 
 ## Fase 5B — yang diimplementasikan (2026-06-25)
 - `index.css`: token/utility baru `als-inner-header`, `als-gold-rule`, `als-scrim`, `als-zoom`,
@@ -54,7 +55,32 @@ secara bertahap per fase, dengan identitas brand ketat:
   fact grid, biografi, status panel.
 - Backend changes: **0**.
 
+## Fase 6 — Match Intelligence (2026-06-25) — FRONTEND ONLY, backend changes = 0
+Semua fitur dihitung/dirender dari API existing (`/api/matches/:id/relations`, `/api/matches`, `/api/players`).
+- **Visual Formation** — `components/public/matchcenter/FormationPitch.js` (baru): pitch CSS (garis tengah,
+  center circle, penalty box) + marker pemain (foto/inisial, nomor, kapten). Baris pitch dibentuk dari
+  `match.formation` (4-3-3 / 4-4-2 / 3-5-2 dst, parsing dinamis); fallback grouping by `position` jika formation
+  kosong/invalid → label "Formasi belum tersedia". Substitutes di section terpisah. Starting XI < 11 diberi catatan
+  jumlah nyata (tanpa pemain palsu). Tab Match Detail "Susunan Pemain" → "Formasi".
+- **Match Statistics** — `MatchStatistics.js` (baru): dihitung dari MatchEvent (goals, own goals, assists,
+  penalty missed, yellow/red cards, substitutions; club vs lawan) + Starting XI/Substitutes count dari MatchLineup.
+  Baris hanya muncul bila datanya ada. Possession/shots/corners/fouls/offsides/pass accuracy **tidak dibuat**
+  karena tidak ada sumber data. Tab baru "Statistik".
+- **Matchday Countdown** — `MatchdayCountdown.js` (baru): kickoff = `match.date` + `match.time` pada zona WIB
+  (+07:00, konvensi existing project); real-time per detik; setelah kickoff → badge "MATCHDAY"; status
+  LIVE/POSTPONED/CANCELLED/FINISHED dihormati (tanpa mengubah status). Dipakai di Homepage (Matchday) dan
+  sidebar Match Detail untuk match upcoming.
+- **Player Spotlight** — `PlayerSpotlight.js` (baru) + `pickSpotlightPlayer` deterministik (prioritas: ada foto →
+  ada nomor punggung → nomor terkecil → id). Tampil di section Squad homepage, CTA ke `/players/:id`.
+- Brand: seluruh komponen baru memakai #000000 (bukan #222222); overlay `rgba(34,34,34,…)` di HomePage diganti
+  `rgba(0,0,0,…)`. Animasi memakai `Reveal`/`useScrollReveal`/`als-lift`/`als-zoom` existing.
+- Verifikasi logika (node, tanpa menyentuh DB): parsing formasi 4-3-3/4-4-2/3-5-2/invalid, fallback posisi,
+  starting XI parsial, kickoff WIB, dan seleksi spotlight — semuanya sesuai ekspektasi.
+- Catatan: rendering dengan DATA NYATA belum bisa diverifikasi (DB sengaja kosong; dilarang membuat dummy data).
+
+
 ## Fase 5E — Production Identity & Auth Cleanup (2026-06-25)
+
 - Auth: 6 akun test `content<timestamp>@alsabbat.com` (CONTENT_ADMIN) dihapus + 6 session miliknya direvoke.
   Tersisa 1 akun resmi `admin@alsabbat.com` (SUPER_ADMIN). JWT/bcrypt/RBAC/middleware TIDAK diubah.
   Sessions: 36 → 30 (hanya session akun test yang dihapus). Analytics tidak disentuh (259 events).

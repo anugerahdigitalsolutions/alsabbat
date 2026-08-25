@@ -8,7 +8,9 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { MatchScoreboard } from '../../components/public/matchcenter/MatchScoreboard';
 import { MatchInfoPanel } from '../../components/public/matchcenter/MatchInfoPanel';
-import { MatchLineupSection } from '../../components/public/matchcenter/MatchLineupSection';
+import { FormationPitch } from '../../components/public/matchcenter/FormationPitch';
+import { MatchStatistics } from '../../components/public/matchcenter/MatchStatistics';
+import { MatchdayCountdown } from '../../components/public/MatchdayCountdown';
 import { MatchTimeline } from '../../components/public/matchcenter/MatchTimeline';
 import { MatchMediaPanel } from '../../components/public/matchcenter/MatchMediaPanel';
 import { MatchGallerySection } from '../../components/public/matchcenter/MatchGallerySection';
@@ -131,7 +133,10 @@ export default function MatchDetailPage() {
             <Tabs defaultValue="lineup">
               <TabsList data-testid="match-detail-tabs">
                 <TabsTrigger value="lineup" data-testid="match-tab-lineup">
-                  Susunan Pemain
+                  Formasi
+                </TabsTrigger>
+                <TabsTrigger value="stats" data-testid="match-tab-stats">
+                  Statistik
                 </TabsTrigger>
                 <TabsTrigger value="timeline" data-testid="match-tab-timeline">
                   Timeline
@@ -142,10 +147,18 @@ export default function MatchDetailPage() {
               </TabsList>
 
               <TabsContent value="lineup" className="mt-6">
-                <MatchLineupSection
+                <FormationPitch
                   lineups={data.lineups}
                   playersById={data.players}
                   formation={match.formation}
+                />
+              </TabsContent>
+
+              <TabsContent value="stats" className="mt-6">
+                <MatchStatistics
+                  events={data.events}
+                  lineups={data.lineups}
+                  playersById={data.players}
                 />
               </TabsContent>
 
@@ -173,6 +186,10 @@ export default function MatchDetailPage() {
           </Reveal>
 
           <Reveal className="space-y-6" delay={120}>
+            {['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'].includes(match.status) ? (
+              <MatchdayCountdown match={match} clubName={shortName || clubName} compact />
+            ) : null}
+
             <MatchInfoPanel
               match={match}
               team={data.team}
