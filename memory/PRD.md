@@ -584,3 +584,9 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - `.als-shell-bg` (dipakai HANYA oleh `PublicLayout`, bukan Admin) kini `#FEFEFE` dengan pola diamond via `::before` `position: fixed; inset:0; z-index:-1; pointer-events:none` — dua layer SVG data-URI seamless (tile 160px `fill-opacity 0.075` + tile 340px `fill-opacity 0.05`, warna `#000000`) sehingga pola tidak seragam dan tidak menghitung ukuran layout. Radial navy lama & latar `#f1f3f7` dihapus.
 - Frame utama (`.als-frame`) tetap `#FEFEFE` + rounded 30px + shadow; header/hero/card/section/footer/Member Card/Admin tidak tersentuh.
 - Verifikasi 1920/1440/1280/1024/768/390: overflow **0 px**, frame width 1400/1392/1232/976/768/390, pola hanya terlihat di luar frame, console 0 error, `yarn build` sukses tanpa warning. Tanpa perubahan backend/DB/CMS.
+
+### Corak diamond dibuat lebih rapat (26 Jun 2026)
+- `.als-shell-bg::before` kini memakai **3 layer** SVG data-URI seamless: tile **64px (13 diamond, opacity 0.075)**, **104px (11, 0.06)**, **168px (6, 0.05)** dengan offset `0 0, 21px 29px, 47px 11px` → kepadatan ±3–4× versi sebelumnya (tile 160px/16 + 340px/6), ukuran diamond tetap kecil-sedang (2–7px) dan tidak membentuk grid kaku.
+- Opacity tidak dinaikkan (tetap 5–7,5%), warna tetap `#000000` di atas `#FEFEFE`, pattern tetap `position: fixed; z-index:-1; pointer-events:none` (di luar frame saja).
+- Verifikasi 1920/1440/1280/1024/768/390: overflow 0 px, lebar frame 1400/1392/1232/976/768/390 (tidak berubah), hero & konten normal, console 0 error, `yarn build` sukses tanpa warning.
+- Catatan insiden: skrip edit otomatis pernah memotong `index.css`; dipulihkan via `git checkout HEAD -- frontend/src/index.css` lalu diedit ulang dengan search_replace. Hindari edit CSS besar lewat skrip index-based.
