@@ -17,6 +17,7 @@ from app.api.routes import (
     merchandise,
     players,
     seasons,
+    readiness,
     seo,
     site,
     social,
@@ -53,5 +54,6 @@ api_router.include_router(social.router, prefix="/social")
 api_router.include_router(merchandise.router, prefix="/merchandise")
 api_router.include_router(customers.router, prefix="/baraya")
 api_router.include_router(customers.member_router, prefix="/member")
+api_router.include_router(readiness.router, prefix="/readiness")
 api_router.include_router(site.banners_router, prefix="/banners")
 api_router.include_router(site.site_content_router, prefix="/site-content")

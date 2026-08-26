@@ -69,7 +69,8 @@ export const MemberCardDesign = () => {
       <h2 className="font-display text-lg font-semibold">Desain Kartu Member</h2>
       <p className="mt-1 max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
         Latar berlaku untuk semua kartu Baraya. Kosongkan untuk memakai latar default ALSABBAT. Overlay navy otomatis
-        dipasang agar nama, nomor, dan QR tetap terbaca.
+        dipasang agar nama, nomor, dan QR tetap terbaca. Pilih gambar dengan area kosong yang cukup (hindari wajah atau
+        teks di tengah) dan utamakan berkas dari Media Library agar tombol Simpan Kartu berfungsi optimal.
       </p>
 
       {loading ? (

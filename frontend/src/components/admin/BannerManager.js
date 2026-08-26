@@ -113,7 +113,7 @@ export const BannerManager = ({ clubName = 'ALSABBAT' }) => {
             type: 'select',
             full: true,
             optionsFrom: { endpoint: '/media', labelFn: (m) => `${m.file_name} · ${m.file_type}` },
-            help: 'Upload gambar di menu Media, lalu pilih di sini.',
+            help: 'Upload gambar di menu Media, lalu pilih di sini. Gunakan gambar landscape resolusi tinggi (minimal 1920px) agar tajam di desktop.',
           },
           {
             name: 'image_url',

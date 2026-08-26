@@ -37,6 +37,7 @@ import AdminBarayaPage from './pages/admin/AdminBarayaPage';
 
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminReadinessPage from './pages/admin/AdminReadinessPage';
 import AdminClubPage from './pages/admin/AdminClubPage';
 import AdminTeamsPage from './pages/admin/AdminTeamsPage';
 import AdminPlayersPage from './pages/admin/AdminPlayersPage';
@@ -145,6 +146,7 @@ function App() {
               }
             >
               <Route index element={<AdminDashboardPage />} />
+              <Route path="readiness" element={<AdminReadinessPage />} />
               <Route path="club" element={<AdminClubPage />} />
               <Route path="teams" element={<AdminTeamsPage />} />
               <Route path="players" element={<AdminPlayersPage />} />

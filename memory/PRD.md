@@ -429,3 +429,28 @@ Fase 17 sudah menyediakan member_number/member_code/photo_url/joined_at, rendere
 - Upload foto customer & upload latar langsung dari perangkat untuk non-admin belum ada (perlu object storage).
 - "Simpan Kartu" (PNG) mengandalkan browser; latar dari domain eksternal bisa gagal dirender karena CORS — gunakan Media Library (same-origin) untuk hasil pasti.
 - Tidak ada ticketing / poin / diskon member (di luar scope).
+
+## FASE 19 — Real Content Preparation & Admin Content Workflow (26 Jun 2026) · STOP GATE 19
+### Discovery
+Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di ResourceManager (pemain: nama/posisi/status; pertandingan: lawan/tanggal/venue_type/status; berita: judul/konten/status; produk: nama/harga/status), Media Library sudah dipakai untuk semua gambar konten (Fase 16 field type `media`). Yang belum: Admin tidak punya gambaran konten mana yang belum diisi.
+### Yang dibuat/diubah
+- BARU: `backend/app/api/routes/readiness.py` (`GET /api/readiness/content`, permission `club:read`), `frontend/src/pages/admin/AdminReadinessPage.js`, `scripts/phase19_verify.py`.
+- DIUBAH: `router.py` (+prefix `/readiness`), `AdminSidebar.js` (+menu **Persiapan Konten**), `App.js` (+route `/admin/readiness`), help text pada field media (pemain, staf, sponsor, thumbnail berita, hero klub, banner, latar kartu member).
+### Content Readiness Dashboard
+- 19 kategori (Profil Klub, Logo & Identitas, Foto Utama, Konten Kontak, Staf, Skuad, Musim, Kompetisi, Pertandingan, Formasi & Starting XI, Berita, Galeri, Sponsor, Prestasi, Banner Homepage, Konten Homepage, Merchandise, Desain Kartu Member, Baraya) dikelompokkan ke TAHAP 1–8.
+- Aturan persen eksplisit: setiap kategori = daftar `checks` boolean dari data nyata; `percent = done/total`. Status: 0% = BELUM DIISI, 100% = SIAP, sisanya SEBAGIAN. Total 49 item. Database kosong → 8% (hanya nama/short_name/deskripsi/warna klub bawaan) — tidak ada angka karangan.
+- Checklist bersifat derived (tanpa koleksi/checkbox baru), tiap kategori punya tombol **Isi Sekarang** ke route admin existing, plus panel **Urutan yang disarankan** (14 langkah + alasan, tidak memblokir).
+### Media, preview, homepage
+- Media Library tetap satu-satunya sumber media (field type `media` dipakai di logo/hero klub, foto pemain & staf, sponsor, trofi, thumbnail berita, cover album, banner hero, latar kartu member).
+- Preview memakai renderer publik yang sama: Banner → `CinematicHero`, Kartu Member → `MemberCard.js`, Klub → tombol "Lihat Halaman Klub". Preview khusus Match/News/Album belum ada (limitasi tercatat, butuh arsitektur preview draft).
+- Homepage/banner/site_content tetap Admin → API → DB → Public dengan fallback default bila kosong.
+### Verifikasi (tanpa Testing Agent)
+- `scripts/phase19_verify.py`: **32/32 PASS** di sandbox `alsabbat_phase19_sandbox` (**DI-DROP**, skrip menolak jalan bila DB bukan sandbox) — P19-01…P19-16 termasuk: RBAC 401, status ikut data nyata (8% → 43% setelah isi klub/pemain/staf), dashboard tidak membuat data, Media Library/Banner/site_content/latar kartu tetap bekerja, **tidak ada endpoint ticketing/seat/klasemen**, 11 regresi endpoint publik.
+- Smoke UI: `/admin/readiness` (19 kartu, 19 Quick Action, navigasi ke `/admin/players` berhasil), 14 route admin tanpa error, 14 route publik tanpa error, overflow **0 px** di 1920/1440/1024/390, Staff Access hanya footer, Login Baraya di header.
+- `yarn build` Compiled successfully tanpa warning (275.79 kB gz), backend import OK, `/api/health` 200.
+- Database produksi tetap: users 1, teams 1, clubs 1, sisanya 0; tidak ada berkas media uji; tidak ada DB sandbox tersisa.
+### Limitasi
+- Upload foto Baraya dari HP **belum** diaktifkan: penyimpanan media masih provider LOCAL (disk pod, ephemeral di deployment) dan endpoint upload butuh permission admin `media:write`. Perlu object storage + konfigurasi deployment sebelum upload customer dibuka.
+- Preview draft untuk Match/News/Album belum ada.
+- Klasemen & ticketing tidak dibuat (future phase).
+- Sisa string multi-team: hanya nilai enum backend `TeamCategory.YOUTH_TEAM` (tidak dipakai UI/data produksi), dibiarkan agar tidak merusak validasi existing.

@@ -45,7 +45,14 @@ export default function AdminSponsorsPage() {
         { name: 'tier', label: 'Tier', type: 'text', placeholder: 'Main Sponsor / Official Partner' },
         { name: 'display_order', label: 'Urutan Tampilan', type: 'number' },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'logo', label: 'Logo Sponsor', type: 'media', full: true, optionsFrom: mediaOptions },
+        {
+          name: 'logo',
+          label: 'Logo Sponsor',
+          type: 'media',
+          full: true,
+          optionsFrom: mediaOptions,
+          help: 'Gunakan logo PNG berlatar transparan agar rapi di baris sponsor.',
+        },
         { name: 'website', label: 'Website', type: 'text', full: true },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}

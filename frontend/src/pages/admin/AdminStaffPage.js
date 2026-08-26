@@ -44,7 +44,14 @@ export default function AdminStaffPage() {
         { name: 'role', label: 'Role', type: 'select', options: opts(meta?.staff_roles), required: true },
         { name: 'role_label', label: 'Label Role (opsional)', type: 'text', help: 'Untuk role kustom di luar daftar.' },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'photo', label: 'Foto Staf', type: 'media', full: true, optionsFrom: mediaOptions },
+        {
+          name: 'photo',
+          label: 'Foto Staf',
+          type: 'media',
+          full: true,
+          optionsFrom: mediaOptions,
+          help: 'Gunakan foto portrait yang jelas. Kosongkan bila belum tersedia — jangan memakai foto orang lain.',
+        },
         { name: 'bio', label: 'Bio', type: 'textarea', full: true },
         { name: 'social_media.instagram', label: 'Instagram', type: 'text' },
       ]}

@@ -8,6 +8,7 @@ import {
   Images,
   LayoutDashboard,
   LayoutTemplate,
+  ListChecks,
   Newspaper,
   Shield,
   Swords,
@@ -28,7 +29,10 @@ import { ClubCrestMark } from '../shared/ClubCrestMark';
 export const ADMIN_NAV = [
   {
     group: 'Overview',
-    items: [{ id: 'dashboard', to: '/admin', label: 'Dashboard', Icon: LayoutDashboard, end: true }],
+    items: [
+      { id: 'dashboard', to: '/admin', label: 'Dashboard', Icon: LayoutDashboard, end: true },
+      { id: 'readiness', to: '/admin/readiness', label: 'Persiapan Konten', Icon: ListChecks },
+    ],
   },
   {
     group: 'Klub',
