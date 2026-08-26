@@ -37,6 +37,8 @@ class Collections:
     ACHIEVEMENTS = "achievements"
     ANALYTICS_EVENTS = "analytics_events"
     SOCIAL_PUBLICATIONS = "social_publications"
+    SOCIAL_CONNECTIONS = "social_connections"
+    SOCIAL_OAUTH_STATES = "social_oauth_states"
     PRODUCTS = "products"
     PRODUCT_CATEGORIES = "product_categories"
     PRODUCT_VARIANTS = "product_variants"
@@ -163,6 +165,11 @@ async def ensure_indexes() -> None:
         await db[Collections.SOCIAL_PUBLICATIONS].create_index(
             [("status", ASCENDING), ("created_at", DESCENDING)]
         )
+
+        # Social account connections (Fase 1 — OAuth connect/disconnect)
+        await db[Collections.SOCIAL_CONNECTIONS].create_index([("platform", ASCENDING)], unique=True)
+        await db[Collections.SOCIAL_OAUTH_STATES].create_index([("state", ASCENDING)], unique=True)
+        await db[Collections.SOCIAL_OAUTH_STATES].create_index("created_at", expireAfterSeconds=900)
 
 
         # Match lookups

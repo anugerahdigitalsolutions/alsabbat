@@ -9,6 +9,7 @@ import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { SocialConnections } from '../../components/admin/SocialConnections';
 import { toast } from 'sonner';
 
 const STATUS_TONE = {
@@ -243,6 +244,8 @@ export default function AdminSocialPage() {
           Buat satu konten, lalu pilih platform tujuan secara eksplisit. Hanya API resmi platform yang digunakan.
         </p>
       </div>
+
+      <SocialConnections />
 
       {/* Platform dashboard */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="social-platform-cards">

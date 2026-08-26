@@ -12,20 +12,23 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import RedirectResponse
 
 from app.api.crud_factory import Repository
 from app.api.deps import require_permission
-from app.core.database import Collections
+from app.core.config import settings
+from app.core.database import Collections, get_db
 from app.core.errors import NotFoundError, ValidationFailedError
 from app.core.logging_config import get_logger
 from app.core.rate_limit import write_rate_limit
 from app.models.auth import AuthContext
-from app.models.base import utcnow
+from app.models.base import new_id, utcnow
 from app.models.social import (
     SocialPublicationCreate,
     SocialPublicationStatus,
     SocialPublicationUpdate,
 )
+from app.services.social import oauth as social_oauth
 from app.services.social.registry import get_publisher, platform_configs
 
 logger = get_logger(__name__)
@@ -81,6 +84,126 @@ async def list_platforms(user: AuthContext = social_read) -> Dict[str, Any]:
         ],
         "total": len(configs),
     }
+
+
+# -------------------------------------------- account connections (OAuth)
+def _admin_return(platform: str, result: str) -> RedirectResponse:
+    """Kembali ke Admin → Media Sosial. Tidak pernah membawa token di URL."""
+    base = (settings.PUBLIC_SITE_URL or "").rstrip("/")
+    return RedirectResponse(
+        url=f"{base}/admin/social?social_oauth={result}&platform={platform.lower()}",
+        status_code=302,
+    )
+
+
+@router.get("/connections", summary="Status koneksi akun sosial (tanpa token)")
+async def list_connections(user: AuthContext = social_read) -> Dict[str, Any]:
+    coll = get_db()[Collections.SOCIAL_CONNECTIONS]
+    docs = {doc["platform"]: doc async for doc in coll.find({})}
+    items = [social_oauth.connection_state(p, docs.get(p)) for p in social_oauth.PLATFORMS]
+    return {"items": items, "total": len(items)}
+
+
+@router.post("/connections/{platform}/authorize", summary="Mulai OAuth resmi platform")
+async def start_authorization(
+    platform: str, request: Request, user: AuthContext = social_publish
+) -> Dict[str, Any]:
+    platform = platform.upper()
+    if platform not in social_oauth.PLATFORMS:
+        raise NotFoundError("Platform tidak dikenal")
+    if not social_oauth.is_configured(platform):
+        raise ValidationFailedError(
+            f"{platform.title()} belum dikonfigurasi. Env yang belum tersedia: "
+            + ", ".join(social_oauth.missing_env(platform))
+        )
+    write_rate_limit(request)
+    state = await social_oauth.create_state(platform, user.user_id)
+    return {"authorization_url": social_oauth.authorize_url(platform, state)}
+
+
+@router.get("/oauth/{platform}/callback", summary="Callback OAuth platform (server-side)")
+async def oauth_callback(
+    platform: str,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+) -> RedirectResponse:
+    platform = platform.upper()
+    if platform not in social_oauth.PLATFORMS:
+        raise NotFoundError("Platform tidak dikenal")
+    state_doc = await social_oauth.consume_state(platform, state)
+    if not state_doc:
+        logger.warning("social oauth callback rejected: invalid state", extra={"platform": platform})
+        return _admin_return(platform, "invalid_state")
+    if error or not code:
+        return _admin_return(platform, "denied")
+
+    coll = get_db()[Collections.SOCIAL_CONNECTIONS]
+    try:
+        tokens = await social_oauth.exchange_code(platform, code)
+        access_token = tokens.get("access_token")
+        if not access_token:
+            raise ValueError("token kosong")
+        identity = await social_oauth.fetch_identity(platform, access_token)
+        await coll.update_one(
+            {"platform": platform},
+            {
+                "$set": {
+                    "platform": platform,
+                    "account_id": identity.get("account_id"),
+                    "account_name": identity.get("account_name"),
+                    "status": "CONNECTED",
+                    "error_message": None,
+                    "scope": social_oauth.provider(platform)["scope"],
+                    "access_token_enc": social_oauth.encrypt_token(access_token),
+                    "refresh_token_enc": social_oauth.encrypt_token(tokens.get("refresh_token")),
+                    "expires_at": tokens.get("expires_at"),
+                    "connected_by": state_doc.get("admin_id"),
+                    "connected_at": utcnow().isoformat(),
+                    "updated_at": utcnow().isoformat(),
+                },
+                "$setOnInsert": {"id": new_id()},
+            },
+            upsert=True,
+        )
+    except Exception:  # noqa: BLE001 — detail platform tidak boleh bocor ke UI/log token
+        logger.exception("social oauth exchange failed", extra={"platform": platform})
+        await coll.update_one(
+            {"platform": platform},
+            {
+                "$set": {
+                    "platform": platform,
+                    "status": "ERROR",
+                    "error_message": "Pertukaran token gagal. Coba hubungkan ulang.",
+                    "updated_at": utcnow().isoformat(),
+                },
+                "$setOnInsert": {"id": new_id()},
+            },
+            upsert=True,
+        )
+        return _admin_return(platform, "error")
+
+    return _admin_return(platform, "connected")
+
+
+@router.delete("/connections/{platform}", summary="Putuskan koneksi akun sosial")
+async def disconnect_connection(
+    platform: str, request: Request, user: AuthContext = social_publish
+) -> Dict[str, Any]:
+    platform = platform.upper()
+    if platform not in social_oauth.PLATFORMS:
+        raise NotFoundError("Platform tidak dikenal")
+    write_rate_limit(request)
+    coll = get_db()[Collections.SOCIAL_CONNECTIONS]
+    doc = await coll.find_one({"platform": platform})
+    if not doc:
+        return {"platform": platform, "status": "NOT_CONNECTED", "revoked": False}
+    revoked = await social_oauth.revoke(
+        platform, social_oauth.decrypt_token(doc.get("access_token_enc")), doc.get("account_id")
+    )
+    await coll.delete_one({"platform": platform})
+    logger.info("social connection disconnected", extra={"platform": platform, "revoked": revoked})
+    return {"platform": platform, "status": "NOT_CONNECTED", "revoked": revoked}
 
 
 # ---------------------------------------------------------- publications

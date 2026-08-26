@@ -117,6 +117,12 @@ class Settings:
     YOUTUBE_CLIENT_ID: str = os.environ.get("YOUTUBE_CLIENT_ID", "")
     YOUTUBE_CLIENT_SECRET: str = os.environ.get("YOUTUBE_CLIENT_SECRET", "")
     YOUTUBE_API_KEY: str = os.environ.get("YOUTUBE_API_KEY", "")
+    # Fase 1 — OAuth koneksi akun sosial (redirect URI harus sama persis dengan
+    # yang didaftarkan di developer console masing-masing platform)
+    INSTAGRAM_REDIRECT_URI: str = os.environ.get("INSTAGRAM_REDIRECT_URI", "")
+    TIKTOK_REDIRECT_URI: str = os.environ.get("TIKTOK_REDIRECT_URI", "")
+    YOUTUBE_REDIRECT_URI: str = os.environ.get("YOUTUBE_REDIRECT_URI", "")
+    SOCIAL_TOKEN_ENCRYPTION_KEY: str = os.environ.get("SOCIAL_TOKEN_ENCRYPTION_KEY", "")
 
     # -------------------------------------------------------------- seo
     PUBLIC_SITE_URL: str = os.environ.get("PUBLIC_SITE_URL", "")
