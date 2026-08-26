@@ -66,9 +66,12 @@ Development uses `MEDIA_STORAGE_PROVIDER=LOCAL`. For production:
 ## 6. Post-deploy checklist
 
 - [ ] `GET /api/health` returns `status: ok` and `database: connected`
-- [ ] `GET /api/docs` reachable (or disabled deliberately)
+- [ ] `ENVIRONMENT=production` and `CORS_ORIGINS` lists the exact domains (a `*` aborts startup)
+- [ ] `ENABLE_API_DOCS=false` (Swagger closed) — `/api/docs` returns 404
 - [ ] Admin login works on the Vercel domain (no CORS errors)
 - [ ] `GET /api/seo/sitemap.xml` and `/api/seo/robots.txt` respond
+- [ ] `PUBLIC_SITE_URL` set → canonical/OG URLs use the final domain
+- [ ] Frontend redeployed after the domain is final (build regenerates `public/robots.txt`)
+- [ ] Midtrans Payment Notification URL → `https://<backend>/api/merchandise/payment/webhook`
 - [ ] Bootstrap admin password rotated after the first login
-- [ ] `CORS_ORIGINS` narrowed to real domains
 - [ ] `JWT_SECRET` is a strong, unique production value

@@ -100,7 +100,14 @@ async def serve_file(file_path: str):
     target = (base / file_path).resolve()
     if not str(target).startswith(str(base)) or not target.is_file():
         raise NotFoundError("Media file not found")
-    return FileResponse(str(target))
+    headers = {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400",
+    }
+    if target.suffix.lower() in {".svg", ".svgz", ".html", ".htm"}:
+        # Never render user-uploaded markup inline (stored XSS prevention).
+        headers["Content-Disposition"] = f'attachment; filename="{target.name}"'
+    return FileResponse(str(target), headers=headers)
 
 
 @router.delete("/{media_id}/hard", summary="Delete media metadata and stored file")

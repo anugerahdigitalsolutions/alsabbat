@@ -13,6 +13,7 @@ from app.api.routes import (
     match_lineups,
     matches,
     media,
+    merchandise,
     players,
     seasons,
     seo,
@@ -47,3 +48,4 @@ api_router.include_router(achievements.router, prefix="/achievements")
 api_router.include_router(analytics.router, prefix="/analytics")
 api_router.include_router(seo.router, prefix="/seo")
 api_router.include_router(social.router, prefix="/social")
+api_router.include_router(merchandise.router, prefix="/merchandise")

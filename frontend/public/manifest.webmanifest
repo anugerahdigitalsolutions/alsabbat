@@ -1,0 +1,20 @@
+{
+  "name": "ALSABBAT Football Club",
+  "short_name": "ALSABBAT FC",
+  "description": "Situs resmi ALSABBAT Football Club — Match Center, skuad, berita, galeri, dan merchandise.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "lang": "id",
+  "orientation": "portrait-primary",
+  "background_color": "#000000",
+  "theme_color": "#012891",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    }
+  ]
+}

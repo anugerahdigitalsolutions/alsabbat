@@ -36,25 +36,56 @@ async def lifespan(_: FastAPI):
     logger.info("Shutdown complete")
 
 
+def resolve_cors_origins() -> list[str]:
+    """Production must never run with a wildcard CORS policy."""
+    origins = [origin for origin in settings.CORS_ORIGINS if origin]
+    if settings.is_production and (not origins or "*" in origins):
+        raise RuntimeError(
+            "CORS_ORIGINS must list the exact production origins (no '*') when "
+            "ENVIRONMENT=production. Example: "
+            "CORS_ORIGINS=https://alsabbat.com,https://www.alsabbat.com"
+        )
+    return origins or ["*"]
+
+
 def create_app() -> FastAPI:
+    docs_enabled = settings.ENABLE_API_DOCS or not settings.is_production
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
-        description="Official ALSABBAT Football Club platform API — Phase 1 foundation.",
-        docs_url=f"{settings.API_PREFIX}/docs",
-        openapi_url=f"{settings.API_PREFIX}/openapi.json",
+        description="Official ALSABBAT Football Club platform API.",
+        docs_url=f"{settings.API_PREFIX}/docs" if docs_enabled else None,
+        openapi_url=f"{settings.API_PREFIX}/openapi.json" if docs_enabled else None,
         redoc_url=None,
         lifespan=lifespan,
     )
 
+    origins = resolve_cors_origins()
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
-        allow_credentials=True,
+        allow_origins=origins,
+        allow_credentials="*" not in origins,
         allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
         expose_headers=["Content-Disposition"],
     )
+
+    if settings.SECURITY_HEADERS_ENABLED:
+
+        @app.middleware("http")
+        async def security_headers(request, call_next):
+            response = await call_next(request)
+            response.headers.setdefault("X-Content-Type-Options", "nosniff")
+            response.headers.setdefault("X-Frame-Options", "DENY")
+            response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+            response.headers.setdefault(
+                "Permissions-Policy", "geolocation=(), microphone=(), camera=()"
+            )
+            if settings.is_production:
+                response.headers.setdefault(
+                    "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+                )
+            return response
 
     register_exception_handlers(app)
     app.include_router(api_router, prefix=settings.API_PREFIX)
@@ -64,8 +95,8 @@ def create_app() -> FastAPI:
         return {
             "service": settings.APP_NAME,
             "version": settings.APP_VERSION,
-            "phase": "Phase 1 — Foundation",
-            "docs": f"{settings.API_PREFIX}/docs",
+            "environment": settings.ENVIRONMENT,
+            "docs": f"{settings.API_PREFIX}/docs" if docs_enabled else None,
             "health": f"{settings.API_PREFIX}/health",
         }
 

@@ -147,7 +147,7 @@ Brand colors wajib — diterapkan sebagai design tokens di `frontend/src/index.c
 | --- | --- |
 | `--club-primary` | `#FCCF2B` |
 | `--club-secondary` | `#012891` |
-| `--club-tertiary` | `#222222` |
+| `--club-tertiary` | `#000000` |
 | `--club-light` | `#FEFEFE` |
 
 Ditambah functional colors (`--success/--warning/--error/--info`), tipografi

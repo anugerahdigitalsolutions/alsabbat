@@ -1,5 +1,8 @@
+# ALSABBAT Football Club
+# This file is REGENERATED at build time by scripts/generate-seo-files.js
+# (the Sitemap directive uses REACT_APP_BACKEND_URL — never a hard-coded domain).
 User-agent: *
 Allow: /
 Disallow: /admin
-
-# Dynamic sitemap is served by the API: <BACKEND_URL>/api/seo/sitemap.xml
+Disallow: /checkout
+Disallow: /cart

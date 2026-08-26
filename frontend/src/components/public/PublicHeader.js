@@ -13,6 +13,7 @@ export const PUBLIC_NAV = [
   { to: '/news', label: 'Berita', id: 'news' },
   { to: '/matches', label: 'Pertandingan', id: 'matches' },
   { to: '/gallery', label: 'Galeri', id: 'gallery' },
+  { to: '/merchandise', label: 'Merchandise', id: 'merchandise' },
   { to: '/achievements', label: 'Prestasi', id: 'achievements' },
   { to: '/sponsors', label: 'Sponsor', id: 'sponsors' },
   { to: '/contact', label: 'Kontak', id: 'contact' },

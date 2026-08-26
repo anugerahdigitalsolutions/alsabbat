@@ -11,6 +11,10 @@ import {
   Shield,
   Swords,
   Share2,
+  ShoppingBag,
+  Receipt,
+  Tags,
+  Layers,
   Trophy,
   Upload,
   User,
@@ -53,6 +57,15 @@ export const ADMIN_NAV = [
       { id: 'sponsors', to: '/admin/sponsors', label: 'Sponsors', Icon: Handshake },
       { id: 'achievements', to: '/admin/achievements', label: 'Achievements', Icon: Trophy },
       { id: 'social', to: '/admin/social', label: 'Social Publishing', Icon: Share2 },
+    ],
+  },
+  {
+    group: 'Merchandise',
+    items: [
+      { id: 'products', to: '/admin/products', label: 'Produk', Icon: ShoppingBag },
+      { id: 'product-categories', to: '/admin/product-categories', label: 'Kategori Produk', Icon: Tags },
+      { id: 'product-variants', to: '/admin/product-variants', label: 'Varian Produk', Icon: Layers },
+      { id: 'orders', to: '/admin/orders', label: 'Orders', Icon: Receipt },
     ],
   },
   {

@@ -77,6 +77,11 @@ class Settings:
     RATE_LIMIT_WRITE_WINDOW: int = int(os.environ.get("RATE_LIMIT_WRITE_WINDOW", "60"))
     RATE_LIMIT_PUBLIC_MAX: int = int(os.environ.get("RATE_LIMIT_PUBLIC_MAX", "600"))
     RATE_LIMIT_PUBLIC_WINDOW: int = int(os.environ.get("RATE_LIMIT_PUBLIC_WINDOW", "60"))
+    # Sensitive endpoints (MongoDB-backed, shared across instances)
+    RATE_LIMIT_CHECKOUT_MAX: int = int(os.environ.get("RATE_LIMIT_CHECKOUT_MAX", "10"))
+    RATE_LIMIT_CHECKOUT_WINDOW: int = int(os.environ.get("RATE_LIMIT_CHECKOUT_WINDOW", "300"))
+    RATE_LIMIT_WEBHOOK_MAX: int = int(os.environ.get("RATE_LIMIT_WEBHOOK_MAX", "120"))
+    RATE_LIMIT_WEBHOOK_WINDOW: int = int(os.environ.get("RATE_LIMIT_WEBHOOK_WINDOW", "60"))
 
     # -------------------------------------------------------------- media
     # Storage is pluggable: LOCAL (default / dev) or S3 (Atlas-era CDN target).
@@ -108,6 +113,11 @@ class Settings:
 
     # -------------------------------------------------------------- seo
     PUBLIC_SITE_URL: str = os.environ.get("PUBLIC_SITE_URL", "")
+
+    # ---------------------------------------------------- hardening flags
+    # Interactive API docs are disabled in production unless explicitly enabled.
+    ENABLE_API_DOCS: bool = _bool(os.environ.get("ENABLE_API_DOCS"), False)
+    SECURITY_HEADERS_ENABLED: bool = _bool(os.environ.get("SECURITY_HEADERS_ENABLED"), True)
 
     @property
     def is_production(self) -> bool:

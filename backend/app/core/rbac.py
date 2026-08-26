@@ -46,6 +46,10 @@ P = {
     # Social publishing (Phase 8)
     "social_read": "social:read",
     "social_publish": "social:publish",
+    "merchandise_read": "merchandise:read",
+    "merchandise_write": "merchandise:write",
+    "order_read": "order:read",
+    "order_write": "order:write",
     "store_manage": "store:manage",
     "order_manage": "order:manage",
 }
@@ -79,8 +83,22 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         P["social_publish"],
         P["analytics_read"],
     ],
-    Role.STORE_ADMIN.value: [P["club_read"], P["media_read"], P["store_manage"]],
-    Role.ORDER_ADMIN.value: [P["club_read"], P["order_manage"]],
+    Role.STORE_ADMIN.value: [
+        P["club_read"],
+        P["media_read"],
+        P["media_write"],
+        P["merchandise_read"],
+        P["merchandise_write"],
+        P["order_read"],
+        P["store_manage"],
+    ],
+    Role.ORDER_ADMIN.value: [
+        P["club_read"],
+        P["merchandise_read"],
+        P["order_read"],
+        P["order_write"],
+        P["order_manage"],
+    ],
 }
 
 ROLE_LABELS: Dict[str, str] = {

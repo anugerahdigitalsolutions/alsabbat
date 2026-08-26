@@ -37,6 +37,11 @@ class Collections:
     ACHIEVEMENTS = "achievements"
     ANALYTICS_EVENTS = "analytics_events"
     SOCIAL_PUBLICATIONS = "social_publications"
+    PRODUCTS = "products"
+    PRODUCT_CATEGORIES = "product_categories"
+    PRODUCT_VARIANTS = "product_variants"
+    ORDERS = "orders"
+    RATE_LIMITS = "rate_limits"
     SETTINGS = "site_settings"
 
 
@@ -116,6 +121,30 @@ async def ensure_indexes() -> None:
         await db[Collections.STAFF].create_index([("team_id", ASCENDING), ("role", ASCENDING)])
         await db[Collections.SEASONS].create_index([("club_id", ASCENDING), ("start_date", DESCENDING)])
         await db[Collections.COMPETITIONS].create_index([("season_id", ASCENDING), ("type", ASCENDING)])
+
+        # Merchandise & commerce (Phase 9)
+        await db[Collections.PRODUCTS].create_index([("slug", ASCENDING)], unique=True, sparse=True)
+        await db[Collections.PRODUCTS].create_index([("status", ASCENDING), ("category_id", ASCENDING)])
+        await db[Collections.PRODUCT_CATEGORIES].create_index([("slug", ASCENDING)], unique=True, sparse=True)
+        await db[Collections.PRODUCT_VARIANTS].create_index([("product_id", ASCENDING), ("status", ASCENDING)])
+        await db[Collections.ORDERS].create_index([("order_number", ASCENDING)], unique=True)
+        await db[Collections.ORDERS].create_index([("customer.email", ASCENDING)])
+        await db[Collections.ORDERS].create_index(
+            [("order_status", ASCENDING), ("payment_status", ASCENDING), ("created_at", DESCENDING)]
+        )
+
+        # Rate limiting counters (Phase 10) — self-expiring documents
+        await db[Collections.RATE_LIMITS].create_index("expires_at", expireAfterSeconds=0)
+
+        # Social publishing (Phase 8)
+        await db[Collections.SOCIAL_PUBLICATIONS].create_index([("id", ASCENDING)], unique=True)
+        await db[Collections.SOCIAL_PUBLICATIONS].create_index(
+            [("post_id", ASCENDING), ("platform", ASCENDING)]
+        )
+        await db[Collections.SOCIAL_PUBLICATIONS].create_index(
+            [("status", ASCENDING), ("created_at", DESCENDING)]
+        )
+
 
         # Match lookups
         await db[Collections.MATCHES].create_index([("date", DESCENDING)])

@@ -33,6 +33,27 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 6 | Match Intelligence (Formation, Statistics, Countdown, Spotlight) | SELESAI |
 | 7 | Real Data & Content Readiness | SELESAI — STOP GATE 7 |
 | 8 | Social Publishing | **SELESAI (25 Jun 2026)** — STOP GATE 8 |
+| 9 | Merchandise & Commerce | SELESAI (25 Jun 2026) — STOP GATE 9 |
+| 10 | Production Finalization | **SELESAI (26 Jun 2026)** — STOP GATE 10 |
+
+## Fase 10 — Production Finalization (2026-06-26)
+Laporan lengkap: `/app/docs/PHASE_10_REPORT.md`. Additive & minimal; Fase 1–9 tidak dirombak.
+- Source hygiene: 0 secret ter-commit, `.env.example` backend/frontend diperbarui akurat (payments + social
+  tokens riil + flag baru), `#222222` sisa di dokumentasi diganti `#000000`, **tidak ada file/skrip/test dihapus**.
+- Security: CORS produksi anti-`*` (fail fast), security headers middleware (+HSTS di produksi),
+  `/api/docs` tertutup di produksi (`ENABLE_API_DOCS`), rate limiting **MongoDB-backed** untuk
+  login/checkout/webhook (collection `rate_limits` + TTL, fallback in-memory), media `.svg/.html`
+  disajikan sebagai attachment (anti stored-XSS).
+- Payments: status pembayaran tidak pernah dipercaya dari redirect — rekonsiliasi via Midtrans Status API
+  resmi (`/v2/{order_id}/status`, signature diverifikasi) pada Lacak Order & admin order detail;
+  apply status disatukan → idempotent, stok berkurang tepat sekali.
+- SEO: origin publik dari `PUBLIC_SITE_URL` → header proxy (canonical kini https), `robots.txt` frontend
+  di-generate saat build dari env, favicon.svg + manifest.webmanifest brand-compliant ditambahkan.
+- Deployment: TTL index `rate_limits`, index `social_publications` baru; Vercel/Railway config diverifikasi;
+  `yarn build` sukses (234.95 kB gz).
+- Verifikasi manual (tanpa Testing Agent): health, headers, login, 429 rate limit, CORS produksi,
+  webhook signature palsu ditolak, path traversal, endpoint publik & terproteksi, SEO, render halaman publik.
+- BLOCKER (NOT VERIFIED): domain final, kredensial Midtrans & sosial media, Atlas cluster, HTTPS produksi.
 
 ## Fase 8 — Social Publishing (2026-06-25)
 Dokumentasi lengkap: `/app/docs/SOCIAL_PUBLISHING.md`.
@@ -170,11 +191,10 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 - Testing Agent TIDAK dijalankan (permintaan user, hemat credit).
 
 ## Backlog
-### P0 (belum dibangun — fase berikutnya)
-- Formation visual (pitch view) untuk lineup
-- Match statistics & player statistics
+### P0
+- (kosong) — Fase 1–10 selesai; menunggu domain produksi & kredensial gateway/sosial dari user.
 ### P1
-- Live match & countdown matchday
-- Social publishing (Instagram/TikTok/YouTube)
+- Route-level code splitting halaman admin (perf; butuh perubahan struktur App.js)
+- Audit log administratif & 2FA Super Admin
 ### P2
-- Merchandise, cart, checkout, payment, membership, ticketing
+- Membership, ticketing, signed URL untuk media privat

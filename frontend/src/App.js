@@ -40,6 +40,15 @@ import AdminAlbumMediaPage from './pages/admin/AdminAlbumMediaPage';
 import AdminMediaPage from './pages/admin/AdminMediaPage';
 import AdminSponsorsPage from './pages/admin/AdminSponsorsPage';
 import AdminSocialPage from './pages/admin/AdminSocialPage';
+import AdminProductsPage from './pages/admin/AdminProductsPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import { AdminProductCategoriesPage, AdminProductVariantsPage } from './pages/admin/AdminProductTaxonomyPages';
+import MerchandisePage from './pages/public/MerchandisePage';
+import ProductDetailPage from './pages/public/ProductDetailPage';
+import CartPage from './pages/public/CartPage';
+import CheckoutPage from './pages/public/CheckoutPage';
+import OrderTrackPage from './pages/public/OrderTrackPage';
+import { CartProvider } from './context/CartContext';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminSystemPage from './pages/admin/AdminSystemPage';
 import AdminAchievementsPage from './pages/admin/AdminAchievementsPage';
@@ -51,6 +60,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ClubProvider>
+          <CartProvider>
           <Routes>
             <Route element={<PublicLayout />}>
               <Route path="/" element={<HomePage />} />
@@ -65,6 +75,11 @@ function App() {
               <Route path="/matches" element={<MatchesPage />} />
               <Route path="/matches/:matchId" element={<MatchDetailPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/merchandise" element={<MerchandisePage />} />
+              <Route path="/merchandise/:slug" element={<ProductDetailPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/order" element={<OrderTrackPage />} />
               <Route path="/gallery/:albumId" element={<GalleryDetailPage />} />
               <Route path="/club" element={<ClubPage />} />
             </Route>
@@ -94,6 +109,10 @@ function App() {
               <Route path="media" element={<AdminMediaPage />} />
               <Route path="sponsors" element={<AdminSponsorsPage />} />
               <Route path="social" element={<AdminSocialPage />} />
+              <Route path="products" element={<AdminProductsPage />} />
+              <Route path="product-categories" element={<AdminProductCategoriesPage />} />
+              <Route path="product-variants" element={<AdminProductVariantsPage />} />
+              <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="achievements" element={<AdminAchievementsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="system" element={<AdminSystemPage />} />
@@ -109,6 +128,7 @@ function App() {
               }
             />
           </Routes>
+          </CartProvider>
           <Toaster position="top-right" richColors />
         </ClubProvider>
       </AuthProvider>

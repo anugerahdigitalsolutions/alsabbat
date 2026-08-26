@@ -10,7 +10,7 @@ never raw hex values, and the club record can override brand tokens at runtime.
 | --- | --- | --- |
 | `--club-primary` | `#FCCF2B` | Primary CTA, highlight, accent, active indicators |
 | `--club-secondary` | `#012891` | Navigation/section accent, interactive elements, football identity |
-| `--club-tertiary` | `#222222` | Primary text, dark sections, footer, hero, admin sidebar |
+| `--club-tertiary` | `#000000` | Primary text, dark sections, footer, hero, admin sidebar |
 | `--club-light` | `#FEFEFE` | Light background, card background, text on dark surfaces |
 
 Accessibility rule: gold is used as a **background/accent with dark text**, never as body

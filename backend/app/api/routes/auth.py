@@ -8,7 +8,7 @@ from app.api.deps import get_current_user, request_ip
 from app.core.database import Collections, get_db
 from app.core.errors import UnauthorizedError
 from app.core.logging_config import get_logger
-from app.core.rate_limit import login_rate_limit
+from app.core.rate_limit import login_guard
 from app.core.rbac import (
     ROLE_DESCRIPTIONS,
     ROLE_LABELS,
@@ -38,7 +38,7 @@ def _public_user(doc: dict) -> dict:
 
 @router.post("/login", response_model=TokenResponse, summary="Admin login")
 async def login(payload: LoginRequest, request: Request):
-    login_rate_limit(request)
+    await login_guard(request)
     db = get_db()
     email = payload.email.lower().strip()
     user = await db[Collections.USERS].find_one({"email": email})

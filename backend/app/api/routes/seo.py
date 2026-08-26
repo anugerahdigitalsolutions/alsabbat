@@ -16,8 +16,13 @@ albums = Repository(Collections.GALLERY_ALBUMS)
 
 
 def _site_url(request: Request) -> str:
+    """Public origin. Environment first (PUBLIC_SITE_URL), proxy headers second."""
     if settings.PUBLIC_SITE_URL:
         return settings.PUBLIC_SITE_URL.rstrip("/")
+    forwarded_host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+    if forwarded_host:
+        scheme = request.headers.get("x-forwarded-proto", "https").split(",")[0].strip()
+        return f"{scheme}://{forwarded_host.split(',')[0].strip()}"
     return str(request.base_url).rstrip("/")
 
 
