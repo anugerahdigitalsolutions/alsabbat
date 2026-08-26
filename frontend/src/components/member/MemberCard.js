@@ -2,6 +2,7 @@ import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useClub } from '../../context/ClubContext';
 import { resolveMediaUrl } from '../public/gallery/mediaUtils';
+import { useSiteText } from '../../lib/siteContent';
 
 const formatJoined = (value) => {
   if (!value) return '—';
@@ -24,8 +25,14 @@ const initials = (name) =>
  * The one and only member card renderer (account page, member page, admin preview).
  * The QR only ever encodes the public verification URL — never tokens or credentials.
  */
-export const MemberCard = React.forwardRef(({ card, testId = 'member-card' }, ref) => {
+export const MemberCard = React.forwardRef(({ card, design, testId = 'member-card' }, ref) => {
   const { clubName, shortName, club } = useClub();
+  const t = useSiteText({ club: shortName || 'ALSABBAT' });
+  const background = resolveMediaUrl(
+    design?.background_url !== undefined ? design.background_url : t('member.card.background_url')
+  );
+  const cardLabel = t('member.card.label') || 'Kartu Member Digital';
+  const tagline = t('member.card.tagline') || 'Satu Klub. Satu Tim.';
   const active = card?.status === 'ACTIVE';
   const verifyUrl = card?.member_code
     ? `${window.location.origin}/member/verifikasi/${card.member_code}`
@@ -37,14 +44,37 @@ export const MemberCard = React.forwardRef(({ card, testId = 'member-card' }, re
       ref={ref}
       className="relative w-full max-w-[440px] overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-7"
       style={{ backgroundColor: 'var(--club-secondary)', boxShadow: '0 24px 60px -28px rgba(1,40,145,0.65)' }}
+      data-has-background={background ? 'true' : 'false'}
       data-testid={testId}
     >
-      <span className="als-pitch-lines absolute inset-0 opacity-60" aria-hidden="true" />
-      <span
-        className="absolute inset-0"
-        style={{ background: 'radial-gradient(420px circle at 100% 0%, rgba(252,207,43,0.28), transparent 62%)' }}
-        aria-hidden="true"
-      />
+      {background ? (
+        <>
+          <img
+            src={background}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover"
+            data-testid={`${testId}-background`}
+          />
+          <span
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(115deg, rgba(1,40,145,0.90) 0%, rgba(1,40,145,0.62) 46%, rgba(0,0,0,0.68) 100%)',
+            }}
+            aria-hidden="true"
+          />
+        </>
+      ) : (
+        <>
+          <span className="als-pitch-lines absolute inset-0 opacity-60" aria-hidden="true" />
+          <span
+            className="absolute inset-0"
+            style={{ background: 'radial-gradient(420px circle at 100% 0%, rgba(252,207,43,0.28), transparent 62%)' }}
+            aria-hidden="true"
+          />
+        </>
+      )}
 
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
@@ -67,8 +97,8 @@ export const MemberCard = React.forwardRef(({ card, testId = 'member-card' }, re
               >
                 Baraya {shortName || 'ALSABBAT'}
               </span>
-              <span className="block truncate text-[11px]" style={{ color: 'rgba(254,254,254,0.72)' }}>
-                Kartu Member Digital
+              <span className="block truncate text-[11px]" style={{ color: 'rgba(254,254,254,0.82)' }}>
+                {cardLabel}
               </span>
             </span>
           </div>
@@ -119,8 +149,8 @@ export const MemberCard = React.forwardRef(({ card, testId = 'member-card' }, re
               >
                 {card?.member_number || '—'}
               </span>
-              <span className="mt-1 block text-[11px]" style={{ color: 'rgba(254,254,254,0.7)' }}>
-                Anggota sejak {formatJoined(card?.joined_at)}
+              <span className="mt-1 block text-[11px]" style={{ color: 'rgba(254,254,254,0.82)' }}>
+                Member sejak {formatJoined(card?.joined_at)}
               </span>
             </span>
           </div>
@@ -144,7 +174,7 @@ export const MemberCard = React.forwardRef(({ card, testId = 'member-card' }, re
           style={{ borderColor: 'rgba(254,254,254,0.16)', color: 'rgba(254,254,254,0.66)' }}
         >
           <span className="truncate">{clubName || 'ALSABBAT Football Club'}</span>
-          <span>Satu Klub. Satu Tim.</span>
+          <span className="shrink-0">{tagline}</span>
         </div>
       </div>
     </div>

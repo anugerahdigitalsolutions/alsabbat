@@ -91,6 +91,11 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'store.header.label', group: 'Halaman Lain', label: 'Merchandise — Label', value: 'Toko' },
   { key: 'store.header.title', group: 'Halaman Lain', label: 'Merchandise — Judul', value: 'Pakai Lambang Klub' },
   { key: 'store.header.description', group: 'Halaman Lain', label: 'Merchandise — Deskripsi', value: 'Produk resmi {club} Football Club.', multiline: true },
+
+  // Member card design (background dikelola lewat Admin → Baraya → Desain Kartu Member)
+  { key: 'member.card.background_url', group: 'Kartu Member', label: 'Latar Kartu (URL gambar)', value: '', multiline: true },
+  { key: 'member.card.label', group: 'Kartu Member', label: 'Kartu — Label', value: 'Kartu Member Digital' },
+  { key: 'member.card.tagline', group: 'Kartu Member', label: 'Kartu — Tagline', value: 'Satu Klub. Satu Tim.' },
 ];
 
 export const SITE_CONTENT_DEFAULTS = Object.fromEntries(

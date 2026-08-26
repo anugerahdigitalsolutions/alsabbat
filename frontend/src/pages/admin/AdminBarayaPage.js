@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { MemberCard } from '../../components/member/MemberCard';
+import { MemberCardDesign } from '../../components/admin/MemberCardDesign';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -28,6 +29,7 @@ export default function AdminBarayaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [previewCard, setPreviewCard] = useState(null);
+  const [stats, setStats] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +51,13 @@ export default function AdminBarayaPage() {
     const timer = setTimeout(load, 300);
     return () => clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    api
+      .get('/baraya/admin/stats')
+      .then(({ data }) => setStats(data))
+      .catch(() => setStats(null));
+  }, []);
 
   const toggleStatus = async (customer) => {
     const next = customer.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
@@ -90,6 +99,24 @@ export default function AdminBarayaPage() {
           />
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="admin-baraya-stats">
+        {[
+          { id: 'total', label: 'Total Baraya', value: stats?.total },
+          { id: 'active', label: 'Aktif', value: stats?.active },
+          { id: 'inactive', label: 'Nonaktif', value: stats?.inactive },
+          { id: 'new', label: 'Baru Bulan Ini', value: stats?.new_this_month },
+        ].map((stat) => (
+          <div key={stat.id} className="als-card p-5" data-testid={`admin-baraya-stat-${stat.id}`}>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+              {stat.label}
+            </p>
+            <p className="font-display mt-2 text-2xl font-extrabold tabular-nums">{stat.value ?? 0}</p>
+          </div>
+        ))}
+      </div>
+
+      <MemberCardDesign />
 
       {loading ? (
         <LoadingState variant="table" rows={4} testId="admin-baraya-loading" />

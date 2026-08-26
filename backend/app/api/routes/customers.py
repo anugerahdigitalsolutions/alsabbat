@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -343,6 +343,19 @@ async def admin_member_card(customer_id: str, user: AuthContext = customer_read)
         raise NotFoundError("Akun Baraya tidak ditemukan.")
     doc = await ensure_member_identity(doc)
     return member_card_payload(doc)
+
+
+@router.get("/admin/stats", summary="Admin: ringkasan Baraya (data nyata)")
+async def admin_member_stats(user: AuthContext = customer_read) -> Dict[str, Any]:
+    coll = customers.coll
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    return {
+        "total": await coll.count_documents({}),
+        "active": await coll.count_documents({"status": "ACTIVE"}),
+        "inactive": await coll.count_documents({"status": "INACTIVE"}),
+        "new_this_month": await coll.count_documents({"created_at": {"$gte": month_start}}),
+    }
 
 
 @router.get("/admin/list", summary="Admin: daftar akun Baraya")

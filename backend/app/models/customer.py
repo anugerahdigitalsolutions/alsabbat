@@ -66,9 +66,13 @@ class CustomerProfileUpdate(AppBaseModel):
     def _photo(cls, value):
         if value in (None, ""):
             return ""
-        if not str(value).startswith(("https://", "/api/media/")):
+        url = str(value)
+        if not url.startswith(("https://", "/api/media/")):
             raise ValueError("Tautan foto harus https:// atau berkas Media ALSABBAT.")
-        return value
+        path = url.split("?")[0].split("#")[0].lower()
+        if path.endswith((".svg", ".svgz", ".html", ".htm", ".xml", ".js")):
+            raise ValueError("Format foto tidak diizinkan. Gunakan JPG, PNG, atau WEBP.")
+        return url
 
 
 class CustomerPasswordChange(AppBaseModel):

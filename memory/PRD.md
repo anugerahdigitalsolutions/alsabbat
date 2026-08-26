@@ -406,3 +406,26 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 ### Catatan & batasan
 - Foto profil = tautan https (belum ada upload object storage untuk customer).
 - Tidak ada ticketing, poin loyalitas, diskon member, biaya membership, atau auto-post sosial (di luar scope).
+
+## FASE 18 — Baraya Member Experience & Content Control (26 Jun 2026) · STOP GATE 18
+### Discovery
+Fase 17 sudah menyediakan member_number/member_code/photo_url/joined_at, renderer tunggal `MemberCard.js`, `site_content` + Media Library. Yang belum: latar kartu belum bisa diatur Admin, belum ada statistik Baraya, validasi foto masih longgar (SVG/HTML lolos).
+### Yang dibuat/diubah
+- BARU: `frontend/src/components/admin/MemberCardDesign.js`, `scripts/phase18_verify.py`.
+- DIUBAH: `components/member/MemberCard.js` (layer latar + overlay + token teks), `lib/siteContent.js` (+grup "Kartu Member": `member.card.background_url`, `member.card.label`, `member.card.tagline`), `pages/admin/AdminBarayaPage.js` (statistik + section Desain Kartu Member), `backend/app/models/customer.py` (validasi foto), `backend/app/api/routes/customers.py` (`GET /api/baraya/admin/stats`).
+### Background CMS
+- Latar kartu diatur di **Admin → Baraya ALSABBAT → Desain Kartu Member**: pilih dari **Media Library** (atau tempel URL), **Simpan Latar**, **Reset ke Default**. Nilai disimpan di `site_content` key `member.card.background_url` (hanya URL — TIDAK ada binary di MongoDB). Kosong → latar default ALSABBAT (pitch lines + gradien emas).
+- Overlay navy→hitam otomatis (rgba(1,40,145,0.90) → rgba(0,0,0,0.68)) agar nama/nomor/status/QR tetap kontras di latar terang maupun gelap; QR tetap di tile putih.
+### Pratinjau & renderer
+- `MemberCard.js` tetap **satu-satunya renderer** (dipakai /akun, /akun/kartu, dialog kartu Admin, dan pratinjau desain). Pratinjau memakai data contoh **hanya di UI**, tidak pernah masuk database.
+### Statistik & foto
+- `GET /api/baraya/admin/stats` (RBAC `user:read`): total, aktif, nonaktif, baru bulan ini — angka nyata dari `customers`, 0 bila kosong.
+- Foto profil: tetap tautan **https://** atau `/api/media/…`; kini menolak `javascript:`, `http://`, dan ekstensi `.svg/.svgz/.html/.htm/.xml/.js`. **Upload dari perangkat untuk customer BELUM diaktifkan** (endpoint upload media memerlukan permission `media:write` admin; upload customer butuh object storage + konfigurasi deployment).
+### Verifikasi (tanpa Testing Agent)
+- `scripts/phase18_verify.py`: **30/30 PASS** di sandbox `alsabbat_phase18_sandbox` (**DI-DROP**) — M18-01…M18-09, validasi foto, statistik + RBAC, isolasi auth, 11 regresi endpoint, tanpa binary di DB.
+- E2E UI produksi: upload gambar uji → pilih di Admin → pratinjau bergambar → Simpan → `/akun/kartu` & `/akun` memakai latar sama (`data-has-background=true`) → overflow 0 px di 1920/1024/390 → **reset ke default, media uji + berkas + akun uji + counter dihapus** (produksi kembali bersih).
+- `yarn build` Compiled successfully tanpa warning (273.91 kB gz), backend import OK, `/api/health` 200, `site-content` kembali kosong.
+### Limitasi
+- Upload foto customer & upload latar langsung dari perangkat untuk non-admin belum ada (perlu object storage).
+- "Simpan Kartu" (PNG) mengandalkan browser; latar dari domain eksternal bisa gagal dirender karena CORS — gunakan Media Library (same-origin) untuk hasil pasti.
+- Tidak ada ticketing / poin / diskon member (di luar scope).
