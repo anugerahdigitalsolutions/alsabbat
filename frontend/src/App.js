@@ -45,6 +45,7 @@ import AdminMatchesPage from './pages/admin/AdminMatchesPage';
 import AdminMatchLineupsPage from './pages/admin/AdminMatchLineupsPage';
 import AdminMatchEventsPage from './pages/admin/AdminMatchEventsPage';
 import AdminContentPage from './pages/admin/AdminContentPage';
+import AdminHomeContentPage from './pages/admin/AdminHomeContentPage';
 import AdminGalleryPage from './pages/admin/AdminGalleryPage';
 import AdminAlbumMediaPage from './pages/admin/AdminAlbumMediaPage';
 import AdminMediaPage from './pages/admin/AdminMediaPage';
@@ -143,6 +144,7 @@ function App() {
               <Route path="match-lineups" element={<AdminMatchLineupsPage />} />
               <Route path="match-events" element={<AdminMatchEventsPage />} />
               <Route path="content" element={<AdminContentPage />} />
+              <Route path="home-content" element={<AdminHomeContentPage />} />
               <Route path="gallery" element={<AdminGalleryPage />} />
               <Route path="gallery/:albumId" element={<AdminAlbumMediaPage />} />
               <Route path="media" element={<AdminMediaPage />} />

@@ -335,3 +335,28 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 - yarn build PASS, backend import PASS, health 200, 12 rute publik/admin 200. DB produksi: customers/sessions/resets/orders/products = 0, users = 1 (tidak berubah).
 ### Limitasi
 - MAIL_PROVIDER default LOG -> di produksi wajib set MAIL_PROVIDER=SMTP + SMTP_* + MAIL_FROM agar email benar-benar terkirim.
+
+## FASE 15 — Content Management Completion (Kategori-C) — 26 Jun 2026 · STOP GATE 15
+### Backend (additive, Fase 1–14 tidak diubah)
+- Model baru `app/models/site.py`: `BannerBase/BannerUpdate/Banner`, `SiteContentBase/SiteContentUpdate/SiteContent`, `SiteContentBulkRequest`.
+- Koleksi baru: `banners` (index id unik, status+display_order), `site_content` (index key unik, group).
+- Route baru `app/api/routes/site.py`:
+  - `GET /api/banners/public` — hanya status ACTIVE + dalam jadwal (`starts_at`/`ends_at`, zona WIB), urut `display_order`, plus `image_resolved` (Media Library id → url, fallback `image_url`).
+  - `GET /api/banners/preview` — permission `content:write`, termasuk draft (untuk Admin Preview).
+  - CRUD `/api/banners` (write permission `content:write`, tanpa perubahan RBAC).
+  - `GET /api/site-content/public` — map `{key: value}` 1 request.
+  - `PUT /api/site-content/bulk` — upsert idempotent; value kosong → row dihapus → frontend memakai default.
+  - CRUD `/api/site-content` (key unik, pola `^[a-z0-9._-]+$`).
+### Frontend
+- `lib/siteContent.js`: 36 key editorial homepage (Hero fallback, Pilar Brand, Judul Section, CTA Penutup) + hook `useSiteText` (DB → default kode, token `{club}`). Label sistem/UI (loading, error, navigasi, aria) TIDAK di-CMS-kan.
+- `lib/banners.js`: `bannerToSlide` — mapper tunggal dipakai homepage DAN Admin Preview (renderer identik `CinematicHero`).
+- `HomePage.js`: banner CMS jadi sumber hero; bila kosong → fallback ALSABBAT existing. Semua label section/statistik note memakai `t()`.
+- `PillarStrip.js`, `JourneyCta.js`: teks dari `t()` dengan default = teks Indonesia sebelumnya (layout Fase 12C tidak berubah).
+- Admin: `/admin/home-content` = menu "Konten Homepage" (Media & Konten) dengan 2 tab — **Banner Hero** (`components/admin/BannerManager.js`: ResourceManager + tombol Preview Hero) dan **Konten Situs** (`components/admin/SiteContentForm.js`: form per grup, placeholder = teks default, tombol "Default" per field, simpan sekali via bulk).
+### Verifikasi (tanpa Testing Agent)
+- `scripts/phase15_verify.py`: **38/38 PASS** pada DB sandbox `alsabbat_phase15_sandbox` (auth, publish/draft, jadwal tampil, resolusi gambar Media Library & URL, preview permission, urutan, hapus, bulk upsert idempotent, hapus key → default, validasi key, konflik duplikat, 6 regresi endpoint publik) → sandbox **DI-DROP**.
+- E2E UI: login admin → buat banner ACTIVE → Preview Hero → edit `home.cta.title` → homepage menampilkan banner + teks baru (Admin → API → DB → Homepage). Data uji **dihapus kembali**; produksi: banners 0, site_content 0, users 1, teams 1, clubs 1, sisanya 0.
+- `yarn build` sukses tanpa warning (255.75 kB gz); overflow 0 px di 1920 & 390; brand #FCCF2B/#012891/#000000/#FEFEFE, Poppins, "Baraya ALSABBAT", Staff Access hanya di footer, Login Baraya tetap kanan atas.
+### Limitasi
+- Video background hero belum didukung (sesuai keputusan user).
+- CTA banner memakai path internal (mis. `/matches`); tautan eksternal penuh belum di-render sebagai anchor.

@@ -2,9 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { ClubCrestMark } from '../../shared/ClubCrestMark';
+import { defaultSiteText } from '../../../lib/siteContent';
 
-/** Full-width closing CTA band before the footer. */
-export const JourneyCta = ({ clubName = 'ALSABBAT' }) => (
+/** Full-width closing CTA band before the footer — copy is admin-editable. */
+export const JourneyCta = ({ t = defaultSiteText }) => (
   <section className="pb-4" data-testid="home-cta">
     <div
       className="relative overflow-hidden rounded-[var(--radius-xl)] p-8 sm:p-12"
@@ -22,28 +23,28 @@ export const JourneyCta = ({ clubName = 'ALSABBAT' }) => (
             <ClubCrestMark size={56} onDark testId="home-cta-crest" />
           </span>
           <div>
-            <p className="als-eyebrow">Ikuti Perjalanan Kami</p>
+            <p className="als-eyebrow">{t('home.cta.eyebrow')}</p>
             <h2
               className="font-display mt-3 text-2xl font-extrabold leading-tight sm:text-4xl"
               style={{ color: 'var(--club-light)' }}
             >
-              Jadi bagian dari Baraya {clubName}
+              {t('home.cta.title')}
             </h2>
             <p className="mt-3 max-w-xl text-sm sm:text-base" style={{ color: 'rgba(254,254,254,0.82)' }}>
-              Ikuti setiap matchday, cerita skuad, dan momen di lapangan bersama kami.
+              {t('home.cta.text')}
             </p>
           </div>
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-3 lg:flex-nowrap">
           <Link to="/matches" className="als-btn-gold als-focus" data-testid="home-cta-matches">
-            Jadwal Pertandingan <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            {t('home.cta.btn_matches')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <Link to="/teams" className="als-btn-ghost als-focus" data-testid="home-cta-squad">
-            Lihat Skuad
+            {t('home.cta.btn_squad')}
           </Link>
           <Link to="/gallery" className="als-btn-ghost als-focus" data-testid="home-cta-gallery">
-            Galeri
+            {t('home.cta.btn_gallery')}
           </Link>
         </div>
       </div>

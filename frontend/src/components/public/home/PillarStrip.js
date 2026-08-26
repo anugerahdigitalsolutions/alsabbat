@@ -1,17 +1,18 @@
 import React from 'react';
 import { Award, HeartHandshake, Shield, Users } from 'lucide-react';
+import { defaultSiteText } from '../../../lib/siteContent';
 
 const PILLARS = [
-  { id: 'club', Icon: Shield, title: 'Satu Klub', text: 'ALSABBAT adalah satu klub dengan satu misi.' },
-  { id: 'team', Icon: Users, title: 'Satu Tim', text: 'Satu tim. Satu skuad. Satu detak jantung.' },
-  { id: 'dream', Icon: HeartHandshake, title: 'Satu Mimpi', text: 'Bermimpi bersama. Meraih bersama.' },
-  { id: 'glory', Icon: Award, title: 'Satu Kejayaan', text: 'Untuk lambang. Untuk Baraya. Untuk ALSABBAT.' },
+  { id: 'club', Icon: Shield },
+  { id: 'team', Icon: Users },
+  { id: 'dream', Icon: HeartHandshake },
+  { id: 'glory', Icon: Award },
 ];
 
-/** Brand pillars — identity copy (never presented as statistics). */
-export const PillarStrip = () => (
+/** Brand pillars — admin-editable copy (never presented as statistics). */
+export const PillarStrip = ({ t = defaultSiteText }) => (
   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="home-pillars">
-    {PILLARS.map(({ id, Icon, title, text }, index) => (
+    {PILLARS.map(({ id, Icon }, index) => (
       <article
         key={id}
         className="als-card als-lift flex items-start gap-4 p-5"
@@ -23,10 +24,10 @@ export const PillarStrip = () => (
         </span>
         <span className="min-w-0">
           <span className="font-display block text-sm font-extrabold" style={{ color: 'var(--club-secondary)' }}>
-            {title}
+            {t(`home.pillar.${id}.title`)}
           </span>
           <span className="mt-1 block text-xs leading-relaxed" style={{ color: 'var(--muted-fg)' }}>
-            {text}
+            {t(`home.pillar.${id}.text`)}
           </span>
         </span>
       </article>

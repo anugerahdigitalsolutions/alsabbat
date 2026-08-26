@@ -18,6 +18,8 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useClub } from '../../context/ClubContext';
+import { useSiteText } from '../../lib/siteContent';
+import { bannerToSlide } from '../../lib/banners';
 
 const UPCOMING = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 const SOCIAL_ICONS = { instagram: Instagram, youtube: Youtube, facebook: Facebook, twitter: Twitter, tiktok: Music2 };
@@ -56,8 +58,10 @@ export default function HomePage() {
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 8 });
   const sponsors = useResourceList('/sponsors', { status: 'ACTIVE', limit: 10 });
   const products = useResourceList('/merchandise/products', { limit: 4 });
+  const banners = useResourceList('/banners/public', { limit: 20 });
 
   const badge = shortName || 'ALSABBAT';
+  const t = useSiteText({ club: badge });
   const upcoming = matches.items.filter((m) => UPCOMING.includes(m.status));
   const finished = matches.items.filter((m) => m.status === 'FINISHED');
   const nextMatch = upcoming[upcoming.length - 1] || null;
@@ -91,6 +95,8 @@ export default function HomePage() {
   );
 
   const heroSlides = useMemo(() => {
+    if (banners.items.length) return banners.items.map(bannerToSlide);
+
     const galleryCover = resolveMediaUrl(albums.items[0]?.cover_url_resolved);
     const newsCover = resolveMediaUrl(news.items[0]?.thumbnail);
     const playerPhoto = players.items.find((p) => p.photo)?.photo;
@@ -98,16 +104,16 @@ export default function HomePage() {
     const slides = [
       {
         id: 'brand',
-        eyebrow: `${badge} Football Club`,
+        eyebrow: t('home.hero.eyebrow'),
         headlineLines: [
-          { text: 'SATU KLUB.' },
-          { text: 'SATU SEMANGAT.' },
-          { text: `SATU ${badge.toUpperCase()}.`, gold: true },
+          { text: t('home.hero.line1') },
+          { text: t('home.hero.line2') },
+          { text: t('home.hero.line3'), gold: true },
         ],
-        meta: 'Bersama berjuang. Bersama menang.',
-        ctaLabel: nextMatch ? 'Pertandingan Berikutnya' : 'Pertandingan',
+        meta: t('home.hero.meta'),
+        ctaLabel: nextMatch ? t('home.hero.cta_matches') : 'Pertandingan',
         ctaTo: nextMatch ? `/matches/${nextMatch.id}` : '/matches',
-        secondaryLabel: 'Tentang Kami',
+        secondaryLabel: t('home.hero.cta_secondary'),
         secondaryTo: '/club',
         image: brandImage,
         alt: `Suasana pertandingan ${clubName}`,
@@ -162,7 +168,7 @@ export default function HomePage() {
     }
 
     return slides;
-  }, [albums.items, news.items, players.items, nextMatch, lastMatch, badge, clubName]);
+  }, [albums.items, news.items, players.items, nextMatch, lastMatch, badge, clubName, banners.items, t]);
 
   const storeImage = resolveMediaUrl(products.items[0]?.cover_url) || resolveMediaUrl(albums.items[1]?.cover_url_resolved);
 
@@ -178,14 +184,14 @@ export default function HomePage() {
       </div>
 
       <Band testId="home-section-pillars">
-        <PillarStrip />
+        <PillarStrip t={t} />
       </Band>
 
       {/* Matchday + Newsroom */}
       <Band className="pt-0" testId="home-section-matchday-news">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,330px)_minmax(0,1fr)]">
           <div>
-            <RowHeader label={nextMatch ? 'Pertandingan Berikutnya' : 'Hasil Terakhir'} testId="home-label-match" />
+            <RowHeader label={nextMatch ? t('home.label.match_next') : t('home.label.match_last')} testId="home-label-match" />
             {matches.loading ? (
               <LoadingState rows={1} testId="home-match-loading" />
             ) : featuredMatch ? (
@@ -206,7 +212,7 @@ export default function HomePage() {
           </div>
 
           <div>
-            <RowHeader label="Berita Terbaru" to="/news" actionLabel="Semua Berita" testId="home-label-news" />
+            <RowHeader label={t('home.label.news')} to="/news" actionLabel={t('home.label.news_action')} testId="home-label-news" />
             {news.loading ? <LoadingState rows={3} testId="home-news-loading" /> : <NewsShowcase posts={news.items} />}
           </div>
         </div>
@@ -216,7 +222,7 @@ export default function HomePage() {
       <Band className="pt-0" testId="home-section-spotlight">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]">
           <div>
-            <RowHeader label="Sorotan Pemain" to="/teams" actionLabel="Lihat Skuad" testId="home-label-spotlight" />
+            <RowHeader label={t('home.label.spotlight')} to="/teams" actionLabel={t('home.label.spotlight_action')} testId="home-label-spotlight" />
             {players.loading ? (
               <LoadingState rows={1} testId="home-spotlight-loading" />
             ) : spotlightPlayer ? (
@@ -232,17 +238,17 @@ export default function HomePage() {
           </div>
 
           <div>
-            <RowHeader label="Statistik Tim" testId="home-label-stats" />
+            <RowHeader label={t('home.label.stats')} testId="home-label-stats" />
             <TeamStatsBlock stats={teamStats} />
             {!teamStats ? (
               <p className="mt-3 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="home-team-stats-note">
-                Statistik dihitung otomatis dari hasil pertandingan yang sudah selesai.
+                {t('home.label.stats_note')}
               </p>
             ) : null}
           </div>
 
           <div>
-            <RowHeader label="Toko Resmi" to="/merchandise" actionLabel="Toko" testId="home-label-store" />
+            <RowHeader label={t('home.label.store')} to="/merchandise" actionLabel={t('home.label.store_action')} testId="home-label-store" />
             {products.total ? (
               <StorePromoCard image={storeImage} productCount={products.total} />
             ) : (
@@ -259,20 +265,20 @@ export default function HomePage() {
 
       {/* Gallery */}
       <Band className="pt-0" testId="home-section-gallery">
-        <RowHeader label="Galeri" to="/gallery" actionLabel="Semua Galeri" testId="home-label-gallery" />
+        <RowHeader label={t('home.label.gallery')} to="/gallery" actionLabel={t('home.label.gallery_action')} testId="home-label-gallery" />
         {albums.loading ? <LoadingState rows={2} testId="home-gallery-loading" /> : <GalleryStrip albums={albums.items} />}
       </Band>
 
       {/* Sponsors */}
       {sponsors.items.length ? (
         <Band className="pt-0" testId="home-section-sponsors">
-          <RowHeader label="Sponsor Kami" to="/sponsors" actionLabel="Semua sponsor" testId="home-label-sponsors" />
+          <RowHeader label={t('home.label.sponsors')} to="/sponsors" actionLabel={t('home.label.sponsors_action')} testId="home-label-sponsors" />
           <SponsorsStrip sponsors={sponsors.items} />
         </Band>
       ) : null}
 
       <div className="als-frame-inner pb-4">
-        <JourneyCta clubName={badge} />
+        <JourneyCta t={t} />
       </div>
     </div>
   );
