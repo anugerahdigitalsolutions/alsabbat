@@ -19,6 +19,10 @@ export const bannerToSlide = (banner) => {
     secondaryTo: banner.cta_secondary_url || null,
     image,
     imagePosition: banner.image_position || 'center',
+    overlayOpacity:
+      banner.overlay_opacity === null || banner.overlay_opacity === undefined
+        ? undefined
+        : Number(banner.overlay_opacity),
     alt: banner.image_alt || lines.join(' ') || banner.eyebrow || '',
   };
 };

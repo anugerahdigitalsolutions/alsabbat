@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { Loader2, Pencil, Plus, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/button';
 import { MediaPicker } from '../shared/MediaPicker';
 import { LinkField } from './LinkField';
+import { Slider } from '../ui/slider';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
@@ -202,6 +203,42 @@ const FieldControl = ({ field, value, onChange, optionMap, testPrefix }) => {
     );
   }
 
+  if (field.type === 'slider') {
+    const min = field.min ?? 0;
+    const max = field.max ?? 100;
+    const step = field.step ?? 1;
+    const current = value === null || value === undefined || value === '' ? field.defaultValue ?? min : Number(value);
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <Slider
+            value={[current]}
+            min={min}
+            max={max}
+            step={step}
+            onValueChange={(v) => onChange(v[0])}
+            className="flex-1"
+            data-testid={`${testId}-slider`}
+          />
+          <span className="w-14 text-right text-sm font-semibold tabular-nums" data-testid={`${testId}-value`}>
+            {Math.round(current)}
+            {field.suffix || ''}
+          </span>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange(field.defaultValue ?? min)}
+          data-testid={`${testId}-reset`}
+        >
+          <RotateCcw className="mr-2 h-3.5 w-3.5" />
+          Gunakan Default
+        </Button>
+      </div>
+    );
+  }
+
   if (field.type === 'link') {
     return <LinkField value={value ?? ''} onChange={onChange} testId={testId} />;
   }
@@ -269,6 +306,7 @@ export const ResourceManager = ({
   allowDelete = true,
   extraActions = null,
   rowActions = null,
+  formPreview = null,
   onChanged,
 }) => {
   const { hasPermission } = useAuth();
@@ -608,6 +646,15 @@ export const ResourceManager = ({
               </div>
             ))}
           </div>
+
+          {formPreview ? (
+            <div className="mt-2" data-testid={`${testPrefix}-form-preview`}>
+              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+                Preview Hero (real-time)
+              </Label>
+              {formPreview(values)}
+            </div>
+          ) : null}
 
           <DialogFooter className="mt-2 gap-2">
             <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid={`${testPrefix}-form-cancel`}>

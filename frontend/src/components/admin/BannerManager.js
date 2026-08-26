@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { bannerToSlide } from '../../lib/banners';
 import { ResourceManager } from './ResourceManager';
-import { CinematicHero } from '../public/CinematicHero';
+import { CinematicHero, DEFAULT_OVERLAY_OPACITY } from '../public/CinematicHero';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -132,6 +132,18 @@ export const BannerManager = ({ clubName = 'ALSABBAT' }) => {
             options: IMAGE_POSITION_OPTIONS,
             help: 'Bagian foto yang diprioritaskan saat foto dipotong ke frame banner. Default: Tengah.',
           },
+          {
+            name: 'overlay_opacity',
+            label: 'Ketebalan Overlay',
+            type: 'slider',
+            min: 0,
+            max: 100,
+            step: 1,
+            suffix: '%',
+            defaultValue: DEFAULT_OVERLAY_OPACITY,
+            full: true,
+            help: `0% = tanpa overlay, 100% = paling kuat. Default sistem ${DEFAULT_OVERLAY_OPACITY}%. Perubahan langsung terlihat pada Preview Hero di bawah.`,
+          },
           { name: 'cta_label', label: 'Tombol Utama — Label', type: 'text' },
           { name: 'cta_url', label: 'Tombol Utama — Tautan', type: 'link' },
           { name: 'cta_secondary_label', label: 'Tombol Sekunder — Label', type: 'text' },
@@ -140,6 +152,9 @@ export const BannerManager = ({ clubName = 'ALSABBAT' }) => {
           { name: 'ends_at', label: 'Berhenti Tampil (opsional)', type: 'date' },
           { name: 'status', label: 'Status', type: 'select', options: STATUS_OPTIONS, required: true },
         ]}
+        formPreview={(values) => (
+          <CinematicHero slides={[bannerToSlide({ ...values, id: 'form-preview' })]} clubName={clubName} />
+        )}
       />
       <PreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} clubName={clubName} />
     </>

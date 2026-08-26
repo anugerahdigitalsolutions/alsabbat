@@ -4,6 +4,9 @@ import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play, Shield } from 'luci
 import { usePrefersReducedMotion } from '../../hooks/useScrollReveal';
 import { isExternalLink } from '../../lib/internalLinks';
 
+/** Nilai default ketebalan overlay hero (persen) — dipakai bila banner belum punya overlay_opacity. */
+export const DEFAULT_OVERLAY_OPACITY = 35;
+
 const AUTOPLAY_MS = 6000;
 const SWIPE_THRESHOLD = 48;
 
@@ -83,6 +86,11 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
       <div className="als-hero-frame relative">
         {slides.map((slide, slideIndex) => {
           const isActive = slideIndex === index;
+          const factor =
+            slide.overlayOpacity === undefined || slide.overlayOpacity === null
+              ? 1
+              : Math.max(0, Number(slide.overlayOpacity)) / DEFAULT_OVERLAY_OPACITY;
+          const navy = (base) => Math.min(0.92, Math.round(base * factor * 1000) / 1000);
           return (
             <div
               key={slide.id}
@@ -105,15 +113,19 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
               <div
                 className="absolute inset-0"
                 style={{
-                  background:
-                    'linear-gradient(96deg, rgba(1,40,145,0.44) 0%, rgba(1,40,145,0.34) 22%, rgba(1,40,145,0.21) 46%, rgba(1,40,145,0.13) 70%, rgba(1,40,145,0.08) 100%)',
+                  background: `linear-gradient(96deg, rgba(1,40,145,${navy(0.44)}) 0%, rgba(1,40,145,${navy(
+                    0.34
+                  )}) 22%, rgba(1,40,145,${navy(0.21)}) 46%, rgba(1,40,145,${navy(0.13)}) 70%, rgba(1,40,145,${navy(
+                    0.08
+                  )}) 100%)`,
                 }}
               />
               <div
                 className="absolute inset-0"
                 style={{
-                  background:
-                    'linear-gradient(100deg, rgba(0,0,0,0.34) 0%, rgba(0,0,0,0.18) 28%, rgba(0,0,0,0.05) 52%, rgba(0,0,0,0) 70%)',
+                  background: `linear-gradient(100deg, rgba(0,0,0,${navy(0.34)}) 0%, rgba(0,0,0,${navy(
+                    0.18
+                  )}) 28%, rgba(0,0,0,${navy(0.05)}) 52%, rgba(0,0,0,0) 70%)`,
                 }}
               />
               <div className="als-hero-scrim absolute inset-0" />
