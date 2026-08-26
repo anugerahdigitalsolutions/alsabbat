@@ -566,3 +566,8 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - Layer navy: `rgba(1,40,145,0.30)` di kiri → **0 pada 62% lebar** (kanan tanpa navy sama sekali). Layer gelap netral horizontal: `rgba(0,0,0,0.42)` di kiri → 0 pada 66%. `als-stadium-glow` opacity 30 → **15**.
 - Scrim bawah dipindah ke kelas `.als-hero-scrim` (index.css): desktop `0.34 → 0` (52%), mobile ≤639px sedikit lebih kuat `0.60 → 0` (90%) agar teks tetap terbaca di frame sempit.
 - Foto tidak difilter/diubah (tanpa saturate/brightness/tint) — hanya layer overlay. Frame tetap 640/580/520, `object-fit: cover`, crop & posisi tidak berubah, CTA + 2 dot slider tetap ada, overflow 0 px di 1920/1440/1280/1024/768/390, console bersih, `yarn build` sukses.
+
+### Overlay Banner Hero — level TENGAH (26 Jun 2026, final)
+- Navy: `rgba(1,40,145,0.44)` kiri → `0.34` (22%) → `0.21` (46%) → `0.13` (70%) → `0.08` (kanan) — transisi bertahap, tanpa biru solid.
+- Gelap netral horizontal `0.34 → 0` (70%) + `.als-hero-scrim` (desktop `0.34→0`, mobile `0.60→0`) untuk keterbacaan; glow stadion opacity 20.
+- Verifikasi: frame 640/640/640/640/580/520 @1920/1440/1280/1024/768/390, `object-fit: cover`, crop/posisi tidak berubah, CTA + 2 dot slider aktif, overflow 0 px, console 0 error, `yarn build` sukses. Foto tidak difilter; DB/API/CMS tidak disentuh.

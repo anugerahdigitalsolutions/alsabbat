@@ -106,18 +106,18 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
                 className="absolute inset-0"
                 style={{
                   background:
-                    'linear-gradient(96deg, rgba(1,40,145,0.30) 0%, rgba(1,40,145,0.16) 22%, rgba(1,40,145,0.05) 44%, rgba(1,40,145,0) 62%)',
+                    'linear-gradient(96deg, rgba(1,40,145,0.44) 0%, rgba(1,40,145,0.34) 22%, rgba(1,40,145,0.21) 46%, rgba(1,40,145,0.13) 70%, rgba(1,40,145,0.08) 100%)',
                 }}
               />
               <div
                 className="absolute inset-0"
                 style={{
                   background:
-                    'linear-gradient(100deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.22) 26%, rgba(0,0,0,0.06) 48%, rgba(0,0,0,0) 66%)',
+                    'linear-gradient(100deg, rgba(0,0,0,0.34) 0%, rgba(0,0,0,0.18) 28%, rgba(0,0,0,0.05) 52%, rgba(0,0,0,0) 70%)',
                 }}
               />
               <div className="als-hero-scrim absolute inset-0" />
-              <div className="als-stadium-glow absolute inset-0 opacity-15" />
+              <div className="als-stadium-glow absolute inset-0 opacity-20" />
               <div className="als-pitch-lines absolute inset-0" />
             </div>
           );
