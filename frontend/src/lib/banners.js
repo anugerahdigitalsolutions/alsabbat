@@ -18,6 +18,7 @@ export const bannerToSlide = (banner) => {
     secondaryLabel: banner.cta_secondary_label || null,
     secondaryTo: banner.cta_secondary_url || null,
     image,
+    imagePosition: banner.image_position || 'center',
     alt: banner.image_alt || lines.join(' ') || banner.eyebrow || '',
   };
 };

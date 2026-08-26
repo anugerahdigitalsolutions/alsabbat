@@ -23,6 +23,7 @@ class BannerBase(AppBaseModel):
     cta_url: Optional[str] = Field(default=None, max_length=400)
     cta_secondary_label: Optional[str] = Field(default=None, max_length=80)
     cta_secondary_url: Optional[str] = Field(default=None, max_length=400)
+    image_position: Optional[str] = Field(default=None, max_length=20)
     display_order: int = Field(default=0, ge=0, le=9999)
     starts_at: Optional[str] = Field(default=None, max_length=40)
     ends_at: Optional[str] = Field(default=None, max_length=40)

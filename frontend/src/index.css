@@ -400,20 +400,29 @@
     border-radius: var(--radius-lg);
   }
 
+  /* Fixed banner frame (Fase 23): tinggi/lebar hero ditentukan frame, BUKAN ukuran gambar. */
   .als-hero-frame {
-    min-height: 520px;
+    height: 520px;
+    overflow: hidden;
+    container-type: size;
   }
 
   @media (min-width: 640px) {
     .als-hero-frame {
-      min-height: 580px;
+      height: 580px;
     }
   }
 
   @media (min-width: 1024px) {
     .als-hero-frame {
-      min-height: 640px;
+      height: 640px;
     }
+  }
+
+  .als-hero-content {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
   }
 
   .als-eyebrow {
@@ -425,6 +434,11 @@
     @apply font-display font-extrabold tracking-tight;
     font-size: clamp(2.25rem, 6.2vw, 4.6rem);
     line-height: 1.02;
+  }
+
+  /* Headline hero: mengecil otomatis mengikuti tinggi frame agar tidak pernah melebihi banner. */
+  .als-hero-headline {
+    font-size: clamp(1.6rem, min(6.2vw, 8.4cqh), 4.6rem);
   }
 
   .als-tile {

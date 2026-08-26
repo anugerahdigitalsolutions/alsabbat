@@ -15,6 +15,14 @@ const STATUS_OPTIONS = [
   { value: 'ARCHIVED', label: 'ARCHIVED' },
 ];
 
+const IMAGE_POSITION_OPTIONS = [
+  { value: 'center', label: 'Tengah (default)' },
+  { value: 'top', label: 'Atas' },
+  { value: 'bottom', label: 'Bawah' },
+  { value: 'left', label: 'Kiri' },
+  { value: 'right', label: 'Kanan' },
+];
+
 const PreviewDialog = ({ open, onOpenChange, clubName }) => {
   const [loading, setLoading] = useState(false);
   const [banners, setBanners] = useState([]);
@@ -115,10 +123,17 @@ export const BannerManager = ({ clubName = 'ALSABBAT' }) => {
             help: 'Upload dari perangkat atau pilih dari Media Library. Gunakan gambar landscape minimal 1920px agar tajam di desktop.',
           },
           { name: 'image_alt', label: 'Alt Text Gambar', type: 'text', full: true },
+          {
+            name: 'image_position',
+            label: 'Posisi Gambar',
+            type: 'select',
+            options: IMAGE_POSITION_OPTIONS,
+            help: 'Bagian foto yang diprioritaskan saat foto dipotong ke frame banner. Default: Tengah.',
+          },
           { name: 'cta_label', label: 'Tombol Utama — Label', type: 'text' },
-          { name: 'cta_url', label: 'Tombol Utama — Tautan', type: 'text', placeholder: '/matches' },
+          { name: 'cta_url', label: 'Tombol Utama — Tautan', type: 'link' },
           { name: 'cta_secondary_label', label: 'Tombol Sekunder — Label', type: 'text' },
-          { name: 'cta_secondary_url', label: 'Tombol Sekunder — Tautan', type: 'text', placeholder: '/club' },
+          { name: 'cta_secondary_url', label: 'Tombol Sekunder — Tautan', type: 'link' },
           { name: 'starts_at', label: 'Mulai Tampil (opsional)', type: 'date' },
           { name: 'ends_at', label: 'Berhenti Tampil (opsional)', type: 'date' },
           { name: 'status', label: 'Status', type: 'select', options: STATUS_OPTIONS, required: true },

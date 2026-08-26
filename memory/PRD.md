@@ -519,3 +519,25 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - Active underline gold tetap tanpa layout shift; motion Fase 21 dipertahankan (tidak ada animasi baru).
 - Console: 0 error / 0 warning setelah perbaikan a11y; `yarn build` Compiled successfully tanpa warning.
 - **Database tidak disentuh** (hanya read-only check: `site_content` 0 dokumen → default kode yang dipakai). Tidak ada data dummy, tidak ada deployment.
+
+## FASE 23 — Admin Form UX (Dropdown Tautan) & Fixed Banner Frame (26 Jun 2026) · STOP GATE 23
+### Dropdown tautan internal
+- Baru: `lib/internalLinks.js` (opsi halaman + `isExternalLink`) dan `components/admin/LinkField.js`.
+- `ResourceManager` mendapat `type: 'link'` → render `LinkField`: **Jenis Tautan** (Halaman Website / Tautan Eksternal); internal = dropdown nama halaman, eksternal = input `https://...`.
+- Dipakai di **Banner Hero**: `cta_url` (Tombol Utama — Tautan) & `cta_secondary_url` (Tombol Sekunder — Tautan). Audit: tidak ada field admin lain yang meminta route internal manual (satu-satunya `type:'text'` ber-URL yang tersisa adalah `seo.canonical_url`, memang teks bebas).
+- Mapping label→route EXISTING: Beranda `/`, Klub `/club`, **Pemain `/teams`**, Pertandingan `/matches`, Berita `/news`, Galeri `/gallery`, Merchandise `/merchandise`, Kontak `/contact`, Login `/login`, Lacak Pesanan `/order`. Tidak ada route/API baru.
+- `CinematicHero` kini merender CTA eksternal sebagai `<a target="_blank" rel="noreferrer">`, internal tetap `<Link>`.
+### Fixed banner frame
+- `index.css`: `.als-hero-frame` dari `min-height` → **`height` tetap** (520 / 580 ≥640px / 640 ≥1024px) + `overflow:hidden` + `container-type: size`; kelas baru `.als-hero-content` (absolute inset-0, overflow hidden) dan `.als-hero-headline` (`clamp` berbasis `cqh` → headline mengecil mengikuti tinggi frame).
+- `CinematicHero`: layer konten tidak lagi memakai `als-hero-frame` (tidak lagi menambah tinggi), gambar tetap `absolute inset-0 h-full w-full object-cover` + `objectPosition` dari CMS.
+- Sebelum: hero 854px di 1440 (ikut konten/gambar). Sesudah: **tetap 640px** di 1024–1920, 580px di 768, 520px di 390.
+### Posisi gambar (crop)
+- Field baru `image_position` (backend `BannerBase`, max 20) + select Admin: Tengah (default) / Atas / Bawah / Kiri / Kanan → `object-position`. Diverifikasi end-to-end: PATCH `image_position=top` → homepage `object-position: 50% 0%`; **dikembalikan ke `center`**.
+- Preview Admin tetap memakai renderer yang sama (`CinematicHero` via `bannerToSlide`) — frame 640px, `object-fit: cover` identik homepage.
+### Verifikasi (tanpa Testing Agent)
+- Uji gambar tanpa menulis DB (ganti `src` di DOM): portrait 900×3000, ultrawide 6000×1200, kecil 200×150, square 1000×1000, dan foto asli 6003×3998 → frame **tetap 640px**, `object-fit: cover`, tidak gepeng, overflow 0.
+- Responsive 1920/1440/1280/1024/768/390: frame 640/640/640/640/580/520, overflow **0 px**, posisi section berikutnya konsisten (nextTop 758/676/608) → tidak ada layout shift.
+- Admin form 1280: dropdown Jenis Tautan & Halaman berfungsi (listbox di dalam viewport), pilih "Pemain" → nilai `/teams`, ganti ke Tautan Eksternal → input `https://...` muncul, Posisi Gambar dapat dipilih, overflow 0.
+- Console 0 error / 0 warning (sekaligus memperbaiki warning lama `fetchpriority` → `fetchPriority`); `yarn build` Compiled successfully tanpa warning.
+- Media tetap Upload/Media Library (0 input URL untuk media); URL media lama tetap dibaca.
+- Database produksi (`alsabbat_platform`) utuh: banners 1 (banner milik user), clubs 1, media 3, users 1, seasons 1, tanpa data dummy. Tidak ada deployment.

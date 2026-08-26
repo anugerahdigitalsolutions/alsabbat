@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play, Shield } from 'lucide-react';
 import { usePrefersReducedMotion } from '../../hooks/useScrollReveal';
+import { isExternalLink } from '../../lib/internalLinks';
 
 const AUTOPLAY_MS = 6000;
 const SWIPE_THRESHOLD = 48;
@@ -95,8 +96,9 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
                   src={slide.image}
                   alt={slide.alt || slide.headline || ''}
                   className={`absolute inset-0 h-full w-full object-cover ${isActive && !reduced ? 'als-kenburns' : ''}`}
+                  style={{ objectPosition: slide.imagePosition || 'center' }}
                   loading={slideIndex === 0 ? 'eager' : 'lazy'}
-                  fetchpriority={slideIndex === 0 ? 'high' : undefined}
+                  fetchPriority={slideIndex === 0 ? 'high' : undefined}
                   decoding="async"
                 />
               ) : null}
@@ -114,7 +116,7 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
         })}
 
         {/* content */}
-        <div className="als-hero-frame relative flex items-end pb-28 pt-20 sm:pb-32">
+        <div className="als-hero-content flex items-end pb-24 pt-14 sm:pb-28 sm:pt-16">
           <div className="grid w-full items-end gap-8 px-6 sm:px-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12 xl:px-14">
             {active ? (
               <div key={active.id} className="max-w-3xl">
@@ -126,7 +128,7 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
                   {active.eyebrow}
                 </p>
                 <h1
-                  className="als-display-xl"
+                  className="als-display-xl als-hero-headline"
                   style={{ color: 'var(--club-light)' }}
                   data-testid="home-hero-headline"
                 >
@@ -173,23 +175,40 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
 
                 <div className="als-hero-step mt-7 flex flex-wrap items-center gap-3" style={{ animationDelay: '580ms' }}>
                   {active.ctaTo ? (
-                    <Link
-                      to={active.ctaTo}
-                      className="als-btn-gold als-focus"
-                      data-testid="home-hero-cta"
-                    >
-                      {active.ctaLabel || 'Selengkapnya'}
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
+                    isExternalLink(active.ctaTo) ? (
+                      <a
+                        href={active.ctaTo}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="als-btn-gold als-focus"
+                        data-testid="home-hero-cta"
+                      >
+                        {active.ctaLabel || 'Selengkapnya'}
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    ) : (
+                      <Link to={active.ctaTo} className="als-btn-gold als-focus" data-testid="home-hero-cta">
+                        {active.ctaLabel || 'Selengkapnya'}
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    )
                   ) : null}
                   {active.secondaryTo ? (
-                    <Link
-                      to={active.secondaryTo}
-                      className="als-btn-ghost als-focus"
-                      data-testid="home-hero-secondary-cta"
-                    >
-                      {active.secondaryLabel}
-                    </Link>
+                    isExternalLink(active.secondaryTo) ? (
+                      <a
+                        href={active.secondaryTo}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="als-btn-ghost als-focus"
+                        data-testid="home-hero-secondary-cta"
+                      >
+                        {active.secondaryLabel}
+                      </a>
+                    ) : (
+                      <Link to={active.secondaryTo} className="als-btn-ghost als-focus" data-testid="home-hero-secondary-cta">
+                        {active.secondaryLabel}
+                      </Link>
+                    )
                   ) : null}
                 </div>
 

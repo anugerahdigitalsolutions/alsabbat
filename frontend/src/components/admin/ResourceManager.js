@@ -5,6 +5,7 @@ import api, { apiErrorMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/button';
 import { MediaPicker } from '../shared/MediaPicker';
+import { LinkField } from './LinkField';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
@@ -198,6 +199,10 @@ const FieldControl = ({ field, value, onChange, optionMap, testPrefix }) => {
         previewUrl={field.returns === 'id' ? options.find((o) => String(o.value) === String(value))?.url : null}
       />
     );
+  }
+
+  if (field.type === 'link') {
+    return <LinkField value={value ?? ''} onChange={onChange} testId={testId} />;
   }
 
   if (field.type === 'switch') {
