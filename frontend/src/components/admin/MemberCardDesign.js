@@ -5,6 +5,7 @@ import api, { apiErrorMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { MemberCard } from '../member/MemberCard';
 import { MediaPicker } from '../shared/MediaPicker';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 import { Button } from '../ui/button';
 
 const PREVIEW_CARD = {
@@ -77,6 +78,7 @@ export const MemberCardDesign = () => {
               value={background}
               onChange={setBackground}
               testId="admin-card-background"
+              spec={MEDIA_SPECS.memberCardBackground}
               hint="Gunakan gambar dengan area kosong yang cukup (hindari wajah/teks di tengah) agar nama, nomor, dan QR tetap terbaca."
             />
             {canWrite ? (

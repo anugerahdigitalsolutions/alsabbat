@@ -2,6 +2,7 @@ import React from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const STATUS = ['DRAFT', 'ACTIVE', 'ARCHIVED'].map((v) => ({ value: v, label: v }));
 
@@ -47,7 +48,8 @@ export default function AdminProductsPage() {
           returns: 'id',
           optionsFrom: { endpoint: '/media', labelKey: 'file_name', valueKey: 'id' },
           full: true,
-          help: 'Upload dari perangkat atau pilih dari Media Library. Gunakan foto produk persegi/landscape.',
+          spec: MEDIA_SPECS.productImage,
+          help: 'Upload dari perangkat atau pilih dari Media Library.',
         },
         { name: 'short_description', label: 'Deskripsi Singkat', type: 'textarea', full: true },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },

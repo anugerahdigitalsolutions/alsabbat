@@ -3,6 +3,7 @@ import { Swords } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -53,7 +54,7 @@ export default function AdminMatchesPage() {
         },
         { name: 'opponent.name', label: 'Nama Lawan', type: 'text', required: true },
         { name: 'opponent.short_name', label: 'Short Name Lawan', type: 'text' },
-        { name: 'opponent.logo', label: 'Logo Lawan', type: 'media', full: true },
+        { name: 'opponent.logo', label: 'Logo Lawan', type: 'media', full: true, spec: MEDIA_SPECS.opponentLogo },
         {
           name: 'season_id',
           label: 'Musim',
@@ -73,7 +74,7 @@ export default function AdminMatchesPage() {
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.match_status), required: true },
         { name: 'home_score', label: 'Skor Home', type: 'number' },
         { name: 'away_score', label: 'Skor Away', type: 'number' },
-        { name: 'match_cover', label: 'Gambar Pertandingan', type: 'media', full: true, help: 'Gambar landscape untuk kartu & halaman detail pertandingan.' },
+        { name: 'match_cover', label: 'Gambar Pertandingan', type: 'media', full: true, spec: MEDIA_SPECS.matchCover, help: 'Gambar landscape untuk kartu & halaman detail pertandingan.' },
         {
           name: 'formation',
           label: 'Formasi ALSABBAT',

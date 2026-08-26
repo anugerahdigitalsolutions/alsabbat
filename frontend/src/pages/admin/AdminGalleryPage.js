@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { useClub } from '../../context/ClubContext';
 import { matchOptions, mediaOptions } from './adminOptions';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -74,7 +75,7 @@ export default function AdminGalleryPage() {
           optionsFrom: matchOptions,
         },
         { name: 'status', label: 'Status Entitas', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'cover_url', label: 'Cover Album (opsional)', type: 'media', full: true, optionsFrom: mediaOptions, help: 'Pilih dari Media Library, atau atur cover pada halaman kelola album.' },
+        { name: 'cover_url', label: 'Cover Album (opsional)', type: 'media', full: true, optionsFrom: mediaOptions, spec: MEDIA_SPECS.albumCover, help: 'Pilih dari Media Library, atau atur cover pada halaman kelola album.' },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
     />

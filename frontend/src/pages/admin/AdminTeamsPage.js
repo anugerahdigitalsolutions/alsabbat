@@ -3,6 +3,7 @@ import { Users } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -42,7 +43,7 @@ export default function AdminTeamsPage() {
         { name: 'short_name', label: 'Short Name', type: 'text' },
         { name: 'category', label: 'Kategori', type: 'select', options: opts(meta?.team_categories), required: true },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'logo', label: 'Logo Tim', type: 'media', full: true },
+        { name: 'logo', label: 'Logo Tim', type: 'media', full: true, spec: MEDIA_SPECS.teamLogo },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
     />

@@ -18,6 +18,7 @@ import {
 } from '../../services/barayaAuth';
 import { MemberCard } from '../../components/member/MemberCard';
 import { MediaPicker } from '../../components/shared/MediaPicker';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -116,6 +117,7 @@ export default function BarayaAccountPage() {
                     uploader={barayaUploadPhoto}
                     libraryEnabled={false}
                     testId="baraya-profile-photo"
+                    spec={MEDIA_SPECS.barayaPhoto}
                     hint="Upload langsung dari HP atau komputer (JPG/PNG/WEBP, maks 10MB). Foto ini juga tampil pada kartu member Anda."
                   />
                 </div>

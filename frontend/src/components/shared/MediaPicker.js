@@ -100,6 +100,7 @@ export const MediaPicker = ({
   libraryEnabled = true,
   returns = 'url',
   hint,
+  spec,
 }) => {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -222,6 +223,22 @@ export const MediaPicker = ({
           </Button>
         ) : null}
       </div>
+
+      {spec ? (
+        <div
+          className="rounded-[var(--radius-sm)] px-3 py-2 text-xs"
+          style={{ backgroundColor: 'rgba(1,40,145,0.05)', color: 'var(--muted-fg)' }}
+          data-testid={`${testId}-spec`}
+        >
+          <span className="font-semibold" style={{ color: 'var(--club-secondary)' }}>
+            Rekomendasi:
+          </span>{' '}
+          <span className="font-semibold">
+            {spec.ratio} · {spec.size}
+          </span>
+          {spec.note ? <span className="mt-0.5 block">{spec.note}</span> : null}
+        </div>
+      ) : null}
 
       {hint ? (
         <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>

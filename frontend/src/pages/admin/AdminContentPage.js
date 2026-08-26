@@ -5,6 +5,7 @@ import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
 import { matchOptions, mediaOptions } from './adminOptions';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -71,7 +72,8 @@ export default function AdminContentPage() {
                 type: 'media',
                 full: true,
                 optionsFrom: mediaOptions,
-                help: 'Gambar landscape (16:9) berkualitas tinggi untuk kartu berita dan halaman detail.',
+                spec: MEDIA_SPECS.newsThumbnail,
+                help: 'Dipakai pada kartu berita dan halaman detail.',
               },
               { name: 'excerpt', label: 'Ringkasan', type: 'textarea', full: true },
               { name: 'content', label: 'Isi Berita', type: 'textarea', full: true, rows: 8 },
@@ -153,7 +155,7 @@ export default function AdminContentPage() {
               { name: 'name', label: 'Nama', type: 'text', required: true },
               { name: 'slug', label: 'Slug', type: 'text' },
               { name: 'status', label: 'Status', type: 'select', options: statusOptions, required: true },
-              { name: 'photo', label: 'Foto Penulis', type: 'media', full: true },
+              { name: 'photo', label: 'Foto Penulis', type: 'media', full: true, spec: MEDIA_SPECS.authorPhoto },
               { name: 'bio', label: 'Bio', type: 'textarea', full: true },
               { name: 'social_media.instagram', label: 'Instagram', type: 'text' },
             ]}

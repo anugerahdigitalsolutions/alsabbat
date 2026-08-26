@@ -4,6 +4,7 @@ import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
 import { mediaOptions } from './adminOptions';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -64,7 +65,8 @@ export default function AdminPlayersPage() {
           type: 'media',
           full: true,
           optionsFrom: mediaOptions,
-          help: 'Gunakan foto portrait yang jelas (wajah terlihat, latar rapi) agar kartu skuad terlihat konsisten.',
+          spec: MEDIA_SPECS.playerPhoto,
+          help: 'Gunakan foto portrait yang jelas (wajah terlihat, latar rapi) agar kartu pemain terlihat konsisten.',
         },
         { name: 'bio', label: 'Bio', type: 'textarea', full: true },
         { name: 'social_media.instagram', label: 'Instagram', type: 'text' },

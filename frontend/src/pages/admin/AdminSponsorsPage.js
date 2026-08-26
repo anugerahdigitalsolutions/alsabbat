@@ -4,6 +4,7 @@ import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
 import { mediaOptions } from './adminOptions';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -51,6 +52,7 @@ export default function AdminSponsorsPage() {
           type: 'media',
           full: true,
           optionsFrom: mediaOptions,
+          spec: MEDIA_SPECS.sponsorLogo,
           help: 'Gunakan logo PNG berlatar transparan agar rapi di baris sponsor.',
         },
         { name: 'website', label: 'Website', type: 'text', full: true },

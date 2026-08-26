@@ -4,6 +4,7 @@ import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
 import { mediaOptions } from './adminOptions';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -50,6 +51,7 @@ export default function AdminStaffPage() {
           type: 'media',
           full: true,
           optionsFrom: mediaOptions,
+          spec: MEDIA_SPECS.staffPhoto,
           help: 'Gunakan foto portrait yang jelas. Kosongkan bila belum tersedia — jangan memakai foto orang lain.',
         },
         { name: 'bio', label: 'Bio', type: 'textarea', full: true },

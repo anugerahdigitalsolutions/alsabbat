@@ -8,6 +8,7 @@ import { CinematicHero } from '../public/CinematicHero';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE (tampil di homepage)' },
@@ -120,7 +121,8 @@ export const BannerManager = ({ clubName = 'ALSABBAT' }) => {
             label: 'Gambar Banner',
             type: 'media',
             full: true,
-            help: 'Upload dari perangkat atau pilih dari Media Library. Gunakan gambar landscape minimal 1920px agar tajam di desktop.',
+            spec: MEDIA_SPECS.bannerHero,
+            help: 'Upload dari perangkat atau pilih dari Media Library.',
           },
           { name: 'image_alt', label: 'Alt Text Gambar', type: 'text', full: true },
           {

@@ -4,6 +4,7 @@ import { ResourceManager } from '../../components/admin/ResourceManager';
 import { mediaOptions } from './adminOptions';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -38,7 +39,7 @@ export default function AdminAchievementsPage() {
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
         { name: 'team_id', label: 'Tim', type: 'select', optionsFrom: { endpoint: '/teams', labelKey: 'name' } },
         { name: 'season_id', label: 'Musim', type: 'select', optionsFrom: { endpoint: '/seasons', labelKey: 'name' } },
-        { name: 'trophy_image', label: 'Gambar Trofi', type: 'media', full: true, optionsFrom: mediaOptions },
+        { name: 'trophy_image', label: 'Gambar Trofi', type: 'media', full: true, optionsFrom: mediaOptions, spec: MEDIA_SPECS.trophyImage },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
     />

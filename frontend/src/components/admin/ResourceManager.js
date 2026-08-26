@@ -196,6 +196,7 @@ const FieldControl = ({ field, value, onChange, optionMap, testPrefix }) => {
         onChange={onChange}
         testId={testId}
         returns={field.returns || 'url'}
+        spec={field.spec}
         previewUrl={field.returns === 'id' ? options.find((o) => String(o.value) === String(value))?.url : null}
       />
     );

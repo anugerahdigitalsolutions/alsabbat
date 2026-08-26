@@ -3,6 +3,7 @@ import { Trophy } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -43,7 +44,7 @@ export default function AdminCompetitionsPage() {
         { name: 'type', label: 'Tipe', type: 'select', options: opts(meta?.competition_types), required: true },
         { name: 'organizer', label: 'Penyelenggara', type: 'text' },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'logo', label: 'Logo Kompetisi', type: 'media', full: true },
+        { name: 'logo', label: 'Logo Kompetisi', type: 'media', full: true, spec: MEDIA_SPECS.competitionLogo },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
     />

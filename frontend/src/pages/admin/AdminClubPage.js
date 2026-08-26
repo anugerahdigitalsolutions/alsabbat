@@ -5,6 +5,7 @@ import { mediaOptions } from './adminOptions';
 import { Button } from '../../components/ui/button';
 import { useClub } from '../../context/ClubContext';
 import { Badge } from '../../components/ui/badge';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 export default function AdminClubPage() {
   const { meta, reload } = useClub();
@@ -77,7 +78,8 @@ export default function AdminClubPage() {
           type: 'media',
           full: true,
           optionsFrom: mediaOptions,
-          help: 'Pilih dari Media Library atau tempel URL.',
+          spec: MEDIA_SPECS.clubLogo,
+          help: 'Dipakai di header, footer, dan kartu member.',
         },
         {
           name: 'hero_image',
@@ -85,7 +87,8 @@ export default function AdminClubPage() {
           type: 'media',
           full: true,
           optionsFrom: mediaOptions,
-          help: 'Gunakan gambar landscape resolusi tinggi (minimal 1600px) agar tetap tajam sebagai latar header halaman Klub & Pemain.',
+          spec: MEDIA_SPECS.clubHero,
+          help: 'Dipakai sebagai latar header halaman Klub & Pemain.',
         },
         { name: 'primary_color', label: 'Primary Color', type: 'color' },
         { name: 'secondary_color', label: 'Secondary Color', type: 'color' },
@@ -117,7 +120,7 @@ export default function AdminClubPage() {
         { name: 'seo.title', label: 'SEO Title', type: 'text', full: true },
         { name: 'seo.description', label: 'SEO Description', type: 'textarea', full: true },
         { name: 'seo.keywords', label: 'SEO Keywords', type: 'multiselect', full: true, help: 'Pisahkan dengan koma.' },
-        { name: 'seo.og_image', label: 'Open Graph Image (share media sosial)', type: 'media', full: true },
+        { name: 'seo.og_image', label: 'Open Graph Image (share media sosial)', type: 'media', full: true, spec: MEDIA_SPECS.ogImage },
         { name: 'seo.canonical_url', label: 'Canonical URL', type: 'text', full: true },
       ]}
     />
