@@ -24,6 +24,8 @@ import ContactPage from './pages/public/ContactPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import BarayaLoginPage from './pages/public/BarayaLoginPage';
 import BarayaRegisterPage from './pages/public/BarayaRegisterPage';
+import BarayaForgotPasswordPage from './pages/public/BarayaForgotPasswordPage';
+import BarayaResetPasswordPage from './pages/public/BarayaResetPasswordPage';
 import BarayaAccountPage from './pages/public/BarayaAccountPage';
 import BarayaOrdersPage from './pages/public/BarayaOrdersPage';
 import BarayaOrderDetailPage from './pages/public/BarayaOrderDetailPage';
@@ -93,6 +95,8 @@ function App() {
               <Route path="/club" element={<ClubPage />} />
               <Route path="/login" element={<BarayaLoginPage />} />
               <Route path="/daftar" element={<BarayaRegisterPage />} />
+              <Route path="/lupa-password" element={<BarayaForgotPasswordPage />} />
+              <Route path="/reset-password" element={<BarayaResetPasswordPage />} />
               <Route
                 path="/akun"
                 element={

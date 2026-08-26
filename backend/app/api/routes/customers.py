@@ -8,6 +8,9 @@ Customers can only ever read their own profile and their own orders.
 """
 from __future__ import annotations
 
+import hashlib
+import secrets
+from datetime import timedelta
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -16,6 +19,7 @@ from fastapi.encoders import jsonable_encoder
 from app.api.crud_factory import Repository
 from app.api.deps import get_current_customer, request_ip, require_permission
 from app.core.database import Collections, get_db
+from app.core.config import settings
 from app.core.errors import (
     ConflictError,
     NotFoundError,
@@ -32,13 +36,16 @@ from app.core.security import (
 from app.models.auth import AuthContext
 from app.models.customer import (
     CustomerAuthContext,
+    CustomerForgotPasswordRequest,
     CustomerLoginRequest,
     CustomerPasswordChange,
     CustomerProfileUpdate,
     CustomerRegisterRequest,
+    CustomerResetPasswordRequest,
     CustomerStatusUpdate,
 )
 from app.models.base import new_id, utcnow
+from app.services.mailer import send_customer_password_reset_email
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["baraya"])
@@ -185,6 +192,87 @@ async def change_password(
         {"$set": {"revoked": True}},
     )
     return {"success": True, "message": "Kata sandi diperbarui."}
+
+
+# ---------------------------------------------------- forgot / reset password
+GENERIC_RESET_RESPONSE = {
+    "message": "Jika email terdaftar, instruksi reset kata sandi telah dikirim."
+}
+INVALID_RESET_TOKEN = "Tautan reset tidak valid atau sudah kedaluwarsa."
+
+
+def _hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+@router.post("/forgot-password", summary="Minta instruksi reset kata sandi Baraya")
+async def forgot_password(
+    payload: CustomerForgotPasswordRequest, request: Request
+) -> Dict[str, Any]:
+    await enforce(request, "baraya-forgot", 5, 900)
+    email = payload.email.lower().strip()
+    # A token is always generated so the response cost does not reveal existence.
+    token = secrets.token_urlsafe(32)
+    token_hash = _hash_reset_token(token)
+    customer = await customers.get_by({"email": email})
+
+    if customer and customer.get("status") == "ACTIVE":
+        expires_at = utcnow() + timedelta(minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
+        await get_db()[Collections.CUSTOMER_PASSWORD_RESETS].insert_one(
+            {
+                "id": new_id(),
+                "customer_id": customer["id"],
+                "token_hash": token_hash,
+                "expires_at": jsonable_encoder(expires_at),
+                "used_at": None,
+                "created_at": jsonable_encoder(utcnow()),
+            }
+        )
+        await send_customer_password_reset_email(
+            email=customer["email"],
+            full_name=customer.get("full_name", ""),
+            token=token,
+            expires_minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
+        )
+    logger.info("baraya.forgot_password requested ip=%s", request_ip(request))
+    return dict(GENERIC_RESET_RESPONSE)
+
+
+@router.post("/reset-password", summary="Reset kata sandi Baraya dengan token")
+async def reset_password(
+    payload: CustomerResetPasswordRequest, request: Request
+) -> Dict[str, Any]:
+    await enforce(request, "baraya-reset", 10, 900)
+    db = get_db()
+    now = jsonable_encoder(utcnow())
+    # Atomic single-use claim: only one caller can ever flip `used_at`.
+    reset = await db[Collections.CUSTOMER_PASSWORD_RESETS].find_one_and_update(
+        {
+            "token_hash": _hash_reset_token(payload.token),
+            "used_at": None,
+            "expires_at": {"$gt": now},
+        },
+        {"$set": {"used_at": now}},
+    )
+    if not reset:
+        raise UnauthorizedError(INVALID_RESET_TOKEN)
+
+    customer = await customers.get(reset["customer_id"])
+    if not customer or customer.get("status") != "ACTIVE":
+        raise UnauthorizedError(INVALID_RESET_TOKEN)
+
+    await customers.coll.update_one(
+        {"id": customer["id"]},
+        {"$set": {"password_hash": hash_password(payload.password), "updated_at": now}},
+    )
+    await db[Collections.CUSTOMER_SESSIONS].update_many(
+        {"customer_id": customer["id"]}, {"$set": {"revoked": True, "revoked_at": now}}
+    )
+    await db[Collections.CUSTOMER_PASSWORD_RESETS].update_many(
+        {"customer_id": customer["id"], "used_at": None}, {"$set": {"used_at": now}}
+    )
+    logger.info("baraya.reset_password success customer=%s", customer["id"])
+    return {"success": True, "message": "Kata sandi berhasil diperbarui. Silakan login kembali."}
 
 
 # ------------------------------------------------------------------- orders

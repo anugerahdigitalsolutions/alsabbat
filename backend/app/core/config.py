@@ -115,6 +115,21 @@ class Settings:
     # -------------------------------------------------------------- seo
     PUBLIC_SITE_URL: str = os.environ.get("PUBLIC_SITE_URL", "")
 
+    # ------------------------------------------------- mail (Phase 14)
+    # MAIL_PROVIDER: SMTP (real delivery) | LOG (no delivery, audit log only)
+    # | MEMORY (in-memory, tests only). Empty/unset => LOG.
+    MAIL_PROVIDER: str = os.environ.get("MAIL_PROVIDER", "LOG")
+    MAIL_FROM: str = os.environ.get("MAIL_FROM", "")
+    MAIL_FROM_NAME: str = os.environ.get("MAIL_FROM_NAME", "ALSABBAT Football Club")
+    SMTP_HOST: str = os.environ.get("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.environ.get("SMTP_PORT", "587"))
+    SMTP_USERNAME: str = os.environ.get("SMTP_USERNAME", "")
+    SMTP_PASSWORD: str = os.environ.get("SMTP_PASSWORD", "")
+    SMTP_USE_TLS: bool = _bool(os.environ.get("SMTP_USE_TLS"), True)
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = int(
+        os.environ.get("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "30")
+    )
+
     # ---------------------------------------------------- hardening flags
     # Interactive API docs are disabled in production unless explicitly enabled.
     ENABLE_API_DOCS: bool = _bool(os.environ.get("ENABLE_API_DOCS"), False)

@@ -43,6 +43,7 @@ class Collections:
     ORDERS = "orders"
     CUSTOMERS = "customers"
     CUSTOMER_SESSIONS = "customer_sessions"
+    CUSTOMER_PASSWORD_RESETS = "customer_password_resets"
     RATE_LIMITS = "rate_limits"
     SETTINGS = "site_settings"
 
@@ -139,6 +140,9 @@ async def ensure_indexes() -> None:
         await db[Collections.CUSTOMERS].create_index([("status", ASCENDING), ("created_at", DESCENDING)])
         await db[Collections.CUSTOMER_SESSIONS].create_index([("jti", ASCENDING)], unique=True)
         await db[Collections.CUSTOMER_SESSIONS].create_index([("customer_id", ASCENDING)])
+        await db[Collections.CUSTOMER_PASSWORD_RESETS].create_index([("token_hash", ASCENDING)], unique=True)
+        await db[Collections.CUSTOMER_PASSWORD_RESETS].create_index([("customer_id", ASCENDING)])
+        await db[Collections.CUSTOMER_PASSWORD_RESETS].create_index([("expires_at", ASCENDING)])
         await db[Collections.ORDERS].create_index(
             [("order_status", ASCENDING), ("payment_status", ASCENDING), ("created_at", DESCENDING)]
         )

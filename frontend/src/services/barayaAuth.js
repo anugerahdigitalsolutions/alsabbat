@@ -35,6 +35,10 @@ export const barayaUpdateProfile = async (payload) => {
 
 export const barayaChangePassword = (payload) => barayaApi.post('/baraya/change-password', payload);
 
+export const barayaForgotPassword = (email) => barayaApi.post('/baraya/forgot-password', { email });
+
+export const barayaResetPassword = (payload) => barayaApi.post('/baraya/reset-password', payload);
+
 export const barayaOrders = async () => {
   const { data } = await barayaApi.get('/baraya/orders');
   return data;

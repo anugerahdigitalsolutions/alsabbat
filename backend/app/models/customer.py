@@ -71,6 +71,28 @@ class CustomerPasswordChange(AppBaseModel):
         return _validate_password(value)
 
 
+class CustomerForgotPasswordRequest(AppBaseModel):
+    email: EmailStr
+
+
+class CustomerResetPasswordRequest(AppBaseModel):
+    token: str = Field(min_length=20, max_length=200)
+    password: str = Field(min_length=8, max_length=128)
+    password_confirmation: str = Field(min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def _password(cls, value: str) -> str:
+        return _validate_password(value)
+
+    @field_validator("password_confirmation")
+    @classmethod
+    def _match(cls, value: str, info):
+        if value != info.data.get("password"):
+            raise ValueError("Konfirmasi kata sandi tidak sama.")
+        return value
+
+
 class CustomerStatusUpdate(AppBaseModel):
     status: CustomerStatus
 

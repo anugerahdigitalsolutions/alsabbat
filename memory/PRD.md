@@ -313,3 +313,25 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 - yarn build OK, backend import OK, admin login 200, /admin/login 200, mobile 390px tanpa overflow.
 ### Limitasi
 - Belum ada verifikasi email / reset password / OAuth. Order guest lama tidak otomatis terhubung ke akun Baraya. Ongkir masih flat 0 (kebijakan klub).
+
+## FASE 14 — Lupa & Reset Kata Sandi Baraya (26 Jun 2026)
+### Discovery (perbedaan dengan rancangan)
+- TIDAK ada mailer/email service di repo (hanya media_service, payments, social). Dibuat abstraksi baru `app/services/mailer.py` dengan provider SMTP (nyata) / LOG (default, tanpa kirim) / MEMORY (khusus test). Tidak ada provider dikarang.
+- URL reset memakai `settings.PUBLIC_SITE_URL` (config existing), bukan domain hardcode.
+### Perubahan
+- `app/core/config.py`: MAIL_PROVIDER, MAIL_FROM, MAIL_FROM_NAME, SMTP_*, PASSWORD_RESET_TOKEN_EXPIRE_MINUTES (30).
+- `app/core/database.py`: koleksi `customer_password_resets` + index token_hash (unique), customer_id, expires_at.
+- `app/models/customer.py`: CustomerForgotPasswordRequest, CustomerResetPasswordRequest (aturan password Fase 13 di-reuse).
+- `app/api/routes/customers.py`: POST /api/baraya/forgot-password, POST /api/baraya/reset-password.
+- `app/services/mailer.py` (baru).
+- Frontend: /lupa-password, /reset-password (BarayaForgotPasswordPage.js, BarayaResetPasswordPage.js), link "Lupa Kata Sandi?" di /login, service barayaForgotPassword/barayaResetPassword, rute di App.js.
+### Keamanan
+- Token: secrets.token_urlsafe(32), disimpan sebagai SHA-256 (plaintext hanya di email), expiry 30 menit, sekali pakai (find_one_and_update atomik), semua token lain milik customer di-invalidate setelah reset.
+- Response forgot-password selalu generik; tidak ada kebocoran email terdaftar/status/customer_id. Rate limit forgot 5/15mnt, reset 10/15mnt.
+- Reset berhasil -> revoke SEMUA customer_sessions milik customer; session admin & guest checkout tidak tersentuh. `users`/RBAC/`/api/auth/*` tidak diubah.
+### Verifikasi (tanpa Testing Agent)
+- `scripts/phase14_verify.py`: 46/46 PASS — in-process app, DB sandbox `alsabbat_phase14_sandbox` (di-DROP di akhir), mailer MEMORY (0 email nyata).
+- Frontend Playwright (API di-mock, 0 write produksi): link login, generic success, invalid-token state, validasi mismatch, redirect ke /login, token tidak masuk localStorage/sessionStorage, mobile 390px tanpa overflow.
+- yarn build PASS, backend import PASS, health 200, 12 rute publik/admin 200. DB produksi: customers/sessions/resets/orders/products = 0, users = 1 (tidak berubah).
+### Limitasi
+- MAIL_PROVIDER default LOG -> di produksi wajib set MAIL_PROVIDER=SMTP + SMTP_* + MAIL_FROM agar email benar-benar terkirim.

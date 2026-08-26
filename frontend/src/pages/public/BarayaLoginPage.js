@@ -84,7 +84,17 @@ export default function BarayaLoginPage() {
               />
             </div>
             <div>
-              <Label className="mb-1.5 block">Kata Sandi</Label>
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <Label>Kata Sandi</Label>
+                <Link
+                  to="/lupa-password"
+                  className="text-xs font-semibold underline"
+                  style={{ color: 'var(--club-secondary)' }}
+                  data-testid="baraya-login-forgot-link"
+                >
+                  Lupa Kata Sandi?
+                </Link>
+              </div>
               <Input
                 type="password"
                 required
