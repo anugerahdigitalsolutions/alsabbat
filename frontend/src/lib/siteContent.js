@@ -20,7 +20,7 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'home.pillar.club.title', group: 'Pilar Brand', label: 'Pilar 1 — Judul', value: 'Satu Klub' },
   { key: 'home.pillar.club.text', group: 'Pilar Brand', label: 'Pilar 1 — Teks', value: '{club} adalah satu klub dengan satu misi.', multiline: true },
   { key: 'home.pillar.team.title', group: 'Pilar Brand', label: 'Pilar 2 — Judul', value: 'Satu Tim' },
-  { key: 'home.pillar.team.text', group: 'Pilar Brand', label: 'Pilar 2 — Teks', value: 'Satu tim. Satu skuad. Satu detak jantung.', multiline: true },
+  { key: 'home.pillar.team.text', group: 'Pilar Brand', label: 'Pilar 2 — Teks', value: 'Satu tim. Satu perjuangan. Satu detak jantung.', multiline: true },
   { key: 'home.pillar.dream.title', group: 'Pilar Brand', label: 'Pilar 3 — Judul', value: 'Satu Mimpi' },
   { key: 'home.pillar.dream.text', group: 'Pilar Brand', label: 'Pilar 3 — Teks', value: 'Bermimpi bersama. Meraih bersama.', multiline: true },
   { key: 'home.pillar.glory.title', group: 'Pilar Brand', label: 'Pilar 4 — Judul', value: 'Satu Kejayaan' },
@@ -32,7 +32,7 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'home.label.news', group: 'Judul Section', label: 'Label — Berita', value: 'Berita Terbaru' },
   { key: 'home.label.news_action', group: 'Judul Section', label: 'Aksi — Berita', value: 'Semua Berita' },
   { key: 'home.label.spotlight', group: 'Judul Section', label: 'Label — Sorotan Pemain', value: 'Sorotan Pemain' },
-  { key: 'home.label.spotlight_action', group: 'Judul Section', label: 'Aksi — Sorotan Pemain', value: 'Lihat Skuad' },
+  { key: 'home.label.spotlight_action', group: 'Judul Section', label: 'Aksi — Sorotan Pemain', value: 'Lihat Pemain' },
   { key: 'home.label.stats', group: 'Judul Section', label: 'Label — Statistik Tim', value: 'Statistik Tim' },
   { key: 'home.label.stats_note', group: 'Judul Section', label: 'Catatan — Statistik Tim', value: 'Statistik dihitung otomatis dari hasil pertandingan yang sudah selesai.', multiline: true },
   { key: 'home.label.store', group: 'Judul Section', label: 'Label — Toko Resmi', value: 'Toko Resmi' },
@@ -45,9 +45,9 @@ export const SITE_CONTENT_ENTRIES = [
   // Closing CTA band
   { key: 'home.cta.eyebrow', group: 'CTA Penutup', label: 'CTA — Eyebrow', value: 'Ikuti Perjalanan Kami' },
   { key: 'home.cta.title', group: 'CTA Penutup', label: 'CTA — Judul', value: 'Jadi bagian dari Baraya {club}' },
-  { key: 'home.cta.text', group: 'CTA Penutup', label: 'CTA — Teks', value: 'Ikuti setiap matchday, cerita skuad, dan momen di lapangan bersama kami.', multiline: true },
+  { key: 'home.cta.text', group: 'CTA Penutup', label: 'CTA — Teks', value: 'Ikuti setiap matchday, cerita pemain, dan momen di lapangan bersama kami.', multiline: true },
   { key: 'home.cta.btn_matches', group: 'CTA Penutup', label: 'CTA — Tombol 1', value: 'Jadwal Pertandingan' },
-  { key: 'home.cta.btn_squad', group: 'CTA Penutup', label: 'CTA — Tombol 2', value: 'Lihat Skuad' },
+  { key: 'home.cta.btn_squad', group: 'CTA Penutup', label: 'CTA — Tombol 2', value: 'Lihat Pemain' },
   { key: 'home.cta.btn_gallery', group: 'CTA Penutup', label: 'CTA — Tombol 3', value: 'Galeri' },
 
   // Club page
@@ -58,17 +58,17 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'club.about.title', group: 'Halaman Klub', label: 'Judul — Profil Singkat', value: 'Profil Singkat' },
   { key: 'club.story.title', group: 'Halaman Klub', label: 'Judul — Cerita Klub', value: 'Cerita Klub' },
   { key: 'club.facts.title', group: 'Halaman Klub', label: 'Judul — Fakta Klub', value: 'Fakta Klub' },
-  { key: 'club.squad.title', group: 'Halaman Klub', label: 'Judul — Skuad', value: 'Satu Klub. Satu Tim.' },
-  { key: 'club.squad.text', group: 'Halaman Klub', label: 'Teks — Skuad', value: '{club} hanya memiliki satu skuad yang membela lambang klub.', multiline: true },
-  { key: 'club.squad.cta', group: 'Halaman Klub', label: 'Tombol — Lihat Skuad', value: 'Lihat Skuad' },
+  { key: 'club.squad.title', group: 'Halaman Klub', label: 'Judul — Pemain', value: 'Satu Klub. Satu Tim.' },
+  { key: 'club.squad.text', group: 'Halaman Klub', label: 'Teks — Pemain', value: '{club} hanya memiliki satu tim yang membela lambang klub.', multiline: true },
+  { key: 'club.squad.cta', group: 'Halaman Klub', label: 'Tombol — Lihat Pemain', value: 'Lihat Pemain' },
   { key: 'club.honours.title', group: 'Halaman Klub', label: 'Judul — Prestasi', value: 'Prestasi Klub' },
 
-  // Squad page
-  { key: 'squad.header.label', group: 'Halaman Skuad', label: 'Header — Label', value: 'Skuad' },
-  { key: 'squad.header.title', group: 'Halaman Skuad', label: 'Header — Judul', value: 'Satu Skuad. Satu Baraya.' },
-  { key: 'squad.header.description', group: 'Halaman Skuad', label: 'Header — Deskripsi', value: 'Satu klub, satu skuad — para pemain dan staf yang membela lambang {club}.', multiline: true },
-  { key: 'squad.spotlight.label', group: 'Halaman Skuad', label: 'Label — Sorotan Pemain', value: 'Sorotan Pemain' },
-  { key: 'squad.staff.label', group: 'Halaman Skuad', label: 'Label — Tim Pendukung', value: 'Tim Pendukung' },
+  // Halaman Pemain (route internal tetap /teams)
+  { key: 'squad.header.label', group: 'Halaman Pemain', label: 'Header — Label', value: 'PEMAIN' },
+  { key: 'squad.header.title', group: 'Halaman Pemain', label: 'Header — Judul', value: 'Satu Tim. Satu Baraya.' },
+  { key: 'squad.header.description', group: 'Halaman Pemain', label: 'Header — Deskripsi', value: 'Satu klub, satu tim — para pemain dan staf yang membela lambang {club}.', multiline: true },
+  { key: 'squad.spotlight.label', group: 'Halaman Pemain', label: 'Label — Sorotan Pemain', value: 'Sorotan Pemain' },
+  { key: 'squad.staff.label', group: 'Halaman Pemain', label: 'Label — Tim Pendukung', value: 'Tim Pendukung' },
 
   // Contact page
   { key: 'contact.header.label', group: 'Halaman Kontak', label: 'Header — Label', value: 'Kontak' },

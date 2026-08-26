@@ -84,7 +84,7 @@ export default function TeamDetailPage() {
 
   usePageSeo({
     title: team?.name || 'Tim',
-    description: team?.description || 'Skuad dan staf tim ALSABBAT Football Club.',
+    description: team?.description || 'Pemain dan staf ALSABBAT Football Club.',
     path: `/teams/${teamId}`,
   });
 
@@ -120,12 +120,12 @@ export default function TeamDetailPage() {
   return (
     <div data-testid="page-team-detail">
       <PublicPageHeader
-        label="Skuad"
+        label="PEMAIN"
         title={team?.name || 'Detail Tim'}
-        description={team?.description || 'Skuad, posisi, dan staf pendukung tim.'}
+        description={team?.description || 'Daftar pemain, posisi, dan staf pendukung.'}
         backgroundImage={team?.cover_image}
         imageAlt={team?.name}
-        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Skuad', to: '/teams' }, { label: team?.name || 'Tim' }]}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'PEMAIN', to: '/teams' }, { label: team?.name || 'Tim' }]}
         meta={
           loading ? null : (
             <span data-testid="team-detail-counts">
@@ -142,13 +142,13 @@ export default function TeamDetailPage() {
         ) : (
           <Tabs defaultValue="squad">
             <TabsList data-testid="team-detail-tabs">
-              <TabsTrigger value="squad" data-testid="team-tab-squad">Skuad</TabsTrigger>
+              <TabsTrigger value="squad" data-testid="team-tab-squad">Pemain</TabsTrigger>
               <TabsTrigger value="staff" data-testid="team-tab-staff">Staf</TabsTrigger>
             </TabsList>
 
             <TabsContent value="squad" className="mt-8">
               {players.length === 0 ? (
-                <EmptyState icon={Users} title="Belum ada pemain" description="Skuad tim ini belum diisi." testId="team-squad-empty" />
+                <EmptyState icon={Users} title="Belum ada pemain" description="Daftar pemain belum diisi." testId="team-squad-empty" />
               ) : (
                 <div className="space-y-12">
                   {grouped.map(({ position, list }) => (

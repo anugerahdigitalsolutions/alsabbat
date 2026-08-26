@@ -47,7 +47,7 @@ const PlayerCard = ({ player, index }) => (
         {player.display_name || player.full_name}
       </span>
       <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--club-primary)' }}>
-        {POSITION_LABEL[player.position] || player.position || 'Skuad'}
+        {POSITION_LABEL[player.position] || player.position || 'Pemain'}
       </span>
       <span
         className="als-media-overlay mt-3 inline-flex items-center gap-1.5 text-xs font-semibold"
@@ -66,7 +66,7 @@ export const SquadShowcase = ({ players = [], limit = 8 }) => {
       <EmptyState
         icon={Users}
         title="Belum ada pemain"
-        description="Skuad akan tampil setelah pemain ditambahkan."
+        description="Daftar pemain akan tampil setelah pemain ditambahkan."
         testId="home-squad-empty"
       />
     );

@@ -497,3 +497,25 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - `yarn build` Compiled successfully tanpa warning (277.81 kB gz, CSS 14.9 kB); `/api/health` 200; backend tidak diubah sama sekali di fase ini.
 - Audit: "Keluarga ALSABBAT" 0, `#222222/#1A1A1A/rgba(34,34,34` 0, `transition: all` 0 pada kode ALSABBAT (5 sisa hanya di primitif shadcn: toast/tabs/accordion/progress/input-otp — sengaja tidak diubah).
 - Database produksi tidak disentuh; data nyata user tetap (logo klub hasil upload, Majalengka, Babakan koda, 1 musim, 2 media).
+
+## FASE 22 — Navigation & Header Polish: CAPITAL MENU + PEMAIN (26 Jun 2026) · STOP GATE 22
+### Struktur menu final (label publik CAPITAL, route tidak diubah)
+- BERANDA `/` · KLUB `/club` · PEMAIN `/teams` · PERTANDINGAN `/matches` · BERITA `/news` · GALERI `/gallery` · MERCHANDISE `/merchandise` · KONTAK `/contact` · LOGIN `/login`.
+- Nav sekunder (drawer mobile) juga CAPITAL: PRESTASI, SPONSOR, LACAK PESANAN.
+- ≥1280px: 8 menu tampil langsung (`public-header-primary-nav`).
+- 1024–1279px: 6 menu prioritas (BERANDA…GALERI) + dropdown **LAINNYA ▾** berisi MERCHANDISE & KONTAK (`public-header-compact-nav`, `public-nav-more-trigger`).
+- <1024px: drawer mobile existing (Sheet) dengan semua menu + tombol LOGIN + caption "Login untuk Baraya ALSABBAT".
+- Caption login desktop dipindah ke `2xl:inline` agar header tidak padat di 1280px. Staff Access tetap HANYA di footer.
+### Terminologi
+- "Skuad"/"Squad" yang tampil ke user → **0** (diganti "PEMAIN"/"pemain"/"tim"): PublicHeader, PublicFooter (memakai PUBLIC_NAV), TeamsPage, TeamDetailPage, PlayerDetailPage (breadcrumb + tombol kembali), SquadShowcase, StorePromoCard, HomePage empty state, `lib/siteContent.js` defaults, label admin (AdminClubPage/AdminHomeContentPage/AdminPlayersPage/SiteContentForm). Key CMS, route, testid, nama file, enum **tidak diubah**.
+- "Markas" 0, "Keluarga ALSABBAT" 0 (tetap "Stadion" & "Baraya ALSABBAT").
+### Aksesibilitas
+- Dropdown LAINNYA memakai Radix DropdownMenu: dapat dibuka via keyboard (Enter), ArrowDown navigasi, Escape menutup — terverifikasi.
+- Drawer mobile: ditambahkan `SheetTitle`/`SheetDescription` sr-only → console error a11y Radix (`DialogContent requires a DialogTitle`) hilang, Escape menutup drawer.
+### Verifikasi (tanpa Testing Agent)
+- Overflow **0 px** di 1920/1440/1280/1024/768/390 (+drawer terbuka di 390).
+- Visibilitas nav benar: 1920/1440/1280 full nav; 1024 compact nav + dropdown; 768/390 burger.
+- Semua route publik status 200 (club, teams, matches, news, gallery, merchandise, contact, login) & 0 istilah terlarang di body.
+- Active underline gold tetap tanpa layout shift; motion Fase 21 dipertahankan (tidak ada animasi baru).
+- Console: 0 error / 0 warning setelah perbaikan a11y; `yarn build` Compiled successfully tanpa warning.
+- **Database tidak disentuh** (hanya read-only check: `site_content` 0 dokumen → default kode yang dipakai). Tidak ada data dummy, tidak ada deployment.

@@ -85,7 +85,7 @@ export default function AdminClubPage() {
           type: 'media',
           full: true,
           optionsFrom: mediaOptions,
-          help: 'Gunakan gambar landscape resolusi tinggi (minimal 1600px) agar tetap tajam sebagai latar header halaman Klub & Skuad.',
+          help: 'Gunakan gambar landscape resolusi tinggi (minimal 1600px) agar tetap tajam sebagai latar header halaman Klub & Pemain.',
         },
         { name: 'primary_color', label: 'Primary Color', type: 'color' },
         { name: 'secondary_color', label: 'Secondary Color', type: 'color' },

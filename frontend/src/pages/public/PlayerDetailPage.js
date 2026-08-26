@@ -46,7 +46,7 @@ const PlayerHero = ({ player, team }) => {
         >
           <Link to="/" className="min-h-[24px] font-medium hover:text-[var(--club-primary)]">Beranda</Link>
           <ChevronRight className="h-3 w-3" aria-hidden="true" />
-          <Link to="/teams" className="min-h-[24px] font-medium hover:text-[var(--club-primary)]">Skuad</Link>
+          <Link to="/teams" className="min-h-[24px] font-medium hover:text-[var(--club-primary)]">PEMAIN</Link>
           <ChevronRight className="h-3 w-3" aria-hidden="true" />
           <span>{player?.display_name || player?.full_name || 'Pemain'}</span>
         </nav>
@@ -181,7 +181,7 @@ export default function PlayerDetailPage() {
           className="mt-6 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold"
           style={{ color: 'var(--club-secondary)' }}
         >
-          <ArrowLeft className="h-4 w-4" /> Kembali ke Squad
+          <ArrowLeft className="h-4 w-4" /> Kembali ke PEMAIN
         </Link>
       </div>
     );

@@ -230,8 +230,8 @@ export default function HomePage() {
             ) : (
               <EmptyState
                 icon={Users}
-                title="Skuad belum tersedia"
-                description="Sorotan pemain akan tampil setelah skuad dilengkapi."
+                title="Data pemain belum tersedia"
+                description="Sorotan pemain akan tampil setelah data pemain dilengkapi."
                 testId="home-spotlight-empty"
               />
             )}

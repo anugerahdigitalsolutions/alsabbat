@@ -13,7 +13,7 @@ export default function AdminPlayersPage() {
   return (
     <ResourceManager
       title="Players"
-      description="Skuad pemain per tim. Tidak ada data pemain yang di-hard-code."
+      description="Daftar pemain klub. Tidak ada data pemain yang di-hard-code."
       endpoint="/players"
       writePermission="player:write"
       testPrefix="admin-players"

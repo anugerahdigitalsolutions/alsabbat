@@ -15,7 +15,7 @@ export default function AdminHomeContentPage() {
           Konten Halaman
         </h1>
         <p className="mt-1 max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
-          Kelola banner hero dan teks editorial halaman publik (Homepage, Klub, Skuad, Kontak) tanpa mengubah kode.
+          Kelola banner hero dan teks editorial halaman publik (Homepage, Klub, Pemain, Kontak) tanpa mengubah kode.
         </p>
       </div>
 

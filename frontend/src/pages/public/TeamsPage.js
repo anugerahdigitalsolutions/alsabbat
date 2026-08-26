@@ -24,7 +24,7 @@ const GROUPS = [
 export default function TeamsPage() {
   const { club, clubName, shortName } = useClub();
   const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
-  usePageSeo({ title: 'Skuad', description: `Skuad resmi ${clubName} — satu klub, satu skuad.`, path: '/teams' });
+  usePageSeo({ title: 'Pemain', description: `Daftar pemain resmi ${clubName} — satu klub, satu tim.`, path: '/teams' });
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 60 });
   const staff = useResourceList('/staff', { status: 'ACTIVE', limit: 30 });
   const spotlight = useMemo(() => pickSpotlightPlayer(players.items), [players.items]);
@@ -62,8 +62,8 @@ export default function TeamsPage() {
         ) : !players.items.length ? (
           <EmptyState
             icon={Users}
-            title="Skuad belum tersedia"
-            description="Profil pemain akan tampil di sini setelah skuad dilengkapi pada Admin Panel."
+            title="Data pemain belum tersedia"
+            description="Profil pemain akan tampil di sini setelah data pemain dilengkapi pada Admin Panel."
             testId="teams-empty"
           />
         ) : (
