@@ -647,3 +647,10 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - **Backward compatible**: helper `lib/personPhotos.js` → pakai `gallery_images` bila ada, jika kosong pakai `photo` lama. `gallery_images[0]` = foto utama (termasuk untuk OG image).
 - Verifikasi (tanpa Testing Agent): PATCH 4 foto → tersimpan 3; duplikat/kosong dibersihkan; create staf dengan 4 foto → 3; admin 3/3 tanpa slot tambah; reorder (← →) + hapus + Simpan → urutan persist setelah reload; slider publik pemain (3 foto: arrow, dot, keyboard, lightbox + Escape/tutup) & staf (swipe kiri/kanan berpindah benar); pemain hanya `photo` → 1 foto tanpa arrow/dot; overflow **0 px** di 1920/1440/1280/1024/768/390; console **0 error**; `yarn build` sukses tanpa warning.
 - Cleanup: gallery pemain uji dikembalikan ke `[]`, staf uji dihapus (staff total 0 seperti semula), `photo` pemain nyata utuh, tidak ada data/foto dummy tertinggal, tanpa deployment.
+
+## FASE — Compact Floating Glass Next Match Card (26 Jun 2026)
+- Hanya `components/public/home/HeroNextMatchPanel.js` diubah (frontend, tanpa backend/DB/CMS/logic countdown).
+- Panel hero "Pertandingan Berikutnya" dibuat compact: desktop **430×213 → 320×128 px** (≈-26% lebar, -40% tinggi), mobile 390 dibatasi `max-w-[300px]` (sebelumnya melebar 407 px sampai terpotong frame).
+- Layout baru 3 baris rapat: (1) label + countdown inline (4 unit kecil), (2) crest 26 px + nama tim + VS satu baris, (3) tanggal·jam·stadion (truncate) + CTA "Pusat Pertandingan" compact (min-h 30 px).
+- Gaya: glass `rgba(1,12,40,0.56)` + `blur(10px)` + border gold `rgba(252,207,43,0.22)` + soft shadow (bukan kotak hitam solid) → foto banner tetap focal point.
+- Verifikasi: 1440 → 320×128, 390 → 300×128 (tepi kanan 340 px, di dalam frame), overflow 0 px pada keduanya, countdown tetap berjalan (detik menurun, logic existing), CTA menuju `/matches/:id`, console 0 error, build sukses tanpa warning, DB & data tidak disentuh.
