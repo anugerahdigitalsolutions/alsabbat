@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Lock, Menu, Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { ClubCrestMark } from '../shared/ClubCrestMark';
@@ -83,16 +83,6 @@ export const PublicHeader = () => {
           >
             <Search className="h-[18px] w-[18px]" style={{ color: 'var(--club-secondary)' }} />
           </button>
-
-          <Link
-            to="/admin/login"
-            className="als-focus font-display hidden min-h-[40px] items-center gap-2 rounded-full px-4 text-xs font-bold transition-transform duration-200 hover:-translate-y-0.5 sm:inline-flex"
-            style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-            data-testid="public-header-staff-access"
-          >
-            <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-            Staff Access
-          </Link>
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>

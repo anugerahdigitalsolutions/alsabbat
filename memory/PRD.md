@@ -278,3 +278,10 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 - Audit log administratif & 2FA Super Admin
 ### P2
 - Membership, ticketing, signed URL untuk media privat
+
+## Koreksi Final — Staff Access (26 Jun 2026)
+- Pill "Staff Access" DIHAPUS dari PublicHeader.js (header kanan atas), import ikon Lock dibersihkan.
+- "Staff Access" TETAP hanya di baris paling bawah PublicFooter.js, subtle (rgba(0,0,0,0.38)).
+- Tidak ada Admin Panel di navigasi publik (PUBLIC_NAV/SECONDARY_NAV/mobile menu).
+- Backend, auth/RBAC, API, DB, deployment TIDAK diubah. Tidak ada data dummy.
+- Verifikasi: yarn build sukses; desktop 1920 & mobile 390 -> header staff access absent, footer staff access present; POST /api/auth/login admin@alsabbat.com berhasil (token SUPER_ADMIN).
