@@ -93,7 +93,7 @@ const TimelineRow = ({ event, playersById, clubName, last }) => {
 };
 
 /** Chronological match timeline (goals, cards, substitutions). */
-export const MatchTimeline = ({ events = [], playersById = {}, clubName = 'ALSABBAT' }) => {
+export const MatchTimeline = ({ events = [], playersById = {}, clubName = 'AL SABBAT' }) => {
   if (!events.length) {
     return (
       <EmptyState

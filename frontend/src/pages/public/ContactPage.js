@@ -9,7 +9,7 @@ import { useSiteText } from '../../lib/siteContent';
 
 export default function ContactPage() {
   const { club, clubName, shortName, loading, error, reload } = useClub();
-  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
+  const t = useSiteText({ club: shortName || clubName || 'AL SABBAT' });
   usePageSeo({ title: 'Kontak', description: `Informasi kontak resmi ${clubName}.`, path: '/contact' });
 
   const contact = club?.contact || {};

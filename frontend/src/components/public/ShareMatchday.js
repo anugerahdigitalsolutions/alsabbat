@@ -20,7 +20,7 @@ const buildText = ({ match, clubName, competitionName }) => {
  * Matchday sharing: Web Share API when available, plus WhatsApp and Copy Link.
  * No claim of automatic posting to any platform that has not authorised it.
  */
-export const ShareMatchday = ({ match, clubName = 'ALSABBAT', competitionName, compact = false }) => {
+export const ShareMatchday = ({ match, clubName = 'AL SABBAT', competitionName, compact = false }) => {
   const [copied, setCopied] = useState(false);
   const url = typeof window !== 'undefined' ? window.location.href : '';
   const text = buildText({ match, clubName, competitionName });
@@ -57,7 +57,7 @@ export const ShareMatchday = ({ match, clubName = 'ALSABBAT', competitionName, c
           <p className="als-section-label">Bagikan Pertandingan</p>
           <span className="als-gold-rule mt-2" aria-hidden="true" />
           <p className="mt-3 text-sm" style={{ color: 'var(--muted-fg)' }}>
-            Sebarkan informasi pertandingan ini ke suporter ALSABBAT.
+            Sebarkan informasi pertandingan ini ke suporter AL SABBAT.
           </p>
         </>
       )}

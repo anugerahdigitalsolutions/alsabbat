@@ -15,10 +15,10 @@ import { useClub } from '../../context/ClubContext';
 
 export default function MerchandisePage() {
   const { clubName, shortName } = useClub();
-  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
+  const t = useSiteText({ club: shortName || clubName || 'AL SABBAT' });
   usePageSeo({
     title: 'Merchandise',
-    description: 'Merchandise resmi ALSABBAT Football Club.',
+    description: 'Merchandise resmi AL SABBAT Football Club.',
     path: '/merchandise',
   });
   const [items, setItems] = useState([]);
@@ -59,7 +59,7 @@ export default function MerchandisePage() {
           <EmptyState
             icon={ShoppingBag}
             title="Merchandise segera hadir"
-            description="Produk resmi ALSABBAT akan tampil di sini setelah dirilis."
+            description="Produk resmi AL SABBAT akan tampil di sini setelah dirilis."
             testId="merchandise-empty"
           />
         ) : (

@@ -70,7 +70,7 @@ const initials = (name = '') =>
     .toUpperCase() || '?';
 
 const drawCrest = (ctx, img, cx, cy, size, label) => {
-  // Container tetap + gaya kartu ALSABBAT
+  // Container tetap + gaya kartu AL SABBAT
   ctx.save();
   roundRect(ctx, cx - size / 2, cy - size / 2, size, size, size * 0.22);
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
@@ -148,7 +148,7 @@ const drawSponsorCell = (ctx, item, x, y, w, h) => {
  */
 export const MatchScoreCardGenerator = ({
   match,
-  clubName = 'ALSABBAT',
+  clubName = 'AL SABBAT',
   clubLogo,
   competitionName,
   seasonName,
@@ -215,7 +215,7 @@ export const MatchScoreCardGenerator = ({
       ctx.drawImage(coverImg, (W - dw) / 2, (H - dh) * 0.35, dw, dh);
     }
 
-    // 2. Identitas warna ALSABBAT (navy + gold) — kekuatan mengikuti slider Admin
+    // 2. Identitas warna AL SABBAT (navy + gold) — kekuatan mengikuti slider Admin
     const a = (full, min) => (coverImg ? full - (full - min) * t : full);
     const navy = ctx.createLinearGradient(0, 0, W * 0.35, H);
     navy.addColorStop(0, `rgba(1,40,145,${a(0.9, 0.2).toFixed(3)})`);
@@ -442,7 +442,7 @@ export const MatchScoreCardGenerator = ({
     const file = new File([blob], fileName(), { type: 'image/png' });
     if (navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: 'Matchday ALSABBAT' });
+        await navigator.share({ files: [file], title: 'Matchday AL SABBAT' });
         return;
       } catch (e) {
         if (e?.name === 'AbortError') return;

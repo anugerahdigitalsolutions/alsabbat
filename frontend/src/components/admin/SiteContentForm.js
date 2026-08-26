@@ -10,7 +10,7 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { LoadingState } from '../shared/LoadingState';
 
-export const SiteContentForm = ({ clubName = 'ALSABBAT' }) => {
+export const SiteContentForm = ({ clubName = 'AL SABBAT' }) => {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission('content:write');
   const [values, setValues] = useState({});

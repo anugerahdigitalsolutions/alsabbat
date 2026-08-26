@@ -8,7 +8,7 @@ import { useClub } from '../../context/ClubContext';
 
 export default function AdminHomeContentPage() {
   const { shortName } = useClub();
-  const clubName = shortName || 'ALSABBAT';
+  const clubName = shortName || 'AL SABBAT';
 
   return (
     <div className="space-y-6" data-testid="admin-home-content-page">

@@ -67,7 +67,7 @@ export const AdminShell = () => {
                 {current?.label || 'Admin'}
               </span>
               <span className="text-[11px]" style={{ color: 'var(--muted-fg)' }}>
-                ALSABBAT Admin Panel
+                AL SABBAT Admin Panel
               </span>
             </div>
           </div>

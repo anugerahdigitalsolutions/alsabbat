@@ -11,7 +11,7 @@ import {
 
 /**
  * Presentation metadata for match event types.
- * Colors stay inside the ALSABBAT palette + semantic tokens.
+ * Colors stay inside the AL SABBAT palette + semantic tokens.
  */
 export const EVENT_META = {
   GOAL: { label: 'Gol', Icon: Goal, color: 'var(--club-secondary)' },

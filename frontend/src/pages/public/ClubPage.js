@@ -21,7 +21,7 @@ const COLORS = [
 
 export default function ClubPage() {
   const { club, clubName, shortName, loading, error, reload } = useClub();
-  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
+  const t = useSiteText({ club: shortName || clubName || 'AL SABBAT' });
   usePageSeo({
     title: 'Profil Klub',
     description: club?.description || `Profil resmi ${clubName}.`,

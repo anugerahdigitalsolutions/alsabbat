@@ -11,7 +11,7 @@ import { formatIDR } from '../../context/CartContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function OrderTrackPage() {
-  usePageSeo({ title: 'Lacak Pesanan', description: 'Lacak status pesanan merchandise ALSABBAT Football Club.', path: '/order', robots: 'noindex,follow' });
+  usePageSeo({ title: 'Lacak Pesanan', description: 'Lacak status pesanan merchandise AL SABBAT Football Club.', path: '/order', robots: 'noindex,follow' });
   const [params] = useSearchParams();
   const [form, setForm] = useState({
     order_number: params.get('order_number') || '',

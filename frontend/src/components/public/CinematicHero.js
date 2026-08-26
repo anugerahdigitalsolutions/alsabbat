@@ -17,7 +17,7 @@ const SWIPE_THRESHOLD = 48;
  * - mobile swipe, keyboard (ArrowLeft / ArrowRight), pause on hover/focus
  * - respects prefers-reduced-motion (no ken-burns, no autoplay)
  */
-export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', panel = null, tagline = null, socials = [] }) => {
+export const CinematicHero = ({ slides = [], stats = [], clubName = 'AL SABBAT', panel = null, tagline = null, socials = [] }) => {
   const reduced = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -269,15 +269,6 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
                 </p>
               </div>
             )}
-            {panel ? (
-              <div
-                className="als-hero-step w-full lg:w-auto lg:justify-self-end lg:pb-2"
-                style={{ animationDelay: '700ms' }}
-                data-testid="home-hero-panel"
-              >
-                {panel}
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -347,6 +338,23 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
           </div>
         ) : null}
       </div>
+
+      {/* Next Match bar — DI BAWAH foto banner, tidak menutupi foto */}
+      {panel ? (
+        <div
+          className="als-hero-step px-4 py-2.5 sm:px-6 lg:px-8"
+          style={{
+            animationDelay: '700ms',
+            borderTop: '1px solid rgba(252,207,43,0.22)',
+            backgroundColor: 'rgba(0,0,0,0.42)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+          }}
+          data-testid="home-hero-panel"
+        >
+          {panel}
+        </div>
+      ) : null}
 
       {/* stats strip */}
       {stats.length ? (

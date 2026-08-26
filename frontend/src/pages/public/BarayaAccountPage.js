@@ -32,7 +32,7 @@ const formatDate = (value) => {
 export default function BarayaAccountPage() {
   usePageSeo({
     title: 'Akun Baraya',
-    description: 'Profil akun Baraya ALSABBAT.',
+    description: 'Profil akun Baraya AL SABBAT.',
     path: '/akun',
     robots: 'noindex,follow',
   });
@@ -73,9 +73,9 @@ export default function BarayaAccountPage() {
   return (
     <div data-testid="page-baraya-account">
       <PublicPageHeader
-        label="Baraya ALSABBAT"
+        label="Baraya AL SABBAT"
         title="Akun Saya"
-        description="Kelola profil Baraya ALSABBAT dan pantau pesanan merchandise Anda."
+        description="Kelola profil Baraya AL SABBAT dan pantau pesanan merchandise Anda."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Akun Saya' }]}
       />
       <div className="als-container py-10 sm:py-14">
@@ -168,7 +168,7 @@ export default function BarayaAccountPage() {
 
           <div className="space-y-6">
             <div className="als-card space-y-4 p-6" data-testid="baraya-member-section">
-              <p className="als-section-label">Kartu Member Baraya ALSABBAT</p>
+              <p className="als-section-label">Kartu Member Baraya AL SABBAT</p>
               <span className="als-gold-rule mt-1 block" aria-hidden="true" />
               <MemberCard card={{
                 member_number: customer?.member_number,

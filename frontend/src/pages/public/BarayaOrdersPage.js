@@ -23,7 +23,7 @@ const formatDate = (value) => {
 export default function BarayaOrdersPage() {
   usePageSeo({
     title: 'Pesanan Saya',
-    description: 'Riwayat pesanan merchandise Baraya ALSABBAT.',
+    description: 'Riwayat pesanan merchandise Baraya AL SABBAT.',
     path: '/akun/pesanan',
     robots: 'noindex,follow',
   });
@@ -51,7 +51,7 @@ export default function BarayaOrdersPage() {
   return (
     <div data-testid="page-baraya-orders">
       <PublicPageHeader
-        label="Baraya ALSABBAT"
+        label="Baraya AL SABBAT"
         title="Pesanan Saya"
         description="Riwayat pesanan merchandise yang tercatat pada akun Baraya Anda."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Akun Saya', to: '/akun' }, { label: 'Pesanan Saya' }]}

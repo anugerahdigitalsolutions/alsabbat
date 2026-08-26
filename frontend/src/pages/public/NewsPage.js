@@ -15,8 +15,8 @@ import { useClub } from '../../context/ClubContext';
 
 export default function NewsPage() {
   const { clubName, shortName } = useClub();
-  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
-  usePageSeo({ title: 'Berita', description: 'Berita resmi, laporan pertandingan, dan pengumuman ALSABBAT Football Club.', path: '/news' });
+  const t = useSiteText({ club: shortName || clubName || 'AL SABBAT' });
+  usePageSeo({ title: 'Berita', description: 'Berita resmi, laporan pertandingan, dan pengumuman AL SABBAT Football Club.', path: '/news' });
   const [query, setQuery] = useState('');
   const { items, total, loading, error, reload } = useResourceList('/content/posts', {
     status: 'PUBLISHED',

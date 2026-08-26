@@ -77,7 +77,7 @@ export default function HomePage() {
   const products = useResourceList('/merchandise/products', { limit: 4 });
   const banners = useResourceList('/banners/public', { limit: 20 });
 
-  const badge = shortName || 'ALSABBAT';
+  const badge = shortName || 'AL SABBAT';
   const t = useSiteText({ club: badge });
   const upcoming = matches.items.filter((m) => UPCOMING.includes(m.status));
   const finished = matches.items.filter((m) => m.status === 'FINISHED');

@@ -31,7 +31,7 @@ export default function NewsDetailPage() {
 
   usePageSeo({
     title: post?.seo?.title || post?.title || 'Berita',
-    description: post?.seo?.description || post?.excerpt || 'Berita resmi ALSABBAT Football Club.',
+    description: post?.seo?.description || post?.excerpt || 'Berita resmi AL SABBAT Football Club.',
     image: post?.seo?.og_image || post?.thumbnail,
     path: `/news/${slug}`,
   });

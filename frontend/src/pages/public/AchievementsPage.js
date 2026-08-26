@@ -9,7 +9,7 @@ import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function AchievementsPage() {
-  usePageSeo({ title: 'Prestasi', description: 'Prestasi dan trofi ALSABBAT Football Club.', path: '/achievements' });
+  usePageSeo({ title: 'Prestasi', description: 'Prestasi dan trofi AL SABBAT Football Club.', path: '/achievements' });
   const { items, total, loading, error, reload } = useResourceList('/achievements', { status: 'ACTIVE', limit: 60 });
 
   return (

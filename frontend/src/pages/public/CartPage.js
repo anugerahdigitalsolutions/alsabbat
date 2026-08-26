@@ -9,7 +9,7 @@ import { formatIDR, useCart } from '../../context/CartContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function CartPage() {
-  usePageSeo({ title: 'Keranjang', description: 'Keranjang merchandise resmi ALSABBAT Football Club.', path: '/cart', robots: 'noindex,follow' });
+  usePageSeo({ title: 'Keranjang', description: 'Keranjang merchandise resmi AL SABBAT Football Club.', path: '/cart', robots: 'noindex,follow' });
   const { lines, payload, updateQuantity, removeItem, count } = useCart();
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
@@ -48,7 +48,7 @@ export default function CartPage() {
           <EmptyState
             icon={ShoppingCart}
             title="Keranjang Anda kosong"
-            description="Jelajahi merchandise resmi ALSABBAT terlebih dahulu."
+            description="Jelajahi merchandise resmi AL SABBAT terlebih dahulu."
             testId="cart-empty"
           />
         ) : (

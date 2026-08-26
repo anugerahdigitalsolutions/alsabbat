@@ -99,7 +99,7 @@ const FramePreview = ({ config, device }) => (
     >
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <span className="font-display text-[13px] font-extrabold" style={{ color: '#000000' }}>
-          ALSABBAT
+          AL SABBAT
         </span>
         <span className="hidden gap-3 text-[9px] font-semibold tracking-[0.05em] sm:flex" style={{ color: 'var(--muted-fg)' }}>
           BERANDA KLUB PEMAIN PERTANDINGAN BERITA
@@ -162,7 +162,7 @@ export const BackgroundManager = () => {
 
   const reset = async () => {
     setConfig(BACKGROUND_DEFAULT);
-    await save(BACKGROUND_DEFAULT, 'Background dikembalikan ke default ALSABBAT');
+    await save(BACKGROUND_DEFAULT, 'Background dikembalikan ke default AL SABBAT');
   };
 
   if (loading) {
@@ -180,7 +180,7 @@ export const BackgroundManager = () => {
           <div>
             <p className="font-display text-sm font-semibold">Gunakan Background Website</p>
             <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>
-              OFF = memakai background default ALSABBAT. Background hanya tampil di area luar frame website.
+              OFF = memakai background default AL SABBAT. Background hanya tampil di area luar frame website.
             </p>
           </div>
           <Switch

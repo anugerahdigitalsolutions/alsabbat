@@ -31,7 +31,7 @@ export const collectYoutubeVideos = (t) =>
 
 const VideoFacade = ({ video, primary = false, testId }) => {
   const [playing, setPlaying] = useState(false);
-  const label = video.title || 'Video YouTube ALSABBAT';
+  const label = video.title || 'Video YouTube AL SABBAT';
 
   return (
     <figure className="als-card overflow-hidden" data-testid={testId}>

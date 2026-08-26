@@ -81,7 +81,7 @@ export default function AdminReadinessPage() {
     <div className="space-y-6" data-testid="admin-readiness-page">
       <div>
         <h1 className="font-display text-2xl font-bold" data-testid="admin-readiness-title">
-          Persiapan Konten ALSABBAT
+          Persiapan Konten AL SABBAT
         </h1>
         <p className="mt-1 max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
           Semua status di halaman ini dihitung langsung dari data nyata di database. Tidak ada contoh atau data palsu.

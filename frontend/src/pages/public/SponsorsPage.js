@@ -9,7 +9,7 @@ import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function SponsorsPage() {
-  usePageSeo({ title: 'Sponsor', description: 'Sponsor dan partner resmi ALSABBAT Football Club.', path: '/sponsors' });
+  usePageSeo({ title: 'Sponsor', description: 'Sponsor dan partner resmi AL SABBAT Football Club.', path: '/sponsors' });
   const { items, loading, error, reload } = useResourceList('/sponsors', {
     status: 'ACTIVE',
     limit: 60,

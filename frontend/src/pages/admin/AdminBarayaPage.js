@@ -21,7 +21,7 @@ const formatDate = (value) => {
   }
 };
 
-/** Admin console for Baraya ALSABBAT customer accounts (read + activate/deactivate only). */
+/** Admin console for Baraya AL SABBAT customer accounts (read + activate/deactivate only). */
 export default function AdminBarayaPage() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -83,7 +83,7 @@ export default function AdminBarayaPage() {
     <div className="space-y-6" data-testid="admin-baraya-page">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold">Baraya ALSABBAT</h1>
+          <h1 className="font-display text-2xl font-bold">Baraya AL SABBAT</h1>
           <p className="text-sm" style={{ color: 'var(--muted-fg)' }}>
             {total} akun pelanggan terdaftar. Password tidak pernah dapat dilihat.
           </p>

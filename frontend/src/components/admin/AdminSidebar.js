@@ -78,7 +78,7 @@ export const ADMIN_NAV = [
     group: 'Sistem',
     items: [
       { id: 'users', to: '/admin/users', label: 'Admin Users', Icon: UserCog },
-      { id: 'baraya', to: '/admin/baraya', label: 'Baraya ALSABBAT', Icon: UserCog },
+      { id: 'baraya', to: '/admin/baraya', label: 'Baraya AL SABBAT', Icon: UserCog },
       { id: 'system', to: '/admin/system', label: 'System Status', Icon: Activity },
     ],
   },
@@ -90,7 +90,7 @@ export const AdminSidebar = ({ onNavigate }) => (
       <ClubCrestMark size={34} onDark testId="admin-sidebar-crest" />
       <div className="flex flex-col leading-tight">
         <span className="font-display text-sm font-bold" style={{ color: 'var(--club-light)' }}>
-          ALSABBAT
+          AL SABBAT
         </span>
         <span className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'var(--club-primary)' }}>
           Admin Panel
@@ -135,7 +135,7 @@ export const AdminSidebar = ({ onNavigate }) => (
     </nav>
 
     <div className="px-5 py-4 text-[11px]" style={{ borderTop: '1px solid rgba(254,254,254,0.10)', color: 'rgba(254,254,254,0.45)' }}>
-      ALSABBAT Football Club · Admin
+      AL SABBAT Football Club · Admin
     </div>
   </div>
 );

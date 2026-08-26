@@ -58,7 +58,7 @@ const PreviewDialog = ({ open, onOpenChange, clubName }) => {
           <CinematicHero slides={slides} clubName={clubName} />
         ) : (
           <p className="py-8 text-sm" style={{ color: 'var(--muted-fg)' }} data-testid="admin-banners-preview-empty">
-            Belum ada banner. Homepage akan memakai hero fallback ALSABBAT (teks dari tab Konten Situs).
+            Belum ada banner. Homepage akan memakai hero fallback AL SABBAT (teks dari tab Konten Situs).
           </p>
         )}
       </DialogContent>
@@ -66,14 +66,14 @@ const PreviewDialog = ({ open, onOpenChange, clubName }) => {
   );
 };
 
-export const BannerManager = ({ clubName = 'ALSABBAT' }) => {
+export const BannerManager = ({ clubName = 'AL SABBAT' }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   return (
     <>
       <ResourceManager
         title="Banner Hero"
-        description="Slider hero homepage. Gambar dipilih dari Media Library. Hanya status ACTIVE yang tampil di website; jika tidak ada banner aktif, homepage memakai hero fallback ALSABBAT."
+        description="Slider hero homepage. Gambar dipilih dari Media Library. Hanya status ACTIVE yang tampil di website; jika tidak ada banner aktif, homepage memakai hero fallback AL SABBAT."
         endpoint="/banners"
         writePermission="content:write"
         testPrefix="admin-banners"

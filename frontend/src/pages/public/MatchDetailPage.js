@@ -54,11 +54,11 @@ export default function MatchDetailPage() {
   const heroImage = coverMedia ? resolveMediaUrl(coverMedia.url || coverMedia.thumbnail_url) : null;
 
   usePageSeo({
-    title: opponentName ? `${shortName || 'ALSABBAT'} vs ${opponentName}` : 'Pusat Pertandingan',
+    title: opponentName ? `${shortName || 'AL SABBAT'} vs ${opponentName}` : 'Pusat Pertandingan',
     description:
       match?.result_summary ||
       match?.description ||
-      'Pusat Pertandingan ALSABBAT: informasi pertandingan, susunan pemain, dan timeline kejadian.',
+      'Pusat Pertandingan AL SABBAT: informasi pertandingan, susunan pemain, dan timeline kejadian.',
     path: `/matches/${matchId}`,
   });
 
@@ -172,7 +172,7 @@ export default function MatchDetailPage() {
                 <MatchTimeline
                   events={data.events}
                   playersById={data.players}
-                  clubName={shortName || 'ALSABBAT'}
+                  clubName={shortName || 'AL SABBAT'}
                 />
               </TabsContent>
 

@@ -15,7 +15,7 @@ import { barayaMemberCard } from '../../services/barayaAuth';
 export default function BarayaMemberCardPage() {
   usePageSeo({
     title: 'Kartu Member Baraya',
-    description: 'Kartu member digital Baraya ALSABBAT.',
+    description: 'Kartu member digital Baraya AL SABBAT.',
     path: '/akun/kartu',
     robots: 'noindex,nofollow',
   });
@@ -46,8 +46,8 @@ export default function BarayaMemberCardPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Kartu Member Baraya ALSABBAT',
-          text: `Baraya ALSABBAT ${card?.member_number}`,
+          title: 'Kartu Member Baraya AL SABBAT',
+          text: `Baraya AL SABBAT ${card?.member_number}`,
           url: verifyUrl,
         });
         return;
@@ -89,9 +89,9 @@ export default function BarayaMemberCardPage() {
   return (
     <div data-testid="page-member-card">
       <PublicPageHeader
-        label="Baraya ALSABBAT"
+        label="Baraya AL SABBAT"
         title="Kartu Member Digital"
-        description="Kartu resmi Baraya ALSABBAT. QR hanya berisi tautan verifikasi publik, bukan data pribadi."
+        description="Kartu resmi Baraya AL SABBAT. QR hanya berisi tautan verifikasi publik, bukan data pribadi."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Akun Saya', to: '/akun' }, { label: 'Kartu Member' }]}
       />
       <div className="als-container py-10 sm:py-14">

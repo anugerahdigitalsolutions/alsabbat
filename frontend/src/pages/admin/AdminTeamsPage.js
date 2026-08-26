@@ -13,7 +13,7 @@ export default function AdminTeamsPage() {
   return (
     <ResourceManager
       title="Teams"
-      description="ALSABBAT adalah satu klub dengan satu skuad utama. Entity Team dipertahankan untuk relasi pemain, staf, dan pertandingan."
+      description="AL SABBAT adalah satu klub dengan satu skuad utama. Entity Team dipertahankan untuk relasi pemain, staf, dan pertandingan."
       endpoint="/teams"
       writePermission="team:write"
       testPrefix="admin-teams"

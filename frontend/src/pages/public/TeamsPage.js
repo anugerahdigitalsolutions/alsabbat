@@ -21,10 +21,10 @@ const GROUPS = [
   ['FORWARD', 'Depan'],
 ];
 
-/** ALSABBAT has exactly one squad — this page lists that squad directly. */
+/** AL SABBAT has exactly one squad — this page lists that squad directly. */
 export default function TeamsPage() {
   const { club, clubName, shortName } = useClub();
-  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
+  const t = useSiteText({ club: shortName || clubName || 'AL SABBAT' });
   usePageSeo({ title: 'Pemain', description: `Daftar pemain resmi ${clubName} — satu klub, satu tim.`, path: '/teams' });
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 60 });
   const staff = useResourceList('/staff', { status: 'ACTIVE', limit: 30 });

@@ -84,7 +84,7 @@ export default function TeamDetailPage() {
 
   usePageSeo({
     title: team?.name || 'Tim',
-    description: team?.description || 'Pemain dan staf ALSABBAT Football Club.',
+    description: team?.description || 'Pemain dan staf AL SABBAT Football Club.',
     path: `/teams/${teamId}`,
   });
 

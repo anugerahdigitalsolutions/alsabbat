@@ -4,7 +4,7 @@ import { useClub } from '../../context/ClubContext';
 /** Club crest mark — uses the club logo when configured, otherwise a monogram. */
 export const ClubCrestMark = ({ size = 40, onDark = false, testId = 'club-crest' }) => {
   const { club, shortName, colors } = useClub();
-  const initials = (shortName || 'ALSABBAT').slice(0, 3).toUpperCase();
+  const initials = (shortName || 'AL SABBAT').replace(/\s+/g, '').slice(0, 3).toUpperCase();
 
   if (club?.logo) {
     return (

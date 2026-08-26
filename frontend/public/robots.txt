@@ -1,4 +1,4 @@
-# ALSABBAT Football Club — generated at build time, do not edit by hand
+# AL SABBAT Football Club — generated at build time, do not edit by hand
 User-agent: *
 Allow: /
 Disallow: /admin

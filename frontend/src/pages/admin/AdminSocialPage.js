@@ -146,13 +146,13 @@ export default function AdminSocialPage() {
       next.match_id = sourceId;
       const hasScore = match?.home_score !== null && match?.home_score !== undefined;
       next.caption = match
-        ? `${hasScore ? 'FULL TIME' : 'MATCHDAY'} — ALSABBAT vs ${match.opponent?.name || 'Lawan'}${
+        ? `${hasScore ? 'FULL TIME' : 'MATCHDAY'} — AL SABBAT vs ${match.opponent?.name || 'Lawan'}${
             hasScore ? ` ${match.home_score}-${match.away_score ?? 0}` : ''
           }\n${match.date || ''}${match.time ? ` · ${match.time} WIB` : ''}${
             match.venue ? `\n${match.venue}` : ''
           }`
         : form.caption;
-      next.title = match ? `ALSABBAT vs ${match.opponent?.name || 'Lawan'}`.slice(0, 100) : form.title;
+      next.title = match ? `AL SABBAT vs ${match.opponent?.name || 'Lawan'}`.slice(0, 100) : form.title;
     } else if (type === 'ALBUM') {
       const album = albums.find((a) => a.id === sourceId);
       next.caption = album ? [album.title, album.description].filter(Boolean).join('\n\n') : form.caption;

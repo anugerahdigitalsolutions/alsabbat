@@ -11,7 +11,7 @@ import { Button } from '../ui/button';
 const PREVIEW_CARD = {
   member_number: 'ALS-000001',
   member_code: 'contoh-pratinjau-kartu-member',
-  full_name: 'Nama Baraya ALSABBAT',
+  full_name: 'Nama Baraya AL SABBAT',
   photo_url: null,
   status: 'ACTIVE',
   joined_at: new Date().toISOString(),
@@ -62,7 +62,7 @@ export const MemberCardDesign = () => {
     <div className="als-card p-6" data-testid="admin-member-card-design">
       <h2 className="font-display text-lg font-semibold">Desain Kartu Member</h2>
       <p className="mt-1 max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
-        Latar berlaku untuk semua kartu Baraya. Kosongkan untuk memakai latar default ALSABBAT. Overlay navy otomatis
+        Latar berlaku untuk semua kartu Baraya. Kosongkan untuk memakai latar default AL SABBAT. Overlay navy otomatis
         dipasang agar nama, nomor, dan QR tetap terbaca. Pilih gambar dengan area kosong yang cukup (hindari wajah atau
         teks di tengah) dan utamakan berkas dari Media Library agar tombol Simpan Kartu berfungsi optimal.
       </p>
@@ -97,7 +97,7 @@ export const MemberCardDesign = () => {
                   variant="outline"
                   onClick={() => {
                     setBackground('');
-                    persist('', 'Latar dikembalikan ke default ALSABBAT');
+                    persist('', 'Latar dikembalikan ke default AL SABBAT');
                   }}
                   disabled={saving}
                   data-testid="admin-card-background-reset"

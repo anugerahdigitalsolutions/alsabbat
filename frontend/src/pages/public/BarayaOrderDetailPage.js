@@ -23,7 +23,7 @@ export default function BarayaOrderDetailPage() {
   const { orderId } = useParams();
   usePageSeo({
     title: 'Detail Pesanan',
-    description: 'Detail pesanan merchandise Baraya ALSABBAT.',
+    description: 'Detail pesanan merchandise Baraya AL SABBAT.',
     path: `/akun/pesanan/${orderId}`,
     robots: 'noindex,follow',
   });
@@ -52,7 +52,7 @@ export default function BarayaOrderDetailPage() {
   return (
     <div data-testid="page-baraya-order-detail">
       <PublicPageHeader
-        label="Baraya ALSABBAT"
+        label="Baraya AL SABBAT"
         title={order?.order_number || 'Detail Pesanan'}
         description="Rincian item, pengiriman, dan status pembayaran pesanan Anda."
         breadcrumb={[

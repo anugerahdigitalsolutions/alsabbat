@@ -37,10 +37,10 @@ const Unit = ({ value, label, testId }) => (
 );
 
 /**
- * Real-time countdown to the next ALSABBAT match. Uses only real match data;
+ * Real-time countdown to the next AL SABBAT match. Uses only real match data;
  * never renders a negative countdown (falls back to MATCHDAY / match status).
  */
-export const MatchdayCountdown = ({ match, clubName = 'ALSABBAT', compact = false }) => {
+export const MatchdayCountdown = ({ match, clubName = 'AL SABBAT', compact = false }) => {
   const kickoff = useMemo(() => kickoffAt(match), [match]);
   const [now, setNow] = useState(() => Date.now());
   const statusLabel = STATUS_LABEL[match?.status];

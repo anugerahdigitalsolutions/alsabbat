@@ -24,7 +24,7 @@ const FIELDS = [
 ];
 
 export default function CheckoutPage() {
-  usePageSeo({ title: 'Checkout', description: 'Checkout merchandise resmi ALSABBAT Football Club.', path: '/checkout', robots: 'noindex,follow' });
+  usePageSeo({ title: 'Checkout', description: 'Checkout merchandise resmi AL SABBAT Football Club.', path: '/checkout', robots: 'noindex,follow' });
   const { lines, payload, clear } = useCart();
   const { customer } = useBaraya();
   const navigate = useNavigate();
@@ -145,13 +145,13 @@ export default function CheckoutPage() {
                   data-testid="checkout-baraya-banner"
                 >
                   <UserRound className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  Checkout sebagai Baraya ALSABBAT ({customer.email}). Pesanan otomatis tersimpan di akun Anda.
+                  Checkout sebagai Baraya AL SABBAT ({customer.email}). Pesanan otomatis tersimpan di akun Anda.
                 </p>
               ) : (
                 <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="checkout-baraya-login-cta">
                   Punya akun?{' '}
                   <Link to="/login" state={{ from: '/checkout' }} className="font-semibold underline" style={{ color: 'var(--club-secondary)' }}>
-                    Login sebagai Baraya ALSABBAT
+                    Login sebagai Baraya AL SABBAT
                   </Link>{' '}
                   agar pesanan tersimpan di riwayat akun. Checkout tanpa akun tetap bisa dilanjutkan.
                 </p>

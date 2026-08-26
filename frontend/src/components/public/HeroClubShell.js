@@ -61,7 +61,7 @@ export const HeroClubShell = ({ stats }) => {
               data-testid="hero-description"
             >
               {club?.description ||
-                'Platform digital resmi ALSABBAT Football Club — pertandingan, skuad, berita, dan galeri klub.'}
+                'Platform digital resmi AL SABBAT Football Club — pertandingan, skuad, berita, dan galeri klub.'}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">

@@ -74,7 +74,7 @@ export const MatchCardDesign = () => {
     <div className="als-card p-6" data-testid="admin-match-card-design">
       <h2 className="font-display text-lg font-semibold">Desain Kartu Pertandingan</h2>
       <p className="mt-1 max-w-3xl text-sm" style={{ color: 'var(--muted-fg)' }}>
-        Gambar pertandingan dipakai sebagai latar (cover), lalu dilapisi overlay & pattern warna ALSABBAT. Atur
+        Gambar pertandingan dipakai sebagai latar (cover), lalu dilapisi overlay & pattern warna AL SABBAT. Atur
         transparansi overlay di bawah: makin tinggi persentasenya, foto pertandingan makin terlihat; makin rendah, warna
         kartu makin kuat. Logo tim selalu dimuat penuh (contain) sehingga tidak pernah terpotong.
       </p>
@@ -111,7 +111,7 @@ export const MatchCardDesign = () => {
                 data-testid="admin-match-card-transparency"
               />
               <p className="mt-2 text-xs" style={{ color: 'var(--muted-fg)' }}>
-                0% = warna kartu ALSABBAT paling kuat · 100% = foto pertandingan paling terlihat. Preview di samping
+                0% = warna kartu AL SABBAT paling kuat · 100% = foto pertandingan paling terlihat. Preview di samping
                 berubah realtime tanpa perlu menyimpan.
               </p>
             </div>
@@ -132,7 +132,7 @@ export const MatchCardDesign = () => {
                   variant="outline"
                   onClick={() => {
                     setTransparency(MATCH_CARD_DEFAULT_TRANSPARENCY);
-                    persist(MATCH_CARD_DEFAULT_TRANSPARENCY, 'Desain dikembalikan ke default ALSABBAT');
+                    persist(MATCH_CARD_DEFAULT_TRANSPARENCY, 'Desain dikembalikan ke default AL SABBAT');
                   }}
                   disabled={saving}
                   data-testid="admin-match-card-reset"

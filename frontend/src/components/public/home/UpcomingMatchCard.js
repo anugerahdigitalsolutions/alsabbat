@@ -14,7 +14,7 @@ const formatDate = (value) => {
 };
 
 /** Editorial match card: upcoming fixture or finished result (real data only). */
-export const UpcomingMatchCard = ({ match, clubName = 'ALSABBAT', competitionName, testId = 'home-upcoming-match' }) => {
+export const UpcomingMatchCard = ({ match, clubName = 'AL SABBAT', competitionName, testId = 'home-upcoming-match' }) => {
   const hasScore = match.home_score !== null && match.home_score !== undefined;
   const isHome = match.venue_type !== 'AWAY';
   const clubGoals = hasScore ? (isHome ? match.home_score : match.away_score ?? 0) : null;

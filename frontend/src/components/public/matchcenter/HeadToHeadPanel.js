@@ -23,7 +23,7 @@ const Stat = ({ label, value, accent }) => (
 );
 
 /** Head-to-head vs the same opponent, derived from existing finished matches. */
-export const HeadToHeadPanel = ({ h2h, clubName = 'ALSABBAT' }) => {
+export const HeadToHeadPanel = ({ h2h, clubName = 'AL SABBAT' }) => {
   if (!h2h || !h2h.available) {
     return (
       <div className="als-card p-5" data-testid="match-head-to-head">

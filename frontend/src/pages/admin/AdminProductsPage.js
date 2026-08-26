@@ -10,7 +10,7 @@ export default function AdminProductsPage() {
   return (
     <ResourceManager
       title="Produk Merchandise"
-      description="Katalog merchandise resmi ALSABBAT. Harga dalam rupiah (tanpa desimal) dan divalidasi server saat checkout."
+      description="Katalog merchandise resmi AL SABBAT. Harga dalam rupiah (tanpa desimal) dan divalidasi server saat checkout."
       endpoint="/merchandise/catalog/products"
       writePermission="merchandise:write"
       testPrefix="admin-products"

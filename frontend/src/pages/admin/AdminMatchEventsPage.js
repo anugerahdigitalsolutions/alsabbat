@@ -59,11 +59,11 @@ export default function AdminMatchEventsPage() {
           type: 'select',
           required: true,
           options: opts(meta?.match_event_sides),
-          help: 'CLUB untuk ALSABBAT, OPPONENT untuk tim lawan.',
+          help: 'CLUB untuk AL SABBAT, OPPONENT untuk tim lawan.',
         },
         {
           name: 'team_id',
-          label: 'Tim ALSABBAT (opsional)',
+          label: 'Tim AL SABBAT (opsional)',
           type: 'select',
           optionsFrom: { endpoint: '/teams', labelKey: 'name' },
         },

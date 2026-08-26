@@ -76,7 +76,7 @@ export default function AdminMatchesPage() {
       fields={[
         {
           name: 'team_id',
-          label: 'Tim ALSABBAT',
+          label: 'Tim AL SABBAT',
           type: 'select',
           required: true,
           optionsFrom: { endpoint: '/teams', labelKey: 'name' },
@@ -112,7 +112,7 @@ export default function AdminMatchesPage() {
         { name: 'match_cover', label: 'Gambar Pertandingan', type: 'media', full: true, spec: MEDIA_SPECS.matchCover, help: 'Gambar landscape untuk kartu & halaman detail pertandingan.' },
         {
           name: 'formation',
-          label: 'Formasi ALSABBAT',
+          label: 'Formasi AL SABBAT',
           type: 'text',
           placeholder: '4-3-3',
           help: 'Dipakai untuk Visual Formation di Match Center. Kosongkan bila belum ditentukan.',

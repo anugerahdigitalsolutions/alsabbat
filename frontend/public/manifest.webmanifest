@@ -1,7 +1,7 @@
 {
-  "name": "ALSABBAT Football Club",
-  "short_name": "ALSABBAT FC",
-  "description": "Situs resmi ALSABBAT Football Club — Match Center, skuad, berita, galeri, dan merchandise.",
+  "name": "AL SABBAT Football Club",
+  "short_name": "AL SABBAT FC",
+  "description": "Situs resmi AL SABBAT Football Club — Match Center, skuad, berita, galeri, dan merchandise.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

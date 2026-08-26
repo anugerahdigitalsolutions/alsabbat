@@ -44,7 +44,7 @@ api.interceptors.response.use(
   }
 );
 
-/** Baraya ALSABBAT (public customer) client — separate token, never mixed with admin. */
+/** Baraya AL SABBAT (public customer) client — separate token, never mixed with admin. */
 export const barayaTokenStore = {
   get: () => localStorage.getItem(BARAYA_TOKEN_KEY),
   set: (token) => localStorage.setItem(BARAYA_TOKEN_KEY, token),

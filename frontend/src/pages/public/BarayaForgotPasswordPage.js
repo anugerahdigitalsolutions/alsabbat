@@ -12,7 +12,7 @@ import { barayaForgotPassword } from '../../services/barayaAuth';
 export default function BarayaForgotPasswordPage() {
   usePageSeo({
     title: 'Lupa Kata Sandi',
-    description: 'Minta instruksi reset kata sandi akun Baraya ALSABBAT.',
+    description: 'Minta instruksi reset kata sandi akun Baraya AL SABBAT.',
     path: '/lupa-password',
     robots: 'noindex,follow',
   });
@@ -38,7 +38,7 @@ export default function BarayaForgotPasswordPage() {
   return (
     <div data-testid="page-baraya-forgot">
       <PublicPageHeader
-        label="Baraya ALSABBAT"
+        label="Baraya AL SABBAT"
         title="Lupa Kata Sandi"
         description="Masukkan email akun Baraya Anda. Kami akan mengirim tautan untuk membuat kata sandi baru."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Login', to: '/login' }, { label: 'Lupa Kata Sandi' }]}

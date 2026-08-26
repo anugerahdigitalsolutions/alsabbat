@@ -21,7 +21,7 @@ export default function StaffDetailPage() {
 
   usePageSeo({
     title: member?.name || 'Profil Staf',
-    description: member?.bio || 'Profil staf ALSABBAT Football Club.',
+    description: member?.bio || 'Profil staf AL SABBAT Football Club.',
     image: photos[0],
     path: `/staff/${staffId}`,
   });

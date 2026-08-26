@@ -111,7 +111,7 @@ export const MatchStatistics = ({ events = [], lineups = [], playersById = {} })
         <div className="mb-4 flex items-center justify-between">
           <p className="als-section-label">Statistik Pertandingan</p>
           <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
-            ALSABBAT · Lawan
+            AL SABBAT · Lawan
           </span>
         </div>
         {rows.length ? (

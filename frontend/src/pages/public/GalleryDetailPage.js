@@ -20,7 +20,7 @@ export default function GalleryDetailPage() {
 
   usePageSeo({
     title: album?.title || 'Album Galeri',
-    description: album?.description || 'Album dokumentasi ALSABBAT Football Club.',
+    description: album?.description || 'Album dokumentasi AL SABBAT Football Club.',
     image: resolveMediaUrl(album?.cover_url_resolved),
     path: `/gallery/${albumId}`,
   });
@@ -212,7 +212,7 @@ export default function GalleryDetailPage() {
               Galeri Pertandingan
             </Badge>
             <span className="text-sm" style={{ color: 'var(--muted-fg)' }}>
-              Album ini terhubung dengan satu pertandingan ALSABBAT.
+              Album ini terhubung dengan satu pertandingan AL SABBAT.
             </span>
           </div>
         ) : null}

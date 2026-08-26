@@ -1,6 +1,6 @@
 import { barayaApi, barayaTokenStore } from '../lib/api';
 
-/** Baraya ALSABBAT (public customer) auth — separate from Admin/RBAC. */
+/** Baraya AL SABBAT (public customer) auth — separate from Admin/RBAC. */
 export const BARAYA_AUTH_ENABLED = true;
 
 export const barayaLogin = async ({ email, password }) => {

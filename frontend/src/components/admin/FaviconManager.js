@@ -90,7 +90,7 @@ export const FaviconManager = () => {
         >
           <img src={previewHref} alt="" width={16} height={16} style={{ width: 16, height: 16, objectFit: 'contain' }} />
           <span className="truncate text-xs" style={{ color: 'var(--fg)' }}>
-            {clubName || 'ALSABBAT Football Club'}
+            {clubName || 'AL SABBAT Football Club'}
           </span>
         </div>
         <div className="flex items-end gap-5">
@@ -142,7 +142,7 @@ export const FaviconManager = () => {
         </Button>
         <Button
           variant="outline"
-          onClick={() => persist({ url: '', version: '' }, 'Favicon dikembalikan ke default ALSABBAT')}
+          onClick={() => persist({ url: '', version: '' }, 'Favicon dikembalikan ke default AL SABBAT')}
           disabled={!canWrite || saving}
           data-testid="admin-favicon-reset"
         >

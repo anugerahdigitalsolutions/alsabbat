@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from './api';
+import { brandText } from './brand';
 
 /**
  * Editable homepage editorial copy (Phase 15).
@@ -120,12 +121,12 @@ export const SITE_CONTENT_GROUPS = SITE_CONTENT_ENTRIES.reduce((groups, entry) =
 }, []);
 
 const interpolate = (value, tokens) =>
-  String(value ?? '').replace(/\{club\}/g, tokens.club || 'ALSABBAT');
+  brandText(String(value ?? '').replace(/\{club\}/g, tokens.club || 'AL SABBAT'));
 
 /** Resolves editable copy: DB value → coded default, with `{club}` token support. */
 export function useSiteText(tokens = {}) {
   const [values, setValues] = useState({});
-  const club = tokens.club || 'ALSABBAT';
+  const club = tokens.club || 'AL SABBAT';
 
   useEffect(() => {
     let cancelled = false;
@@ -146,5 +147,5 @@ export function useSiteText(tokens = {}) {
   }, [values, club]);
 }
 
-export const defaultSiteText = (key, club = 'ALSABBAT') =>
+export const defaultSiteText = (key, club = 'AL SABBAT') =>
   interpolate(SITE_CONTENT_DEFAULTS[key] ?? '', { club });

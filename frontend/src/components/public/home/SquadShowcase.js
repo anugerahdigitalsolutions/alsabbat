@@ -59,7 +59,7 @@ const PlayerCard = ({ player, index }) => (
   </Link>
 );
 
-/** ALSABBAT has exactly one squad — a single flat grid, never a team selector. */
+/** AL SABBAT has exactly one squad — a single flat grid, never a team selector. */
 export const SquadShowcase = ({ players = [], limit = 8 }) => {
   if (!players.length) {
     return (

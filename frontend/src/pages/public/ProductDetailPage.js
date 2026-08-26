@@ -23,7 +23,7 @@ export default function ProductDetailPage() {
 
   usePageSeo({
     title: product?.name || 'Merchandise',
-    description: product?.short_description || product?.description || 'Merchandise resmi ALSABBAT.',
+    description: product?.short_description || product?.description || 'Merchandise resmi AL SABBAT.',
     image: product?.cover_url,
     path: `/merchandise/${slug}`,
   });

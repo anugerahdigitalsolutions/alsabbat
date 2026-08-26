@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import api from '../lib/api';
 import { applyDefaultSeo } from '../lib/seo';
+import { brandText } from '../lib/brand';
 
 const ClubContext = createContext(null);
 
-/** Mandatory ALSABBAT brand defaults (used until the API provides overrides). */
+/** Mandatory AL SABBAT brand defaults (used until the API provides overrides). */
 export const BRAND_DEFAULTS = {
   primary_color: '#FCCF2B',
   secondary_color: '#012891',
@@ -55,11 +56,11 @@ export function ClubProvider({ children }) {
   useEffect(() => {
     if (!seo) return;
     applyDefaultSeo({
-      title: seo.title,
-      description: seo.description,
+      title: brandText(seo.title),
+      description: brandText(seo.description),
       image: seo.open_graph?.image,
       canonical: seo.canonical_url,
-      siteName: seo.open_graph?.site_name,
+      siteName: brandText(seo.open_graph?.site_name),
       robots: seo.robots,
     });
   }, [seo]);
@@ -78,8 +79,8 @@ export function ClubProvider({ children }) {
         tertiary: club?.tertiary_color || BRAND_DEFAULTS.tertiary_color,
         light: club?.light_color || BRAND_DEFAULTS.light_color,
       },
-      clubName: club?.name || 'ALSABBAT Football Club',
-      shortName: club?.short_name || 'ALSABBAT',
+      clubName: brandText(club?.name) || 'AL SABBAT Football Club',
+      shortName: brandText(club?.short_name) || 'AL SABBAT',
     }),
     [club, meta, seo, loading, error]
   );

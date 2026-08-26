@@ -17,8 +17,8 @@ const UPCOMING = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 
 export default function MatchesPage() {
   const { clubName, shortName } = useClub();
-  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
-  usePageSeo({ title: 'Pertandingan', description: 'Jadwal, hasil, dan Pusat Pertandingan ALSABBAT Football Club.', path: '/matches' });
+  const t = useSiteText({ club: shortName || clubName || 'AL SABBAT' });
+  usePageSeo({ title: 'Pertandingan', description: 'Jadwal, hasil, dan Pusat Pertandingan AL SABBAT Football Club.', path: '/matches' });
   const [seasonId, setSeasonId] = useState('all');
   const [tab, setTab] = useState('upcoming');
 

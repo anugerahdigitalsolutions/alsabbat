@@ -116,7 +116,7 @@ export default function PlayerDetailPage() {
 
   usePageSeo({
     title: player?.full_name || 'Profil Pemain',
-    description: player?.bio || 'Profil pemain ALSABBAT Football Club.',
+    description: player?.bio || 'Profil pemain AL SABBAT Football Club.',
     image: personPhotos(player)[0] || player?.photo,
     path: `/players/${playerId}`,
   });

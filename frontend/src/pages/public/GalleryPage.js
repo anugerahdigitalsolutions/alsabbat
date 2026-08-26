@@ -14,7 +14,7 @@ const PAGE_SIZE = 24;
 
 export default function GalleryPage() {
   const { clubName, shortName } = useClub();
-  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
+  const t = useSiteText({ club: shortName || clubName || 'AL SABBAT' });
   const [albums, setAlbums] = useState([]);
   const [total, setTotal] = useState(0);
   const [skip, setSkip] = useState(0);
@@ -24,7 +24,7 @@ export default function GalleryPage() {
 
   usePageSeo({
     title: 'Galeri',
-    description: 'Dokumentasi foto dan video pertandingan serta kegiatan ALSABBAT Football Club.',
+    description: 'Dokumentasi foto dan video pertandingan serta kegiatan AL SABBAT Football Club.',
     path: '/gallery',
   });
 

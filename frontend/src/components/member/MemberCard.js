@@ -27,7 +27,7 @@ const initials = (name) =>
  */
 export const MemberCard = React.forwardRef(({ card, design, testId = 'member-card' }, ref) => {
   const { clubName, shortName, club } = useClub();
-  const t = useSiteText({ club: shortName || 'ALSABBAT' });
+  const t = useSiteText({ club: shortName || 'AL SABBAT' });
   const background = resolveMediaUrl(
     design?.background_url !== undefined ? design.background_url : t('member.card.background_url')
   );
@@ -95,7 +95,7 @@ export const MemberCard = React.forwardRef(({ card, design, testId = 'member-car
                 className="font-display block text-[11px] font-extrabold uppercase tracking-[0.22em]"
                 style={{ color: 'var(--club-primary)' }}
               >
-                Baraya {shortName || 'ALSABBAT'}
+                Baraya {shortName || 'AL SABBAT'}
               </span>
               <span className="block truncate text-[11px]" style={{ color: 'rgba(254,254,254,0.82)' }}>
                 {cardLabel}
@@ -173,7 +173,7 @@ export const MemberCard = React.forwardRef(({ card, design, testId = 'member-car
           className="mt-6 flex items-center justify-between gap-2 border-t pt-3 text-[10px] uppercase tracking-wider"
           style={{ borderColor: 'rgba(254,254,254,0.16)', color: 'rgba(254,254,254,0.66)' }}
         >
-          <span className="truncate">{clubName || 'ALSABBAT Football Club'}</span>
+          <span className="truncate">{clubName || 'AL SABBAT Football Club'}</span>
           <span className="shrink-0">{tagline}</span>
         </div>
       </div>

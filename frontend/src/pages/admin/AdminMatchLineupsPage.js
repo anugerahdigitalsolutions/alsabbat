@@ -64,7 +64,7 @@ export default function AdminMatchLineupsPage() {
         },
         {
           name: 'team_id',
-          label: 'Tim ALSABBAT',
+          label: 'Tim AL SABBAT',
           type: 'select',
           required: true,
           optionsFrom: { endpoint: '/teams', labelKey: 'name' },

@@ -11,13 +11,13 @@ import { useBaraya } from '../../context/BarayaAuthContext';
 const BENEFITS = [
   'Simpan data pembeli agar checkout merchandise lebih cepat',
   'Lihat riwayat dan status pesanan kapan saja',
-  'Kelola profil Baraya ALSABBAT dalam satu akun',
+  'Kelola profil Baraya AL SABBAT dalam satu akun',
 ];
 
 export default function BarayaLoginPage() {
   usePageSeo({
-    title: 'Login Baraya ALSABBAT',
-    description: 'Login akun Baraya ALSABBAT untuk pembelian merchandise dan riwayat pesanan.',
+    title: 'Login Baraya AL SABBAT',
+    description: 'Login akun Baraya AL SABBAT untuk pembelian merchandise dan riwayat pesanan.',
     path: '/login',
     robots: 'noindex,follow',
   });
@@ -45,9 +45,9 @@ export default function BarayaLoginPage() {
   return (
     <div data-testid="page-baraya-login">
       <PublicPageHeader
-        label="Baraya ALSABBAT"
-        title="Login untuk Baraya ALSABBAT"
-        description="Akun pengunjung dan pelanggan resmi ALSABBAT. Bukan akses staf maupun admin klub."
+        label="Baraya AL SABBAT"
+        title="Login untuk Baraya AL SABBAT"
+        description="Akun pengunjung dan pelanggan resmi AL SABBAT. Bukan akses staf maupun admin klub."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Login' }]}
       />
       <div className="als-container py-10 sm:py-14">
@@ -66,7 +66,7 @@ export default function BarayaLoginPage() {
             <p className="mt-6 text-sm" style={{ color: 'var(--muted-fg)' }}>
               Belum punya akun?{' '}
               <Link to="/daftar" className="font-semibold underline" style={{ color: 'var(--club-secondary)' }} data-testid="baraya-login-to-register">
-                Daftar sebagai Baraya ALSABBAT
+                Daftar sebagai Baraya AL SABBAT
               </Link>
             </p>
           </div>

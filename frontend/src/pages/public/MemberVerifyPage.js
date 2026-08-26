@@ -20,7 +20,7 @@ export default function MemberVerifyPage() {
   const { code } = useParams();
   usePageSeo({
     title: 'Verifikasi Member',
-    description: 'Verifikasi kartu member Baraya ALSABBAT.',
+    description: 'Verifikasi kartu member Baraya AL SABBAT.',
     path: `/member/verifikasi/${code || ''}`,
     robots: 'noindex,nofollow',
   });
@@ -49,7 +49,7 @@ export default function MemberVerifyPage() {
   const state = !result?.found
     ? { Icon: ShieldX, title: 'Member Tidak Ditemukan', tone: 'rgba(0,0,0,0.06)', color: 'var(--fg)' }
     : result.valid
-    ? { Icon: BadgeCheck, title: 'Baraya ALSABBAT Terverifikasi', tone: 'rgba(252,207,43,0.18)', color: 'var(--club-secondary)' }
+    ? { Icon: BadgeCheck, title: 'Baraya AL SABBAT Terverifikasi', tone: 'rgba(252,207,43,0.18)', color: 'var(--club-secondary)' }
     : { Icon: ShieldAlert, title: 'Keanggotaan Tidak Aktif', tone: 'rgba(0,0,0,0.06)', color: 'var(--fg)' };
 
   return (
@@ -57,7 +57,7 @@ export default function MemberVerifyPage() {
       <PublicPageHeader
         label="Verifikasi"
         title="Verifikasi Member"
-        description="Pemeriksaan resmi kartu member Baraya ALSABBAT."
+        description="Pemeriksaan resmi kartu member Baraya AL SABBAT."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Verifikasi Member' }]}
       />
       <div className="als-container py-12 sm:py-16">
@@ -110,7 +110,7 @@ export default function MemberVerifyPage() {
               </dl>
             ) : (
               <p className="mt-4 text-sm" style={{ color: 'var(--muted-fg)' }}>
-                Kartu ini tidak terdaftar sebagai member Baraya ALSABBAT.
+                Kartu ini tidak terdaftar sebagai member Baraya AL SABBAT.
               </p>
             )}
 

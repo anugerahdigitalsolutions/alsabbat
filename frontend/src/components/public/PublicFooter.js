@@ -32,7 +32,7 @@ export const PublicFooter = () => {
             </span>
           </div>
           <p className="text-sm" style={{ color: 'var(--muted-fg)' }}>
-            {club?.description || 'Platform digital resmi klub sepak bola ALSABBAT.'}
+            {club?.description || 'Platform digital resmi klub sepak bola AL SABBAT.'}
           </p>
         </div>
 
