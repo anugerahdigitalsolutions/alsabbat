@@ -557,3 +557,7 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - Verifikasi (tanpa Testing Agent, tanpa menyimpan entitas): foto landscape 3:1 → frame pemain terukur **0.8 (4:5)**, hasil crop **320×400**; foto portrait 1:3 → frame banner terukur **2.00**, hasil crop **320×160**; foto 1200×300 di sponsor (mobile 390px) → frame **3.01**, drag + simpan OK, lalu **crop ulang dari URL tersimpan** (canvas same-origin, tidak tainted) berhasil (903×301 → 753×251). Berkas asli tetap utuh di library.
 - Mobile 390px: dialog & frame tidak keluar layar, overflow 0, tombol cukup besar; console 0 error/0 warning; `yarn build` sukses tanpa warning.
 - Kebersihan data: seluruh media uji dihapus setelah pengujian (media kembali **3** berkas milik user), tidak ada entitas dummy (players/staff/sponsors/products tetap 0), banner & club user tidak diubah. Banner publik tetap fixed frame 640/580/520 px.
+
+### Penyesuaian visual Banner Hero — overlay lebih tipis (26 Jun 2026)
+- `CinematicHero`: gradient navy dikurangi drastis dari `rgba(1,40,145,0.96 → 0.18)` menjadi `0.60 → 0.04`; ditambah scrim hitam netral dari bawah (`0.60 → 0` sampai 64%) khusus untuk keterbacaan teks; `als-stadium-glow` opacity 60 → 30.
+- Hasil: foto (wajah, jersey, rumput, stadion) dominan dan natural, nuansa navy premium tetap ada, headline putih/gold tetap kontras. Frame, crop, layout, tipografi, CTA, social icon, dan slider tidak diubah — banner tetap fixed frame 640/520 px, overflow 0, console 0 error, `yarn build` sukses.
