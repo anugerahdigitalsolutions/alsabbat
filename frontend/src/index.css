@@ -52,6 +52,7 @@
 
     /* ---------------- motion --------------------------- */
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-page: cubic-bezier(0.22, 1, 0.36, 1);
     --dur-1: 120ms;
     --dur-2: 180ms;
     --dur-3: 260ms;
@@ -90,6 +91,7 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 88px;
   }
 
   body {
@@ -222,7 +224,7 @@
 
   /* -------- Phase 21: premium motion polish (transform/opacity only) ------- */
   .als-page-enter {
-    animation: als-page-in 260ms var(--ease-out) both;
+    animation: als-page-in 420ms var(--ease-page) both;
   }
 
   .als-stagger > * {
@@ -510,7 +512,8 @@
     max-width: 1400px;
     margin: 0 auto;
     background-color: var(--club-light);
-    overflow: hidden;
+    /* clip (bukan hidden) agar sudut tetap terpotong TANPA merusak position: sticky pada header */
+    overflow: clip;
   }
 
   @media (min-width: 1024px) {

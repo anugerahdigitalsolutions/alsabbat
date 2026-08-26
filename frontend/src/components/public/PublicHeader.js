@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Search, UserRound, LogOut, Receipt, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
@@ -63,16 +63,35 @@ export const PublicHeader = () => {
   const { clubName, shortName } = useClub();
   const { customer, logout } = useBaraya();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const goFromDrawer = (to) => {
+    setOpen(false);
+    // biarkan animasi drawer selesai dulu, baru page transition dimulai
+    setTimeout(() => navigate(to), 180);
+  };
 
   const overflowActive = OVERFLOW_NAV.some((item) => pathname.startsWith(item.to));
 
   return (
     <header
-      className="sticky top-0 z-50 backdrop-blur"
-      style={{ backgroundColor: 'rgba(254,254,254,0.96)', boxShadow: '0 1px 0 rgba(0,0,0,0.06)' }}
+      className="sticky top-0 z-50 backdrop-blur transition-shadow duration-300"
+      style={{
+        backgroundColor: scrolled ? 'rgba(254,254,254,0.92)' : 'rgba(254,254,254,0.96)',
+        boxShadow: scrolled ? '0 10px 30px rgba(0,0,0,0.10)' : '0 1px 0 rgba(0,0,0,0.06)',
+      }}
       data-testid="public-header"
+      data-scrolled={scrolled ? 'true' : 'false'}
     >
       <div className="als-frame-inner flex h-[72px] items-center justify-between gap-4">
         <Link to="/" className="flex shrink-0 items-center gap-2.5" data-testid="public-header-logo">
@@ -220,7 +239,10 @@ export const PublicHeader = () => {
                     key={item.id}
                     to={item.to}
                     end={item.to === '/'}
-                    onClick={() => setOpen(false)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      goFromDrawer(item.to);
+                    }}
                     className={({ isActive }) =>
                       [
                         'rounded-[var(--radius-sm)] px-3 py-3 text-sm font-semibold tracking-[0.05em] transition-colors duration-200',
@@ -236,7 +258,10 @@ export const PublicHeader = () => {
                 ))}
                 <Link
                   to={customer ? '/akun' : '/login'}
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    goFromDrawer(customer ? '/akun' : '/login');
+                  }}
                   className="font-display mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 text-sm font-bold tracking-[0.04em]"
                   style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                   data-testid="public-mobile-baraya-login"
