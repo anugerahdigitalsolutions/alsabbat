@@ -187,6 +187,39 @@ const FieldControl = ({ field, value, onChange, optionMap, testPrefix }) => {
     );
   }
 
+  if (field.type === 'media') {
+    const picked = options.some((option) => String(option.value) === String(value));
+    return (
+      <div className="space-y-2">
+        <Input
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder || 'URL gambar'}
+          className="bg-white"
+          data-testid={testId}
+        />
+        <Select value={picked ? String(value) : undefined} onValueChange={onChange}>
+          <SelectTrigger className="bg-white" data-testid={`${testId}-media-picker`}>
+            <SelectValue placeholder="Pilih dari Media Library…" />
+          </SelectTrigger>
+          <SelectContent className="max-h-72">
+            {options.length ? (
+              options.map((option) => (
+                <SelectItem key={String(option.value)} value={String(option.value)}>
+                  {option.label}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value={NONE} disabled>
+                Media Library masih kosong
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  }
+
   if (field.type === 'switch') {
     return (
       <div className="flex h-10 items-center">

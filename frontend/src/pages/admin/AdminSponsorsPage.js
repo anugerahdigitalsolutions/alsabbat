@@ -3,6 +3,7 @@ import { Handshake } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { mediaOptions } from './adminOptions';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -44,7 +45,7 @@ export default function AdminSponsorsPage() {
         { name: 'tier', label: 'Tier', type: 'text', placeholder: 'Main Sponsor / Official Partner' },
         { name: 'display_order', label: 'Urutan Tampilan', type: 'number' },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'logo', label: 'Logo URL', type: 'text', full: true },
+        { name: 'logo', label: 'Logo Sponsor', type: 'media', full: true, optionsFrom: mediaOptions },
         { name: 'website', label: 'Website', type: 'text', full: true },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}

@@ -3,6 +3,7 @@ import { Briefcase } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { mediaOptions } from './adminOptions';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -43,7 +44,7 @@ export default function AdminStaffPage() {
         { name: 'role', label: 'Role', type: 'select', options: opts(meta?.staff_roles), required: true },
         { name: 'role_label', label: 'Label Role (opsional)', type: 'text', help: 'Untuk role kustom di luar daftar.' },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'photo', label: 'Foto URL', type: 'text', full: true },
+        { name: 'photo', label: 'Foto Staf', type: 'media', full: true, optionsFrom: mediaOptions },
         { name: 'bio', label: 'Bio', type: 'textarea', full: true },
         { name: 'social_media.instagram', label: 'Instagram', type: 'text' },
       ]}

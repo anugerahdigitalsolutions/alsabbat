@@ -3,6 +3,7 @@ import { User } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { mediaOptions } from './adminOptions';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -57,7 +58,7 @@ export default function AdminPlayersPage() {
         { name: 'nationality', label: 'Kebangsaan', type: 'text' },
         { name: 'height_cm', label: 'Tinggi (cm)', type: 'number' },
         { name: 'weight_kg', label: 'Berat (kg)', type: 'number' },
-        { name: 'photo', label: 'Foto URL', type: 'text', full: true },
+        { name: 'photo', label: 'Foto Pemain', type: 'media', full: true, optionsFrom: mediaOptions },
         { name: 'bio', label: 'Bio', type: 'textarea', full: true },
         { name: 'social_media.instagram', label: 'Instagram', type: 'text' },
         { name: 'social_media.twitter', label: 'X / Twitter', type: 'text' },

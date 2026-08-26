@@ -10,10 +10,14 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { useSiteText } from '../../lib/siteContent';
+import { useClub } from '../../context/ClubContext';
 
 const UPCOMING = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 
 export default function MatchesPage() {
+  const { clubName, shortName } = useClub();
+  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
   usePageSeo({ title: 'Pertandingan', description: 'Jadwal, hasil, dan Pusat Pertandingan ALSABBAT Football Club.', path: '/matches' });
   const [seasonId, setSeasonId] = useState('all');
   const [tab, setTab] = useState('upcoming');
@@ -31,9 +35,9 @@ export default function MatchesPage() {
   return (
     <div data-testid="page-matches">
       <PublicPageHeader
-        label="Jadwal & Hasil"
-        title="Setiap Laga. Setiap Momen."
-        description="Jadwal, hasil, dan Pusat Pertandingan ALSABBAT Football Club."
+        label={t('matches.header.label')}
+        title={t('matches.header.title')}
+        description={t('matches.header.description')}
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Pertandingan' }]}
         meta={
           <>

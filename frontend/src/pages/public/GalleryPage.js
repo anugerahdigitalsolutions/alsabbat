@@ -7,10 +7,14 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { AlbumCard } from '../../components/public/gallery/AlbumCard';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { useSiteText } from '../../lib/siteContent';
+import { useClub } from '../../context/ClubContext';
 
 const PAGE_SIZE = 24;
 
 export default function GalleryPage() {
+  const { clubName, shortName } = useClub();
+  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
   const [albums, setAlbums] = useState([]);
   const [total, setTotal] = useState(0);
   const [skip, setSkip] = useState(0);
@@ -52,9 +56,9 @@ export default function GalleryPage() {
   return (
     <div data-testid="page-gallery">
       <PublicPageHeader
-        label="Media"
-        title="Momen yang Kami Ingat"
-        description="Album dokumentasi pertandingan, latihan, dan kegiatan klub."
+        label={t('gallery.header.label')}
+        title={t('gallery.header.title')}
+        description={t('gallery.header.description')}
       />
       <div className="als-container py-10">
         <p className="mb-6 text-sm" style={{ color: 'var(--muted-fg)' }} data-testid="gallery-total">

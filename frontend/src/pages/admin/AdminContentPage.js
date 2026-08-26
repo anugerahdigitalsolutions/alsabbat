@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
-import { matchOptions } from './adminOptions';
+import { matchOptions, mediaOptions } from './adminOptions';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -65,7 +65,7 @@ export default function AdminContentPage() {
                 help: 'Pilih MATCH_REPORT agar tampil sebagai laporan pertandingan di Match Center.',
               },
               { name: 'status', label: 'Status', type: 'select', options: opts(meta?.post_status), required: true },
-              { name: 'thumbnail', label: 'Thumbnail URL', type: 'text', full: true },
+              { name: 'thumbnail', label: 'Thumbnail', type: 'media', full: true, optionsFrom: mediaOptions },
               { name: 'excerpt', label: 'Ringkasan', type: 'textarea', full: true },
               { name: 'content', label: 'Isi Berita', type: 'textarea', full: true, rows: 8 },
               { name: 'category_id', label: 'Kategori', type: 'select', optionsFrom: { endpoint: '/content/categories', labelKey: 'name' } },

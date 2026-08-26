@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trophy } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
+import { mediaOptions } from './adminOptions';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
 
@@ -37,7 +38,7 @@ export default function AdminAchievementsPage() {
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
         { name: 'team_id', label: 'Tim', type: 'select', optionsFrom: { endpoint: '/teams', labelKey: 'name' } },
         { name: 'season_id', label: 'Musim', type: 'select', optionsFrom: { endpoint: '/seasons', labelKey: 'name' } },
-        { name: 'trophy_image', label: 'Gambar Trofi (URL)', type: 'text', full: true },
+        { name: 'trophy_image', label: 'Gambar Trofi', type: 'media', full: true, optionsFrom: mediaOptions },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
     />

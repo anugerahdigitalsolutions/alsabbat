@@ -10,8 +10,12 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Badge } from '../../components/ui/badge';
 import { formatIDR } from '../../context/CartContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { useSiteText } from '../../lib/siteContent';
+import { useClub } from '../../context/ClubContext';
 
 export default function MerchandisePage() {
+  const { clubName, shortName } = useClub();
+  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
   usePageSeo({
     title: 'Merchandise',
     description: 'Merchandise resmi ALSABBAT Football Club.',
@@ -41,9 +45,9 @@ export default function MerchandisePage() {
   return (
     <div data-testid="page-merchandise">
       <PublicPageHeader
-        label="Toko"
-        title="Pakai Lambang Klub"
-        description="Produk resmi ALSABBAT Football Club."
+        label={t('store.header.label')}
+        title={t('store.header.title')}
+        description={t('store.header.description')}
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Merchandise' }]}
       />
       <div className="als-container py-10 sm:py-14">

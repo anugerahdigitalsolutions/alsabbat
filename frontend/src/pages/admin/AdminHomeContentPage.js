@@ -12,10 +12,10 @@ export default function AdminHomeContentPage() {
     <div className="space-y-6" data-testid="admin-home-content-page">
       <div>
         <h1 className="font-display text-2xl font-semibold tracking-tight" data-testid="admin-home-content-title">
-          Konten Homepage
+          Konten Halaman
         </h1>
         <p className="mt-1 max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
-          Kelola banner hero dan teks editorial homepage tanpa mengubah kode.
+          Kelola banner hero dan teks editorial halaman publik (Homepage, Klub, Skuad, Kontak) tanpa mengubah kode.
         </p>
       </div>
 
@@ -25,7 +25,7 @@ export default function AdminHomeContentPage() {
             Banner Hero
           </TabsTrigger>
           <TabsTrigger value="content" data-testid="admin-home-content-tab-content">
-            Konten Situs
+            Teks Halaman
           </TabsTrigger>
         </TabsList>
         <TabsContent value="banners" className="mt-6">

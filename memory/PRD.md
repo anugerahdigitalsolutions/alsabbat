@@ -360,3 +360,27 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 ### Limitasi
 - Video background hero belum didukung (sesuai keputusan user).
 - CTA banner memakai path internal (mis. `/matches`); tautan eksternal penuh belum di-render sebagai anchor.
+
+## FASE 16 — Production Content Experience & Club Pages (26 Jun 2026) · STOP GATE 16
+### Discovery (Klub / Skuad / Kontak)
+- Sudah API-driven: identitas & warna klub, deskripsi, founded/location/stadium, kontak & sosial (Club Profile), pemain & staf, sponsor, prestasi.
+- Gap ditemukan: teks editorial header/section hard-coded; **tidak ada foto utama** untuk halaman Klub; **tidak ada field cerita klub**; halaman Klub masih menampilkan "Jumlah Tim" + daftar "Tim Klub" (**pelanggaran single-team**); foto staf tidak dirender; gambar konten (logo, foto pemain/staf, sponsor, thumbnail berita, cover album, trofi) hanya input URL teks.
+### Backend (2 field additive saja)
+- `ClubBase`: `story` (cerita klub, max 8000) + `hero_image` (foto utama, dipakai header Klub & Skuad). Tidak ada koleksi/endpoint/RBAC baru — semua lewat `/api/club` existing (`club:write`).
+### Frontend
+- `ResourceManager`: field type baru **`media`** = Input URL + dropdown **Media Library** (`adminOptions.mediaOptions`, menyimpan URL media). Dipakai untuk logo klub, foto utama klub, foto pemain, foto staf, logo sponsor, thumbnail berita, cover album, gambar trofi.
+- `AdminClubPage`: + Logo (media), Foto Utama (media), Cerita Klub (textarea), tombol **Lihat Halaman Klub** (preview via halaman publik nyata).
+- `ClubPage`: header memakai `club.hero_image`; section Identitas, Profil Singkat, **Cerita Klub** (tampil hanya bila diisi), Fakta Klub (hanya field yang ada isinya — tidak ada fakta karangan), blok **Satu Klub. Satu Tim.** (jumlah pemain/staf nyata + CTA Skuad) **menggantikan daftar multi-team**, dan **Prestasi Klub** dari `/achievements` (ACTIVE, hilang bila kosong).
+- `TeamsPage`: teks header/label dari site_content, header memakai foto utama klub, kartu staf kini menampilkan **foto** + `role_label`.
+- `ContactPage`: teks header/section/catatan dari site_content; data kontak tetap 100% dari Club Profile (sumber sama dengan footer).
+- `site_content` diperluas +36 key → total **72 key**: Homepage (36), Halaman Klub (11), Halaman Skuad (5), Halaman Kontak (6), Halaman Lain (12: Pertandingan/Berita/Galeri/Merchandise). Label sistem/UI (loading, error, empty state, navigasi, aria, cart/checkout/akun) **tetap di kode**.
+- Menu admin `/admin/home-content` di-rename **"Konten Halaman"**, tab 2 → **"Teks Halaman"** (Homepage, Klub, Skuad, Kontak, Halaman Lain). Tidak ada CMS kedua.
+### Verifikasi (tanpa Testing Agent)
+- `scripts/phase16_verify.py`: **34/34 PASS** di DB sandbox `alsabbat_phase16_sandbox` (**DI-DROP**): club story/hero_image/logo/kontak, RBAC (401 tanpa token), player & staff CRUD + hanya ACTIVE yang publik, foto dari Media Library, prestasi ACTIVE-only, copy Klub/Skuad/Kontak via site_content + fallback default, persistensi setelah re-read, 7 regresi endpoint publik, single-team check.
+- E2E UI produksi: login admin → 11 halaman Admin render tanpa error → edit **Cerita Klub** → tampil di `/club` → tetap ada setelah refresh → **dikembalikan kosong** (produksi kembali ke kondisi awal, tidak ada data uji).
+- `yarn build` Compiled successfully tanpa warning (257.36 kB gz); backend import OK; `/api/health` 200. Overflow 0 px di 1920 & 390 pada 11 route publik.
+- Scan: `#222222`/`#1A1A1A`/`rgba(34,34,34` = 0; "Keluarga ALSABBAT" = 0; wording multi-team/youth/reserve = 0; Staff Access header 0 / footer 1; pill Login Baraya di header ada.
+- Database produksi: banners/site_content/players/staff/media/matches/posts/albums/sponsors/achievements/products/orders/customers = 0, users 1, teams 1, clubs 1, `demo:true` = 0, tidak ada database sandbox tersisa.
+### Gap yang MASIH hard-coded (disengaja, kategori B/C)
+- Empty state, loading, error, aria/accessibility, navigasi, label taksonomi posisi (Penjaga Gawang/Belakang/Tengah/Depan), label fakta klub (Didirikan/Lokasi/Markas), teks Cart/Checkout/Lacak Pesanan/Login/Daftar/Akun, teks brand fallback hero.
+- Halaman detail (Match Detail, News Detail, Album Detail, Player Detail) memakai label sistem + data nyata; belum ada teks editorial ber-CMS di sana.

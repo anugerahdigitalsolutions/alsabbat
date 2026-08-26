@@ -9,6 +9,9 @@ import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { useClub } from '../../context/ClubContext';
+import { useSiteText } from '../../lib/siteContent';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 const GROUPS = [
   ['GOALKEEPER', 'Penjaga Gawang'],
@@ -19,7 +22,9 @@ const GROUPS = [
 
 /** ALSABBAT has exactly one squad — this page lists that squad directly. */
 export default function TeamsPage() {
-  usePageSeo({ title: 'Skuad', description: 'Skuad resmi ALSABBAT Football Club — satu klub, satu skuad.', path: '/teams' });
+  const { club, clubName, shortName } = useClub();
+  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
+  usePageSeo({ title: 'Skuad', description: `Skuad resmi ${clubName} — satu klub, satu skuad.`, path: '/teams' });
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 60 });
   const staff = useResourceList('/staff', { status: 'ACTIVE', limit: 30 });
   const spotlight = useMemo(() => pickSpotlightPlayer(players.items), [players.items]);
@@ -33,10 +38,12 @@ export default function TeamsPage() {
   return (
     <div data-testid="page-teams">
       <PublicPageHeader
-        label="Skuad"
-        title="Satu Skuad. Satu Baraya."
-        description="Satu klub, satu skuad — para pemain dan staf yang membela lambang ALSABBAT."
-        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Skuad' }]}
+        label={t('squad.header.label')}
+        title={t('squad.header.title')}
+        description={t('squad.header.description')}
+        backgroundImage={resolveMediaUrl(club?.hero_image)}
+        imageAlt={clubName}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: t('squad.header.label') }]}
         meta={
           players.total ? (
             <>
@@ -63,7 +70,7 @@ export default function TeamsPage() {
           <div className="space-y-14">
             {spotlight ? (
               <Reveal>
-                <p className="als-row-label mb-4">Sorotan Pemain</p>
+                <p className="als-row-label mb-4">{t('squad.spotlight.label')}</p>
                 <PlayerSpotlight player={spotlight} />
               </Reveal>
             ) : null}
@@ -84,13 +91,22 @@ export default function TeamsPage() {
 
         {staff.items.length ? (
           <Reveal className="mt-16">
-            <p className="als-row-label mb-4">Tim Pendukung</p>
+            <p className="als-row-label mb-4">{t('squad.staff.label')}</p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {staff.items.map((member) => (
                 <article key={member.id} className="als-card als-lift p-5" data-testid={`staff-card-${member.id}`}>
+                  {member.photo ? (
+                    <img
+                      src={resolveMediaUrl(member.photo)}
+                      alt={member.name || ''}
+                      className="mb-4 h-40 w-full rounded-[var(--radius-sm)] object-cover object-top"
+                      loading="lazy"
+                      data-testid={`staff-photo-${member.id}`}
+                    />
+                  ) : null}
                   <p className="font-display text-sm font-bold">{member.full_name || member.name}</p>
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--club-secondary)' }}>
-                    {member.role || member.position || 'Staf'}
+                    {member.role_label || member.role || member.position || 'Staf'}
                   </p>
                 </article>
               ))}

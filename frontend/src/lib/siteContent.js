@@ -49,6 +49,48 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'home.cta.btn_matches', group: 'CTA Penutup', label: 'CTA — Tombol 1', value: 'Jadwal Pertandingan' },
   { key: 'home.cta.btn_squad', group: 'CTA Penutup', label: 'CTA — Tombol 2', value: 'Lihat Skuad' },
   { key: 'home.cta.btn_gallery', group: 'CTA Penutup', label: 'CTA — Tombol 3', value: 'Galeri' },
+
+  // Club page
+  { key: 'club.header.label', group: 'Halaman Klub', label: 'Header — Label', value: 'Tentang Klub' },
+  { key: 'club.header.title', group: 'Halaman Klub', label: 'Header — Judul', value: 'Inilah {club}' },
+  { key: 'club.header.description', group: 'Halaman Klub', label: 'Header — Deskripsi', value: 'Identitas, nilai, dan perjalanan resmi klub.', multiline: true },
+  { key: 'club.identity.title', group: 'Halaman Klub', label: 'Judul — Identitas Klub', value: 'Identitas Klub' },
+  { key: 'club.about.title', group: 'Halaman Klub', label: 'Judul — Profil Singkat', value: 'Profil Singkat' },
+  { key: 'club.story.title', group: 'Halaman Klub', label: 'Judul — Cerita Klub', value: 'Cerita Klub' },
+  { key: 'club.facts.title', group: 'Halaman Klub', label: 'Judul — Fakta Klub', value: 'Fakta Klub' },
+  { key: 'club.squad.title', group: 'Halaman Klub', label: 'Judul — Skuad', value: 'Satu Klub. Satu Tim.' },
+  { key: 'club.squad.text', group: 'Halaman Klub', label: 'Teks — Skuad', value: '{club} hanya memiliki satu skuad yang membela lambang klub.', multiline: true },
+  { key: 'club.squad.cta', group: 'Halaman Klub', label: 'Tombol — Lihat Skuad', value: 'Lihat Skuad' },
+  { key: 'club.honours.title', group: 'Halaman Klub', label: 'Judul — Prestasi', value: 'Prestasi Klub' },
+
+  // Squad page
+  { key: 'squad.header.label', group: 'Halaman Skuad', label: 'Header — Label', value: 'Skuad' },
+  { key: 'squad.header.title', group: 'Halaman Skuad', label: 'Header — Judul', value: 'Satu Skuad. Satu Baraya.' },
+  { key: 'squad.header.description', group: 'Halaman Skuad', label: 'Header — Deskripsi', value: 'Satu klub, satu skuad — para pemain dan staf yang membela lambang {club}.', multiline: true },
+  { key: 'squad.spotlight.label', group: 'Halaman Skuad', label: 'Label — Sorotan Pemain', value: 'Sorotan Pemain' },
+  { key: 'squad.staff.label', group: 'Halaman Skuad', label: 'Label — Tim Pendukung', value: 'Tim Pendukung' },
+
+  // Contact page
+  { key: 'contact.header.label', group: 'Halaman Kontak', label: 'Header — Label', value: 'Kontak' },
+  { key: 'contact.header.title', group: 'Halaman Kontak', label: 'Header — Judul', value: 'Hubungi {club}' },
+  { key: 'contact.header.description', group: 'Halaman Kontak', label: 'Header — Deskripsi', value: 'Informasi kontak resmi yang tercatat pada konfigurasi klub.', multiline: true },
+  { key: 'contact.info.title', group: 'Halaman Kontak', label: 'Judul — Informasi Kontak', value: 'Informasi Kontak' },
+  { key: 'contact.social.title', group: 'Halaman Kontak', label: 'Judul — Media Sosial', value: 'Media Sosial' },
+  { key: 'contact.note', group: 'Halaman Kontak', label: 'Catatan Kontak', value: 'Informasi kontak dikelola melalui konfigurasi klub sehingga selalu konsisten di seluruh website.', multiline: true },
+
+  // Other public list pages
+  { key: 'matches.header.label', group: 'Halaman Lain', label: 'Pertandingan — Label', value: 'Jadwal & Hasil' },
+  { key: 'matches.header.title', group: 'Halaman Lain', label: 'Pertandingan — Judul', value: 'Setiap Laga. Setiap Momen.' },
+  { key: 'matches.header.description', group: 'Halaman Lain', label: 'Pertandingan — Deskripsi', value: 'Jadwal, hasil, dan Pusat Pertandingan {club} Football Club.', multiline: true },
+  { key: 'news.header.label', group: 'Halaman Lain', label: 'Berita — Label', value: 'Ruang Berita' },
+  { key: 'news.header.title', group: 'Halaman Lain', label: 'Berita — Judul', value: 'Cerita Dari {club}' },
+  { key: 'news.header.description', group: 'Halaman Lain', label: 'Berita — Deskripsi', value: 'Kabar resmi klub, laporan pertandingan, dan pengumuman.', multiline: true },
+  { key: 'gallery.header.label', group: 'Halaman Lain', label: 'Galeri — Label', value: 'Media' },
+  { key: 'gallery.header.title', group: 'Halaman Lain', label: 'Galeri — Judul', value: 'Momen yang Kami Ingat' },
+  { key: 'gallery.header.description', group: 'Halaman Lain', label: 'Galeri — Deskripsi', value: 'Album dokumentasi pertandingan, latihan, dan kegiatan klub.', multiline: true },
+  { key: 'store.header.label', group: 'Halaman Lain', label: 'Merchandise — Label', value: 'Toko' },
+  { key: 'store.header.title', group: 'Halaman Lain', label: 'Merchandise — Judul', value: 'Pakai Lambang Klub' },
+  { key: 'store.header.description', group: 'Halaman Lain', label: 'Merchandise — Deskripsi', value: 'Produk resmi {club} Football Club.', multiline: true },
 ];
 
 export const SITE_CONTENT_DEFAULTS = Object.fromEntries(

@@ -10,8 +10,12 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { useSiteText } from '../../lib/siteContent';
+import { useClub } from '../../context/ClubContext';
 
 export default function NewsPage() {
+  const { clubName, shortName } = useClub();
+  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
   usePageSeo({ title: 'Berita', description: 'Berita resmi, laporan pertandingan, dan pengumuman ALSABBAT Football Club.', path: '/news' });
   const [query, setQuery] = useState('');
   const { items, total, loading, error, reload } = useResourceList('/content/posts', {
@@ -26,9 +30,9 @@ export default function NewsPage() {
   return (
     <div data-testid="page-news">
       <PublicPageHeader
-        label="Ruang Berita"
-        title="Cerita Dari ALSABBAT"
-        description="Kabar resmi klub, laporan pertandingan, dan pengumuman."
+        label={t('news.header.label')}
+        title={t('news.header.title')}
+        description={t('news.header.description')}
         backgroundImage={featured?.thumbnail}
         imageAlt={featured?.title}
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Berita' }]}

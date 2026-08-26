@@ -1,6 +1,8 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
+import { mediaOptions } from './adminOptions';
+import { Button } from '../../components/ui/button';
 import { useClub } from '../../context/ClubContext';
 import { Badge } from '../../components/ui/badge';
 
@@ -25,6 +27,13 @@ export default function AdminClubPage() {
       emptyTitle="Belum ada konfigurasi klub"
       emptyDescription="Buat entitas klub untuk mengaktifkan identitas terpusat."
       onChanged={reload}
+      extraActions={
+        <Button variant="outline" size="sm" asChild data-testid="admin-club-view-public">
+          <a href="/club" target="_blank" rel="noreferrer">
+            Lihat Halaman Klub
+          </a>
+        </Button>
+      }
       defaults={{
         primary_color: '#FCCF2B',
         secondary_color: '#012891',
@@ -62,12 +71,35 @@ export default function AdminClubPage() {
         { name: 'name', label: 'Nama Klub', type: 'text', required: true, full: true },
         { name: 'short_name', label: 'Short Name', type: 'text', required: true },
         { name: 'status', label: 'Status', type: 'select', options: statusOptions, required: true },
-        { name: 'logo', label: 'Logo URL', type: 'text', full: true, help: 'Gunakan URL dari Media Library atau CDN.' },
+        {
+          name: 'logo',
+          label: 'Logo Klub',
+          type: 'media',
+          full: true,
+          optionsFrom: mediaOptions,
+          help: 'Pilih dari Media Library atau tempel URL.',
+        },
+        {
+          name: 'hero_image',
+          label: 'Foto Utama Halaman Klub',
+          type: 'media',
+          full: true,
+          optionsFrom: mediaOptions,
+          help: 'Dipakai sebagai latar header halaman Klub & Skuad.',
+        },
         { name: 'primary_color', label: 'Primary Color', type: 'color' },
         { name: 'secondary_color', label: 'Secondary Color', type: 'color' },
         { name: 'tertiary_color', label: 'Tertiary Color', type: 'color' },
         { name: 'light_color', label: 'Light Color', type: 'color' },
-        { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
+        { name: 'description', label: 'Deskripsi / Profil Singkat', type: 'textarea', full: true },
+        {
+          name: 'story',
+          label: 'Cerita Klub',
+          type: 'textarea',
+          full: true,
+          rows: 8,
+          help: 'Teks bebas untuk cerita/perjalanan klub. Tulis hanya fakta yang benar.',
+        },
         { name: 'founded_date', label: 'Tanggal Berdiri', type: 'date' },
         { name: 'location', label: 'Lokasi', type: 'text' },
         { name: 'stadium', label: 'Markas / Stadion', type: 'text' },

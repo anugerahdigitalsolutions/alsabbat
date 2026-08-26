@@ -10,3 +10,10 @@ export const matchOptionLabel = (match) => {
 };
 
 export const matchOptions = { endpoint: '/matches', labelFn: matchOptionLabel };
+
+/** Media Library picker (stores the media URL directly). */
+export const mediaOptions = {
+  endpoint: '/media',
+  valueKey: 'url',
+  labelFn: (media) => `${media.file_name}${media.file_type && media.file_type !== 'IMAGE' ? ` · ${media.file_type}` : ''}`,
+};

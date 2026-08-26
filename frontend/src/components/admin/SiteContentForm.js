@@ -62,7 +62,7 @@ export const SiteContentForm = ({ clubName = 'ALSABBAT' }) => {
     <div className="space-y-6" data-testid="admin-site-content">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
-          Teks editorial homepage. Kosongkan sebuah field untuk kembali memakai teks bawaan (ditampilkan sebagai
+          Teks editorial halaman publik (Homepage, Klub, Skuad, Kontak). Kosongkan sebuah field untuk kembali memakai teks bawaan (ditampilkan sebagai
           placeholder). Token <code>{'{club}'}</code> otomatis diganti menjadi nama klub.
         </p>
         {canWrite ? (

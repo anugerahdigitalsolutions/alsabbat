@@ -5,9 +5,11 @@ import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { useClub } from '../../context/ClubContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { useSiteText } from '../../lib/siteContent';
 
 export default function ContactPage() {
-  const { club, clubName, loading, error, reload } = useClub();
+  const { club, clubName, shortName, loading, error, reload } = useClub();
+  const t = useSiteText({ club: shortName || clubName || 'ALSABBAT' });
   usePageSeo({ title: 'Kontak', description: `Informasi kontak resmi ${clubName}.`, path: '/contact' });
 
   const contact = club?.contact || {};
@@ -23,7 +25,12 @@ export default function ContactPage() {
 
   return (
     <div data-testid="page-contact">
-      <PublicPageHeader label="Kontak" title="Hubungi ALSABBAT" description="Informasi kontak resmi yang tercatat pada konfigurasi klub." />
+      <PublicPageHeader
+        label={t('contact.header.label')}
+        title={t('contact.header.title')}
+        description={t('contact.header.description')}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: t('contact.header.label') }]}
+      />
       <div className="als-container py-10">
         {loading ? (
           <LoadingState variant="text" testId="contact-loading" />
@@ -32,7 +39,7 @@ export default function ContactPage() {
         ) : (
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="als-card p-6">
-              <h2 className="font-display mb-5 text-lg font-bold">Informasi Kontak</h2>
+              <h2 className="font-display mb-5 text-lg font-bold">{t('contact.info.title')}</h2>
               <ul className="space-y-4">
                 {rows.map(({ id, label, value, Icon, href }) => (
                   <li key={id} className="flex items-start gap-3" data-testid={`contact-${id}`}>
@@ -66,7 +73,7 @@ export default function ContactPage() {
             </div>
 
             <div className="als-card p-6">
-              <h2 className="font-display mb-5 text-lg font-bold">Media Sosial</h2>
+              <h2 className="font-display mb-5 text-lg font-bold">{t('contact.social.title')}</h2>
               <div className="flex flex-wrap gap-2" data-testid="contact-social">
                 {Object.entries(social).filter(([, v]) => !!v).length === 0 ? (
                   <p className="text-sm" style={{ color: 'var(--muted-fg)' }} data-testid="contact-social-empty">
@@ -91,7 +98,7 @@ export default function ContactPage() {
                 )}
               </div>
               <p className="mt-6 text-xs" style={{ color: 'var(--muted-fg)' }}>
-                Informasi kontak dikelola melalui konfigurasi klub sehingga selalu konsisten di seluruh website.
+                {t('contact.note')}
               </p>
             </div>
           </div>

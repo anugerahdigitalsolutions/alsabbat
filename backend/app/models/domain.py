@@ -61,6 +61,8 @@ class ClubBase(AppBaseModel):
     tertiary_color: str = Field(default="#000000", pattern=HEX_COLOR)
     light_color: str = Field(default="#FEFEFE", pattern=HEX_COLOR)
     description: Optional[str] = Field(default=None, max_length=4000)
+    story: Optional[str] = Field(default=None, max_length=8000)
+    hero_image: Optional[str] = None
     founded_date: Optional[_dt.date] = None
     location: Optional[str] = Field(default=None, max_length=200)
     stadium: Optional[str] = Field(default=None, max_length=200)

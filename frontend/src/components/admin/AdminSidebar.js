@@ -52,7 +52,7 @@ export const ADMIN_NAV = [
   {
     group: 'Media & Konten',
     items: [
-      { id: 'home-content', to: '/admin/home-content', label: 'Konten Homepage', Icon: LayoutTemplate },
+      { id: 'home-content', to: '/admin/home-content', label: 'Konten Halaman', Icon: LayoutTemplate },
       { id: 'content', to: '/admin/content', label: 'Content', Icon: Newspaper },
       { id: 'gallery', to: '/admin/gallery', label: 'Gallery', Icon: Images },
       { id: 'media', to: '/admin/media', label: 'Media', Icon: Upload },
