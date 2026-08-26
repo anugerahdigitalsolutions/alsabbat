@@ -78,7 +78,7 @@ export default function NewsPage() {
             </Reveal>
 
             {rest.length ? (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="als-stagger grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {rest.map((post, index) => (
                   <Reveal key={post.id} delay={Math.min(index, 6) * 70} className="h-full">
                     <Link

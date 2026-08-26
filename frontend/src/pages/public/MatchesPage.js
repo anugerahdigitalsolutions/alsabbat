@@ -86,7 +86,7 @@ export default function MatchesPage() {
                 testId="matches-empty"
               />
             ) : (
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <div className="als-stagger grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {shown.map((match, index) => (
                   <Reveal key={match.id} delay={Math.min(index, 6) * 70}>
                     <MatchCardShell match={match} testId={`match-card-${match.id}`} />

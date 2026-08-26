@@ -478,3 +478,22 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - Emergent object storage tidak punya API delete → penghapusan media = soft delete metadata (binary tetap ada di bucket, tidak dapat diakses tanpa metadata).
 - Album gallery masih memakai halaman kelola album existing (pilih media dari library, upload lewat menu Media).
 - Ticketing & klasemen tetap tidak dibuat.
+
+## FASE 21 — Premium Motion, Interaction Polish & Terminology (26 Jun 2026) · STOP GATE 21
+### Motion yang ditambahkan (semua transform/opacity, GPU-friendly, tanpa dependency baru)
+- `index.css`: utilitas baru `.als-page-enter` (+keyframe `als-page-in`), `.als-stagger` (delay 0/40/80/120/160/200/240ms), `.als-hero-step`, `.als-card-enter` (+keyframe `als-card-in`), `.als-press` (hover lift + press feedback), `:active` press pada `.als-btn-gold/blue/ghost`, `.als-admin-table tbody tr:hover` highlight.
+- **Page transition**: `PublicLayout` membungkus `<Outlet/>` dengan `key={pathname}` + `.als-page-enter` (±260ms). Back/forward, scroll reset, dan analytics tetap normal.
+- **Hero cinematic**: `CinematicHero` kini bertahap — eyebrow 60ms → headline baris 1/2/3 (140/250/360ms, baris emas tetap) → subheadline 420ms → meta 480ms → tagline 520ms → CTA 580ms → sosial 640ms → panel Next Match 700ms. Crossfade 800ms `.als-hero-slide` + ken-burns existing dipertahankan, tanpa layout shift.
+- **Stagger grid**: `.als-stagger` dipasang di grid Skuad, Berita, Galeri, Merchandise, dan Pertandingan (delay maks 240ms agar tidak terasa lambat).
+- **Scroll reveal**: tetap memakai `Reveal` + `useScrollReveal` (IntersectionObserver, sekali reveal) yang sudah ada — tidak ada sistem kedua.
+- **Micro-interaction**: tombol utama sudah lift+shadow, kini punya press feedback; tombol Kartu Member (Bagikan/Salin/Simpan) dan tombol Tambah/Simpan di ResourceManager memakai `.als-press`; kartu member masuk dengan `.als-card-enter`.
+### Reduced motion & aksesibilitas
+- Blok `@media (prefers-reduced-motion: reduce)` diperluas: page transition, hero step, stagger, card enter, ken-burns, dan hover-lift **dimatikan total** (`animation: none`, `opacity 1`, `transform none`), `scroll-behavior: auto`. Terverifikasi via `emulate_media`: `heroAnim=none`, `pageAnim=none`, opacity 1. Focus ring tetap terlihat (Tab → ring 2px).
+### Terminologi
+- "Markas" → **"Stadion"** pada UI publik (fakta klub) dan Admin (label field `stadium` + help text). Field/API/enum/nama file tidak diubah. Audit: **0 kemunculan "Markas"** di seluruh frontend.
+### Verifikasi (tanpa Testing Agent)
+- Overflow **0 px** untuk 8 route publik di **1920/1440/1024/390**; halaman Admin (club/players/baraya/readiness) 0 error & 0 overflow; navigasi menu + back button normal (scroll reset 0).
+- Hero: 7 elemen ber-animasi; page transition wrapper terdeteksi; aturan CSS stagger ada di bundle; tidak ada console error.
+- `yarn build` Compiled successfully tanpa warning (277.81 kB gz, CSS 14.9 kB); `/api/health` 200; backend tidak diubah sama sekali di fase ini.
+- Audit: "Keluarga ALSABBAT" 0, `#222222/#1A1A1A/rgba(34,34,34` 0, `transition: all` 0 pada kode ALSABBAT (5 sisa hanya di primitif shadcn: toast/tabs/accordion/progress/input-otp — sengaja tidak diubah).
+- Database produksi tidak disentuh; data nyata user tetap (logo klub hasil upload, Majalengka, Babakan koda, 1 musim, 2 media).

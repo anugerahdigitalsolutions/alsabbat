@@ -17,7 +17,9 @@ export const PublicLayout = () => {
       <div className="als-frame als-app" data-testid="public-frame">
         <PublicHeader />
         <main className="flex-1">
-          <Outlet />
+          <div key={pathname} className="als-page-enter" data-testid="public-page-transition">
+            <Outlet />
+          </div>
         </main>
         <PublicFooter />
       </div>

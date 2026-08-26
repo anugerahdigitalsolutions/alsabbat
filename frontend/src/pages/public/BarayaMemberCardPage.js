@@ -112,18 +112,18 @@ export default function BarayaMemberCardPage() {
               <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={share}
-                  className="min-h-[44px] font-semibold"
+                  className="als-press min-h-[44px] font-semibold"
                   style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                   data-testid="member-card-share"
                 >
                   <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />
                   Bagikan
                 </Button>
-                <Button variant="outline" className="min-h-[44px]" onClick={copyLink} data-testid="member-card-copy">
+                <Button variant="outline" className="als-press min-h-[44px]" onClick={copyLink} data-testid="member-card-copy">
                   <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
                   Salin Tautan
                 </Button>
-                <Button variant="outline" className="min-h-[44px]" onClick={download} data-testid="member-card-download">
+                <Button variant="outline" className="als-press min-h-[44px]" onClick={download} data-testid="member-card-download">
                   <Download className="mr-2 h-4 w-4" aria-hidden="true" />
                   Simpan Kartu
                 </Button>

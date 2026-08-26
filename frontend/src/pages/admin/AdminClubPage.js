@@ -102,7 +102,7 @@ export default function AdminClubPage() {
         },
         { name: 'founded_date', label: 'Tanggal Berdiri', type: 'date' },
         { name: 'location', label: 'Lokasi', type: 'text' },
-        { name: 'stadium', label: 'Markas / Stadion', type: 'text' },
+        { name: 'stadium', label: 'Stadion', type: 'text', help: 'Nama stadion / lapangan resmi klub.' },
         { name: 'official_website', label: 'Website Resmi', type: 'text' },
         { name: 'contact.email', label: 'Email Kontak', type: 'text' },
         { name: 'contact.phone', label: 'Telepon', type: 'text' },

@@ -389,7 +389,7 @@ export const ResourceManager = ({
             <Button
               size="sm"
               onClick={openCreate}
-              className="font-semibold"
+              className="als-press font-semibold"
               style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid={`${testPrefix}-create-button`}
             >
@@ -477,7 +477,7 @@ export const ResourceManager = ({
             />
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="als-admin-table">
                 <TableHeader>
                   <TableRow style={{ backgroundColor: 'rgba(1,40,145,0.04)' }}>
                     {columns.map((column) => (
@@ -610,7 +610,7 @@ export const ResourceManager = ({
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="font-semibold"
+              className="als-press font-semibold"
               style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid={`${testPrefix}-form-submit`}
             >

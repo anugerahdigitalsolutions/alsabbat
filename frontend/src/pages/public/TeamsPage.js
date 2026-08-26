@@ -92,7 +92,7 @@ export default function TeamsPage() {
         {staff.items.length ? (
           <Reveal className="mt-16">
             <p className="als-row-label mb-4">{t('squad.staff.label')}</p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="als-stagger grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {staff.items.map((member) => (
                 <article key={member.id} className="als-card als-lift p-5" data-testid={`staff-card-${member.id}`}>
                   {member.photo ? (

@@ -220,6 +220,61 @@
     animation: als-reveal-in 620ms var(--ease-out) both;
   }
 
+  /* -------- Phase 21: premium motion polish (transform/opacity only) ------- */
+  .als-page-enter {
+    animation: als-page-in 260ms var(--ease-out) both;
+  }
+
+  .als-stagger > * {
+    animation: als-reveal-in 520ms var(--ease-out) both;
+  }
+
+  .als-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .als-stagger > *:nth-child(2) { animation-delay: 40ms; }
+  .als-stagger > *:nth-child(3) { animation-delay: 80ms; }
+  .als-stagger > *:nth-child(4) { animation-delay: 120ms; }
+  .als-stagger > *:nth-child(5) { animation-delay: 160ms; }
+  .als-stagger > *:nth-child(6) { animation-delay: 200ms; }
+  .als-stagger > *:nth-child(n + 7) { animation-delay: 240ms; }
+
+  .als-hero-step {
+    animation: als-reveal-in 620ms var(--ease-out) both;
+  }
+
+  .als-btn-gold:active,
+  .als-btn-blue:active,
+  .als-btn-ghost:active {
+    transform: translate3d(0, 0, 0) scale(0.985);
+  }
+
+  .als-press {
+    transition-property: transform, box-shadow, background-color;
+    transition-duration: var(--dur-2);
+    transition-timing-function: var(--ease-out);
+  }
+
+  .als-press:hover {
+    transform: translate3d(0, -1px, 0);
+  }
+
+  .als-press:active {
+    transform: translate3d(0, 0, 0) scale(0.985);
+  }
+
+  .als-card-enter {
+    animation: als-card-in 520ms var(--ease-out) both;
+  }
+
+  .als-admin-table tbody tr {
+    transition-property: background-color;
+    transition-duration: var(--dur-1);
+    transition-timing-function: var(--ease-out);
+  }
+
+  .als-admin-table tbody tr:hover {
+    background-color: rgba(1, 40, 145, 0.04);
+  }
+
   /* -------- Phase 5B: inner page visual language ------- */
   .als-inner-header {
     min-height: 220px;
@@ -496,6 +551,28 @@
   }
 }
 
+@keyframes als-page-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes als-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 @keyframes als-reveal-in {
   from {
     opacity: 0;
@@ -512,6 +589,32 @@
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .als-page-enter,
+  .als-hero-step,
+  .als-card-enter,
+  .als-stagger > *,
+  .als-reveal-hidden,
+  .als-reveal-shown {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .als-kenburns {
+    animation: none !important;
+  }
+
+  .als-lift:hover,
+  .als-press:hover,
+  .als-btn-gold:hover,
+  .als-btn-blue:hover,
+  .als-btn-ghost:hover {
+    transform: none !important;
   }
 }

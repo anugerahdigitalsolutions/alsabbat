@@ -117,10 +117,10 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
         <div className="als-hero-frame relative flex items-end pb-28 pt-20 sm:pb-32">
           <div className="grid w-full items-end gap-8 px-6 sm:px-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12 xl:px-14">
             {active ? (
-              <div key={active.id} className="als-reveal-shown max-w-3xl">
+              <div key={active.id} className="max-w-3xl">
                 <p
-                  className="als-eyebrow mb-4"
-                  style={{ color: 'var(--club-primary)' }}
+                  className="als-eyebrow als-hero-step mb-4"
+                  style={{ color: 'var(--club-primary)', animationDelay: '60ms' }}
                   data-testid="home-hero-eyebrow"
                 >
                   {active.eyebrow}
@@ -131,8 +131,12 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
                   data-testid="home-hero-headline"
                 >
                   {active.headlineLines ? (
-                    active.headlineLines.map((line) => (
-                      <span key={line.text} className="block">
+                    active.headlineLines.map((line, lineIndex) => (
+                      <span
+                        key={line.text}
+                        className="als-hero-step block"
+                        style={{ animationDelay: `${140 + lineIndex * 110}ms` }}
+                      >
                         <span style={{ color: line.gold ? 'var(--club-primary)' : 'inherit' }}>{line.text}</span>
                       </span>
                     ))
@@ -142,29 +146,32 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
                 </h1>
                 {active.subheadline ? (
                   <p
-                    className="font-display mt-3 text-lg font-semibold sm:text-2xl"
-                    style={{ color: 'var(--club-primary)' }}
+                    className="font-display als-hero-step mt-3 text-lg font-semibold sm:text-2xl"
+                    style={{ color: 'var(--club-primary)', animationDelay: '420ms' }}
                     data-testid="home-hero-subheadline"
                   >
                     {active.subheadline}
                   </p>
                 ) : null}
                 {active.meta ? (
-                  <p className="mt-4 max-w-xl text-sm sm:text-base" style={{ color: 'rgba(254,254,254,0.82)' }}>
+                  <p
+                    className="als-hero-step mt-4 max-w-xl text-sm sm:text-base"
+                    style={{ color: 'rgba(254,254,254,0.82)', animationDelay: '480ms' }}
+                  >
                     {active.meta}
                   </p>
                 ) : null}
                 {tagline ? (
                   <p
-                    className="font-display mt-5 text-base font-semibold sm:text-lg"
-                    style={{ color: 'rgba(254,254,254,0.9)' }}
+                    className="font-display als-hero-step mt-5 text-base font-semibold sm:text-lg"
+                    style={{ color: 'rgba(254,254,254,0.9)', animationDelay: '520ms' }}
                     data-testid="home-hero-tagline"
                   >
                     {tagline}
                   </p>
                 ) : null}
 
-                <div className="mt-7 flex flex-wrap items-center gap-3">
+                <div className="als-hero-step mt-7 flex flex-wrap items-center gap-3" style={{ animationDelay: '580ms' }}>
                   {active.ctaTo ? (
                     <Link
                       to={active.ctaTo}
@@ -187,7 +194,11 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
                 </div>
 
                 {socials.length ? (
-                  <div className="mt-8 flex flex-wrap items-center gap-3" data-testid="home-hero-socials">
+                  <div
+                    className="als-hero-step mt-8 flex flex-wrap items-center gap-3"
+                    style={{ animationDelay: '640ms' }}
+                    data-testid="home-hero-socials"
+                  >
                     <span className="text-xs font-semibold" style={{ color: 'rgba(254,254,254,0.7)' }}>
                       Ikuti Kami
                     </span>
@@ -220,7 +231,11 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
               </div>
             )}
             {panel ? (
-              <div className="als-reveal-shown w-full lg:w-auto lg:justify-self-end lg:pb-2" data-testid="home-hero-panel">
+              <div
+                className="als-hero-step w-full lg:w-auto lg:justify-self-end lg:pb-2"
+                style={{ animationDelay: '700ms' }}
+                data-testid="home-hero-panel"
+              >
                 {panel}
               </div>
             ) : null}

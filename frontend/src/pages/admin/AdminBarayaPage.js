@@ -126,7 +126,7 @@ export default function AdminBarayaPage() {
         <EmptyState icon={Users} title="Belum ada akun Baraya" description="Akun pelanggan akan tampil di sini setelah pendaftaran." testId="admin-baraya-empty" />
       ) : (
         <div className="als-card overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="als-admin-table w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: 'var(--surface-2)' }}>
                 {['No. Member', 'Nama', 'Email', 'WhatsApp', 'Status', 'Daftar', 'Login Terakhir', 'Aksi'].map((head) => (

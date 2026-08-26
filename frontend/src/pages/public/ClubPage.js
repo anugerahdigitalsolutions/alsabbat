@@ -35,7 +35,7 @@ export default function ClubPage() {
   const facts = [
     { id: 'founded', label: 'Didirikan', value: club?.founded_date, Icon: CalendarDays },
     { id: 'location', label: 'Lokasi', value: club?.location, Icon: MapPin },
-    { id: 'stadium', label: 'Markas', value: club?.stadium, Icon: Shield },
+    { id: 'stadium', label: 'Stadion', value: club?.stadium, Icon: Shield },
   ].filter((fact) => !!fact.value);
 
   return (

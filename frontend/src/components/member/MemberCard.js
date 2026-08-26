@@ -42,7 +42,7 @@ export const MemberCard = React.forwardRef(({ card, design, testId = 'member-car
   return (
     <div
       ref={ref}
-      className="relative w-full max-w-[440px] overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-7"
+      className="als-card-enter relative w-full max-w-[440px] overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-7"
       style={{ backgroundColor: 'var(--club-secondary)', boxShadow: '0 24px 60px -28px rgba(1,40,145,0.65)' }}
       data-has-background={background ? 'true' : 'false'}
       data-testid={testId}
