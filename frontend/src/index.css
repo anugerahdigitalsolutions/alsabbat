@@ -492,11 +492,25 @@
   }
 
   /* ---- Phase 12B: premium page frame (reference layout) ---- */
+  /* Ambient canvas di LUAR frame website: putih #FEFEFE + corak diamond hitam sangat samar. */
   .als-shell-bg {
-    background-color: #f1f3f7;
-    background-image: radial-gradient(1200px circle at 50% -10%, rgba(1, 40, 145, 0.08), transparent 60%);
+    background-color: #fefefe;
     min-height: 100vh;
     padding: 0;
+    position: relative;
+    isolation: isolate;
+  }
+
+  .als-shell-bg::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: #fefefe;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='%23000000' fill-opacity='0.075'%3E%3Cpath d='M20 12l5 5-5 5-5-5z'/%3E%3Cpath d='M52 26l3 3-3 3-3-3z'/%3E%3Cpath d='M86 10l7 7-7 7-7-7z'/%3E%3Cpath d='M124 22l4 4-4 4-4-4z'/%3E%3Cpath d='M146 46l3 3-3 3-3-3z'/%3E%3Cpath d='M36 54l6 6-6 6-6-6z'/%3E%3Cpath d='M70 62l3 3-3 3-3-3z'/%3E%3Cpath d='M104 50l5 5-5 5-5-5z'/%3E%3Cpath d='M16 88l4 4-4 4-4-4z'/%3E%3Cpath d='M58 96l7 7-7 7-7-7z'/%3E%3Cpath d='M96 90l3 3-3 3-3-3z'/%3E%3Cpath d='M132 100l5 5-5 5-5-5z'/%3E%3Cpath d='M28 128l3 3-3 3-3-3z'/%3E%3Cpath d='M66 138l5 5-5 5-5-5z'/%3E%3Cpath d='M110 132l4 4-4 4-4-4z'/%3E%3Cpath d='M144 122l3 3-3 3-3-3z'/%3E%3C/g%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340' viewBox='0 0 340 340'%3E%3Cg fill='%23000000' fill-opacity='0.05'%3E%3Cpath d='M48 40l10 10-10 10-10-10z'/%3E%3Cpath d='M196 74l8 8-8 8-8-8z'/%3E%3Cpath d='M290 150l11 11-11 11-11-11z'/%3E%3Cpath d='M116 196l9 9-9 9-9-9z'/%3E%3Cpath d='M242 258l10 10-10 10-10-10z'/%3E%3Cpath d='M60 288l8 8-8 8-8-8z'/%3E%3C/g%3E%3C/svg%3E");
+    background-position: 0 0, 40px 60px;
   }
 
   @media (min-width: 1024px) {
