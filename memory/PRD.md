@@ -454,3 +454,27 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - Preview draft untuk Match/News/Album belum ada.
 - Klasemen & ticketing tidak dibuat (future phase).
 - Sisa string multi-team: hanya nilai enum backend `TeamCategory.YOUTH_TEAM` (tidak dipakai UI/data produksi), dibiarkan agar tidak merusak validasi existing.
+
+## FASE 20 — Universal Media Upload & Storage (26 Jun 2026) · STOP GATE 20
+### Storage
+- `MEDIA_STORAGE_PROVIDER` sekarang mendukung **LOCAL | EMERGENT | S3** (satu abstraksi `StorageBackend`, tanpa hard-code provider).
+- Provider aktif di preview: **EMERGENT** (Emergent Managed Object Storage, persisten & deployment-safe). Binary di object storage, MongoDB hanya metadata (url, mime, size, width/height, storage_key, provider). Berkas disajikan lewat `GET /api/media/files/{key}` (backend streaming) sehingga kredensial storage tidak pernah sampai ke browser.
+- ENV baru (`backend/.env.example`): `MEDIA_STORAGE_PUBLIC_BASE_URL`, `MEDIA_STORAGE_BUCKET`, `MEDIA_STORAGE_REGION`, `MEDIA_STORAGE_ENDPOINT`, `MEDIA_STORAGE_PREFIX`, `EMERGENT_LLM_KEY`, `INTEGRATION_PROXY_URL`. Tidak ada credential asli di repo.
+- `GET /api/media/storage/status` kini melaporkan `persistent` + catatan jujur bila masih LOCAL.
+### Keamanan upload (server-side)
+- Allowlist MIME (SVG **dihapus** dari daftar gambar), batas ukuran dievaluasi pada berkas **asli** sebelum re-encode, signature/magic-byte check, penolakan `<script>/<html>/<?php/MZ/ELF`, **re-encode gambar via Pillow** (JPEG/PNG) sehingga payload berbahaya tidak tersimpan mentah, storage key dibuat server-side (nama file user hanya metadata), header `X-Content-Type-Options: nosniff`, proteksi path traversal.
+### Universal uploader
+- Komponen tunggal `frontend/src/components/shared/MediaPicker.js`: preview, drag & drop, pilih file dari HP, progress %, Upload dari Perangkat, Pilih dari Media Library (dengan pencarian), Hapus, replace. Dipakai oleh `ResourceManager` (type `media`), `BannerManager`, `MemberCardDesign`, dan halaman Akun Baraya — tidak ada uploader kedua.
+- Field yang kini upload/library (tanpa ketik URL): club logo, club hero, club OG image, foto pemain, foto staf, logo tim, logo kompetisi, logo lawan, gambar pertandingan, logo sponsor, gambar trofi, thumbnail berita, foto penulis, cover album, gambar banner hero, gambar produk (`cover_media_id`, mode id), latar kartu member, foto profil Baraya.
+- Backward compatible: URL lama (`logo`, `photo`, `image_url`, `hero_image`, `background_url`) tetap dibaca & dirender; tidak ada migrasi data massal.
+### Upload foto Baraya (aktif)
+- `POST /api/baraya/me/photo` & `DELETE /api/baraya/me/photo` (auth Baraya existing, tanpa auth kedua): validasi + sanitasi sama, hanya foto sendiri, langsung tampil di kartu member; nomor/member_code/status tidak bisa diubah; Baraya tidak bisa upload ke Media Library admin maupun mengubah latar kartu global.
+### Verifikasi (tanpa Testing Agent)
+- `scripts/phase20_verify.py`: **44/44 PASS** di sandbox `alsabbat_phase20_sandbox` (**DI-DROP**, menolak jalan di non-sandbox) — upload desktop/HP, metadata & dimensi, baca ulang berkas, reuse library, tolak HTML-berkedok-JPG/SVG/executable/kosong/oversize/unauth/path-traversal, integrasi ke club/player/staff/sponsor/news/banner/product/member-card, URL lama tetap terbaca, upload+hapus foto Baraya + isolasi antar customer, soft delete media, 12 regresi endpoint.
+- UI produksi: upload logo klub dari perangkat → preview → simpan (berhasil, tampil di sidebar & halaman), Media Library picker menampilkan berkas hasil upload, tombol Hapus tersedia; form players/teams/matches/competitions/sponsors/products menampilkan uploader dengan **0 input URL** tersisa; overflow **0 px** di 1920/1600/390 pada admin & publik.
+- `yarn build` Compiled successfully tanpa warning; `/api/health` 200; provider status `EMERGENT/persistent: true`.
+- Data uji produksi **dikembalikan**: club.logo & hero_image dikosongkan lagi, media uji dihapus (media total 0). Data nyata milik user (location "Majalengka", stadium "Babakan koda", 1 season) **tidak disentuh**.
+### Limitasi
+- Emergent object storage tidak punya API delete → penghapusan media = soft delete metadata (binary tetap ada di bucket, tidak dapat diakses tanpa metadata).
+- Album gallery masih memakai halaman kelola album existing (pilih media dari library, upload lewat menu Media).
+- Ticketing & klasemen tetap tidak dibuat.

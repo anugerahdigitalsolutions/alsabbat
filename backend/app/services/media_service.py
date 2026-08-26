@@ -35,7 +35,6 @@ ALLOWED_MIME_TYPES = {
         "image/webp",
         "image/gif",
         "image/avif",
-        "image/svg+xml",
     },
     MediaType.VIDEO: {
         "video/mp4",
@@ -99,6 +98,62 @@ def validate_file(mime_type: str, size_bytes: int) -> MediaType:
             f"{media_type.value} exceeds the maximum size of {MAX_SIZE_MB[media_type]}MB"
         )
     return media_type
+
+
+IMAGE_SIGNATURES = {
+    b"\xff\xd8\xff": "image/jpeg",
+    b"\x89PNG\r\n\x1a\n": "image/png",
+    b"GIF87a": "image/gif",
+    b"GIF89a": "image/gif",
+}
+BLOCKED_SNIPPETS = (b"<script", b"<!doctype html", b"<html", b"<?php", b"MZ", b"\x7fELF")
+
+
+def sniff_image_mime(content: bytes) -> Optional[str]:
+    """Content-based image detection (never trust the client mime/extension)."""
+    for signature, mime in IMAGE_SIGNATURES.items():
+        if content.startswith(signature):
+            return mime
+    if content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+    if content[4:12] in (b"ftypavif", b"ftypavis"):
+        return "image/avif"
+    return None
+
+
+def sanitize_upload(file_name: str, content: bytes, mime_type: str) -> Tuple[str, bytes, str]:
+    """Server-side hardening: signature check + safe re-encode for raster images."""
+    head = content[:2048].lower()
+    if any(snippet.lower() in head for snippet in BLOCKED_SNIPPETS):
+        raise ValidationFailedError("Berkas ditolak: konten tidak aman untuk media.")
+    mime = (mime_type or "").lower()
+    if mime.startswith("image/") or sniff_image_mime(content):
+        sniffed = sniff_image_mime(content)
+        if not sniffed:
+            raise ValidationFailedError("Berkas gambar tidak valid (signature tidak dikenali).")
+        try:
+            from io import BytesIO
+
+            from PIL import Image
+
+            with Image.open(BytesIO(content)) as image:
+                image.verify()
+            with Image.open(BytesIO(content)) as image:
+                fmt = "PNG" if sniffed in ("image/png", "image/gif") else "JPEG"
+                if fmt == "JPEG" and image.mode not in ("RGB", "L"):
+                    image = image.convert("RGB")
+                buffer = BytesIO()
+                image.save(buffer, format=fmt, quality=88, optimize=True)
+                content = buffer.getvalue()
+                mime = "image/png" if fmt == "PNG" else "image/jpeg"
+        except ValidationFailedError:
+            raise
+        except Exception as exc:
+            raise ValidationFailedError("Gambar tidak dapat diproses. Gunakan JPG, PNG, atau WEBP.") from exc
+        base = os.path.basename(file_name or "gambar")
+        stem = base.rsplit(".", 1)[0][:80] or "gambar"
+        file_name = f"{stem}.{'png' if mime == 'image/png' else 'jpg'}"
+    return file_name, content, mime
 
 
 class StorageBackend(ABC):
@@ -188,11 +243,98 @@ class S3StorageBackend(StorageBackend):
         return True
 
 
+class EmergentStorageBackend(StorageBackend):
+    """Emergent Managed Object Storage (persistent, deployment-safe).
+
+    Binary lives in object storage; the app streams it back through
+    /api/media/files/{key} so no storage credential ever reaches the browser.
+    """
+
+    provider = StorageProvider.EMERGENT
+    _storage_key: Optional[str] = None
+
+    @property
+    def _base_url(self) -> str:
+        base = (settings.INTEGRATION_PROXY_URL or "").strip() or "https://integrations.emergentagent.com"
+        return base.rstrip("/") + "/objstore/api/v1/storage"
+
+    def is_configured(self) -> bool:
+        return bool(settings.EMERGENT_LLM_KEY)
+
+    def _init_key(self, force: bool = False) -> str:
+        import requests
+
+        if EmergentStorageBackend._storage_key and not force:
+            return EmergentStorageBackend._storage_key
+        response = requests.post(
+            f"{self._base_url}/init", json={"emergent_key": settings.EMERGENT_LLM_KEY}, timeout=30
+        )
+        response.raise_for_status()
+        EmergentStorageBackend._storage_key = response.json()["storage_key"]
+        return EmergentStorageBackend._storage_key
+
+    def _path(self, key: str) -> str:
+        prefix = (settings.MEDIA_STORAGE_PREFIX or "alsabbat").strip("/")
+        return f"{prefix}/{key.lstrip('/')}"
+
+    async def save(self, key: str, content: bytes, mime_type: str) -> StoredFile:
+        import requests
+
+        if not self.is_configured():
+            raise ValidationFailedError(
+                "Object storage belum dikonfigurasi. Set EMERGENT_LLM_KEY atau ganti MEDIA_STORAGE_PROVIDER."
+            )
+        path = self._path(key)
+        for attempt in (1, 2):
+            storage_key = self._init_key(force=attempt == 2)
+            response = requests.put(
+                f"{self._base_url}/objects/{path}",
+                headers={"X-Storage-Key": storage_key, "Content-Type": mime_type},
+                data=content,
+                timeout=120,
+            )
+            if response.status_code == 404 and attempt == 1:
+                continue
+            response.raise_for_status()
+            break
+        base = settings.MEDIA_CDN_BASE_URL.rstrip("/") if settings.MEDIA_CDN_BASE_URL else ""
+        public_path = f"{settings.MEDIA_PUBLIC_PATH}/{key}"
+        return StoredFile(
+            url=f"{base}{public_path}" if base else public_path,
+            storage_key=key,
+            provider=self.provider,
+            size=len(content),
+        )
+
+    def fetch(self, key: str) -> Tuple[bytes, str]:
+        import requests
+
+        for attempt in (1, 2):
+            storage_key = self._init_key(force=attempt == 2)
+            response = requests.get(
+                f"{self._base_url}/objects/{self._path(key)}",
+                headers={"X-Storage-Key": storage_key},
+                timeout=60,
+            )
+            if response.status_code == 404 and attempt == 1:
+                continue
+            response.raise_for_status()
+            return response.content, response.headers.get("Content-Type", "application/octet-stream")
+        raise FileNotFoundError(key)
+
+    async def delete(self, key: str) -> bool:
+        # Emergent object storage has no delete API -> metadata soft delete only.
+        logger.info("EMERGENT storage has no delete API; keeping binary for key=%s", key)
+        return False
+
+
 class MediaService:
     def __init__(self) -> None:
         provider = settings.MEDIA_STORAGE_PROVIDER
         if provider == StorageProvider.S3.value:
             self.backend: StorageBackend = S3StorageBackend()
+        elif provider == StorageProvider.EMERGENT.value:
+            self.backend = EmergentStorageBackend()
         else:
             self.backend = LocalStorageBackend(
                 settings.MEDIA_LOCAL_DIR, settings.MEDIA_PUBLIC_PATH
@@ -212,6 +354,10 @@ class MediaService:
     async def store(
         self, file_name: str, content: bytes, mime_type: str
     ) -> Tuple[StoredFile, MediaType]:
+        # Batas ukuran & tipe dievaluasi pada berkas ASLI (sebelum re-encode),
+        # agar berkas raksasa tidak lolos hanya karena hasil re-encode-nya kecil.
+        validate_file(mime_type, len(content))
+        file_name, content, mime_type = sanitize_upload(file_name, content, mime_type)
         media_type = validate_file(mime_type, len(content))
         key = self.build_key(file_name, media_type)
         stored = await self.backend.save(key, content, mime_type)
@@ -231,6 +377,13 @@ class MediaService:
             "provider": self.backend.provider.value,
             "configured": self.backend.is_configured(),
             "cdn_enabled": bool(settings.MEDIA_CDN_BASE_URL),
+            "persistent": self.backend.provider != StorageProvider.LOCAL,
+            "note": (
+                "Penyimpanan LOCAL hanya untuk pengembangan — berkas bisa hilang saat deployment. "
+                "Set MEDIA_STORAGE_PROVIDER=EMERGENT (atau S3) untuk penyimpanan permanen."
+                if self.backend.provider == StorageProvider.LOCAL
+                else "Penyimpanan objek persisten aktif."
+            ),
             "limits_mb": {k.value: v for k, v in MAX_SIZE_MB.items()},
             "allowed_mime_types": {k.value: sorted(v) for k, v in ALLOWED_MIME_TYPES.items()},
         }

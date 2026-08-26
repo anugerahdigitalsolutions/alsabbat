@@ -13,7 +13,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 
 from app.api.crud_factory import Repository
@@ -27,7 +27,7 @@ from app.core.errors import (
     ValidationFailedError,
 )
 from app.core.logging_config import get_logger
-from app.core.rate_limit import enforce, login_guard
+from app.core.rate_limit import enforce, login_guard, write_rate_limit
 from app.core.security import (
     create_customer_access_token,
     hash_password,
@@ -45,7 +45,9 @@ from app.models.customer import (
     CustomerStatusUpdate,
 )
 from app.models.base import new_id, utcnow
+from app.models.enums import MediaType
 from app.services.mailer import send_customer_password_reset_email
+from app.services.media_service import media_service
 from app.services.membership import (
     ensure_member_identity,
     member_card_payload,
@@ -281,6 +283,37 @@ async def reset_password(
     )
     logger.info("baraya.reset_password success customer=%s", customer["id"])
     return {"success": True, "message": "Kata sandi berhasil diperbarui. Silakan login kembali."}
+
+
+# ------------------------------------------------------------- profile photo
+@router.post("/me/photo", summary="Upload foto profil Baraya (milik sendiri)")
+async def upload_my_photo(
+    request: Request,
+    file: UploadFile = File(...),
+    customer: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    write_rate_limit(request)
+    doc = await customers.get(customer.customer_id)
+    if not doc:
+        raise UnauthorizedError("Akun tidak ditemukan.")
+    content = await file.read()
+    stored, media_type = await media_service.store(
+        file.filename or "foto", content, file.content_type or "application/octet-stream"
+    )
+    if media_type != MediaType.IMAGE:
+        await media_service.remove(stored.storage_key)
+        raise ValidationFailedError("Hanya berkas gambar yang diizinkan untuk foto profil.")
+    await customers.update(customer.customer_id, {"photo_url": stored.url})
+    logger.info("baraya.photo.upload customer=%s", customer.customer_id)
+    return {"success": True, "photo_url": stored.url}
+
+
+@router.delete("/me/photo", summary="Hapus foto profil Baraya (milik sendiri)")
+async def delete_my_photo(
+    customer: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    await customers.update(customer.customer_id, {"photo_url": ""})
+    return {"success": True, "photo_url": ""}
 
 
 # -------------------------------------------------------------- member card

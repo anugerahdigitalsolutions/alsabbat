@@ -10,8 +10,14 @@ import { Badge } from '../../components/ui/badge';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { apiErrorMessage } from '../../lib/api';
 import { useBaraya } from '../../context/BarayaAuthContext';
-import { barayaChangePassword, barayaUpdateProfile } from '../../services/barayaAuth';
+import {
+  barayaChangePassword,
+  barayaDeletePhoto,
+  barayaUpdateProfile,
+  barayaUploadPhoto,
+} from '../../services/barayaAuth';
 import { MemberCard } from '../../components/member/MemberCard';
+import { MediaPicker } from '../../components/shared/MediaPicker';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -99,16 +105,19 @@ export default function BarayaAccountPage() {
                   <Input value={customer?.email || ''} disabled data-testid="baraya-profile-email" />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="mb-1.5 block">Foto Profil (tautan https)</Label>
-                  <Input
+                  <Label className="mb-1.5 block">Foto Profil</Label>
+                  <MediaPicker
                     value={profile.photo_url}
-                    onChange={(e) => setProfile((p) => ({ ...p, photo_url: e.target.value }))}
-                    placeholder="https://…"
-                    data-testid="baraya-profile-photo"
+                    onChange={async (url) => {
+                      setProfile((p) => ({ ...p, photo_url: url }));
+                      if (!url) await barayaDeletePhoto().catch(() => {});
+                      await reload();
+                    }}
+                    uploader={barayaUploadPhoto}
+                    libraryEnabled={false}
+                    testId="baraya-profile-photo"
+                    hint="Upload langsung dari HP atau komputer (JPG/PNG/WEBP, maks 10MB). Foto ini juga tampil pada kartu member Anda."
                   />
-                  <p className="mt-1.5 text-xs" style={{ color: 'var(--muted-fg)' }}>
-                    Foto ini juga tampil pada kartu member Anda. Kosongkan untuk memakai inisial nama.
-                  </p>
                 </div>
               </div>
               <Button

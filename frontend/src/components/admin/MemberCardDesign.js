@@ -4,10 +4,8 @@ import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { MemberCard } from '../member/MemberCard';
+import { MediaPicker } from '../shared/MediaPicker';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const PREVIEW_CARD = {
   member_number: 'ALS-000001',
@@ -25,19 +23,14 @@ export const MemberCardDesign = () => {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission('content:write');
   const [background, setBackground] = useState('');
-  const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [content, mediaList] = await Promise.all([
-        api.get('/site-content/public'),
-        api.get('/media', { params: { limit: 200 } }),
-      ]);
-      setBackground(content.data?.items?.[BACKGROUND_KEY] || '');
-      setMedia((mediaList.data?.items || []).filter((item) => item.url));
+      const { data } = await api.get('/site-content/public');
+      setBackground(data?.items?.[BACKGROUND_KEY] || '');
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Gagal memuat desain kartu'));
     } finally {
@@ -80,52 +73,16 @@ export const MemberCardDesign = () => {
       ) : (
         <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
           <div className="space-y-4">
-            <div>
-              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
-                Latar dari Media Library
-              </Label>
-              <Select
-                value={media.some((item) => item.url === background) ? background : undefined}
-                onValueChange={setBackground}
-                disabled={!canWrite}
-              >
-                <SelectTrigger className="bg-white" data-testid="admin-card-background-picker">
-                  <SelectValue placeholder="Pilih gambar dari Media Library…" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {media.length ? (
-                    media.map((item) => (
-                      <SelectItem key={item.id} value={item.url}>
-                        {item.file_name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="__empty" disabled>
-                      Media Library masih kosong
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
-                Atau tempel URL gambar
-              </Label>
-              <Input
-                value={background}
-                onChange={(e) => setBackground(e.target.value)}
-                placeholder="https://… atau /api/media/files/…"
-                disabled={!canWrite}
-                className="bg-white"
-                data-testid="admin-card-background-url"
-              />
-            </div>
-
+            <MediaPicker
+              value={background}
+              onChange={setBackground}
+              testId="admin-card-background"
+              hint="Gunakan gambar dengan area kosong yang cukup (hindari wajah/teks di tengah) agar nama, nomor, dan QR tetap terbaca."
+            />
             {canWrite ? (
               <div className="flex flex-wrap gap-3">
                 <Button
-                  onClick={() => persist(background.trim(), 'Latar kartu member tersimpan')}
+                  onClick={() => persist((background || '').trim(), 'Latar kartu member tersimpan')}
                   disabled={saving}
                   className="font-semibold"
                   style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
@@ -136,7 +93,10 @@ export const MemberCardDesign = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => persist('', 'Latar dikembalikan ke default ALSABBAT')}
+                  onClick={() => {
+                    setBackground('');
+                    persist('', 'Latar dikembalikan ke default ALSABBAT');
+                  }}
                   disabled={saving}
                   data-testid="admin-card-background-reset"
                 >

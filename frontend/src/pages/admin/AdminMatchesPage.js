@@ -53,7 +53,7 @@ export default function AdminMatchesPage() {
         },
         { name: 'opponent.name', label: 'Nama Lawan', type: 'text', required: true },
         { name: 'opponent.short_name', label: 'Short Name Lawan', type: 'text' },
-        { name: 'opponent.logo', label: 'Logo Lawan (URL)', type: 'text', full: true },
+        { name: 'opponent.logo', label: 'Logo Lawan', type: 'media', full: true },
         {
           name: 'season_id',
           label: 'Musim',
@@ -73,7 +73,7 @@ export default function AdminMatchesPage() {
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.match_status), required: true },
         { name: 'home_score', label: 'Skor Home', type: 'number' },
         { name: 'away_score', label: 'Skor Away', type: 'number' },
-        { name: 'match_cover', label: 'Match Cover (URL)', type: 'text', full: true },
+        { name: 'match_cover', label: 'Gambar Pertandingan', type: 'media', full: true, help: 'Gambar landscape untuk kartu & halaman detail pertandingan.' },
         {
           name: 'formation',
           label: 'Formasi ALSABBAT',

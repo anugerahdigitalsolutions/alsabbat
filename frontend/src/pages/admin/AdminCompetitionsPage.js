@@ -43,7 +43,7 @@ export default function AdminCompetitionsPage() {
         { name: 'type', label: 'Tipe', type: 'select', options: opts(meta?.competition_types), required: true },
         { name: 'organizer', label: 'Penyelenggara', type: 'text' },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'logo', label: 'Logo URL', type: 'text', full: true },
+        { name: 'logo', label: 'Logo Kompetisi', type: 'media', full: true },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
     />

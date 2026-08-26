@@ -137,6 +137,7 @@ class MediaType(str, Enum):
 
 class StorageProvider(str, Enum):
     LOCAL = "LOCAL"
+    EMERGENT = "EMERGENT"
     S3 = "S3"
     EXTERNAL = "EXTERNAL"
 

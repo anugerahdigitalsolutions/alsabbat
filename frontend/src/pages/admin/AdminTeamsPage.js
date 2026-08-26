@@ -42,7 +42,7 @@ export default function AdminTeamsPage() {
         { name: 'short_name', label: 'Short Name', type: 'text' },
         { name: 'category', label: 'Kategori', type: 'select', options: opts(meta?.team_categories), required: true },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
-        { name: 'logo', label: 'Logo URL', type: 'text', full: true },
+        { name: 'logo', label: 'Logo Tim', type: 'media', full: true },
         { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
       ]}
     />

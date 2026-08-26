@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 from app.api.crud_factory import Repository, build_crud_router
 from app.api.deps import require_permission
@@ -94,8 +94,21 @@ async def upload_media(
     return await repo.create(jsonable_encoder(doc))
 
 
-@router.get("/files/{file_path:path}", summary="Serve locally stored media (dev/self-hosted)")
+@router.get("/files/{file_path:path}", summary="Serve stored media (object storage or local disk)")
 async def serve_file(file_path: str):
+    if ".." in file_path:
+        raise NotFoundError("Media file not found")
+    backend = getattr(media_service, "backend", None)
+    if hasattr(backend, "fetch"):
+        try:
+            content, content_type = backend.fetch(file_path)
+        except Exception as exc:
+            raise NotFoundError("Media file not found") from exc
+        return Response(
+            content=content,
+            media_type=content_type,
+            headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "public, max-age=86400"},
+        )
     base = Path(settings.MEDIA_LOCAL_DIR).resolve()
     target = (base / file_path).resolve()
     if not str(target).startswith(str(base)) or not target.is_file():

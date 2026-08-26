@@ -33,6 +33,23 @@ export const barayaUpdateProfile = async (payload) => {
   return data;
 };
 
+export const barayaUploadPhoto = async (file, onProgress) => {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await barayaApi.post('/baraya/me/photo', form, {
+    headers: { 'Content-Type': undefined },
+    onUploadProgress: (event) => {
+      if (event.total && onProgress) onProgress(Math.round((event.loaded / event.total) * 100));
+    },
+  });
+  return { url: data.photo_url };
+};
+
+export const barayaDeletePhoto = async () => {
+  const { data } = await barayaApi.delete('/baraya/me/photo');
+  return data;
+};
+
 export const barayaMemberCard = async () => {
   const { data } = await barayaApi.get('/baraya/member-card');
   return data;

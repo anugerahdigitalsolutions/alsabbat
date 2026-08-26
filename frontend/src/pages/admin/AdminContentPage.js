@@ -153,7 +153,7 @@ export default function AdminContentPage() {
               { name: 'name', label: 'Nama', type: 'text', required: true },
               { name: 'slug', label: 'Slug', type: 'text' },
               { name: 'status', label: 'Status', type: 'select', options: statusOptions, required: true },
-              { name: 'photo', label: 'Foto URL', type: 'text', full: true },
+              { name: 'photo', label: 'Foto Penulis', type: 'media', full: true },
               { name: 'bio', label: 'Bio', type: 'textarea', full: true },
               { name: 'social_media.instagram', label: 'Instagram', type: 'text' },
             ]}

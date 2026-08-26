@@ -117,7 +117,7 @@ export default function AdminClubPage() {
         { name: 'seo.title', label: 'SEO Title', type: 'text', full: true },
         { name: 'seo.description', label: 'SEO Description', type: 'textarea', full: true },
         { name: 'seo.keywords', label: 'SEO Keywords', type: 'multiselect', full: true, help: 'Pisahkan dengan koma.' },
-        { name: 'seo.og_image', label: 'Open Graph Image', type: 'text', full: true },
+        { name: 'seo.og_image', label: 'Open Graph Image (share media sosial)', type: 'media', full: true },
         { name: 'seo.canonical_url', label: 'Canonical URL', type: 'text', full: true },
       ]}
     />
