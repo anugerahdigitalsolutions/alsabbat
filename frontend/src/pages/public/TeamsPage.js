@@ -1,138 +1,102 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Users } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Users } from 'lucide-react';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { Reveal } from '../../components/public/Reveal';
+import { SquadShowcase } from '../../components/public/home/SquadShowcase';
+import { PlayerSpotlight, pickSpotlightPlayer } from '../../components/public/PlayerSpotlight';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { Badge } from '../../components/ui/badge';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
-const Crest = ({ team, size = 'md' }) => {
-  const box = size === 'lg' ? 'h-20 w-20 text-lg' : 'h-12 w-12 text-sm';
-  if (team.logo) {
-    return (
-      <img
-        src={team.logo}
-        alt={team.name}
-        className={`${box} rounded-[12px] object-cover`}
-        loading="lazy"
-      />
-    );
-  }
-  return (
-    <span
-      className={`font-display flex ${box} items-center justify-center rounded-[12px] font-bold`}
-      style={{ backgroundColor: 'var(--club-primary)', color: 'var(--club-tertiary)' }}
-      aria-hidden="true"
-    >
-      {(team.short_name || team.name || 'ALS').slice(0, 3).toUpperCase()}
-    </span>
-  );
-};
+const GROUPS = [
+  ['GOALKEEPER', 'Penjaga Gawang'],
+  ['DEFENDER', 'Belakang'],
+  ['MIDFIELDER', 'Tengah'],
+  ['FORWARD', 'Depan'],
+];
 
+/** ALSABBAT has exactly one squad — this page lists that squad directly. */
 export default function TeamsPage() {
   usePageSeo({ title: 'Squad', description: 'Skuad resmi ALSABBAT Football Club — satu klub, satu skuad.', path: '/teams' });
-  const { items, loading, error, reload } = useResourceList('/teams', { status: 'ACTIVE', limit: 30 });
-  const single = items.length === 1 ? items[0] : null;
+  const players = useResourceList('/players', { status: 'ACTIVE', limit: 60 });
+  const staff = useResourceList('/staff', { status: 'ACTIVE', limit: 30 });
+  const spotlight = useMemo(() => pickSpotlightPlayer(players.items), [players.items]);
+
+  const grouped = GROUPS.map(([position, label]) => [
+    label,
+    players.items.filter((p) => p.position === position),
+  ]).filter(([, list]) => list.length);
+  const others = players.items.filter((p) => !GROUPS.some(([position]) => position === p.position));
 
   return (
     <div data-testid="page-teams">
       <PublicPageHeader
         label="Squad"
-        title="ALSABBAT Football Club"
-        description="Satu klub, satu skuad — profil tim, pemain, dan staf pendukung."
+        title="One Squad. One Family."
+        description="Satu klub, satu skuad — para pemain dan staf yang membela lambang ALSABBAT."
         breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Squad' }]}
+        meta={
+          players.total ? (
+            <>
+              <span>{players.total} pemain</span>
+              {staff.total ? <span>{staff.total} staf</span> : null}
+            </>
+          ) : null
+        }
       />
-      <div className="als-container py-10 sm:py-14">
-        {loading ? (
-          <LoadingState rows={3} testId="teams-loading" />
-        ) : error ? (
-          <ErrorState message={error} onRetry={reload} testId="teams-error" />
-        ) : items.length === 0 ? (
-          <EmptyState icon={Users} title="Skuad belum tersedia" description="Skuad klub akan tampil di sini setelah dilengkapi." testId="teams-empty" />
-        ) : single ? (
-          <Reveal>
-            <Link
-              to={`/teams/${single.id}`}
-              className="als-card als-lift als-focus group relative block overflow-hidden"
-              data-testid={`team-card-${single.id}`}
-            >
-              <div
-                className="relative px-6 py-10 sm:px-10 sm:py-12"
-                style={{ backgroundColor: 'var(--club-tertiary)' }}
-              >
-                <div className="als-stadium-glow absolute inset-0 opacity-70" aria-hidden="true" />
-                <div className="als-pitch-lines absolute inset-0" aria-hidden="true" />
-                <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
-                  <Crest team={single} size="lg" />
-                  <div className="min-w-0">
-                    <p
-                      className="font-display text-[11px] font-semibold uppercase tracking-[0.26em]"
-                      style={{ color: 'var(--club-primary)' }}
-                    >
-                      Football Club
-                    </p>
-                    <h2
-                      className="font-display mt-2 text-2xl font-bold sm:text-3xl"
-                      style={{ color: 'var(--club-light)' }}
-                    >
-                      {single.name}
-                    </h2>
-                    <p
-                      className="mt-3 max-w-xl text-sm leading-relaxed"
-                      style={{ color: 'rgba(254,254,254,0.75)' }}
-                    >
-                      {single.description || 'Deskripsi tim belum diatur.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-3 px-6 py-5 sm:px-10">
-                <span className="als-section-label">Squad Overview</span>
-                <span
-                  className="font-display inline-flex min-h-[24px] items-center gap-1.5 text-sm font-semibold"
-                  style={{ color: 'var(--club-secondary)' }}
-                >
-                  Lihat Skuad <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </Link>
-          </Reveal>
+
+      <div className="als-container py-12 sm:py-16">
+        {players.loading ? (
+          <LoadingState rows={4} testId="squad-loading" />
+        ) : players.error ? (
+          <ErrorState message={players.error} onRetry={players.reload} testId="squad-error" />
+        ) : !players.items.length ? (
+          <EmptyState
+            icon={Users}
+            title="Skuad belum tersedia"
+            description="Profil pemain akan tampil di sini setelah skuad dilengkapi pada Admin Panel."
+            testId="teams-empty"
+          />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((team, index) => (
-              <Reveal key={team.id} delay={Math.min(index, 6) * 70} className="h-full">
-                <Link
-                  to={`/teams/${team.id}`}
-                  className="als-card als-lift als-focus flex h-full flex-col p-6"
-                  data-testid={`team-card-${team.id}`}
-                >
-                  <div className="mb-4 flex items-center gap-3">
-                    <Crest team={team} />
-                    <div className="min-w-0">
-                      <h2 className="font-display truncate text-lg font-bold">{team.name}</h2>
-                      <Badge variant="outline" className="mt-1" style={{ backgroundColor: 'rgba(1,40,145,0.05)' }}>
-                        {team.category}
-                      </Badge>
-                    </div>
-                  </div>
-                  <p className="flex-1 text-sm" style={{ color: 'var(--muted-fg)' }}>
-                    {team.description || 'Deskripsi tim belum diatur.'}
-                  </p>
-                  <span
-                    className="mt-5 inline-flex min-h-[24px] items-center gap-1.5 text-sm font-semibold"
-                    style={{ color: 'var(--club-secondary)' }}
-                  >
-                    Lihat Skuad <ArrowRight className="h-4 w-4" />
+          <div className="space-y-14">
+            {spotlight ? (
+              <Reveal>
+                <p className="als-row-label mb-4">Player Spotlight</p>
+                <PlayerSpotlight player={spotlight} />
+              </Reveal>
+            ) : null}
+
+            {[...grouped, ...(others.length ? [['Lainnya', others]] : [])].map(([label, list], index) => (
+              <Reveal key={label} delay={Math.min(index, 4) * 70}>
+                <div className="mb-4 flex items-end justify-between gap-3">
+                  <p className="als-row-label">{label}</p>
+                  <span className="text-xs font-semibold" style={{ color: 'var(--muted-fg)' }}>
+                    {list.length} pemain
                   </span>
-                </Link>
+                </div>
+                <SquadShowcase players={list} limit={60} />
               </Reveal>
             ))}
           </div>
         )}
+
+        {staff.items.length ? (
+          <Reveal className="mt-16">
+            <p className="als-row-label mb-4">Tim Pendukung</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {staff.items.map((member) => (
+                <article key={member.id} className="als-card als-lift p-5" data-testid={`staff-card-${member.id}`}>
+                  <p className="font-display text-sm font-bold">{member.full_name || member.name}</p>
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--club-secondary)' }}>
+                    {member.role || member.position || 'Staf'}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </Reveal>
+        ) : null}
       </div>
     </div>
   );

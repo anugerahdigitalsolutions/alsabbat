@@ -23,10 +23,11 @@ export const PublicPageHeader = ({
   });
 
   return (
+    <div className="als-frame-inner pt-4 sm:pt-6">
     <section
       ref={ref}
-      className="als-inner-header relative overflow-hidden py-10 sm:py-14"
-      style={{ backgroundColor: 'var(--club-tertiary)' }}
+      className="als-inner-header relative overflow-hidden rounded-none py-12 sm:py-16 lg:rounded-[26px]"
+      style={{ backgroundColor: 'var(--club-secondary)' }}
       data-testid={testId}
     >
       {backgroundImage ? (
@@ -38,11 +39,17 @@ export const PublicPageHeader = ({
           loading="eager"
         />
       ) : null}
-      <div className="als-stadium-glow absolute inset-0 opacity-70" aria-hidden="true" />
-      <div className="als-pitch-lines absolute inset-0" aria-hidden="true" />
-      {backgroundImage ? <div className="als-scrim absolute inset-0" aria-hidden="true" /> : null}
+      <div className="als-pitch-lines absolute inset-0 opacity-70" aria-hidden="true" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(96deg, rgba(1,40,145,0.96) 0%, rgba(1,40,145,0.84) 32%, rgba(1,40,145,0.5) 62%, rgba(0,0,0,0.3) 100%)',
+        }}
+        aria-hidden="true"
+      />
 
-      <div className="als-container relative w-full">
+      <div className="relative w-full px-6 sm:px-10 xl:px-14">
         {breadcrumb.length ? (
           <nav
             className={`mb-4 flex flex-wrap items-center gap-1 text-xs ${shown ? 'als-reveal-shown' : 'als-reveal-hidden'}`}
@@ -79,7 +86,7 @@ export const PublicPageHeader = ({
         ) : null}
 
         <h1
-          className={`font-display max-w-3xl text-3xl font-bold leading-[1.08] tracking-tight sm:text-4xl lg:text-5xl ${shown ? 'als-reveal-shown' : 'als-reveal-hidden'}`}
+          className={`font-display max-w-3xl text-3xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-[3.4rem] ${shown ? 'als-reveal-shown' : 'als-reveal-hidden'}`}
           style={{ color: 'var(--club-light)', ...step(2) }}
         >
           {title}
@@ -111,6 +118,7 @@ export const PublicPageHeader = ({
         ) : null}
       </div>
     </section>
+    </div>
   );
 };
 

@@ -22,7 +22,7 @@ export default function ClubPage() {
 
   return (
     <div data-testid="page-club">
-      <PublicPageHeader label="Tentang" title={clubName} description="Identitas dan konfigurasi resmi klub." />
+      <PublicPageHeader label="Tentang Klub" title="This Is ALSABBAT" description="Identitas, nilai, dan perjalanan resmi klub." />
       <div className="als-container py-10">
         {loading ? (
           <LoadingState variant="text" testId="club-loading" />

@@ -32,7 +32,7 @@ export default function MatchesPage() {
     <div data-testid="page-matches">
       <PublicPageHeader
         label="Matchday"
-        title="Fixtures &amp; Results"
+        title="Every Match. Every Moment."
         description="Jadwal, hasil, dan Match Center pertandingan ALSABBAT Football Club."
         breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Matches' }]}
         meta={

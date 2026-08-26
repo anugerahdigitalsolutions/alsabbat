@@ -27,7 +27,7 @@ export default function NewsPage() {
     <div data-testid="page-news">
       <PublicPageHeader
         label="Newsroom"
-        title="Latest from ALSABBAT"
+        title="Stories From ALSABBAT"
         description="Kabar resmi klub, laporan pertandingan, dan pengumuman."
         backgroundImage={featured?.thumbnail}
         imageAlt={featured?.title}

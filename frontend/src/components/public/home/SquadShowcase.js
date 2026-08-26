@@ -60,7 +60,7 @@ const PlayerCard = ({ player, index }) => (
 );
 
 /** ALSABBAT has exactly one squad — a single flat grid, never a team selector. */
-export const SquadShowcase = ({ players = [] }) => {
+export const SquadShowcase = ({ players = [], limit = 8 }) => {
   if (!players.length) {
     return (
       <EmptyState
@@ -73,7 +73,7 @@ export const SquadShowcase = ({ players = [] }) => {
   }
   return (
     <div className="als-media-tile grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" data-testid="home-squad-grid">
-      {players.slice(0, 8).map((player, index) => (
+      {players.slice(0, limit).map((player, index) => (
         <PlayerCard key={player.id} player={player} index={index} />
       ))}
     </div>

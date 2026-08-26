@@ -38,6 +38,21 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 11 | Final Feature Completion & Experience Polish | **SELESAI (26 Jun 2026)** — STOP GATE 11 |
 | 12 | UI/UX Redesign & Visual Showcase | **SELESAI (26 Jun 2026)** — STOP GATE 12 |
 | 12B | Exact UI Visual Correction (referensi user) | **SELESAI (26 Jun 2026)** — STOP GATE 12B |
+| 12C | Full Website Visual Consistency | **SELESAI (26 Jun 2026)** — STOP GATE 12C |
+
+## Fase 12C — Full Website Visual Consistency (2026-06-26)
+Laporan lengkap: `/app/docs/PHASE_12C_REPORT.md`. Frontend-only; backend/API/database **0 perubahan**.
+- Diterapkan lewat **shared components**, bukan rewrite tiap halaman: `.als-container` diselaraskan dengan frame
+  homepage (max-w 1400px), `PublicPageHeader` jadi **navy cinematic rounded** (dipakai 13 halaman inner),
+  header/footer/frame 12B dipakai global, `NotFoundPage` jadi panel navy + CTA gold, `SquadShowcase` diberi prop `limit`.
+- Judul editorial sesuai referensi: Matches "Every Match. Every Moment.", News "Stories From ALSABBAT",
+  Squad "One Squad. One Family.", Gallery "Moments We Remember", Merchandise "Wear The Badge",
+  Contact "Connect With ALSABBAT", Club "This Is ALSABBAT".
+- `TeamsPage` ditulis ulang menjadi **Squad page** (Player Spotlight + grid pemain per posisi + tim pendukung) →
+  menghapus pola multi-team terakhir & memperbaiki bug empty state yang bergantung pada daftar team.
+- Verifikasi: build 246.87 kB gz tanpa warning; overflow **0 px** di 1440/1280/390 pada 10 route + 5 halaman detail;
+  brand scan 0 `#222222`/`#1A1A1A`; 0 `transition: all`; 0 wording multi-team; Staff Access subtle (header kanan + footer bawah).
+- Demo preview di database sekali-pakai `alsabbat_ui_demo` → **di-drop**; produksi bersih (teams 1, clubs 1, users 1, sisanya 0).
 
 ## Fase 12B — Exact UI Visual Correction (2026-06-26)
 Laporan lengkap: `/app/docs/PHASE_12B_REPORT.md`. Frontend-only; backend/database tidak diubah.

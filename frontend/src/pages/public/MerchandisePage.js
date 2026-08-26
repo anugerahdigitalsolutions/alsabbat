@@ -42,7 +42,7 @@ export default function MerchandisePage() {
     <div data-testid="page-merchandise">
       <PublicPageHeader
         label="Store"
-        title="Merchandise Resmi"
+        title="Wear The Badge"
         description="Produk resmi ALSABBAT Football Club."
         breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Merchandise' }]}
       />

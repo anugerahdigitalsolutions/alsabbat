@@ -1,21 +1,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Home, Search } from 'lucide-react';
-import { Button } from '../../components/ui/button';
 import { ClubCrestMark } from '../../components/shared/ClubCrestMark';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function NotFoundPage() {
   usePageSeo({ title: 'Halaman tidak ditemukan', description: 'Halaman yang Anda cari tidak tersedia.', robots: 'noindex,follow' });
   return (
-    <div
-      className="relative flex min-h-[70vh] items-center overflow-hidden"
-      style={{ backgroundColor: 'var(--club-tertiary)' }}
-      data-testid="page-not-found"
-    >
-      <div className="als-stadium-glow absolute inset-0" />
-      <div className="als-pitch-lines absolute inset-0" />
-      <div className="als-container relative py-16">
+    <div className="als-frame-inner py-4 sm:py-6" data-testid="page-not-found">
+      <div
+        className="relative flex min-h-[62vh] items-center overflow-hidden rounded-none lg:rounded-[26px]"
+        style={{ backgroundColor: 'var(--club-secondary)' }}
+      >
+      <div className="als-pitch-lines absolute inset-0 opacity-70" aria-hidden="true" />
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(760px circle at 88% 8%, rgba(252,207,43,0.26), transparent 62%)' }}
+        aria-hidden="true"
+      />
+      <div className="relative px-6 py-16 sm:px-10 xl:px-14">
         <ClubCrestMark size={56} onDark testId="notfound-crest" />
         <p
           className="font-display mt-8 text-xs font-semibold uppercase tracking-[0.24em]"
@@ -24,7 +27,7 @@ export default function NotFoundPage() {
           Error 404
         </p>
         <h1
-          className="font-display mt-3 text-4xl font-semibold tracking-tight sm:text-5xl"
+          className="als-display-xl mt-3"
           style={{ color: 'var(--club-light)' }}
         >
           Halaman tidak ditemukan
@@ -33,27 +36,16 @@ export default function NotFoundPage() {
           Halaman yang Anda cari tidak tersedia atau sudah dipindahkan.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link to="/" data-testid="notfound-home-link">
-            <Button size="lg" style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}>
-              <Home className="mr-2 h-4 w-4" />
-              Kembali ke Beranda
-            </Button>
+          <Link to="/" className="als-btn-gold als-focus" data-testid="notfound-home-link">
+            <Home className="h-4 w-4" aria-hidden="true" />
+            Kembali ke Beranda
           </Link>
-          <Link to="/news" data-testid="notfound-news-link">
-            <Button
-              size="lg"
-              variant="outline"
-              style={{
-                borderColor: 'rgba(254,254,254,0.35)',
-                backgroundColor: 'rgba(254,254,254,0.06)',
-                color: 'var(--club-light)',
-              }}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              Lihat Berita
-            </Button>
+          <Link to="/news" className="als-btn-ghost als-focus" data-testid="notfound-news-link">
+            <Search className="h-4 w-4" aria-hidden="true" />
+            Lihat Berita
           </Link>
         </div>
+      </div>
       </div>
     </div>
   );
