@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../ui/button';
+import { useMatchCardDesign, MATCH_CARD_DEFAULT_TRANSPARENCY, clampTransparency } from '../../../lib/matchCardDesign';
 
 const BRAND = {
   gold: '#FCCF2B',
@@ -11,7 +12,7 @@ const BRAND = {
 };
 
 const RATIOS = [
-  { id: 'square', label: '1:1 Feed', width: 1080, height: 1080 },
+  { id: 'feed', label: '4:5 Feed', width: 1080, height: 1350 },
   { id: 'story', label: '9:16 Story', width: 1080, height: 1920 },
 ];
 
@@ -22,6 +23,16 @@ const STATUS_LABEL = {
   FINISHED: 'SELESAI',
   POSTPONED: 'DITUNDA',
   CANCELLED: 'DIBATALKAN',
+};
+
+const formatCardDate = (value) => {
+  try {
+    return new Date(value)
+      .toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      .toUpperCase();
+  } catch (e) {
+    return value;
+  }
 };
 
 const loadImage = (src) =>
@@ -57,27 +68,34 @@ const initials = (name = '') =>
     .toUpperCase() || '?';
 
 const drawCrest = (ctx, img, cx, cy, size, label) => {
+  // Container tetap + gaya kartu ALSABBAT
   ctx.save();
   roundRect(ctx, cx - size / 2, cy - size / 2, size, size, size * 0.22);
-  ctx.fillStyle = 'rgba(254,254,254,0.06)';
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(252,207,43,0.45)';
   ctx.lineWidth = size * 0.02;
   ctx.stroke();
-  ctx.clip();
+  ctx.restore();
+
   if (img) {
-    const scale = Math.min(size / img.width, size / img.height) * 0.78;
+    // LOGO = contain (tidak pernah dipotong), dengan safe padding di dalam container.
+    const inner = size * 0.78;
+    const scale = Math.min(inner / img.width, inner / img.height);
     const w = img.width * scale;
     const h = img.height * scale;
+    ctx.save();
     ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+    ctx.restore();
   } else {
+    ctx.save();
     ctx.fillStyle = BRAND.gold;
     ctx.font = `800 ${size * 0.32}px Poppins, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(initials(label), cx, cy);
+    ctx.restore();
   }
-  ctx.restore();
 };
 
 const truncate = (ctx, text, maxWidth) => {
@@ -99,10 +117,21 @@ export const MatchScoreCardGenerator = ({
   clubLogo,
   competitionName,
   seasonName,
+  transparencyOverride = null,
+  fixedRatio = null,
+  bare = false,
 }) => {
   const canvasRef = useRef(null);
-  const [ratio, setRatio] = useState(RATIOS[0]);
+  const design = useMatchCardDesign();
+  const [ratio, setRatio] = useState(fixedRatio ? RATIOS.find((r) => r.id === fixedRatio) || RATIOS[0] : RATIOS[0]);
   const [rendering, setRendering] = useState(true);
+  const transparency = clampTransparency(
+    transparencyOverride === null || transparencyOverride === undefined
+      ? design.loading
+        ? MATCH_CARD_DEFAULT_TRANSPARENCY
+        : design.transparency
+      : transparencyOverride,
+  );
 
   const render = useCallback(async () => {
     const canvas = canvasRef.current;
@@ -122,51 +151,69 @@ export const MatchScoreCardGenerator = ({
       }
     }
 
-    const [clubImg, opponentImg] = await Promise.all([
+    const [clubImg, opponentImg, coverImg] = await Promise.all([
       loadImage(clubLogo),
       loadImage(match?.opponent?.logo),
+      loadImage(match?.match_cover),
     ]);
 
-    // Background
+    // 1. Foto pertandingan sebagai background (cover, boleh terpotong natural)
+    const t = transparency / 100; // 1 = foto paling terlihat, 0 = warna kartu paling kuat
     ctx.fillStyle = BRAND.dark;
     ctx.fillRect(0, 0, W, H);
-    const goldGlow = ctx.createRadialGradient(W * 0.12, H * 0.1, 0, W * 0.12, H * 0.1, W * 0.85);
-    goldGlow.addColorStop(0, 'rgba(252,207,43,0.20)');
+    if (coverImg) {
+      const scale = Math.max(W / coverImg.width, H / coverImg.height);
+      const dw = coverImg.width * scale;
+      const dh = coverImg.height * scale;
+      ctx.drawImage(coverImg, (W - dw) / 2, (H - dh) * 0.35, dw, dh);
+    }
+
+    // 2. Identitas warna ALSABBAT (navy + gold) — kekuatan mengikuti slider Admin
+    const a = (full, min) => (coverImg ? full - (full - min) * t : full);
+    const navy = ctx.createLinearGradient(0, 0, W * 0.35, H);
+    navy.addColorStop(0, `rgba(1,40,145,${a(0.9, 0.2).toFixed(3)})`);
+    navy.addColorStop(0.55, `rgba(1,40,145,${a(0.68, 0.1).toFixed(3)})`);
+    navy.addColorStop(1, `rgba(1,40,145,${a(0.5, 0.04).toFixed(3)})`);
+    ctx.fillStyle = navy;
+    ctx.fillRect(0, 0, W, H);
+
+    const goldGlow = ctx.createRadialGradient(W * 0.12, H * 0.08, 0, W * 0.12, H * 0.08, W * 0.85);
+    goldGlow.addColorStop(0, `rgba(252,207,43,${a(0.3, 0.1).toFixed(3)})`);
     goldGlow.addColorStop(1, 'rgba(252,207,43,0)');
     ctx.fillStyle = goldGlow;
     ctx.fillRect(0, 0, W, H);
+
     const blueGlow = ctx.createRadialGradient(W * 0.9, H * 0.95, 0, W * 0.9, H * 0.95, W * 0.9);
-    blueGlow.addColorStop(0, 'rgba(1,40,145,0.55)');
+    blueGlow.addColorStop(0, `rgba(1,40,145,${a(0.6, 0.14).toFixed(3)})`);
     blueGlow.addColorStop(1, 'rgba(1,40,145,0)');
     ctx.fillStyle = blueGlow;
     ctx.fillRect(0, 0, W, H);
 
-    // Pitch lines (subtle vertical stripes)
-    ctx.save();
-    ctx.strokeStyle = 'rgba(254,254,254,0.045)';
-    ctx.lineWidth = 2;
-    for (let x = W * 0.08; x < W; x += W * 0.085) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-      ctx.stroke();
-    }
-    ctx.restore();
+    // 3. Scrim gelap hanya di area teks (atas & bawah) agar informasi selalu terbaca
+    const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+    topScrim.addColorStop(0, `rgba(0,0,0,${a(0.66, 0.4).toFixed(3)})`);
+    topScrim.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = topScrim;
+    ctx.fillRect(0, 0, W, H * 0.3);
+    const bottomScrim = ctx.createLinearGradient(0, H, 0, H * 0.4);
+    bottomScrim.addColorStop(0, `rgba(0,0,0,${a(0.88, 0.62).toFixed(3)})`);
+    bottomScrim.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = bottomScrim;
+    ctx.fillRect(0, H * 0.4, W, H * 0.6);
 
     const pad = W * 0.08;
     const isStory = ratio.id === 'story';
-    const centerY = isStory ? H * 0.44 : H * 0.5;
 
     // Header
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = BRAND.gold;
-    ctx.font = `700 ${W * 0.032}px Poppins, sans-serif`;
+    ctx.font = `700 ${W * 0.024}px Poppins, sans-serif`;
     const statusText = STATUS_LABEL[match.status] || 'HARI PERTANDINGAN';
     ctx.fillText(statusText.split('').join(' '), pad, pad + W * 0.03);
 
     ctx.fillStyle = 'rgba(254,254,254,0.72)';
-    ctx.font = `500 ${W * 0.028}px Poppins, sans-serif`;
+    ctx.font = `500 ${W * 0.022}px Poppins, sans-serif`;
     const meta = [competitionName, seasonName].filter(Boolean).join(' · ');
     if (meta) ctx.fillText(truncate(ctx, meta, W - pad * 2), pad, pad + W * 0.085);
 
@@ -174,78 +221,86 @@ export const MatchScoreCardGenerator = ({
     ctx.fillStyle = BRAND.gold;
     ctx.fillRect(pad, pad + W * 0.115, W * 0.16, W * 0.008);
 
-    // Crests + score
+    // Kotak informasi pertandingan (dihitung dulu agar matchup bisa menempel di atasnya)
     const hasScore = match.home_score !== null && match.home_score !== undefined;
     const isHome = match.venue_type !== 'AWAY';
     const clubGoals = hasScore ? (isHome ? match.home_score : match.away_score ?? 0) : null;
     const opponentGoals = hasScore ? (isHome ? match.away_score ?? 0 : match.home_score) : null;
     const scoreText = hasScore ? `${clubGoals} - ${opponentGoals}` : 'VS';
 
-    // Crest size adapts to the measured score width so nothing ever overlaps.
-    const scoreFont = W * (hasScore ? 0.11 : 0.085);
-    ctx.font = `800 ${scoreFont}px Poppins, sans-serif`;
-    const scoreWidth = ctx.measureText(scoreText).width;
-    const gutter = W * 0.05;
-    const maxCrest = (W - pad * 2 - scoreWidth - gutter * 2) / 2;
-    const crestSize = Math.max(W * 0.13, Math.min(isStory ? W * 0.22 : W * 0.2, maxCrest));
-    const crestY = centerY - (isStory ? W * 0.18 : W * 0.02);
-    drawCrest(ctx, clubImg, pad + crestSize / 2, crestY, crestSize, clubName);
-    drawCrest(ctx, opponentImg, W - pad - crestSize / 2, crestY, crestSize, match?.opponent?.name || 'OPP');
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = hasScore ? BRAND.gold : BRAND.light;
-    ctx.font = `800 ${scoreFont}px Poppins, sans-serif`;
-    ctx.fillText(scoreText, W / 2, crestY + scoreFont * 0.35);
-
-    // Team names
-    ctx.font = `700 ${W * 0.034}px Poppins, sans-serif`;
-    ctx.fillStyle = BRAND.light;
-    ctx.textAlign = 'center';
-    const nameY = crestY + crestSize / 2 + W * 0.07;
-    ctx.fillText(truncate(ctx, clubName.toUpperCase(), W * 0.3), pad + crestSize / 2, nameY);
-    ctx.fillText(
-      truncate(ctx, (match?.opponent?.name || 'LAWAN').toUpperCase(), W * 0.3),
-      W - pad - crestSize / 2,
-      nameY,
-    );
-
-    // Detail block
     const details = [
-      match.date ? `${match.date}${match.time ? ` · ${match.time} WIB` : ''}` : null,
+      match.date ? `${formatCardDate(match.date)}${match.time ? ` · ${match.time.slice(0, 5)} WIB` : ''}` : null,
       match.venue || null,
       isHome ? 'HOME' : match.venue_type === 'NEUTRAL' ? 'NEUTRAL' : 'AWAY',
     ].filter(Boolean);
 
-    const blockH = W * (0.06 + 0.062 * details.length);
-    const blockY = isStory ? H * 0.66 : H - pad - blockH;
+    const blockH = W * (0.05 + 0.05 * details.length);
+    const blockY = isStory ? H * 0.7 : H - pad * 1.3 - blockH;
+
+    // Matchup compact: logo saling berdekatan di tengah, posisi menempel ke kotak informasi
+    const scoreFont = W * (hasScore ? 0.085 : 0.062);
+    ctx.font = `800 ${scoreFont}px Poppins, sans-serif`;
+    const scoreWidth = ctx.measureText(scoreText).width;
+    const crestSize = W * (isStory ? 0.13 : 0.12);
+    const gutter = W * 0.03;
+    const crestOffset = scoreWidth / 2 + gutter + crestSize / 2;
+    const clubCx = W / 2 - crestOffset;
+    const opponentCx = W / 2 + crestOffset;
+    const crestY = blockY - W * 0.1 - crestSize / 2;
+
+    drawCrest(ctx, clubImg, clubCx, crestY, crestSize, clubName);
+    drawCrest(ctx, opponentImg, opponentCx, crestY, crestSize, match?.opponent?.name || 'OPP');
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = hasScore ? BRAND.gold : BRAND.light;
+    ctx.font = `800 ${scoreFont}px Poppins, sans-serif`;
+    ctx.fillText(scoreText, W / 2, crestY + scoreFont * 0.35);
+
+    // Nama tim tepat di bawah masing-masing logo
+    ctx.font = `600 ${W * 0.024}px Poppins, sans-serif`;
+    ctx.fillStyle = BRAND.light;
+    ctx.textAlign = 'center';
+    const nameY = crestY + crestSize / 2 + W * 0.05;
+    const nameMax = W * 0.26;
+    ctx.fillText(truncate(ctx, clubName.toUpperCase(), nameMax), clubCx, nameY);
+    ctx.fillText(truncate(ctx, (match?.opponent?.name || 'LAWAN').toUpperCase(), nameMax), opponentCx, nameY);
+
+    // Kotak informasi
     ctx.save();
     roundRect(ctx, pad, blockY, W - pad * 2, blockH, W * 0.03);
-    ctx.fillStyle = 'rgba(254,254,254,0.06)';
+    ctx.fillStyle = 'rgba(1,40,145,0.45)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(252,207,43,0.28)';
+    ctx.strokeStyle = 'rgba(252,207,43,0.32)';
     ctx.lineWidth = W * 0.004;
     ctx.stroke();
     ctx.restore();
 
     ctx.textAlign = 'left';
-    ctx.font = `500 ${W * 0.032}px Poppins, sans-serif`;
+    ctx.font = `500 ${W * 0.025}px Poppins, sans-serif`;
     details.forEach((line, index) => {
-      ctx.fillStyle = index === 0 ? BRAND.light : 'rgba(254,254,254,0.75)';
-      ctx.fillText(truncate(ctx, line, W - pad * 2.6), pad + W * 0.05, blockY + W * 0.075 + index * W * 0.062);
+      ctx.fillStyle = index === 0 ? BRAND.light : 'rgba(254,254,254,0.82)';
+      ctx.fillText(truncate(ctx, line, W - pad * 2.6), pad + W * 0.045, blockY + W * 0.062 + index * W * 0.05);
     });
 
     // Footer signature
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(252,207,43,0.85)';
-    ctx.font = `700 ${W * 0.026}px Poppins, sans-serif`;
+    ctx.font = `700 ${W * 0.02}px Poppins, sans-serif`;
     ctx.fillText(
       `${clubName.toUpperCase()} FOOTBALL CLUB`.split('').join(' '),
       W / 2,
-      isStory ? H - pad * 0.9 : H - pad * 0.35,
+      isStory ? H - pad * 1.5 : H - pad * 0.5,
     );
 
     setRendering(false);
-  }, [match, clubLogo, clubName, competitionName, seasonName, ratio]);
+  }, [match, clubLogo, clubName, competitionName, seasonName, ratio, transparency]);
+
+  useEffect(() => {
+    if (!fixedRatio) return;
+    const next = RATIOS.find((r) => r.id === fixedRatio);
+    if (next) setRatio(next);
+  }, [fixedRatio]);
 
   useEffect(() => {
     render();
@@ -298,6 +353,29 @@ export const MatchScoreCardGenerator = ({
   };
 
   if (!match) return null;
+
+  if (bare) {
+    return (
+      <div
+        className="relative overflow-hidden rounded-[var(--radius-md)]"
+        style={{ backgroundColor: '#000000' }}
+        data-testid={`match-score-card-bare-${ratio.id}`}
+      >
+        <canvas
+          ref={canvasRef}
+          className="block h-auto w-full"
+          role="img"
+          aria-label={`Pratinjau kartu ${ratio.label}`}
+          data-testid={`score-card-canvas-${ratio.id}`}
+        />
+        {rendering ? (
+          <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: '#FCCF2B' }} />
+          </span>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="als-card p-5 sm:p-6" data-testid="match-score-card">

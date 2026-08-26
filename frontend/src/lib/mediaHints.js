@@ -7,7 +7,7 @@ const CROP_NOTE = 'Foto akan otomatis dipotong agar sesuai dengan tampilan websi
 
 export const MEDIA_SPECS = {
   // Lambang klub (ClubCrestMark, header, footer, kartu member) — selalu persegi
-  clubLogo: { aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: 'Utamakan PNG berlatar transparan.' },
+  clubLogo: { fit: 'contain', aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: 'Utamakan PNG berlatar transparan.' },
   // Latar header halaman Klub & Pemain (PublicPageHeader, lebar penuh)
   clubHero: { aspect: 16 / 9, ratio: '16:9', size: '1920 × 1080 px', note: CROP_NOTE },
   // Open Graph / share media sosial
@@ -18,13 +18,13 @@ export const MEDIA_SPECS = {
   playerPhoto: { aspect: 4 / 5, ratio: '4:5 (portrait)', size: '1200 × 1500 px', note: `Wajah di bagian atas foto. ${CROP_NOTE}` },
   staffPhoto: { aspect: 4 / 5, ratio: '4:5 (portrait)', size: '1200 × 1500 px', note: `Wajah di bagian atas foto. ${CROP_NOTE}` },
   // Logo tim / kompetisi / lawan — dirender di kotak persegi (h-9 w-9 … object-contain)
-  teamLogo: { aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: 'Utamakan PNG berlatar transparan.' },
-  competitionLogo: { aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: 'Utamakan PNG berlatar transparan.' },
-  opponentLogo: { aspect: 1, ratio: '1:1', size: '500 × 500 px', note: 'Utamakan PNG berlatar transparan.' },
+  teamLogo: { fit: 'contain', aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: 'Utamakan PNG berlatar transparan.' },
+  competitionLogo: { fit: 'contain', aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: 'Utamakan PNG berlatar transparan.' },
+  opponentLogo: { fit: 'contain', aspect: 1, ratio: '1:1', size: '500 × 500 px', note: 'Utamakan PNG berlatar transparan.' },
   // Kartu & halaman detail pertandingan (landscape)
   matchCover: { aspect: 16 / 9, ratio: '16:9', size: '1920 × 1080 px', note: CROP_NOTE },
   // Baris sponsor: kartu tinggi 96px, logo object-contain
-  sponsorLogo: { aspect: 3, ratio: '3:1 (horizontal)', size: '1500 × 500 px', note: 'PNG berlatar transparan agar rapi di baris sponsor.' },
+  sponsorLogo: { fit: 'contain', aspect: 3, ratio: '3:1 (horizontal)', size: '1500 × 500 px', note: 'PNG berlatar transparan agar rapi di baris sponsor.' },
   // Frame trofi: tinggi 128px, lebar kartu ±420px
   trophyImage: { aspect: 3, ratio: '3:1', size: '1500 × 500 px', note: CROP_NOTE },
   // Kartu berita (thumbnail landscape) + kartu utama

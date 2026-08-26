@@ -43,6 +43,7 @@ export const ImageCropper = ({
   const [frame, setFrame] = useState({ w: 0, h: 0 });
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [fitMode, setFitMode] = useState(spec?.fit === 'contain' ? 'contain' : 'cover');
 
   const src = useMemo(() => {
     if (!source) return null;
@@ -82,7 +83,16 @@ export const ImageCropper = ({
     };
   }, [open, measure]);
 
-  const baseScale = natural.w && frame.w ? Math.max(frame.w / natural.w, frame.h / natural.h) : 1;
+  useEffect(() => {
+    if (open) setFitMode(spec?.fit === 'contain' ? 'contain' : 'cover');
+  }, [open, spec?.fit]);
+
+  const baseScale =
+    natural.w && frame.w
+      ? fitMode === 'contain'
+        ? Math.min(frame.w / natural.w, frame.h / natural.h) * 0.9
+        : Math.max(frame.w / natural.w, frame.h / natural.h)
+      : 1;
   const displayW = natural.w * baseScale * zoom;
   const displayH = natural.h * baseScale * zoom;
   const maxX = Math.max(0, (displayW - frame.w) / 2);
@@ -139,6 +149,31 @@ export const ImageCropper = ({
   const confirm = async () => {
     const image = imgRef.current;
     if (!image || !natural.w) return;
+
+    const isPngSource =
+      typeof source === 'string' ? /\.(png|webp)(\?|#|$)/i.test(source) : ['image/png', 'image/webp'].includes(source?.type);
+
+    if (fitMode === 'contain') {
+      // LOGO: seluruh gambar dimuat penuh (contain) di dalam frame, tanpa crop,
+      // latar dibiarkan transparan agar alpha channel PNG tetap utuh.
+      const outW = Math.min(MAX_OUTPUT_WIDTH, Math.max(320, Math.round(Math.max(natural.w, natural.h))));
+      const outH = Math.max(1, Math.round(outW / aspect));
+      const canvas = document.createElement('canvas');
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      const s = Math.min(outW / natural.w, outH / natural.h) * 0.9 * zoom;
+      const dw = natural.w * s;
+      const dh = natural.h * s;
+      const ox = frame.w ? (offset.x / frame.w) * outW : 0;
+      const oy = frame.h ? (offset.y / frame.h) * outH : 0;
+      ctx.drawImage(image, (outW - dw) / 2 + ox, (outH - dh) / 2 + oy, dw, dh);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (blob) await onConfirm(blob, { zoom, offset, aspect, type: 'image/png', fit: 'contain' });
+      return;
+    }
+
     const scale = baseScale * zoom;
     const left = (frame.w - displayW) / 2 + offset.x;
     const top = (frame.h - displayH) / 2 + offset.y;
@@ -156,9 +191,7 @@ export const ImageCropper = ({
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(image, sx, sy, sw, sh, 0, 0, outW, outH);
 
-    const isPng =
-      typeof source === 'string' ? /\.(png|webp)(\?|#|$)/i.test(source) : ['image/png', 'image/webp'].includes(source?.type);
-    const type = isPng ? 'image/png' : 'image/jpeg';
+    const type = isPngSource ? 'image/png' : 'image/jpeg';
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, type, 0.92));
     if (blob) await onConfirm(blob, { zoom, offset, aspect, type });
   };
@@ -212,6 +245,42 @@ export const ImageCropper = ({
             />
           ) : null}
           <div className="pointer-events-none absolute inset-0" style={{ boxShadow: 'inset 0 0 0 1px rgba(252,207,43,0.5)' }} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Mode gambar">
+          <Button
+            type="button"
+            size="sm"
+            variant={fitMode === 'contain' ? 'default' : 'outline'}
+            onClick={() => {
+              setFitMode('contain');
+              setZoom(1);
+              setOffset({ x: 0, y: 0 });
+            }}
+            style={fitMode === 'contain' ? { backgroundColor: 'var(--club-secondary)', color: '#FEFEFE' } : undefined}
+            data-testid="image-cropper-fit-contain"
+          >
+            Muat penuh (logo)
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={fitMode === 'cover' ? 'default' : 'outline'}
+            onClick={() => {
+              setFitMode('cover');
+              setZoom(1);
+              setOffset({ x: 0, y: 0 });
+            }}
+            style={fitMode === 'cover' ? { backgroundColor: 'var(--club-secondary)', color: '#FEFEFE' } : undefined}
+            data-testid="image-cropper-fit-cover"
+          >
+            Isi frame (foto)
+          </Button>
+          <span className="text-xs" style={{ color: 'var(--muted-fg)' }}>
+            {fitMode === 'contain'
+              ? 'Seluruh logo dimuat penuh — tidak ada bagian terpotong, transparansi PNG dijaga.'
+              : 'Gambar mengisi frame; bagian luar frame akan terpotong.'}
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
