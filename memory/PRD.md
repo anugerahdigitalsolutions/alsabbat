@@ -561,3 +561,8 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 ### Penyesuaian visual Banner Hero — overlay lebih tipis (26 Jun 2026)
 - `CinematicHero`: gradient navy dikurangi drastis dari `rgba(1,40,145,0.96 → 0.18)` menjadi `0.60 → 0.04`; ditambah scrim hitam netral dari bawah (`0.60 → 0` sampai 64%) khusus untuk keterbacaan teks; `als-stadium-glow` opacity 60 → 30.
 - Hasil: foto (wajah, jersey, rumput, stadion) dominan dan natural, nuansa navy premium tetap ada, headline putih/gold tetap kontras. Frame, crop, layout, tipografi, CTA, social icon, dan slider tidak diubah — banner tetap fixed frame 640/520 px, overflow 0, console 0 error, `yarn build` sukses.
+
+### Overlay Banner Hero dibuat sangat tipis (26 Jun 2026)
+- Layer navy: `rgba(1,40,145,0.30)` di kiri → **0 pada 62% lebar** (kanan tanpa navy sama sekali). Layer gelap netral horizontal: `rgba(0,0,0,0.42)` di kiri → 0 pada 66%. `als-stadium-glow` opacity 30 → **15**.
+- Scrim bawah dipindah ke kelas `.als-hero-scrim` (index.css): desktop `0.34 → 0` (52%), mobile ≤639px sedikit lebih kuat `0.60 → 0` (90%) agar teks tetap terbaca di frame sempit.
+- Foto tidak difilter/diubah (tanpa saturate/brightness/tint) — hanya layer overlay. Frame tetap 640/580/520, `object-fit: cover`, crop & posisi tidak berubah, CTA + 2 dot slider tetap ada, overflow 0 px di 1920/1440/1280/1024/768/390, console bersih, `yarn build` sukses.

@@ -425,6 +425,23 @@
     overflow: hidden;
   }
 
+  /* Scrim netral tipis untuk keterbacaan teks; sedikit lebih kuat di layar kecil. */
+  .als-hero-scrim {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.34) 0%, rgba(0, 0, 0, 0.1) 28%, rgba(0, 0, 0, 0) 52%);
+  }
+
+  @media (max-width: 639px) {
+    .als-hero-scrim {
+      background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.6) 0%,
+        rgba(0, 0, 0, 0.34) 42%,
+        rgba(0, 0, 0, 0.1) 72%,
+        rgba(0, 0, 0, 0) 90%
+      );
+    }
+  }
+
   .als-eyebrow {
     @apply font-display text-[11px] font-semibold uppercase tracking-[0.28em] sm:text-xs;
     color: var(--club-primary);
