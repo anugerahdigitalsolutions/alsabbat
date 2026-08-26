@@ -276,7 +276,17 @@ const FieldControl = ({ field, value, onChange, optionMap, testPrefix }) => {
 
   return (
     <Input
-      type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : field.type === 'password' ? 'password' : 'text'}
+      type={
+        field.type === 'number'
+          ? 'number'
+          : field.type === 'date'
+            ? 'date'
+            : field.type === 'time'
+              ? 'time'
+              : field.type === 'password'
+                ? 'password'
+                : 'text'
+      }
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
       placeholder={field.placeholder}

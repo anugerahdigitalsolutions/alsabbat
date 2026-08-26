@@ -139,7 +139,8 @@ def sanitize_upload(file_name: str, content: bytes, mime_type: str) -> Tuple[str
             with Image.open(BytesIO(content)) as image:
                 image.verify()
             with Image.open(BytesIO(content)) as image:
-                fmt = "PNG" if sniffed in ("image/png", "image/gif") else "JPEG"
+                has_alpha = image.mode in ("RGBA", "LA", "PA") or "transparency" in image.info
+                fmt = "PNG" if sniffed in ("image/png", "image/gif") or has_alpha else "JPEG"
                 if fmt == "JPEG" and image.mode not in ("RGB", "L"):
                     image = image.convert("RGB")
                 buffer = BytesIO()

@@ -156,7 +156,9 @@ export const ImageCropper = ({
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(image, sx, sy, sw, sh, 0, 0, outW, outH);
 
-    const type = typeof source !== 'string' && source?.type === 'image/png' ? 'image/png' : 'image/jpeg';
+    const isPng =
+      typeof source === 'string' ? /\.(png|webp)(\?|#|$)/i.test(source) : ['image/png', 'image/webp'].includes(source?.type);
+    const type = isPng ? 'image/png' : 'image/jpeg';
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, type, 0.92));
     if (blob) await onConfirm(blob, { zoom, offset, aspect, type });
   };
@@ -174,8 +176,17 @@ export const ImageCropper = ({
 
         <div
           ref={frameRef}
-          className="relative w-full touch-none overflow-hidden rounded-[var(--radius-sm)] bg-black"
-          style={{ height: frame.h || undefined, aspectRatio: frame.h ? undefined : String(aspect), cursor: 'grab' }}
+          className="relative w-full touch-none overflow-hidden rounded-[var(--radius-sm)]"
+          style={{
+            height: frame.h || undefined,
+            aspectRatio: frame.h ? undefined : String(aspect),
+            cursor: 'grab',
+            backgroundColor: '#FEFEFE',
+            backgroundImage:
+              'linear-gradient(45deg, rgba(0,0,0,0.07) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.07) 75%), linear-gradient(45deg, rgba(0,0,0,0.07) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.07) 75%)',
+            backgroundSize: '16px 16px',
+            backgroundPosition: '0 0, 8px 8px',
+          }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
