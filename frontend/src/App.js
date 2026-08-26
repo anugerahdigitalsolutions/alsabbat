@@ -68,10 +68,12 @@ import AdminSystemPage from './pages/admin/AdminSystemPage';
 import AdminAchievementsPage from './pages/admin/AdminAchievementsPage';
 
 import './App.css';
+import { SiteIcons } from './lib/siteIcons';
 
 function App() {
   return (
     <BrowserRouter>
+      <SiteIcons />
       <AuthProvider>
         <ClubProvider>
           <CartProvider>

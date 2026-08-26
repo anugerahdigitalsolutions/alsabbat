@@ -1,6 +1,7 @@
 import React from 'react';
 import { BannerManager } from '../../components/admin/BannerManager';
 import { BackgroundManager } from '../../components/admin/BackgroundManager';
+import { FaviconManager } from '../../components/admin/FaviconManager';
 import { SiteContentForm } from '../../components/admin/SiteContentForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { useClub } from '../../context/ClubContext';
@@ -31,6 +32,9 @@ export default function AdminHomeContentPage() {
           <TabsTrigger value="background" data-testid="admin-home-content-tab-background">
             Background Website
           </TabsTrigger>
+          <TabsTrigger value="settings" data-testid="admin-home-content-tab-settings">
+            Pengaturan Website
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="banners" className="mt-6">
           <BannerManager clubName={clubName} />
@@ -40,6 +44,9 @@ export default function AdminHomeContentPage() {
         </TabsContent>
         <TabsContent value="background" className="mt-6">
           <BackgroundManager />
+        </TabsContent>
+        <TabsContent value="settings" className="mt-6">
+          <FaviconManager />
         </TabsContent>
       </Tabs>
     </div>

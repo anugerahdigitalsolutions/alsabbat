@@ -116,6 +116,10 @@ export const MediaPicker = ({
 
   const preview = resolveMediaUrl(previewUrl || localPreview || (returns === 'url' ? value : null));
 
+  useEffect(() => {
+    if (!value) setLocalPreview(null);
+  }, [value]);
+
   const handleFile = useCallback(
     async (file) => {
       if (!file) return;
