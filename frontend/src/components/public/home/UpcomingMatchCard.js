@@ -23,7 +23,7 @@ export const UpcomingMatchCard = ({ match, clubName = 'ALSABBAT', competitionNam
   return (
     <article className="als-card als-lift p-6 sm:p-7" data-testid={testId}>
       <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--muted-fg)' }}>
-        {competitionName || (hasScore ? 'Full Time' : 'Upcoming Match')}
+        {competitionName || (hasScore ? 'Selesai' : 'Pertandingan Berikutnya')}
       </p>
 
       <div className="mt-6 flex items-start justify-center gap-5">
@@ -62,7 +62,7 @@ export const UpcomingMatchCard = ({ match, clubName = 'ALSABBAT', competitionNam
       </div>
 
       <Link to={`/matches/${match.id}`} className="als-btn-gold als-focus mt-6 w-full justify-center" data-testid={`${testId}-cta`}>
-        Match Details
+        Detail Pertandingan
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </Link>
     </article>

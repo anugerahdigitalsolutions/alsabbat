@@ -11,7 +11,7 @@ import { formatIDR } from '../../context/CartContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function OrderTrackPage() {
-  usePageSeo({ title: 'Lacak Order', description: 'Lacak status order merchandise ALSABBAT Football Club.', path: '/order', robots: 'noindex,follow' });
+  usePageSeo({ title: 'Lacak Pesanan', description: 'Lacak status pesanan merchandise ALSABBAT Football Club.', path: '/order', robots: 'noindex,follow' });
   const [params] = useSearchParams();
   const [form, setForm] = useState({
     order_number: params.get('order_number') || '',
@@ -30,7 +30,7 @@ export default function OrderTrackPage() {
       setOrder(data);
     } catch (e) {
       setOrder(null);
-      setError(apiErrorMessage(e, 'Order tidak ditemukan.'));
+      setError(apiErrorMessage(e, 'Pesanan tidak ditemukan.'));
     } finally {
       setLoading(false);
     }
@@ -44,16 +44,16 @@ export default function OrderTrackPage() {
   return (
     <div data-testid="page-order-track">
       <PublicPageHeader
-        label="Store"
-        title="Lacak Order"
-        description="Masukkan nomor order dan email yang digunakan saat checkout."
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Merchandise', to: '/merchandise' }, { label: 'Lacak Order' }]}
+        label="Toko"
+        title="Lacak Pesanan"
+        description="Masukkan nomor pesanan dan email yang digunakan saat checkout."
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Merchandise', to: '/merchandise' }, { label: 'Lacak Pesanan' }]}
       />
       <div className="als-container py-10 sm:py-14">
         <div className="als-card max-w-xl p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label className="mb-1.5 block">Nomor Order</Label>
+              <Label className="mb-1.5 block">Nomor Pesanan</Label>
               <Input
                 value={form.order_number}
                 onChange={(e) => setForm((f) => ({ ...f, order_number: e.target.value }))}

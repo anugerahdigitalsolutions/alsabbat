@@ -21,7 +21,7 @@ export const StorePromoCard = ({ image, productCount = 0 }) => {
         aria-hidden="true"
       />
       <div className="relative flex h-full flex-col justify-end p-5">
-        <p className="als-eyebrow">Official Store</p>
+        <p className="als-eyebrow">Toko Resmi</p>
         <p className="font-display mt-2 text-lg font-extrabold leading-tight" style={{ color: 'var(--club-light)' }}>
           Pakai Warna Klub, Dukung Skuad
         </p>

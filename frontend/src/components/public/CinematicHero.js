@@ -189,7 +189,7 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', 
                 {socials.length ? (
                   <div className="mt-8 flex flex-wrap items-center gap-3" data-testid="home-hero-socials">
                     <span className="text-xs font-semibold" style={{ color: 'rgba(254,254,254,0.7)' }}>
-                      Follow Us
+                      Ikuti Kami
                     </span>
                     {socials.map((item) => (
                       <a

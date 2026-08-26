@@ -50,7 +50,7 @@ export const NewsCardShell = ({ post, testId, featured = false }) => {
       >
         <Thumb post={post} heightClass="h-56 sm:h-72 lg:h-full lg:min-h-[320px]" eager />
         <div className="flex flex-col justify-center p-6 sm:p-8">
-          <p className="als-section-label mb-3">Headline</p>
+          <p className="als-section-label mb-3">Berita Utama</p>
           <h2 className="font-display text-xl font-bold leading-snug sm:text-2xl lg:text-3xl">{post.title}</h2>
           {post.excerpt ? (
             <p className="mt-3 line-clamp-3 text-sm leading-relaxed" style={{ color: 'var(--muted-fg)' }}>

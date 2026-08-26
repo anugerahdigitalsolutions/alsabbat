@@ -53,7 +53,7 @@ export default function GalleryPage() {
     <div data-testid="page-gallery">
       <PublicPageHeader
         label="Media"
-        title="Moments We Remember"
+        title="Momen yang Kami Ingat"
         description="Album dokumentasi pertandingan, latihan, dan kegiatan klub."
       />
       <div className="als-container py-10">

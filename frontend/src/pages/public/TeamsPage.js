@@ -19,7 +19,7 @@ const GROUPS = [
 
 /** ALSABBAT has exactly one squad — this page lists that squad directly. */
 export default function TeamsPage() {
-  usePageSeo({ title: 'Squad', description: 'Skuad resmi ALSABBAT Football Club — satu klub, satu skuad.', path: '/teams' });
+  usePageSeo({ title: 'Skuad', description: 'Skuad resmi ALSABBAT Football Club — satu klub, satu skuad.', path: '/teams' });
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 60 });
   const staff = useResourceList('/staff', { status: 'ACTIVE', limit: 30 });
   const spotlight = useMemo(() => pickSpotlightPlayer(players.items), [players.items]);
@@ -33,10 +33,10 @@ export default function TeamsPage() {
   return (
     <div data-testid="page-teams">
       <PublicPageHeader
-        label="Squad"
-        title="One Squad. One Family."
+        label="Skuad"
+        title="Satu Skuad. Satu Baraya."
         description="Satu klub, satu skuad — para pemain dan staf yang membela lambang ALSABBAT."
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Squad' }]}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Skuad' }]}
         meta={
           players.total ? (
             <>
@@ -63,7 +63,7 @@ export default function TeamsPage() {
           <div className="space-y-14">
             {spotlight ? (
               <Reveal>
-                <p className="als-row-label mb-4">Player Spotlight</p>
+                <p className="als-row-label mb-4">Sorotan Pemain</p>
                 <PlayerSpotlight player={spotlight} />
               </Reveal>
             ) : null}

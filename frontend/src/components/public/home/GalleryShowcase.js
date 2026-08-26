@@ -20,7 +20,7 @@ const Tile = ({ album, large = false }) => {
       )}
       <span className="als-scrim-bottom absolute inset-0" aria-hidden="true" />
       <span className={`relative flex h-full flex-col justify-end ${large ? 'p-6 sm:p-8' : 'p-4'}`}>
-        {large ? <span className="als-eyebrow">Match Moments</span> : null}
+        {large ? <span className="als-eyebrow">Momen Pertandingan</span> : null}
         <span
           className={`font-display font-bold leading-tight ${large ? 'mt-3 text-xl sm:text-2xl' : 'text-sm'}`}
           style={{ color: 'var(--club-light)' }}

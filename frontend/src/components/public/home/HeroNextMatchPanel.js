@@ -26,7 +26,7 @@ export const HeroNextMatchPanel = ({ match, clubName = 'ALSABBAT' }) => {
   return (
     <div className="als-glass w-full p-4 sm:p-5 lg:w-[430px]" data-testid="hero-next-match-panel">
       <p className="text-center text-[9px] font-bold uppercase tracking-[0.26em]" style={{ color: 'rgba(254,254,254,0.72)' }}>
-        Next Match
+        Pertandingan Berikutnya
       </p>
 
       <div className="mt-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
@@ -56,10 +56,10 @@ export const HeroNextMatchPanel = ({ match, clubName = 'ALSABBAT' }) => {
           style={{ backgroundColor: 'rgba(254,254,254,0.10)' }}
           aria-live="polite"
         >
-          <Unit value={running ? days : 0} label="Days" testId="hero-countdown-days" />
-          <Unit value={running ? hours : 0} label="Hrs" testId="hero-countdown-hours" />
-          <Unit value={running ? minutes : 0} label="Mins" testId="hero-countdown-minutes" />
-          <Unit value={running ? seconds : 0} label="Secs" testId="hero-countdown-seconds" />
+          <Unit value={running ? days : 0} label="Hari" testId="hero-countdown-days" />
+          <Unit value={running ? hours : 0} label="Jam" testId="hero-countdown-hours" />
+          <Unit value={running ? minutes : 0} label="Mnt" testId="hero-countdown-minutes" />
+          <Unit value={running ? seconds : 0} label="Dtk" testId="hero-countdown-seconds" />
         </div>
       </div>
 
@@ -73,7 +73,7 @@ export const HeroNextMatchPanel = ({ match, clubName = 'ALSABBAT' }) => {
           style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
           data-testid="hero-next-match-cta"
         >
-          Match Center
+          Pusat Pertandingan
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
       </div>

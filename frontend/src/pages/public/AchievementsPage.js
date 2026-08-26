@@ -14,7 +14,7 @@ export default function AchievementsPage() {
 
   return (
     <div data-testid="page-achievements">
-      <PublicPageHeader label="Honours" title="Prestasi Klub" description="Trofi dan pencapaian resmi yang tercatat pada sistem klub." />
+      <PublicPageHeader label="Penghargaan" title="Prestasi Klub" description="Trofi dan pencapaian resmi yang tercatat pada sistem klub." />
       <div className="als-container py-10">
         <p className="mb-6 text-sm" style={{ color: 'var(--muted-fg)' }} data-testid="achievements-total">
           {loading ? 'Memuat…' : `${total} prestasi`}

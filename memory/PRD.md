@@ -285,3 +285,11 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 - Tidak ada Admin Panel di navigasi publik (PUBLIC_NAV/SECONDARY_NAV/mobile menu).
 - Backend, auth/RBAC, API, DB, deployment TIDAK diubah. Tidak ada data dummy.
 - Verifikasi: yarn build sukses; desktop 1920 & mobile 390 -> header staff access absent, footer staff access present; POST /api/auth/login admin@alsabbat.com berhasil (token SUPER_ADMIN).
+
+## Bahasa Indonesia + Login Baraya ALSABBAT (26 Jun 2026)
+- Seluruh UI publik diterjemahkan ke Bahasa Indonesia (nav, hero, section label, empty state, Match Center -> Pusat Pertandingan, Merchandise/Cart/Checkout/Lacak Pesanan, footer). Admin Panel TIDAK diubah.
+- Istilah komunitas: "keluarga ALSABBAT" -> "Baraya ALSABBAT" (JourneyCta, PillarStrip, TeamsPage).
+- Login Baraya ALSABBAT: rute /login + /daftar (BarayaLoginPage.js, BarayaRegisterPage.js) + integration point src/services/barayaAuth.js (BARAYA_AUTH_ENABLED=false). TIDAK ada fake auth, TIDAK ada backend baru.
+- Header kanan atas: pill "Login" + keterangan "Login untuk Baraya ALSABBAT" (xl+), mobile menu punya entri "Login untuk Baraya ALSABBAT". Staff Access tetap hanya di baris paling bawah footer.
+- Verifikasi: yarn build sukses; desktop 1920 & mobile 390 (header tanpa Staff Access, footer ada Staff Access, pill Login tampil); tidak ada kata "keluarga" tersisa; /login & /daftar 200; POST /api/auth/login admin 200.
+- BACKLOG: backend auth Baraya (koleksi customers, JWT terpisah), checkout dengan akun, riwayat pesanan, profil.

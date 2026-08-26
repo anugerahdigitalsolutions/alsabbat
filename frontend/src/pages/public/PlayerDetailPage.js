@@ -44,9 +44,9 @@ const PlayerHero = ({ player, team }) => {
           style={{ color: 'rgba(254,254,254,0.6)' }}
           aria-label="Breadcrumb"
         >
-          <Link to="/" className="min-h-[24px] font-medium hover:text-[var(--club-primary)]">Home</Link>
+          <Link to="/" className="min-h-[24px] font-medium hover:text-[var(--club-primary)]">Beranda</Link>
           <ChevronRight className="h-3 w-3" aria-hidden="true" />
-          <Link to="/teams" className="min-h-[24px] font-medium hover:text-[var(--club-primary)]">Squad</Link>
+          <Link to="/teams" className="min-h-[24px] font-medium hover:text-[var(--club-primary)]">Skuad</Link>
           <ChevronRight className="h-3 w-3" aria-hidden="true" />
           <span>{player?.display_name || player?.full_name || 'Pemain'}</span>
         </nav>
@@ -75,7 +75,7 @@ const PlayerHero = ({ player, team }) => {
               className={`font-display text-[11px] font-semibold uppercase tracking-[0.26em] ${revealClass}`}
               style={{ color: 'var(--club-primary)', ...step(2) }}
             >
-              Player Profile
+              Profil Pemain
             </p>
             <h1
               className={`font-display mt-3 text-3xl font-bold leading-[1.05] sm:text-5xl ${revealClass}`}

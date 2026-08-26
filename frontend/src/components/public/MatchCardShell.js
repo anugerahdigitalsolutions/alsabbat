@@ -145,7 +145,7 @@ export const MatchCardShell = ({ match, testId }) => {
         className="font-display mt-4 inline-flex min-h-[24px] items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors duration-200 group-hover:text-[var(--club-tertiary)]"
         style={{ color: 'var(--club-secondary)' }}
       >
-        Match Center
+        Pusat Pertandingan
         <ArrowRight className="h-3.5 w-3.5" />
       </span>
     </Link>

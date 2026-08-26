@@ -40,7 +40,7 @@ const TeamSide = ({ name, logo, align = 'right', isClub, sideLabel, testId }) =>
         className="font-display mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.2em] sm:text-left"
         style={{ color: isClub ? 'var(--club-primary)' : 'rgba(254,254,254,0.5)' }}
       >
-        {isClub ? sideLabel : `${sideLabel} · Opponent`}
+        {isClub ? sideLabel : `${sideLabel} · Lawan`}
       </p>
     </div>
   </div>
@@ -88,7 +88,7 @@ export const MatchScoreboard = ({ match, clubName, clubLogo, competition, season
             className="font-display text-[11px] font-semibold uppercase tracking-[0.28em]"
             style={{ color: 'var(--club-primary)' }}
           >
-            Matchday
+            Hari Pertandingan
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export const MatchScoreboard = ({ match, clubName, clubLogo, competition, season
         </div>
 
         <div className={`flex flex-col items-center gap-8 sm:flex-row sm:gap-6 ${revealClass}`} style={step(2)}>
-          <TeamSide name={home.name} logo={home.logo} isClub={home.isClub} sideLabel="Home" align="right" testId="match-home-team" />
+          <TeamSide name={home.name} logo={home.logo} isClub={home.isClub} sideLabel="Tuan Rumah" align="right" testId="match-home-team" />
 
           <div className="flex flex-col items-center gap-3">
             <div
@@ -141,12 +141,12 @@ export const MatchScoreboard = ({ match, clubName, clubLogo, competition, season
                 style={{ color: 'rgba(254,254,254,0.7)' }}
                 data-testid="match-kickoff-time"
               >
-                Kick-off {match.time}
+                Mulai {match.time}
               </span>
             ) : null}
           </div>
 
-          <TeamSide name={away.name} logo={away.logo} isClub={away.isClub} sideLabel="Away" align="left" testId="match-away-team" />
+          <TeamSide name={away.name} logo={away.logo} isClub={away.isClub} sideLabel="Tandang" align="left" testId="match-away-team" />
         </div>
 
         <div

@@ -79,7 +79,7 @@ export default function ProductDetailPage() {
         description={product?.short_description}
         backgroundImage={product?.cover_url}
         imageAlt={product?.name}
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Merchandise', to: '/merchandise' }, { label: 'Produk' }]}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Merchandise', to: '/merchandise' }, { label: 'Produk' }]}
       />
       <div className="als-container py-10 sm:py-14">
         {loading ? (
@@ -161,7 +161,7 @@ export default function ProductDetailPage() {
                   </Button>
                 </div>
                 <span className="text-sm" style={{ color: 'var(--muted-fg)' }} data-testid="product-stock">
-                  {outOfStock ? 'OUT OF STOCK' : `Stok tersedia: ${stock}`}
+                  {outOfStock ? 'Stok habis' : `Stok tersedia: ${stock}`}
                 </span>
               </div>
 

@@ -2,10 +2,10 @@ import React from 'react';
 import { Award, Handshake, Shield, Star } from 'lucide-react';
 
 const CELLS = [
-  { id: 'played', label: 'Matches Played', Icon: Shield, tint: 'rgba(1,40,145,0.08)', color: 'var(--club-secondary)' },
-  { id: 'wins', label: 'Wins', Icon: Star, tint: 'rgba(252,207,43,0.22)', color: '#7A5A00' },
-  { id: 'draws', label: 'Draws', Icon: Handshake, tint: 'rgba(1,40,145,0.06)', color: 'var(--club-secondary)' },
-  { id: 'losses', label: 'Losses', Icon: Award, tint: 'rgba(0,0,0,0.06)', color: '#000000' },
+  { id: 'played', label: 'Main', Icon: Shield, tint: 'rgba(1,40,145,0.08)', color: 'var(--club-secondary)' },
+  { id: 'wins', label: 'Menang', Icon: Star, tint: 'rgba(252,207,43,0.22)', color: '#7A5A00' },
+  { id: 'draws', label: 'Seri', Icon: Handshake, tint: 'rgba(1,40,145,0.06)', color: 'var(--club-secondary)' },
+  { id: 'losses', label: 'Kalah', Icon: Award, tint: 'rgba(0,0,0,0.06)', color: '#000000' },
 ];
 
 /** Team stats derived from finished matches; `—` when no match data exists yet. */

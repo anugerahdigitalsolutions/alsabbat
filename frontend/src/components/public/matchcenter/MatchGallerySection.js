@@ -22,7 +22,7 @@ export const MatchGallerySection = ({ matchMedia = [], albums = [] }) => {
     return (
       <EmptyState
         icon={ImageIcon}
-        title="Match gallery belum tersedia"
+        title="Galeri pertandingan belum tersedia"
         description="Foto dan video pertandingan akan tampil di sini setelah album galeri dipublikasikan."
         testId="match-gallery-section-empty"
       />
@@ -33,7 +33,7 @@ export const MatchGallerySection = ({ matchMedia = [], albums = [] }) => {
     <section className="space-y-4" data-testid="match-gallery-section">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="als-section-label">Match Media</p>
+          <p className="als-section-label">Media Pertandingan</p>
           <p className="mt-1 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="match-media-counts">
             {photos.length} foto · {videos.length} video
           </p>
@@ -44,7 +44,7 @@ export const MatchGallerySection = ({ matchMedia = [], albums = [] }) => {
           style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
           data-testid="match-view-full-gallery"
         >
-          View Full Gallery
+          Lihat Galeri Lengkap
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

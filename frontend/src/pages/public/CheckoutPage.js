@@ -80,10 +80,10 @@ export default function CheckoutPage() {
   if (result) {
     return (
       <div data-testid="page-checkout">
-        <PublicPageHeader label="Store" title="Order Dibuat" breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Checkout' }]} />
+        <PublicPageHeader label="Toko" title="Pesanan Dibuat" breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Checkout' }]} />
         <div className="als-container py-12">
           <div className="als-card mx-auto max-w-xl p-6" data-testid="checkout-result">
-            <p className="als-section-label">Nomor Order</p>
+            <p className="als-section-label">Nomor Pesanan</p>
             <p className="font-display mt-1 text-2xl font-bold">{result.order.order_number}</p>
             <p className="mt-4 text-sm" style={{ color: 'var(--muted-fg)' }}>
               Total {formatIDR(result.order.total)} · Pembayaran: {result.order.payment_status}
@@ -91,7 +91,7 @@ export default function CheckoutPage() {
             {!result.payment?.configured ? (
               <p className="mt-4 flex items-start gap-2 text-sm" style={{ color: '#991B1B' }} data-testid="checkout-payment-not-configured">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                PAYMENT NOT CONFIGURED — {result.payment?.error_message}
+                PEMBAYARAN BELUM DIKONFIGURASI — {result.payment?.error_message}
               </p>
             ) : null}
             <Button
@@ -100,7 +100,7 @@ export default function CheckoutPage() {
               onClick={() => navigate(`/order?order_number=${result.order.order_number}&email=${result.order.customer.email}`)}
               data-testid="checkout-track-button"
             >
-              Lacak Order
+              Lacak Pesanan
             </Button>
           </div>
         </div>
@@ -111,10 +111,10 @@ export default function CheckoutPage() {
   return (
     <div data-testid="page-checkout">
       <PublicPageHeader
-        label="Store"
+        label="Toko"
         title="Checkout"
-        description="Total dihitung ulang oleh server. Pembayaran hanya melalui gateway resmi."
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Merchandise', to: '/merchandise' }, { label: 'Checkout' }]}
+        description="Total dihitung ulang oleh server. Pembayaran hanya melalui gerbang pembayaran resmi."
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Merchandise', to: '/merchandise' }, { label: 'Checkout' }]}
       />
       <div className="als-container py-10 sm:py-14">
         {lines.length === 0 ? (
@@ -146,7 +146,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="als-card h-fit p-5" data-testid="checkout-summary">
-              <p className="als-section-label mb-4">Ringkasan Order</p>
+              <p className="als-section-label mb-4">Ringkasan Pesanan</p>
               {(summary?.items || []).map((item) => (
                 <div key={`${item.product_id}-${item.variant_id || 'base'}`} className="mb-2 flex justify-between text-sm">
                   <span className="min-w-0 truncate pr-2">
@@ -166,7 +166,7 @@ export default function CheckoutPage() {
               {paymentConfig && !paymentConfig.configured ? (
                 <p className="mt-4 flex items-start gap-2 text-xs" style={{ color: '#991B1B' }} data-testid="checkout-payment-status">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  PAYMENT NOT CONFIGURED ({paymentConfig.provider}). Order tetap tercatat sebagai PENDING dan admin akan menghubungi Anda.
+                  PEMBAYARAN BELUM DIKONFIGURASI ({paymentConfig.provider}). Pesanan tetap tercatat sebagai PENDING dan admin akan menghubungi Anda.
                 </p>
               ) : (
                 <p className="mt-4 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="checkout-payment-status">
@@ -182,7 +182,7 @@ export default function CheckoutPage() {
                 data-testid="checkout-submit"
               >
                 {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Buat Order &amp; Bayar
+                Buat Pesanan &amp; Bayar
               </Button>
             </div>
           </div>

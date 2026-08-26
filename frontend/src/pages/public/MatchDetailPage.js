@@ -54,11 +54,11 @@ export default function MatchDetailPage() {
   const heroImage = coverMedia ? resolveMediaUrl(coverMedia.url || coverMedia.thumbnail_url) : null;
 
   usePageSeo({
-    title: opponentName ? `${shortName || 'ALSABBAT'} vs ${opponentName}` : 'Match Center',
+    title: opponentName ? `${shortName || 'ALSABBAT'} vs ${opponentName}` : 'Pusat Pertandingan',
     description:
       match?.result_summary ||
       match?.description ||
-      'Match Center ALSABBAT: informasi pertandingan, susunan pemain, dan timeline kejadian.',
+      'Pusat Pertandingan ALSABBAT: informasi pertandingan, susunan pemain, dan timeline kejadian.',
     path: `/matches/${matchId}`,
   });
 
@@ -196,7 +196,7 @@ export default function MatchDetailPage() {
 
             {data.match_report ? (
               <div className="als-card p-5 sm:p-6" data-testid="match-report-card">
-                <p className="als-section-label">Match Report</p>
+                <p className="als-section-label">Laporan Pertandingan</p>
                 <span className="als-gold-rule mt-2" aria-hidden="true" />
                 <h2 className="font-display mt-4 text-lg font-bold">{data.match_report.title}</h2>
                 {data.match_report.excerpt ? (

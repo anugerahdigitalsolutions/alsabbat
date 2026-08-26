@@ -164,7 +164,7 @@ export const FormationPitch = ({ lineups = [], playersById = {}, formation }) =>
       <EmptyState
         icon={Users}
         title="Susunan pemain belum tersedia"
-        description="Starting XI dan pemain cadangan akan tampil di sini setelah diinput melalui Admin Panel."
+        description="Susunan pemain inti dan cadangan akan tampil di sini setelah diinput melalui Admin Panel."
         testId="match-lineup-empty"
       />
     );
@@ -257,20 +257,20 @@ export const FormationPitch = ({ lineups = [], playersById = {}, formation }) =>
             className="font-display relative mt-2 text-center text-[10px] font-semibold uppercase tracking-[0.24em]"
             style={{ color: 'rgba(254,254,254,0.45)' }}
           >
-            Opponent
+            Lawan
           </p>
         </div>
       ) : null}
 
       {starters.length && starters.length < 11 ? (
         <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="match-formation-partial-note">
-          Starting XI belum lengkap: {starters.length} dari 11 pemain sudah diinput.
+          Pemain inti belum lengkap: {starters.length} dari 11 pemain sudah diinput.
         </p>
       ) : null}
 
       <div className="als-card p-5" data-testid="match-substitutes">
         <div className="mb-4 flex items-center justify-between">
-          <p className="als-section-label">Substitutes</p>
+          <p className="als-section-label">Pemain Cadangan</p>
           <span className="text-xs tabular-nums" style={{ color: 'var(--muted-fg)' }}>
             {substitutes.length} pemain
           </span>

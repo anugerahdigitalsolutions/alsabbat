@@ -12,7 +12,7 @@ import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function NewsPage() {
-  usePageSeo({ title: 'Berita', description: 'Berita resmi, match report, dan pengumuman ALSABBAT Football Club.', path: '/news' });
+  usePageSeo({ title: 'Berita', description: 'Berita resmi, laporan pertandingan, dan pengumuman ALSABBAT Football Club.', path: '/news' });
   const [query, setQuery] = useState('');
   const { items, total, loading, error, reload } = useResourceList('/content/posts', {
     status: 'PUBLISHED',
@@ -26,12 +26,12 @@ export default function NewsPage() {
   return (
     <div data-testid="page-news">
       <PublicPageHeader
-        label="Newsroom"
-        title="Stories From ALSABBAT"
+        label="Ruang Berita"
+        title="Cerita Dari ALSABBAT"
         description="Kabar resmi klub, laporan pertandingan, dan pengumuman."
         backgroundImage={featured?.thumbnail}
         imageAlt={featured?.title}
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'News' }]}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Berita' }]}
         meta={<span data-testid="news-header-count">{loading ? 'Memuat…' : `${total} berita dipublikasikan`}</span>}
       />
       <div className="als-container py-10 sm:py-14">

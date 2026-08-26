@@ -27,7 +27,7 @@ export const HeadToHeadPanel = ({ h2h, clubName = 'ALSABBAT' }) => {
   if (!h2h || !h2h.available) {
     return (
       <div className="als-card p-5" data-testid="match-head-to-head">
-        <p className="als-section-label mb-4">Head-to-Head</p>
+        <p className="als-section-label mb-4">Rekor Pertemuan</p>
         <EmptyState
           icon={History}
           title="Belum ada riwayat pertemuan"
@@ -40,7 +40,7 @@ export const HeadToHeadPanel = ({ h2h, clubName = 'ALSABBAT' }) => {
 
   return (
     <div className="als-card p-5 sm:p-6" data-testid="match-head-to-head">
-      <p className="als-section-label">Head-to-Head</p>
+      <p className="als-section-label">Rekor Pertemuan</p>
       <span className="als-gold-rule mt-2" aria-hidden="true" />
       <p className="mt-3 text-sm" style={{ color: 'var(--muted-fg)' }} data-testid="match-h2h-subtitle">
         {clubName} vs {h2h.opponent} · {h2h.matches_played} pertandingan selesai
@@ -82,7 +82,7 @@ export const HeadToHeadPanel = ({ h2h, clubName = 'ALSABBAT' }) => {
                     {item.club_goals} — {item.opponent_goals}
                   </span>
                   <span className="text-xs" style={{ color: 'var(--muted-fg)' }}>
-                    {item.date} · {item.venue_type === 'AWAY' ? 'Away' : item.venue_type === 'NEUTRAL' ? 'Netral' : 'Home'}
+                    {item.date} · {item.venue_type === 'AWAY' ? 'Tandang' : item.venue_type === 'NEUTRAL' ? 'Netral' : 'Tuan Rumah'}
                   </span>
                 </li>
               );

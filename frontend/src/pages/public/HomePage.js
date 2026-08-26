@@ -100,14 +100,14 @@ export default function HomePage() {
         id: 'brand',
         eyebrow: `${badge} Football Club`,
         headlineLines: [
-          { text: 'ONE CLUB.' },
-          { text: 'ONE PASSION.' },
-          { text: `ONE ${badge.toUpperCase()}.`, gold: true },
+          { text: 'SATU KLUB.' },
+          { text: 'SATU SEMANGAT.' },
+          { text: `SATU ${badge.toUpperCase()}.`, gold: true },
         ],
-        meta: 'Together we fight. Together we win.',
-        ctaLabel: nextMatch ? 'Next Match' : 'Pertandingan',
+        meta: 'Bersama berjuang. Bersama menang.',
+        ctaLabel: nextMatch ? 'Pertandingan Berikutnya' : 'Pertandingan',
         ctaTo: nextMatch ? `/matches/${nextMatch.id}` : '/matches',
-        secondaryLabel: 'About Us',
+        secondaryLabel: 'Tentang Kami',
         secondaryTo: '/club',
         image: brandImage,
         alt: `Suasana pertandingan ${clubName}`,
@@ -120,11 +120,11 @@ export default function HomePage() {
       const other = isHome ? lastMatch.away_score ?? 0 : lastMatch.home_score;
       slides.push({
         id: `result-${lastMatch.id}`,
-        eyebrow: 'Latest Result',
+        eyebrow: 'Hasil Terakhir',
         headline: `${badge} ${own} - ${other} ${lastMatch.opponent?.name || 'Lawan'}`,
-        subheadline: 'Full Time',
+        subheadline: 'Selesai',
         meta: [lastMatch.date, lastMatch.venue].filter(Boolean).join(' · '),
-        ctaLabel: 'View Match',
+        ctaLabel: 'Lihat Pertandingan',
         ctaTo: `/matches/${lastMatch.id}`,
         image: resolveMediaUrl(lastMatch.match_cover) || galleryCover,
         alt: `Hasil pertandingan ${badge} melawan ${lastMatch.opponent?.name || 'lawan'}`,
@@ -135,7 +135,7 @@ export default function HomePage() {
     if (post) {
       slides.push({
         id: `news-${post.id}`,
-        eyebrow: 'Latest News',
+        eyebrow: 'Berita Terbaru',
         headline: post.title,
         meta: post.excerpt || null,
         ctaLabel: 'Baca Berita',
@@ -151,10 +151,10 @@ export default function HomePage() {
     if (album) {
       slides.push({
         id: `album-${album.id}`,
-        eyebrow: 'Match Moments',
+        eyebrow: 'Momen Pertandingan',
         headline: album.title,
         meta: album.photo_count ? `${album.photo_count} foto` : null,
-        ctaLabel: 'View Gallery',
+        ctaLabel: 'Lihat Galeri',
         ctaTo: `/gallery/${album.id}`,
         image: resolveMediaUrl(album.cover_url_resolved),
         alt: album.title,
@@ -185,14 +185,14 @@ export default function HomePage() {
       <Band className="pt-0" testId="home-section-matchday-news">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,330px)_minmax(0,1fr)]">
           <div>
-            <RowHeader label={nextMatch ? 'Upcoming Match' : 'Latest Result'} testId="home-label-match" />
+            <RowHeader label={nextMatch ? 'Pertandingan Berikutnya' : 'Hasil Terakhir'} testId="home-label-match" />
             {matches.loading ? (
               <LoadingState rows={1} testId="home-match-loading" />
             ) : featuredMatch ? (
               <UpcomingMatchCard
                 match={featuredMatch}
                 clubName={badge}
-                competitionName={featuredMatch.competition_name || (nextMatch ? 'Matchday' : 'Full Time')}
+                competitionName={featuredMatch.competition_name || (nextMatch ? 'Hari Pertandingan' : 'Selesai')}
                 testId="home-featured-match"
               />
             ) : (
@@ -206,7 +206,7 @@ export default function HomePage() {
           </div>
 
           <div>
-            <RowHeader label="Latest News" to="/news" actionLabel="View All News" testId="home-label-news" />
+            <RowHeader label="Berita Terbaru" to="/news" actionLabel="Semua Berita" testId="home-label-news" />
             {news.loading ? <LoadingState rows={3} testId="home-news-loading" /> : <NewsShowcase posts={news.items} />}
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function HomePage() {
       <Band className="pt-0" testId="home-section-spotlight">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]">
           <div>
-            <RowHeader label="Player Spotlight" to="/teams" actionLabel="Lihat Skuad" testId="home-label-spotlight" />
+            <RowHeader label="Sorotan Pemain" to="/teams" actionLabel="Lihat Skuad" testId="home-label-spotlight" />
             {players.loading ? (
               <LoadingState rows={1} testId="home-spotlight-loading" />
             ) : spotlightPlayer ? (
@@ -232,7 +232,7 @@ export default function HomePage() {
           </div>
 
           <div>
-            <RowHeader label="Team Stats" testId="home-label-stats" />
+            <RowHeader label="Statistik Tim" testId="home-label-stats" />
             <TeamStatsBlock stats={teamStats} />
             {!teamStats ? (
               <p className="mt-3 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="home-team-stats-note">
@@ -242,7 +242,7 @@ export default function HomePage() {
           </div>
 
           <div>
-            <RowHeader label="Official Store" to="/merchandise" actionLabel="Store" testId="home-label-store" />
+            <RowHeader label="Toko Resmi" to="/merchandise" actionLabel="Toko" testId="home-label-store" />
             {products.total ? (
               <StorePromoCard image={storeImage} productCount={products.total} />
             ) : (
@@ -259,14 +259,14 @@ export default function HomePage() {
 
       {/* Gallery */}
       <Band className="pt-0" testId="home-section-gallery">
-        <RowHeader label="Gallery" to="/gallery" actionLabel="View All Gallery" testId="home-label-gallery" />
+        <RowHeader label="Galeri" to="/gallery" actionLabel="Semua Galeri" testId="home-label-gallery" />
         {albums.loading ? <LoadingState rows={2} testId="home-gallery-loading" /> : <GalleryStrip albums={albums.items} />}
       </Band>
 
       {/* Sponsors */}
       {sponsors.items.length ? (
         <Band className="pt-0" testId="home-section-sponsors">
-          <RowHeader label="Our Sponsors" to="/sponsors" actionLabel="Semua sponsor" testId="home-label-sponsors" />
+          <RowHeader label="Sponsor Kami" to="/sponsors" actionLabel="Semua sponsor" testId="home-label-sponsors" />
           <SponsorsStrip sponsors={sponsors.items} />
         </Band>
       ) : null}

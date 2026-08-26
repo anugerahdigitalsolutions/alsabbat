@@ -22,6 +22,8 @@ import AchievementsPage from './pages/public/AchievementsPage';
 import SponsorsPage from './pages/public/SponsorsPage';
 import ContactPage from './pages/public/ContactPage';
 import NotFoundPage from './pages/public/NotFoundPage';
+import BarayaLoginPage from './pages/public/BarayaLoginPage';
+import BarayaRegisterPage from './pages/public/BarayaRegisterPage';
 
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -82,6 +84,8 @@ function App() {
               <Route path="/order" element={<OrderTrackPage />} />
               <Route path="/gallery/:albumId" element={<GalleryDetailPage />} />
               <Route path="/club" element={<ClubPage />} />
+              <Route path="/login" element={<BarayaLoginPage />} />
+              <Route path="/daftar" element={<BarayaRegisterPage />} />
             </Route>
 
             <Route path="/admin/login" element={<AdminLoginPage />} />

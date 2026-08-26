@@ -2,10 +2,10 @@ import React from 'react';
 import { Award, HeartHandshake, Shield, Users } from 'lucide-react';
 
 const PILLARS = [
-  { id: 'club', Icon: Shield, title: 'One Club', text: 'ALSABBAT is one club with one mission.' },
-  { id: 'team', Icon: Users, title: 'One Team', text: 'One team. One squad. One heartbeat.' },
-  { id: 'dream', Icon: HeartHandshake, title: 'One Dream', text: 'We dream together. We achieve together.' },
-  { id: 'glory', Icon: Award, title: 'One Glory', text: 'For the badge. For the fans. For ALSABBAT.' },
+  { id: 'club', Icon: Shield, title: 'Satu Klub', text: 'ALSABBAT adalah satu klub dengan satu misi.' },
+  { id: 'team', Icon: Users, title: 'Satu Tim', text: 'Satu tim. Satu skuad. Satu detak jantung.' },
+  { id: 'dream', Icon: HeartHandshake, title: 'Satu Mimpi', text: 'Bermimpi bersama. Meraih bersama.' },
+  { id: 'glory', Icon: Award, title: 'Satu Kejayaan', text: 'Untuk lambang. Untuk Baraya. Untuk ALSABBAT.' },
 ];
 
 /** Brand pillars — identity copy (never presented as statistics). */

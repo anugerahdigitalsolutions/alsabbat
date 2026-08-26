@@ -41,10 +41,10 @@ export default function MerchandisePage() {
   return (
     <div data-testid="page-merchandise">
       <PublicPageHeader
-        label="Store"
-        title="Wear The Badge"
+        label="Toko"
+        title="Pakai Lambang Klub"
         description="Produk resmi ALSABBAT Football Club."
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Merchandise' }]}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Merchandise' }]}
       />
       <div className="als-container py-10 sm:py-14">
         {loading ? (

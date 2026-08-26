@@ -38,10 +38,10 @@ export default function CartPage() {
   return (
     <div data-testid="page-cart">
       <PublicPageHeader
-        label="Store"
+        label="Toko"
         title="Keranjang"
         description="Harga dan stok selalu divalidasi ulang oleh server sebelum checkout."
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Merchandise', to: '/merchandise' }, { label: 'Keranjang' }]}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Merchandise', to: '/merchandise' }, { label: 'Keranjang' }]}
       />
       <div className="als-container py-10 sm:py-14">
         {lines.length === 0 ? (

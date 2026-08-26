@@ -100,7 +100,7 @@ export const MatchMediaPanel = ({ galleryAlbums = [], images = [], videos = [], 
       )}
     </PanelShell>
 
-    <PanelShell title="Video Highlight" count={videos.length} testId="match-video-panel">
+    <PanelShell title="Video Sorotan" count={videos.length} testId="match-video-panel">
       {videos.length ? (
         <div className="space-y-2">
           {videos.map((item) => (
@@ -133,7 +133,7 @@ export const MatchMediaPanel = ({ galleryAlbums = [], images = [], videos = [], 
       )}
     </PanelShell>
 
-    <PanelShell title="Social Content" testId="match-social-panel">
+    <PanelShell title="Konten Media Sosial" testId="match-social-panel">
       {socialContent.length ? (
         <div className="space-y-2">
           {socialContent.map((item, index) => (
@@ -146,7 +146,7 @@ export const MatchMediaPanel = ({ galleryAlbums = [], images = [], videos = [], 
         <>
           <Placeholder
             icon={Share2}
-            text="Integration point sudah disiapkan. Publishing Instagram / TikTok / YouTube menyusul pada fase berikutnya."
+            text="Titik integrasi sudah disiapkan. Publikasi Instagram / TikTok / YouTube menyusul pada fase berikutnya."
             testId="match-social-empty"
           />
           <Badge
@@ -154,7 +154,7 @@ export const MatchMediaPanel = ({ galleryAlbums = [], images = [], videos = [], 
             className="mt-3 text-[10px] font-semibold uppercase tracking-wider"
             style={{ color: 'var(--muted-fg)' }}
           >
-            Architecture ready
+            Arsitektur siap
           </Badge>
         </>
       )}

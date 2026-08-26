@@ -120,12 +120,12 @@ export default function TeamDetailPage() {
   return (
     <div data-testid="page-team-detail">
       <PublicPageHeader
-        label="Squad"
+        label="Skuad"
         title={team?.name || 'Detail Tim'}
         description={team?.description || 'Skuad, posisi, dan staf pendukung tim.'}
         backgroundImage={team?.cover_image}
         imageAlt={team?.name}
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Squad', to: '/teams' }, { label: team?.name || 'Tim' }]}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Skuad', to: '/teams' }, { label: team?.name || 'Tim' }]}
         meta={
           loading ? null : (
             <span data-testid="team-detail-counts">

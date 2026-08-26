@@ -78,13 +78,13 @@ const Block = ({ title, events, playersById, testId }) =>
  */
 export const MatchStatistics = ({ events = [], lineups = [], playersById = {} }) => {
   const rows = [
-    { key: 'goals', label: 'Goals', ...countBySide(events, GOAL_TYPES) },
-    { key: 'own-goals', label: 'Own Goals', ...countBySide(events, ['OWN_GOAL']) },
-    { key: 'assists', label: 'Assists', ...countBySide(events, ['ASSIST']) },
-    { key: 'penalty-missed', label: 'Penalty Missed', ...countBySide(events, ['PENALTY_MISSED']) },
-    { key: 'yellow-cards', label: 'Yellow Cards', ...countBySide(events, CARD_YELLOW) },
-    { key: 'red-cards', label: 'Red Cards', ...countBySide(events, ['RED_CARD']) },
-    { key: 'substitutions', label: 'Substitutions', ...countBySide(events, ['SUBSTITUTION']) },
+    { key: 'goals', label: 'Gol', ...countBySide(events, GOAL_TYPES) },
+    { key: 'own-goals', label: 'Gol Sendiri', ...countBySide(events, ['OWN_GOAL']) },
+    { key: 'assists', label: 'Assist', ...countBySide(events, ['ASSIST']) },
+    { key: 'penalty-missed', label: 'Penalti Gagal', ...countBySide(events, ['PENALTY_MISSED']) },
+    { key: 'yellow-cards', label: 'Kartu Kuning', ...countBySide(events, CARD_YELLOW) },
+    { key: 'red-cards', label: 'Kartu Merah', ...countBySide(events, ['RED_CARD']) },
+    { key: 'substitutions', label: 'Pergantian', ...countBySide(events, ['SUBSTITUTION']) },
   ].filter((row) => row.total > 0);
 
   const starters = lineups.filter((l) => l.role === 'STARTING').length;
@@ -109,7 +109,7 @@ export const MatchStatistics = ({ events = [], lineups = [], playersById = {} })
     <div className="space-y-6" data-testid="match-statistics">
       <div className="als-card p-5 sm:p-6">
         <div className="mb-4 flex items-center justify-between">
-          <p className="als-section-label">Match Statistics</p>
+          <p className="als-section-label">Statistik Pertandingan</p>
           <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
             ALSABBAT · Lawan
           </span>
@@ -140,13 +140,13 @@ export const MatchStatistics = ({ events = [], lineups = [], playersById = {} })
           >
             <div>
               <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
-                Starting XI
+                Pemain Inti
               </p>
               <p className="font-display text-lg font-bold tabular-nums">{starters}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
-                Substitutes
+                Pemain Cadangan
               </p>
               <p className="font-display text-lg font-bold tabular-nums">{subs}</p>
             </div>

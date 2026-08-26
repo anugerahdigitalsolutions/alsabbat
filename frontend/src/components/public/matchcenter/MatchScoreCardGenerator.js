@@ -16,10 +16,10 @@ const RATIOS = [
 ];
 
 const STATUS_LABEL = {
-  SCHEDULED: 'MATCHDAY',
-  UPCOMING: 'MATCHDAY',
+  SCHEDULED: 'HARI PERTANDINGAN',
+  UPCOMING: 'HARI PERTANDINGAN',
   LIVE: 'LIVE',
-  FINISHED: 'FULL TIME',
+  FINISHED: 'SELESAI',
   POSTPONED: 'DITUNDA',
   CANCELLED: 'DIBATALKAN',
 };
@@ -162,7 +162,7 @@ export const MatchScoreCardGenerator = ({
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = BRAND.gold;
     ctx.font = `700 ${W * 0.032}px Poppins, sans-serif`;
-    const statusText = STATUS_LABEL[match.status] || 'MATCHDAY';
+    const statusText = STATUS_LABEL[match.status] || 'HARI PERTANDINGAN';
     ctx.fillText(statusText.split('').join(' '), pad, pad + W * 0.03);
 
     ctx.fillStyle = 'rgba(254,254,254,0.72)';
@@ -351,7 +351,7 @@ export const MatchScoreCardGenerator = ({
           style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
           data-testid="score-card-download"
         >
-          <Download className="mr-2 h-4 w-4" aria-hidden="true" /> Download PNG
+          <Download className="mr-2 h-4 w-4" aria-hidden="true" /> Unduh PNG
         </Button>
         <Button
           type="button"
@@ -366,7 +366,7 @@ export const MatchScoreCardGenerator = ({
 
       <p className="mt-3 flex items-start gap-1.5 text-xs" style={{ color: 'var(--muted-fg)' }}>
         <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        Unggah kartu ke Media Library bila ingin dipublikasikan lewat Social Publishing.
+        Unggah kartu ke Pustaka Media bila ingin dipublikasikan lewat Social Publishing.
       </p>
     </div>
   );

@@ -151,7 +151,7 @@ export default function GalleryDetailPage() {
           <EmptyState
             icon={ImageIcon}
             title="Album ini belum memiliki media"
-            description="Foto dan video akan tampil setelah ditambahkan dari Media Library."
+            description="Foto dan video akan tampil setelah ditambahkan dari Pustaka Media."
             testId="gallery-detail-empty"
           />
         ) : (
@@ -209,7 +209,7 @@ export default function GalleryDetailPage() {
         {album.match?.id ? (
           <div className="mt-10 flex flex-wrap items-center gap-3">
             <Badge variant="outline" style={{ backgroundColor: 'rgba(1,40,145,0.06)', color: 'var(--club-secondary)' }}>
-              Match Gallery
+              Galeri Pertandingan
             </Badge>
             <span className="text-sm" style={{ color: 'var(--muted-fg)' }}>
               Album ini terhubung dengan satu pertandingan ALSABBAT.

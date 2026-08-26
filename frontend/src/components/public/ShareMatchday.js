@@ -54,7 +54,7 @@ export const ShareMatchday = ({ match, clubName = 'ALSABBAT', competitionName, c
     <div className={compact ? '' : 'als-card p-5 sm:p-6'} data-testid="share-matchday">
       {compact ? null : (
         <>
-          <p className="als-section-label">Bagikan Matchday</p>
+          <p className="als-section-label">Bagikan Pertandingan</p>
           <span className="als-gold-rule mt-2" aria-hidden="true" />
           <p className="mt-3 text-sm" style={{ color: 'var(--muted-fg)' }}>
             Sebarkan informasi pertandingan ini ke suporter ALSABBAT.
@@ -98,7 +98,7 @@ export const ShareMatchday = ({ match, clubName = 'ALSABBAT', competitionName, c
           ) : (
             <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
           )}
-          Copy Link
+          Salin Tautan
         </Button>
       </div>
 

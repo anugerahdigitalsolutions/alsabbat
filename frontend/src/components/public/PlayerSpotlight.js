@@ -68,7 +68,7 @@ export const PlayerSpotlight = ({ player }) => {
             className="font-display text-[11px] font-semibold uppercase tracking-[0.26em]"
             style={{ color: 'var(--club-primary)' }}
           >
-            Player Spotlight
+            Sorotan Pemain
           </p>
           <h3
             className="font-display mt-3 text-2xl font-bold leading-tight sm:text-3xl"
@@ -96,7 +96,7 @@ export const PlayerSpotlight = ({ player }) => {
             style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
             data-testid="player-spotlight-cta"
           >
-            View Profile
+            Lihat Profil
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

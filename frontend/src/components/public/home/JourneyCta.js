@@ -22,12 +22,12 @@ export const JourneyCta = ({ clubName = 'ALSABBAT' }) => (
             <ClubCrestMark size={56} onDark testId="home-cta-crest" />
           </span>
           <div>
-            <p className="als-eyebrow">Follow The Journey</p>
+            <p className="als-eyebrow">Ikuti Perjalanan Kami</p>
             <h2
               className="font-display mt-3 text-2xl font-extrabold leading-tight sm:text-4xl"
               style={{ color: 'var(--club-light)' }}
             >
-              Jadi bagian dari keluarga {clubName}
+              Jadi bagian dari Baraya {clubName}
             </h2>
             <p className="mt-3 max-w-xl text-sm sm:text-base" style={{ color: 'rgba(254,254,254,0.82)' }}>
               Ikuti setiap matchday, cerita skuad, dan momen di lapangan bersama kami.

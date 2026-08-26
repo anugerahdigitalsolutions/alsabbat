@@ -22,7 +22,7 @@ export default function ClubPage() {
 
   return (
     <div data-testid="page-club">
-      <PublicPageHeader label="Tentang Klub" title="This Is ALSABBAT" description="Identitas, nilai, dan perjalanan resmi klub." />
+      <PublicPageHeader label="Tentang Klub" title="Inilah ALSABBAT" description="Identitas, nilai, dan perjalanan resmi klub." />
       <div className="als-container py-10">
         {loading ? (
           <LoadingState variant="text" testId="club-loading" />
@@ -44,10 +44,10 @@ export default function ClubPage() {
                 <p className="als-section-label">Warna Resmi Klub</p>
                 <div className="flex gap-3" data-testid="club-brand-colors">
                   {[
-                    ['primary_color', 'Primary'],
-                    ['secondary_color', 'Secondary'],
-                    ['tertiary_color', 'Tertiary'],
-                    ['light_color', 'Light'],
+                    ['primary_color', 'Primer'],
+                    ['secondary_color', 'Sekunder'],
+                    ['tertiary_color', 'Tersier'],
+                    ['light_color', 'Terang'],
                   ].map(([key, label]) => (
                     <div key={key} className="flex-1 text-center">
                       <span

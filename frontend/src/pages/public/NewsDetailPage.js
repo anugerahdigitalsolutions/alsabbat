@@ -68,12 +68,12 @@ export default function NewsDetailPage() {
   return (
     <div data-testid="page-news-detail">
       <PublicPageHeader
-        label={category?.name || 'Newsroom'}
+        label={category?.name || 'Ruang Berita'}
         title={post?.title || 'Berita'}
         description={post?.excerpt}
         backgroundImage={post?.thumbnail}
         imageAlt={post?.title}
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'News', to: '/news' }, { label: 'Artikel' }]}
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Berita', to: '/news' }, { label: 'Artikel' }]}
         meta={
           post ? (
             <>

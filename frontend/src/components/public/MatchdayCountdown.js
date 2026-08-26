@@ -78,7 +78,7 @@ export const MatchdayCountdown = ({ match, clubName = 'ALSABBAT', compact = fals
           className="font-display text-[11px] font-semibold uppercase tracking-[0.26em]"
           style={{ color: 'var(--club-primary)' }}
         >
-          Next Match
+          Pertandingan Berikutnya
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -129,10 +129,10 @@ export const MatchdayCountdown = ({ match, clubName = 'ALSABBAT', compact = fals
             </span>
           ) : running ? (
             <div className="flex flex-wrap gap-3 sm:gap-4" data-testid="matchday-countdown-units">
-              <Unit value={days} label="Days" testId="countdown-days" />
-              <Unit value={pad(hours)} label="Hours" testId="countdown-hours" />
-              <Unit value={pad(minutes)} label="Minutes" testId="countdown-minutes" />
-              <Unit value={pad(secs)} label="Seconds" testId="countdown-seconds" />
+              <Unit value={days} label="Hari" testId="countdown-days" />
+              <Unit value={pad(hours)} label="Jam" testId="countdown-hours" />
+              <Unit value={pad(minutes)} label="Menit" testId="countdown-minutes" />
+              <Unit value={pad(secs)} label="Detik" testId="countdown-seconds" />
             </div>
           ) : (
             <span
@@ -140,7 +140,7 @@ export const MatchdayCountdown = ({ match, clubName = 'ALSABBAT', compact = fals
               style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid="matchday-countdown-matchday"
             >
-              Matchday
+              Hari Pertandingan
             </span>
           )}
         </div>
@@ -151,7 +151,7 @@ export const MatchdayCountdown = ({ match, clubName = 'ALSABBAT', compact = fals
           style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
           data-testid="matchday-countdown-cta"
         >
-          Match Center
+          Pusat Pertandingan
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

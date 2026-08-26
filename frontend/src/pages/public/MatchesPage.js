@@ -14,7 +14,7 @@ import { usePageSeo } from '../../hooks/usePageSeo';
 const UPCOMING = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 
 export default function MatchesPage() {
-  usePageSeo({ title: 'Pertandingan', description: 'Jadwal, hasil, dan Match Center ALSABBAT Football Club.', path: '/matches' });
+  usePageSeo({ title: 'Pertandingan', description: 'Jadwal, hasil, dan Pusat Pertandingan ALSABBAT Football Club.', path: '/matches' });
   const [seasonId, setSeasonId] = useState('all');
   const [tab, setTab] = useState('upcoming');
 
@@ -31,10 +31,10 @@ export default function MatchesPage() {
   return (
     <div data-testid="page-matches">
       <PublicPageHeader
-        label="Matchday"
-        title="Every Match. Every Moment."
-        description="Jadwal, hasil, dan Match Center pertandingan ALSABBAT Football Club."
-        breadcrumb={[{ label: 'Home', to: '/' }, { label: 'Matches' }]}
+        label="Jadwal & Hasil"
+        title="Setiap Laga. Setiap Momen."
+        description="Jadwal, hasil, dan Pusat Pertandingan ALSABBAT Football Club."
+        breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Pertandingan' }]}
         meta={
           <>
             <span data-testid="matches-meta-upcoming">{upcoming.length} pertandingan akan datang</span>
@@ -78,7 +78,7 @@ export default function MatchesPage() {
               <EmptyState
                 icon={Swords}
                 title={tab === 'upcoming' ? 'Belum ada jadwal pertandingan' : 'Belum ada hasil pertandingan'}
-                description="Data pertandingan dikelola melalui Admin Panel pada modul Matches."
+                description="Data pertandingan dikelola melalui Admin Panel pada modul Pertandingan."
                 testId="matches-empty"
               />
             ) : (

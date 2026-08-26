@@ -90,7 +90,7 @@ export const MatchLineupSection = ({ lineups = [], playersById = {}, formation }
       <EmptyState
         icon={Users}
         title="Susunan pemain belum tersedia"
-        description="Starting XI dan pemain cadangan akan tampil di sini setelah diinput melalui Admin Panel."
+        description="Susunan pemain inti dan cadangan akan tampil di sini setelah diinput melalui Admin Panel."
         testId="match-lineup-empty"
       />
     );
@@ -116,7 +116,7 @@ export const MatchLineupSection = ({ lineups = [], playersById = {}, formation }
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {starting.length ? (
           <LineupGroup
-            title="Starting XI"
+            title="Pemain Inti"
             entries={starting}
             playersById={playersById}
             testId="match-lineup-starting"

@@ -36,7 +36,7 @@ export const HeroClubShell = ({ stats }) => {
                   className="font-display text-xs font-semibold uppercase tracking-[0.22em]"
                   style={{ color: 'var(--club-primary)' }}
                 >
-                  Official Platform
+                  Platform Resmi
                 </span>
                 <span className="text-sm" style={{ color: 'rgba(254,254,254,0.72)' }}>
                   {shortName} Football Club

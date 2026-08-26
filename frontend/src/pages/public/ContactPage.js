@@ -23,7 +23,7 @@ export default function ContactPage() {
 
   return (
     <div data-testid="page-contact">
-      <PublicPageHeader label="Kontak" title="Connect With ALSABBAT" description="Informasi kontak resmi yang tercatat pada konfigurasi klub." />
+      <PublicPageHeader label="Kontak" title="Hubungi ALSABBAT" description="Informasi kontak resmi yang tercatat pada konfigurasi klub." />
       <div className="als-container py-10">
         {loading ? (
           <LoadingState variant="text" testId="contact-loading" />

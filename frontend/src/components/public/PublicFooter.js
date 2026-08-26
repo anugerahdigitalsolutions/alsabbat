@@ -38,7 +38,7 @@ export const PublicFooter = () => {
 
         <div>
           <h4 className="font-display mb-4 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--club-secondary)' }}>
-            Quick Links
+            Tautan Cepat
           </h4>
           <div className="grid grid-cols-2 gap-x-4">
             <ul className="space-y-2">
@@ -74,7 +74,7 @@ export const PublicFooter = () => {
 
         <div>
           <h4 className="font-display mb-4 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--club-secondary)' }}>
-            Contact Us
+            Hubungi Kami
           </h4>
           <ul className="space-y-3 text-sm" style={{ color: 'var(--muted-fg)' }}>
             <li className="flex items-start gap-2" data-testid="footer-contact-location">
@@ -94,7 +94,7 @@ export const PublicFooter = () => {
 
         <div>
           <h4 className="font-display mb-4 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--club-secondary)' }}>
-            Follow Us
+            Ikuti Kami
           </h4>
           <div className="flex flex-wrap gap-2" data-testid="footer-social-links">
             {SOCIALS.filter((s) => social[s.key]).map(({ key, label, Icon }) => (

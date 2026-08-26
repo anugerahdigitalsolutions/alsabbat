@@ -71,7 +71,7 @@ export const NewsShowcase = ({ posts = [] }) => {
         )}
         <span className="als-scrim-bottom absolute inset-0" aria-hidden="true" />
         <span className="relative flex h-full flex-col justify-end p-6 sm:p-8">
-          <span className="als-eyebrow">Headline</span>
+          <span className="als-eyebrow">Berita Utama</span>
           <span
             className="font-display mt-3 text-xl font-extrabold leading-tight sm:text-3xl"
             style={{ color: 'var(--club-light)' }}

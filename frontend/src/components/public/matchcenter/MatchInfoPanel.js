@@ -36,7 +36,7 @@ export const MatchInfoPanel = ({ match, team, competition, season }) => (
       <Row label="Kompetisi" value={competition?.name} testId="match-info-competition" />
       <Row label="Musim" value={season?.name} testId="match-info-season" />
       <Row label="Lawan" value={match?.opponent?.name} testId="match-info-opponent" />
-      <Row label="Venue" value={match?.venue} testId="match-info-venue" />
+      <Row label="Lokasi" value={match?.venue} testId="match-info-venue" />
       <Row label="Tipe" value={match?.venue_type} testId="match-info-venue-type" />
       <Row label="Status" value={match?.status} testId="match-info-status" />
       <Row label="Formasi" value={match?.formation} testId="match-info-formation" />

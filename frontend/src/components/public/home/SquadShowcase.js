@@ -47,13 +47,13 @@ const PlayerCard = ({ player, index }) => (
         {player.display_name || player.full_name}
       </span>
       <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--club-primary)' }}>
-        {POSITION_LABEL[player.position] || player.position || 'Squad'}
+        {POSITION_LABEL[player.position] || player.position || 'Skuad'}
       </span>
       <span
         className="als-media-overlay mt-3 inline-flex items-center gap-1.5 text-xs font-semibold"
         style={{ color: 'var(--club-light)' }}
       >
-        View Profile <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+        Lihat Profil <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
       </span>
     </span>
   </Link>
