@@ -85,7 +85,7 @@ export const AdminShell = () => {
                 <Button variant="outline" size="sm" className="gap-2" data-testid="admin-user-menu-button">
                   <span
                     className="font-display flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold"
-                    style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                    style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                   >
                     {(user?.name || 'A').slice(0, 1).toUpperCase()}
                   </span>

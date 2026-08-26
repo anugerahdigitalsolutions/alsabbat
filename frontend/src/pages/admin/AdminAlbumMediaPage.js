@@ -241,7 +241,7 @@ export default function AdminAlbumMediaPage() {
               size="sm"
               onClick={() => setPickerOpen(true)}
               className="font-semibold"
-              style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+              style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid="admin-album-add-media"
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -272,7 +272,7 @@ export default function AdminAlbumMediaPage() {
                 <MediaThumb item={item} />
                 <span
                   className="font-display absolute left-2 top-2 rounded px-2 py-0.5 text-xs font-bold"
-                  style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                  style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                 >
                   {index + 1}
                 </span>
@@ -429,7 +429,7 @@ export default function AdminAlbumMediaPage() {
               onClick={attach}
               disabled={saving || !selected.length}
               className="font-semibold"
-              style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+              style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid="admin-album-picker-save"
             >
               Tambahkan {selected.length ? `(${selected.length})` : ''}
@@ -476,7 +476,7 @@ export default function AdminAlbumMediaPage() {
             <Button
               onClick={saveMeta}
               className="font-semibold"
-              style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+              style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid="admin-album-meta-save"
             >
               Simpan

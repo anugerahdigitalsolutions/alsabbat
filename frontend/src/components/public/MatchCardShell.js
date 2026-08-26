@@ -10,7 +10,7 @@ const STATUS_STYLE = {
   SCHEDULED: { bg: 'rgba(2,132,199,0.12)', fg: '#075985', border: 'rgba(2,132,199,0.22)' },
   UPCOMING: { bg: 'rgba(2,132,199,0.12)', fg: '#075985', border: 'rgba(2,132,199,0.22)' },
   POSTPONED: { bg: 'rgba(245,158,11,0.14)', fg: '#92400E', border: 'rgba(245,158,11,0.24)' },
-  CANCELLED: { bg: 'rgba(34,34,34,0.08)', fg: '#3F3F46', border: 'rgba(34,34,34,0.18)' },
+  CANCELLED: { bg: 'rgba(0,0,0,0.08)', fg: '#3F3F46', border: 'rgba(0,0,0,0.18)' },
 };
 
 const formatDate = (value) => {

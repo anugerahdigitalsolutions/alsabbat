@@ -34,7 +34,7 @@ const Crest = ({ team, size = 'md' }) => {
 };
 
 export default function TeamsPage() {
-  usePageSeo({ title: 'Tim', description: 'Skuad resmi ALSABBAT Football Club.', path: '/teams' });
+  usePageSeo({ title: 'Squad', description: 'Skuad resmi ALSABBAT Football Club — satu klub, satu skuad.', path: '/teams' });
   const { items, loading, error, reload } = useResourceList('/teams', { status: 'ACTIVE', limit: 30 });
   const single = items.length === 1 ? items[0] : null;
 
@@ -52,7 +52,7 @@ export default function TeamsPage() {
         ) : error ? (
           <ErrorState message={error} onRetry={reload} testId="teams-error" />
         ) : items.length === 0 ? (
-          <EmptyState icon={Users} title="Belum ada tim" description="Tim klub akan tampil di sini setelah ditambahkan." testId="teams-empty" />
+          <EmptyState icon={Users} title="Skuad belum tersedia" description="Skuad klub akan tampil di sini setelah dilengkapi." testId="teams-empty" />
         ) : single ? (
           <Reveal>
             <Link
@@ -126,7 +126,7 @@ export default function TeamsPage() {
                     className="mt-5 inline-flex min-h-[24px] items-center gap-1.5 text-sm font-semibold"
                     style={{ color: 'var(--club-secondary)' }}
                   >
-                    Lihat Tim <ArrowRight className="h-4 w-4" />
+                    Lihat Skuad <ArrowRight className="h-4 w-4" />
                   </span>
                 </Link>
               </Reveal>

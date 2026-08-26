@@ -101,7 +101,7 @@ export default function NewsDetailPage() {
             {category ? (
               <Badge
                 className="mb-6 border-0 font-semibold"
-                style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                 data-testid="news-detail-category"
               >
                 {category.name}

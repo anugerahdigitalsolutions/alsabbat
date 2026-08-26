@@ -46,7 +46,7 @@ export const PlayerCard = ({ player, testId }) => (
       )}
       <div
         className="absolute inset-x-0 bottom-0 h-24"
-        style={{ backgroundImage: 'linear-gradient(180deg, rgba(34,34,34,0) 0%, rgba(34,34,34,0.88) 100%)' }}
+        style={{ backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.88) 100%)' }}
         aria-hidden="true"
       />
       <span

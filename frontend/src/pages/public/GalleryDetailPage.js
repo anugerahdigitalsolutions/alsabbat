@@ -180,7 +180,7 @@ export default function GalleryDetailPage() {
                         <span
                           className="als-media-overlay absolute inset-x-0 bottom-0 line-clamp-2 p-2 text-left text-[11px] font-medium"
                           style={{
-                            background: 'linear-gradient(to top, rgba(34,34,34,0.85), rgba(34,34,34,0))',
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0))',
                             color: 'var(--club-light)',
                           }}
                         >

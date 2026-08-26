@@ -64,7 +64,7 @@ const TimelineRow = ({ event, playersById, clubName, last }) => {
           <span
             className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
             style={{
-              backgroundColor: isOpponent ? 'rgba(34,34,34,0.07)' : 'rgba(252,207,43,0.22)',
+              backgroundColor: isOpponent ? 'rgba(0,0,0,0.07)' : 'rgba(252,207,43,0.22)',
               color: isOpponent ? 'var(--muted-fg)' : '#7A5A00',
             }}
           >

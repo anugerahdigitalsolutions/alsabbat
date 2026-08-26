@@ -315,7 +315,7 @@ export default function AdminMediaPage() {
                 onClick={upload}
                 disabled={uploading}
                 className="w-full font-semibold"
-                style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                 data-testid="media-upload-button"
               >
                 {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
@@ -376,7 +376,7 @@ export default function AdminMediaPage() {
                     </Button>
                     <Button
                       onClick={saveExternal}
-                      style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                      style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                       data-testid="media-external-save"
                     >
                       Simpan

@@ -13,12 +13,14 @@ export const PublicLayout = () => {
   }, [pathname]);
 
   return (
-    <div className="als-app" data-testid="public-layout">
-      <PublicHeader />
-      <main className="flex-1">
-        <Outlet />
-      </main>
-      <PublicFooter />
+    <div className="als-shell-bg" data-testid="public-layout">
+      <div className="als-frame als-app" data-testid="public-frame">
+        <PublicHeader />
+        <main className="flex-1">
+          <Outlet />
+        </main>
+        <PublicFooter />
+      </div>
     </div>
   );
 };

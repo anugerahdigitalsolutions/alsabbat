@@ -82,7 +82,7 @@ export default function ContactPage() {
                         target="_blank"
                         rel="noreferrer"
                         className="rounded-full px-4 py-2 text-xs font-semibold capitalize"
-                        style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                        style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                         data-testid={`contact-social-${key}`}
                       >
                         {key}

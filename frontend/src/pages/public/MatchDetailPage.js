@@ -137,7 +137,7 @@ export default function MatchDetailPage() {
           <div className="space-y-6 lg:col-span-2">
           <Reveal>
             <Tabs defaultValue="lineup">
-              <TabsList data-testid="match-detail-tabs">
+              <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto" data-testid="match-detail-tabs">
                 <TabsTrigger value="lineup" data-testid="match-tab-lineup">
                   Formasi
                 </TabsTrigger>

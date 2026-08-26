@@ -69,7 +69,7 @@ export const HeroClubShell = ({ stats }) => {
                 <Button
                   size="lg"
                   className="font-semibold"
-                  style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                  style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                 >
                   <CalendarDays className="mr-2 h-4 w-4" />
                   Jadwal &amp; Hasil
@@ -137,7 +137,7 @@ export const HeroClubShell = ({ stats }) => {
                 <div
                   key={stat.label}
                   className="rounded-[var(--radius-md)] p-4"
-                  style={{ backgroundColor: 'rgba(34,34,34,0.35)' }}
+                  style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
                   data-testid={`hero-stat-${stat.id}`}
                 >
                   <p

@@ -20,12 +20,12 @@ export const AlbumCard = ({ album, index = 0, testId }) => {
           <img src={cover} alt={album.title} className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <ImageIcon className="h-7 w-7" style={{ color: 'rgba(34,34,34,0.22)' }} />
+            <ImageIcon className="h-7 w-7" style={{ color: 'rgba(0,0,0,0.22)' }} />
           </div>
         )}
         <div
           className="als-media-overlay absolute inset-0 flex items-end p-3"
-          style={{ background: 'linear-gradient(to top, rgba(34,34,34,0.78), rgba(34,34,34,0))' }}
+          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.78), rgba(0,0,0,0))' }}
         >
           <span className="font-display text-xs font-semibold" style={{ color: 'var(--club-primary)' }}>
             Lihat album

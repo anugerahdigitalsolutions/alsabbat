@@ -34,7 +34,7 @@ export default function NotFoundPage() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/" data-testid="notfound-home-link">
-            <Button size="lg" style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}>
+            <Button size="lg" style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}>
               <Home className="mr-2 h-4 w-4" />
               Kembali ke Beranda
             </Button>

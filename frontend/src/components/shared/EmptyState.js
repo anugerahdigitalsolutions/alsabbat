@@ -30,7 +30,7 @@ export const EmptyState = ({
       <Button
         onClick={onAction}
         className="mt-1 font-medium"
-        style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+        style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
         data-testid={`${testId}-primary-action`}
       >
         {actionLabel}

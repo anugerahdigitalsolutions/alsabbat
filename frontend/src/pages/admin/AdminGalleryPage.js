@@ -12,7 +12,7 @@ const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 const PUBLISH_STYLE = {
   PUBLISHED: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#166534' },
   DRAFT: { backgroundColor: 'rgba(245,158,11,0.14)', color: '#92400E' },
-  ARCHIVED: { backgroundColor: 'rgba(34,34,34,0.08)', color: '#3F3F46' },
+  ARCHIVED: { backgroundColor: 'rgba(0,0,0,0.08)', color: '#3F3F46' },
 };
 
 export default function AdminGalleryPage() {

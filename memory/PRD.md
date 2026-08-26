@@ -36,6 +36,44 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 9 | Merchandise & Commerce | SELESAI (25 Jun 2026) — STOP GATE 9 |
 | 10 | Production Finalization | **SELESAI (26 Jun 2026)** — STOP GATE 10 |
 | 11 | Final Feature Completion & Experience Polish | **SELESAI (26 Jun 2026)** — STOP GATE 11 |
+| 12 | UI/UX Redesign & Visual Showcase | **SELESAI (26 Jun 2026)** — STOP GATE 12 |
+| 12B | Exact UI Visual Correction (referensi user) | **SELESAI (26 Jun 2026)** — STOP GATE 12B |
+
+## Fase 12B — Exact UI Visual Correction (2026-06-26)
+Laporan lengkap: `/app/docs/PHASE_12B_REPORT.md`. Frontend-only; backend/database tidak diubah.
+- **Page frame premium**: outer soft-white + frame putih rounded 30px (max-w 1400px) — alignment header/hero/konten konsisten.
+- **Header** compact 72px: logo kiri, nav tengah 8 menu dengan underline gold, **ikon Search**, **pill gold Staff Access**
+  di kanan (tanpa tautan Admin Panel). **Search dialog nyata** ke `/content/posts`, `/players`, `/matches` (parameter `search`).
+- **Hero navy cinematic** rounded: headline 3 baris "ONE CLUB. / ONE PASSION. / ONE ALSABBAT." (baris ke-3 gold),
+  CTA gold + outline, baris Follow Us (sosial nyata), **floating glass Next Match panel** dengan crest–VS–crest +
+  countdown live (responsif, tidak overlap di 390px). Slider/autoplay/keyboard/swipe/reduced-motion tetap.
+- **Pillar strip** 4 kartu putih ikon kotak gold; **Upcoming Match + Latest News** dua kolom editorial;
+  **Player Spotlight + Team Stats 2×2 + Official Store**; **gallery strip 5 tile**; sponsors strip; CTA band navy;
+  **footer terang** (Quick Links 2 kolom, Contact Us, Follow Us, Staff Access paling bawah).
+- Aturan data dipatuhi: **klasemen & ticketing tidak dibuat** (belum ada model/fitur → tidak ada dummy/tombol palsu),
+  Official Store hanya muncul bila katalog berisi produk, Team Stats `—` bila belum ada hasil pertandingan.
+- Verifikasi: build 246.3 kB gz **tanpa warning**; overflow 0 px di 1920/1440/390; 14 route render; search 11 hasil nyata;
+  brand scan 0 `#222222`/`#1A1A1A`; 0 `transition: all`; 0 wording multi-team.
+- Demo preview di database sekali-pakai `alsabbat_ui_demo` → **di-drop**; produksi tetap bersih (teams 1, clubs 1, users 1, sisanya 0).
+
+## Fase 12 — UI/UX Redesign & Visual Showcase (2026-06-26)
+Laporan lengkap: `/app/docs/PHASE_12_REPORT.md`. Frontend-only; backend/database tidak diubah.
+- Homepage redesign total mengikuti komposisi referensi user: hero cinematic 640/760px + panel Next Match
+  kaca (countdown live), quick stats strip 5 kolom (angka nyata, `—` bila kosong), pillar strip
+  One Club/One Team/One Dream/One Glory, About (teks + gambar besar), Matchday, Newsroom (featured + list),
+  Squad (spotlight + kartu premium), Match Moments (tile besar + thumbnail), Honours timeline,
+  Sponsors, Social, CTA band "Follow The Journey".
+- Header premium (74px, label `Tim` → **Squad**, admin tidak muncul), footer navigasi 2 kolom dengan
+  **Staff Access tetap subtle di baris paling bawah**.
+- Design tokens baru: `als-btn-gold/ghost/blue` (pill), `als-glass`, `als-hero-frame`, `als-display-xl`,
+  `als-tile` (hover zoom), `als-scrim-bottom`, `als-hairline`; spacing section dinaikkan.
+- Brand audit: **0** `#222222`/`#1A1A1A`/`rgba(34,34,34)` di seluruh JS/CSS (24 file diperbaiki ke `#000000`).
+- Reuse penuh: CinematicHero, MatchdayCountdown, PlayerSpotlight, Match Center, Gallery/MediaService,
+  News CMS, Merchandise, Social Publishing, SEO, Reveal — tanpa arsitektur kedua & tanpa dependency baru.
+- Verifikasi: build 245.27 kB gz tanpa warning; 16 route publik + admin login render; overflow 0 px di
+  1920/1440/390; hero slider (autoplay/dots/counter/keyboard/swipe/reduced-motion) utuh.
+- Demo content dijalankan di **database sekali-pakai** `alsabbat_ui_demo`, lalu **di-drop**;
+  database produksi kembali bersih (teams 1, users 1, clubs 1, sisanya 0, `demo:true` = 0).
 
 ## Fase 11 — Final Feature Completion & Experience Polish (2026-06-26)
 Laporan lengkap: `/app/docs/PHASE_11_REPORT.md`. Additive; Fase 1–10 tidak dirombak; tanpa data dummy.

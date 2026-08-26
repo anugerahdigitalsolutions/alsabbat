@@ -20,17 +20,17 @@ export const SectionShell = ({
     <section
       ref={reveal ? ref : undefined}
       className={[
-        'py-12 sm:py-16',
+        'py-14 sm:py-20',
         reveal ? (shown ? 'als-reveal-shown' : 'als-reveal-hidden') : '',
       ].join(' ')}
       style={dark ? { backgroundColor: 'var(--surface-2)' } : undefined}
       data-testid={testId}
     >
       <div className="als-container">
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             {label ? <p className="als-section-label mb-2">{label}</p> : null}
-            <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h2>
+            <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-4xl">{title}</h2>
             {description ? (
               <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
                 {description}

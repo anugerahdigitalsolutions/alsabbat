@@ -377,7 +377,7 @@ export const ResourceManager = ({
               size="sm"
               onClick={openCreate}
               className="font-semibold"
-              style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+              style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid={`${testPrefix}-create-button`}
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -598,7 +598,7 @@ export const ResourceManager = ({
               onClick={handleSave}
               disabled={saving}
               className="font-semibold"
-              style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+              style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid={`${testPrefix}-form-submit`}
             >
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

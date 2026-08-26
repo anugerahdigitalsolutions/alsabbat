@@ -41,7 +41,7 @@ export const MatchGallerySection = ({ matchMedia = [], albums = [] }) => {
         <Link
           to={primaryAlbum ? `/gallery/${primaryAlbum.id}` : '/gallery'}
           className="font-display inline-flex items-center gap-2 rounded-[var(--radius-sm)] px-4 py-2 text-sm font-semibold transition-transform duration-200 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2"
-          style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+          style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
           data-testid="match-view-full-gallery"
         >
           View Full Gallery
@@ -81,7 +81,7 @@ export const MatchGallerySection = ({ matchMedia = [], albums = [] }) => {
               <span
                 className="als-media-overlay absolute inset-x-0 bottom-0 line-clamp-2 p-2 text-left text-[11px] font-medium"
                 style={{
-                  background: 'linear-gradient(to top, rgba(34,34,34,0.85), rgba(34,34,34,0))',
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0))',
                   color: 'var(--club-light)',
                 }}
               >

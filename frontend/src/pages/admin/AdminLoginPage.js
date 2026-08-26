@@ -110,7 +110,7 @@ export default function AdminLoginPage() {
             disabled={submitting}
             className="w-full font-semibold"
             size="lg"
-            style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+            style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
             data-testid="admin-login-submit-button"
           >
             {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}

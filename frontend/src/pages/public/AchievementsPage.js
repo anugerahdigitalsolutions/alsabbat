@@ -45,7 +45,7 @@ export default function AchievementsPage() {
                 <div className="p-5">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     {item.year ? (
-                      <Badge className="border-0 font-bold" style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}>
+                      <Badge className="border-0 font-bold" style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}>
                         {item.year}
                       </Badge>
                     ) : null}

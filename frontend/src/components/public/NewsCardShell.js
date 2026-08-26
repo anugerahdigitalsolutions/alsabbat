@@ -34,7 +34,7 @@ const Thumb = ({ post, heightClass, eager }) => (
     )}
     <Badge
       className="absolute left-3 top-3 border-0 font-semibold"
-      style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+      style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
     >
       {post.status === 'PUBLISHED' ? 'Berita' : post.status}
     </Badge>

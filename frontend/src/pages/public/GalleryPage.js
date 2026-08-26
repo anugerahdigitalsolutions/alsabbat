@@ -92,7 +92,7 @@ export default function GalleryPage() {
                   onClick={() => load(skip + PAGE_SIZE)}
                   disabled={loadingMore}
                   className="font-display rounded-[var(--radius-sm)] px-5 py-2.5 text-sm font-semibold transition-transform duration-200 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 disabled:opacity-60"
-                  style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                  style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                   data-testid="gallery-load-more"
                 >
                   {loadingMore ? 'Memuat…' : 'Muat album lainnya'}

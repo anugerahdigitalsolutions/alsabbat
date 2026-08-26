@@ -13,7 +13,7 @@ const SWIPE_THRESHOLD = 48;
  * - mobile swipe, keyboard (ArrowLeft / ArrowRight), pause on hover/focus
  * - respects prefers-reduced-motion (no ken-burns, no autoplay)
  */
-export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }) => {
+export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT', panel = null, tagline = null, socials = [] }) => {
   const reduced = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -63,8 +63,8 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
 
   return (
     <section
-      className="relative isolate overflow-hidden"
-      style={{ backgroundColor: 'var(--club-tertiary)' }}
+      className="relative isolate overflow-hidden rounded-none lg:rounded-[26px]"
+      style={{ backgroundColor: 'var(--club-secondary)' }}
       role="region"
       aria-roledescription="carousel"
       aria-label={`Sorotan ${clubName}`}
@@ -79,7 +79,7 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
       data-testid="home-hero"
     >
       {/* slides */}
-      <div className="relative min-h-[540px] sm:min-h-[600px] lg:min-h-[660px]">
+      <div className="als-hero-frame relative">
         {slides.map((slide, slideIndex) => {
           const isActive = slideIndex === index;
           return (
@@ -104,7 +104,7 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
                 className="absolute inset-0"
                 style={{
                   background:
-                    'linear-gradient(100deg, rgba(34,34,34,0.92) 6%, rgba(34,34,34,0.62) 46%, rgba(34,34,34,0.28) 100%)',
+                    'linear-gradient(96deg, rgba(1,40,145,0.96) 0%, rgba(1,40,145,0.86) 26%, rgba(1,40,145,0.55) 52%, rgba(1,40,145,0.18) 78%, rgba(0,0,0,0.22) 100%)',
                 }}
               />
               <div className="als-stadium-glow absolute inset-0 opacity-60" />
@@ -114,23 +114,31 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
         })}
 
         {/* content */}
-        <div className="relative flex min-h-[540px] items-end pb-24 pt-16 sm:min-h-[600px] sm:pb-28 lg:min-h-[660px]">
-          <div className="als-container">
+        <div className="als-hero-frame relative flex items-end pb-28 pt-20 sm:pb-32">
+          <div className="grid w-full items-end gap-8 px-6 sm:px-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12 xl:px-14">
             {active ? (
               <div key={active.id} className="als-reveal-shown max-w-3xl">
                 <p
-                  className="font-display mb-4 text-[11px] font-semibold uppercase tracking-[0.28em] sm:text-xs"
+                  className="als-eyebrow mb-4"
                   style={{ color: 'var(--club-primary)' }}
                   data-testid="home-hero-eyebrow"
                 >
                   {active.eyebrow}
                 </p>
                 <h1
-                  className="font-display text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl"
+                  className="als-display-xl"
                   style={{ color: 'var(--club-light)' }}
                   data-testid="home-hero-headline"
                 >
-                  {active.headline}
+                  {active.headlineLines ? (
+                    active.headlineLines.map((line) => (
+                      <span key={line.text} className="block">
+                        <span style={{ color: line.gold ? 'var(--club-primary)' : 'inherit' }}>{line.text}</span>
+                      </span>
+                    ))
+                  ) : (
+                    active.headline
+                  )}
                 </h1>
                 {active.subheadline ? (
                   <p
@@ -146,13 +154,21 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
                     {active.meta}
                   </p>
                 ) : null}
+                {tagline ? (
+                  <p
+                    className="font-display mt-5 text-base font-semibold sm:text-lg"
+                    style={{ color: 'rgba(254,254,254,0.9)' }}
+                    data-testid="home-hero-tagline"
+                  >
+                    {tagline}
+                  </p>
+                ) : null}
 
                 <div className="mt-7 flex flex-wrap items-center gap-3">
                   {active.ctaTo ? (
                     <Link
                       to={active.ctaTo}
-                      className="als-lift font-display inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] px-5 py-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                      style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A', '--tw-ring-color': 'var(--focus-ring)' }}
+                      className="als-btn-gold als-focus"
                       data-testid="home-hero-cta"
                     >
                       {active.ctaLabel || 'Selengkapnya'}
@@ -162,14 +178,35 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
                   {active.secondaryTo ? (
                     <Link
                       to={active.secondaryTo}
-                      className="als-lift inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] px-5 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2"
-                      style={{ border: '1px solid rgba(254,254,254,0.4)', color: 'var(--club-light)' }}
+                      className="als-btn-ghost als-focus"
                       data-testid="home-hero-secondary-cta"
                     >
                       {active.secondaryLabel}
                     </Link>
                   ) : null}
                 </div>
+
+                {socials.length ? (
+                  <div className="mt-8 flex flex-wrap items-center gap-3" data-testid="home-hero-socials">
+                    <span className="text-xs font-semibold" style={{ color: 'rgba(254,254,254,0.7)' }}>
+                      Follow Us
+                    </span>
+                    {socials.map((item) => (
+                      <a
+                        key={item.key}
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="als-focus inline-flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-200 hover:-translate-y-0.5"
+                        style={{ border: '1px solid rgba(254,254,254,0.4)', color: 'var(--club-light)' }}
+                        aria-label={item.key}
+                        data-testid={`home-hero-social-${item.key}`}
+                      >
+                        <item.Icon className="h-4 w-4" aria-hidden="true" />
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="max-w-2xl" data-testid="home-hero-fallback">
@@ -182,6 +219,11 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
                 </p>
               </div>
             )}
+            {panel ? (
+              <div className="als-reveal-shown w-full lg:w-auto lg:justify-self-end lg:pb-2" data-testid="home-hero-panel">
+                {panel}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -241,7 +283,7 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
                   onClick={next}
                   aria-label="Slide berikutnya"
                   className="als-lift inline-flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2"
-                  style={{ backgroundColor: 'var(--club-primary)', color: '#1A1A1A' }}
+                  style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                   data-testid="home-hero-next"
                 >
                   <ChevronRight className="h-5 w-5" />
@@ -254,14 +296,31 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'ALSABBAT' }
 
       {/* stats strip */}
       {stats.length ? (
-        <div style={{ borderTop: '1px solid rgba(254,254,254,0.12)' }}>
-          <div className="als-container grid grid-cols-2 gap-4 py-6 sm:grid-cols-4" data-testid="home-hero-stats">
-            {stats.map((stat) => (
-              <div key={stat.id} data-testid={`home-hero-stat-${stat.id}`}>
-                <p className="font-display text-2xl font-extrabold tabular-nums sm:text-3xl" style={{ color: 'var(--club-primary)' }}>
+        <div style={{ borderTop: '1px solid rgba(252,207,43,0.22)', backgroundColor: 'rgba(0,0,0,0.55)' }}>
+          <div
+            className="als-container grid grid-cols-2 gap-x-6 gap-y-6 py-8 sm:grid-cols-3 lg:grid-cols-5"
+            data-testid="home-hero-stats"
+          >
+            {stats.map((stat, statIndex) => (
+              <div
+                key={stat.id}
+                className="lg:border-r lg:pr-6 lg:last:border-r-0"
+                style={{
+                  borderColor: 'rgba(254,254,254,0.12)',
+                  animation: `als-reveal-in 620ms var(--ease-out) ${statIndex * 80}ms both`,
+                }}
+                data-testid={`home-hero-stat-${stat.id}`}
+              >
+                <p
+                  className="font-display text-3xl font-extrabold tabular-nums sm:text-4xl"
+                  style={{ color: 'var(--club-primary)' }}
+                >
                   {stat.value}
                 </p>
-                <p className="text-[11px] uppercase tracking-[0.16em] sm:text-xs" style={{ color: 'rgba(254,254,254,0.62)' }}>
+                <p
+                  className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
+                  style={{ color: 'rgba(254,254,254,0.66)' }}
+                >
                   {stat.label}
                 </p>
               </div>

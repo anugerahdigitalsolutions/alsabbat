@@ -32,7 +32,7 @@ export const MediaLightbox = ({ items = [], index = 0, onClose, onPrev, onNext }
   return (
     <div
       className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ zIndex: 200, backgroundColor: 'rgba(34,34,34,0.92)', backdropFilter: 'blur(14px)' }}
+      style={{ zIndex: 200, backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(14px)' }}
       role="dialog"
       aria-modal="true"
       aria-label={item.alt_text || item.file_name}
