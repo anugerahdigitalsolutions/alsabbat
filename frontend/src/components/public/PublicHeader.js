@@ -78,7 +78,7 @@ export const PublicHeader = () => {
         <Link to="/" className="flex shrink-0 items-center gap-2.5" data-testid="public-header-logo">
           <ClubCrestMark size={40} testId="public-header-crest" />
           <span className="flex flex-col leading-none">
-            <span className="font-display text-[19px] font-extrabold tracking-tight" style={{ color: 'var(--club-secondary)' }}>
+            <span className="font-display text-[19px] font-extrabold tracking-tight" style={{ color: '#000000' }}>
               {shortName}
             </span>
             <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em]" style={{ color: 'var(--muted-fg)' }}>
