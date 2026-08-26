@@ -590,3 +590,8 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - Opacity tidak dinaikkan (tetap 5–7,5%), warna tetap `#000000` di atas `#FEFEFE`, pattern tetap `position: fixed; z-index:-1; pointer-events:none` (di luar frame saja).
 - Verifikasi 1920/1440/1280/1024/768/390: overflow 0 px, lebar frame 1400/1392/1232/976/768/390 (tidak berubah), hero & konten normal, console 0 error, `yarn build` sukses tanpa warning.
 - Catatan insiden: skrip edit otomatis pernah memotong `index.css`; dipulihkan via `git checkout HEAD -- frontend/src/index.css` lalu diedit ulang dengan search_replace. Hindari edit CSS besar lewat skrip index-based.
+
+### Background corak diamond DIBATALKAN (26 Jun 2026)
+- Atas permintaan user, seluruh implementasi pattern diamond dihapus total: `.als-shell-bg::before` (3 layer SVG data-URI), `position/isolation` tambahan, dan latar `#FEFEFE` dikembalikan ke kondisi sebelumnya: `background-color: #f1f3f7` + `radial-gradient(1200px circle at 50% -10%, rgba(1,40,145,0.08), transparent 60%)`. Tidak ada asset/class/dead code pattern yang tertinggal (grep "diamond"/"fill-opacity" = 0).
+- Semua fitur lain dipertahankan: overlay hero level tengah + kontrol overlay per banner, universal crop, navigasi Fase 22 (label KAPITAL + PEMAIN), logo ALSABBAT `#000000`, motion Fase 21.
+- Verifikasi 1920/1440/1280/1024/768/390: `background-color rgb(241,243,247)` + radial navy kembali, pattern layers = 0, frame 1400/1392/1232/976/768/390, hero 640/640/640/640/580/520, overflow 0, console 0 error, `yarn build` sukses. DB tidak disentuh (banners 2, media 13, clubs 1).
