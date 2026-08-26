@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
+import { Crop, ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { resolveMediaUrl } from '../public/gallery/mediaUtils';
+import { ImageCropper } from './ImageCropper';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -108,6 +109,9 @@ export const MediaPicker = ({
   const [dragging, setDragging] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [localPreview, setLocalPreview] = useState(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropSource, setCropSource] = useState(null);
+  const [cropping, setCropping] = useState(false);
 
   const preview = resolveMediaUrl(previewUrl || localPreview || (returns === 'url' ? value : null));
 
@@ -130,6 +134,10 @@ export const MediaPicker = ({
         setLocalPreview(media.url || null);
         onChange(next);
         toast.success('Gambar berhasil diunggah.');
+        if (spec?.aspect) {
+          setCropSource(media.url ? resolveMediaUrl(media.url) : file);
+          setCropOpen(true);
+        }
       } catch (e) {
         toast.error(apiErrorMessage(e, 'Gagal mengunggah gambar.'));
       } finally {
@@ -137,7 +145,28 @@ export const MediaPicker = ({
         setProgress(0);
       }
     },
-    [accept, onChange, returns, uploader]
+    [accept, onChange, returns, uploader, spec]
+  );
+
+  const saveCrop = useCallback(
+    async (blob) => {
+      setCropping(true);
+      try {
+        const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+        const cropped = new File([blob], `crop-${Date.now()}.${ext}`, { type: blob.type });
+        const media = await uploader(cropped, setProgress);
+        setLocalPreview(media.url || null);
+        onChange(returns === 'id' ? media.id : media.url);
+        setCropOpen(false);
+        toast.success('Crop tersimpan. Berkas asli tetap ada di Media Library.');
+      } catch (e) {
+        toast.error(apiErrorMessage(e, 'Gagal menyimpan crop.'));
+      } finally {
+        setCropping(false);
+        setProgress(0);
+      }
+    },
+    [onChange, returns, uploader]
   );
 
   return (
@@ -207,6 +236,21 @@ export const MediaPicker = ({
             Pilih dari Media Library
           </Button>
         ) : null}
+        {value && spec?.aspect ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setCropSource(preview || null);
+              setCropOpen(true);
+            }}
+            data-testid={`${testId}-crop-button`}
+          >
+            <Crop className="mr-2 h-3.5 w-3.5" />
+            Sesuaikan / Crop
+          </Button>
+        ) : null}
         {value ? (
           <Button
             type="button"
@@ -255,7 +299,23 @@ export const MediaPicker = ({
             setLocalPreview(item.url);
             onChange(returns === 'id' ? item.id : item.url);
             setLibraryOpen(false);
+            if (spec?.aspect) {
+              setCropSource(resolveMediaUrl(item.url));
+              setCropOpen(true);
+            }
           }}
+        />
+      ) : null}
+
+      {spec?.aspect ? (
+        <ImageCropper
+          open={cropOpen}
+          onOpenChange={setCropOpen}
+          source={cropSource}
+          aspect={spec.aspect}
+          spec={spec}
+          busy={cropping}
+          onConfirm={saveCrop}
         />
       ) : null}
     </div>
