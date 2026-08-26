@@ -6,7 +6,7 @@ import { resolveMediaUrl } from '../public/gallery/mediaUtils';
 import { ImageCropper } from './ImageCropper';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 
 const defaultUploader = async (file, onProgress) => {
   const form = new FormData();
@@ -40,6 +40,7 @@ const LibraryDialog = ({ open, onOpenChange, onPick, testId }) => {
       <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto bg-white" data-testid={`${testId}-library`}>
         <DialogHeader>
           <DialogTitle className="font-display">Media Library</DialogTitle>
+          <DialogDescription>Pilih berkas yang sudah diunggah sebelumnya.</DialogDescription>
         </DialogHeader>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--muted-fg)' }} />
