@@ -70,10 +70,18 @@ class Paginated(BaseModel, Generic[T]):
     skip: int
 
 
-def make_update_model(name: str, base: Type[BaseModel]) -> Type[BaseModel]:
-    """Derive a PATCH model where every field of `base` is optional."""
+def make_update_model(
+    name: str, base: Type[BaseModel], validators: Optional[Dict[str, Any]] = None
+) -> Type[BaseModel]:
+    """Derive a PATCH model where every field of `base` is optional.
+
+    `validators` lets a resource keep the sanitising validators it needs on PATCH
+    (create_model does not inherit the base model's validators).
+    """
     fields: Dict[str, Any] = {}
     for field_name, field in base.model_fields.items():
         annotation = field.annotation
         fields[field_name] = (Optional[annotation], None)
-    return create_model(name, __base__=AppBaseModel, **fields)  # type: ignore[call-overload]
+    return create_model(  # type: ignore[call-overload]
+        name, __base__=AppBaseModel, __validators__=validators or {}, **fields
+    )

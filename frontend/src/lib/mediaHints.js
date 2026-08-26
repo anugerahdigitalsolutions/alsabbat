@@ -16,6 +16,8 @@ export const MEDIA_SPECS = {
   bannerHero: { aspect: 2, ratio: '2:1', size: '1920 × 960 px', note: `Frame hero tetap. ${CROP_NOTE}` },
   // Kartu pemain (tile 4 kolom) + frame detail 208×256 / 256×320 → portrait
   playerPhoto: { aspect: 4 / 5, ratio: '4:5 (portrait)', size: '1200 × 1500 px', note: `Wajah di bagian atas foto. ${CROP_NOTE}` },
+  playerGallery: { aspect: 4 / 5, ratio: '4:5 (portrait)', size: '1200 × 1500 px', note: `Galeri detail pemain (maks 3 foto). ${CROP_NOTE}` },
+  staffGallery: { aspect: 4 / 5, ratio: '4:5 (portrait)', size: '1200 × 1500 px', note: `Galeri detail staf (maks 3 foto). ${CROP_NOTE}` },
   staffPhoto: { aspect: 4 / 5, ratio: '4:5 (portrait)', size: '1200 × 1500 px', note: `Wajah di bagian atas foto. ${CROP_NOTE}` },
   // Logo tim / kompetisi / lawan — dirender di kotak persegi (h-9 w-9 … object-contain)
   teamLogo: { fit: 'contain', aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: 'Utamakan PNG berlatar transparan.' },

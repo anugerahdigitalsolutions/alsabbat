@@ -54,6 +54,15 @@ export default function AdminStaffPage() {
           spec: MEDIA_SPECS.staffPhoto,
           help: 'Gunakan foto portrait yang jelas. Kosongkan bila belum tersedia — jangan memakai foto orang lain.',
         },
+        {
+          name: 'gallery_images',
+          label: 'Galeri Foto',
+          type: 'gallery',
+          max: 3,
+          full: true,
+          spec: MEDIA_SPECS.staffGallery,
+          help: 'Maksimal 3 foto. Foto pertama menjadi foto utama di halaman detail staf; urutan di sini = urutan slider publik.',
+        },
         { name: 'bio', label: 'Bio', type: 'textarea', full: true },
         { name: 'social_media.instagram', label: 'Instagram', type: 'text' },
       ]}

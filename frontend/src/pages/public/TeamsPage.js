@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { Reveal } from '../../components/public/Reveal';
@@ -94,10 +95,15 @@ export default function TeamsPage() {
             <p className="als-row-label mb-4">{t('squad.staff.label')}</p>
             <div className="als-stagger grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {staff.items.map((member) => (
-                <article key={member.id} className="als-card als-lift p-5" data-testid={`staff-card-${member.id}`}>
-                  {member.photo ? (
+                <Link
+                  key={member.id}
+                  to={`/staff/${member.id}`}
+                  className="als-card als-lift block p-5"
+                  data-testid={`staff-card-${member.id}`}
+                >
+                  {member.photo || member.gallery_images?.length ? (
                     <img
-                      src={resolveMediaUrl(member.photo)}
+                      src={resolveMediaUrl(member.gallery_images?.[0] || member.photo)}
                       alt={member.name || ''}
                       className="mb-4 h-40 w-full rounded-[var(--radius-sm)] object-cover object-top"
                       loading="lazy"
@@ -108,7 +114,7 @@ export default function TeamsPage() {
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--club-secondary)' }}>
                     {member.role_label || member.role || member.position || 'Staf'}
                   </p>
-                </article>
+                </Link>
               ))}
             </div>
           </Reveal>

@@ -98,6 +98,28 @@ class Team(TeamBase, DBModel):
     pass
 
 
+MAX_GALLERY_IMAGES = 3
+
+
+def normalise_gallery(value):
+    """Maksimal 3 referensi media (URL Media Library), tanpa duplikat/kosong."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = [value]
+    if not isinstance(value, (list, tuple)):
+        return []
+    cleaned = []
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        item = item.strip()
+        if not item or len(item) > 800 or item in cleaned:
+            continue
+        cleaned.append(item)
+    return cleaned[:MAX_GALLERY_IMAGES]
+
+
 # --------------------------------------------------------------- Player
 class PlayerBase(AppBaseModel):
     team_id: str
@@ -113,9 +135,21 @@ class PlayerBase(AppBaseModel):
     bio: Optional[str] = Field(default=None, max_length=4000)
     status: PlayerStatus = PlayerStatus.ACTIVE
     social_media: SocialLinks = Field(default_factory=SocialLinks)
+    gallery_images: List[str] = Field(default_factory=list, max_length=3)
+
+    @field_validator("gallery_images", mode="before")
+    @classmethod
+    def _player_gallery(cls, value):
+        return normalise_gallery(value)
 
 
-PlayerUpdate = make_update_model("PlayerUpdate", PlayerBase)
+GALLERY_VALIDATORS = {
+    "_gallery_images": field_validator("gallery_images", mode="before")(
+        classmethod(lambda cls, value: normalise_gallery(value))
+    )
+}
+
+PlayerUpdate = make_update_model("PlayerUpdate", PlayerBase, GALLERY_VALIDATORS)
 
 
 class Player(PlayerBase, DBModel):
@@ -132,9 +166,15 @@ class StaffBase(AppBaseModel):
     bio: Optional[str] = Field(default=None, max_length=4000)
     social_media: SocialLinks = Field(default_factory=SocialLinks)
     status: EntityStatus = EntityStatus.ACTIVE
+    gallery_images: List[str] = Field(default_factory=list, max_length=3)
+
+    @field_validator("gallery_images", mode="before")
+    @classmethod
+    def _staff_gallery(cls, value):
+        return normalise_gallery(value)
 
 
-StaffUpdate = make_update_model("StaffUpdate", StaffBase)
+StaffUpdate = make_update_model("StaffUpdate", StaffBase, GALLERY_VALIDATORS)
 
 
 class Staff(StaffBase, DBModel):

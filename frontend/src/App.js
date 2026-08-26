@@ -16,6 +16,7 @@ import GalleryDetailPage from './pages/public/GalleryDetailPage';
 import ClubPage from './pages/public/ClubPage';
 import TeamsPage from './pages/public/TeamsPage';
 import TeamDetailPage from './pages/public/TeamDetailPage';
+import StaffDetailPage from './pages/public/StaffDetailPage';
 import PlayerDetailPage from './pages/public/PlayerDetailPage';
 import NewsDetailPage from './pages/public/NewsDetailPage';
 import AchievementsPage from './pages/public/AchievementsPage';
@@ -86,6 +87,7 @@ function App() {
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/:teamId" element={<TeamDetailPage />} />
               <Route path="/players/:playerId" element={<PlayerDetailPage />} />
+              <Route path="/staff/:staffId" element={<StaffDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
               <Route path="/sponsors" element={<SponsorsPage />} />
               <Route path="/contact" element={<ContactPage />} />

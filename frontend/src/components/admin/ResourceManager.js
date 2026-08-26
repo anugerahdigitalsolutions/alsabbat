@@ -5,6 +5,7 @@ import api, { apiErrorMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/button';
 import { MediaPicker } from '../shared/MediaPicker';
+import { MediaGalleryField } from './MediaGalleryField';
 import { LinkField } from './LinkField';
 import { Slider } from '../ui/slider';
 import { Input } from '../ui/input';
@@ -67,10 +68,11 @@ const buildInitialValues = (fields, defaults = {}, row = null) => {
     let value = existing !== undefined && existing !== null ? existing : fallback;
     if (value === undefined || value === null) {
       if (field.type === 'switch') value = false;
-      else if (field.type === 'multiselect') value = [];
+      else if (field.type === 'multiselect' || field.type === 'gallery') value = [];
       else value = '';
     }
     if (field.type === 'multiselect' && Array.isArray(value)) value = value.join(', ');
+    if (field.type === 'gallery') value = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
     values = setPath(values, field.name, value);
   });
   return values;
@@ -83,6 +85,11 @@ const preparePayload = (fields, values) => {
     if (field.type === 'number') {
       value = value === '' || value === null ? null : Number(value);
       if (Number.isNaN(value)) value = null;
+    }
+    if (field.type === 'gallery') {
+      const list = (Array.isArray(value) ? value : value ? [value] : []).filter(Boolean).slice(0, field.max || 3);
+      payload = setPath(payload, field.name, list);
+      return;
     }
     if (field.type === 'multiselect') {
       value = String(value || '')
@@ -199,6 +206,19 @@ const FieldControl = ({ field, value, onChange, optionMap, testPrefix }) => {
         returns={field.returns || 'url'}
         spec={field.spec}
         previewUrl={field.returns === 'id' ? options.find((o) => String(o.value) === String(value))?.url : null}
+      />
+    );
+  }
+
+  if (field.type === 'gallery') {
+    return (
+      <MediaGalleryField
+        value={value}
+        onChange={onChange}
+        max={field.max || 3}
+        spec={field.spec}
+        label={field.label}
+        testId={testId}
       />
     );
   }

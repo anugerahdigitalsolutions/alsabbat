@@ -6,6 +6,8 @@ import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { Reveal } from '../../components/public/Reveal';
 import { PlayerSeasonStats } from '../../components/public/PlayerSeasonStats';
+import { PersonPhotoGallery } from '../../components/public/PersonPhotoGallery';
+import { personPhotos } from '../../lib/personPhotos';
 import { Badge } from '../../components/ui/badge';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
@@ -52,23 +54,13 @@ const PlayerHero = ({ player, team }) => {
         </nav>
 
         <div className="flex flex-col gap-8 sm:flex-row sm:items-end">
-          <div
+          <PersonPhotoGallery
+            photos={personPhotos(player)}
+            alt={player?.full_name || 'Pemain'}
+            testId="player-gallery"
+            fallbackIcon={Shirt}
             className={`als-card relative h-64 w-52 shrink-0 overflow-hidden sm:h-80 sm:w-64 ${revealClass}`}
-            style={{ backgroundColor: 'rgba(254,254,254,0.05)', borderColor: 'rgba(252,207,43,0.28)', ...step(1) }}
-          >
-            {player?.photo ? (
-              <img
-                src={player.photo}
-                alt={player.full_name}
-                className="h-full w-full object-cover object-top"
-                loading="eager"
-              />
-            ) : (
-              <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                <Shirt className="h-16 w-16" style={{ color: 'rgba(252,207,43,0.5)' }} />
-              </span>
-            )}
-          </div>
+          />
 
           <div className="min-w-0">
             <p
@@ -125,7 +117,7 @@ export default function PlayerDetailPage() {
   usePageSeo({
     title: player?.full_name || 'Profil Pemain',
     description: player?.bio || 'Profil pemain ALSABBAT Football Club.',
-    image: player?.photo,
+    image: personPhotos(player)[0] || player?.photo,
     path: `/players/${playerId}`,
   });
 
