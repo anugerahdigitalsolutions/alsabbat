@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { KeyRound, LogOut, Receipt, Save } from 'lucide-react';
+import { CreditCard, KeyRound, LogOut, Receipt, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { Button } from '../../components/ui/button';
@@ -11,6 +11,7 @@ import { usePageSeo } from '../../hooks/usePageSeo';
 import { apiErrorMessage } from '../../lib/api';
 import { useBaraya } from '../../context/BarayaAuthContext';
 import { barayaChangePassword, barayaUpdateProfile } from '../../services/barayaAuth';
+import { MemberCard } from '../../components/member/MemberCard';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -32,6 +33,7 @@ export default function BarayaAccountPage() {
   const [profile, setProfile] = useState({
     full_name: customer?.full_name || '',
     phone: customer?.phone || '',
+    photo_url: customer?.photo_url || '',
   });
   const [passwords, setPasswords] = useState({ current_password: '', new_password: '' });
   const [saving, setSaving] = useState(false);
@@ -96,6 +98,18 @@ export default function BarayaAccountPage() {
                   <Label className="mb-1.5 block">Email</Label>
                   <Input value={customer?.email || ''} disabled data-testid="baraya-profile-email" />
                 </div>
+                <div className="sm:col-span-2">
+                  <Label className="mb-1.5 block">Foto Profil (tautan https)</Label>
+                  <Input
+                    value={profile.photo_url}
+                    onChange={(e) => setProfile((p) => ({ ...p, photo_url: e.target.value }))}
+                    placeholder="https://…"
+                    data-testid="baraya-profile-photo"
+                  />
+                  <p className="mt-1.5 text-xs" style={{ color: 'var(--muted-fg)' }}>
+                    Foto ini juga tampil pada kartu member Anda. Kosongkan untuk memakai inisial nama.
+                  </p>
+                </div>
               </div>
               <Button
                 type="submit"
@@ -141,7 +155,36 @@ export default function BarayaAccountPage() {
             </form>
           </div>
 
-          <div className="als-card h-fit space-y-4 p-6" data-testid="baraya-account-summary">
+          <div className="space-y-6">
+            <div className="als-card space-y-4 p-6" data-testid="baraya-member-section">
+              <p className="als-section-label">Kartu Member Baraya ALSABBAT</p>
+              <span className="als-gold-rule mt-1 block" aria-hidden="true" />
+              <MemberCard card={{
+                member_number: customer?.member_number,
+                member_code: customer?.member_code,
+                full_name: customer?.full_name,
+                photo_url: customer?.photo_url,
+                status: customer?.status,
+                joined_at: customer?.joined_at || customer?.created_at,
+              }} testId="account-member-card" />
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span style={{ color: 'var(--muted-fg)' }}>Nomor Member</span>
+                <span className="font-mono font-bold" data-testid="baraya-member-number">
+                  {customer?.member_number || '—'}
+                </span>
+              </div>
+              <Link
+                to="/akun/kartu"
+                className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] text-sm font-bold"
+                style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+                data-testid="baraya-member-card-link"
+              >
+                <CreditCard className="h-4 w-4" aria-hidden="true" />
+                Lihat Kartu
+              </Link>
+            </div>
+
+            <div className="als-card space-y-4 p-6" data-testid="baraya-account-summary">
             <p className="als-section-label">Ringkasan Akun</p>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-3">
@@ -174,6 +217,7 @@ export default function BarayaAccountPage() {
               <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
               Keluar
             </Button>
+            </div>
           </div>
         </div>
       </div>

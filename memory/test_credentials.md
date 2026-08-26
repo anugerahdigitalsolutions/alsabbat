@@ -1,34 +1,15 @@
-# ALSABBAT Platform — Test Credentials (development only)
+# Test Credentials — ALSABBAT
 
-> These credentials exist for development/testing convenience.
-> Remind the agent to remove/rotate them before production deployment.
+## Admin Panel (RBAC) — /admin/login
+- Super Admin: admin@alsabbat.com / Alsabbat2026!
 
-## Bootstrap Super Admin (seeded idempotently on backend startup)
+## Baraya (customer) — /login
+- Tidak ada akun Baraya di database produksi (sengaja bersih, tanpa data uji).
+- Untuk pengujian, buat akun sandbox lewat /daftar atau gunakan skrip sandbox
+  (`/app/scripts/phase17_verify.py`) yang memakai database sekali-pakai lalu di-DROP.
+- Pola akun sandbox: <nama>@sandbox-alsabbat.dev / Sandbox123
+  (domain .test/.example ditolak validator email).
 
-- Admin login URL: `/admin/login`
-- Email: `admin@alsabbat.com`
-- Password: `Alsabbat2026!`
-- Role: `SUPER_ADMIN` (wildcard permission `*`)
-
-Source of truth: `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` in `backend/.env`.
-If the password env var is unset, the seed is skipped (no default password is baked in).
-
-## Additional roles for RBAC testing
-
-> Catatan Fase 5E (25 Jun 2026): seluruh akun test `content<timestamp>@alsabbat.com` (CONTENT_ADMIN)
-> sudah DIHAPUS. Saat ini hanya ada satu akun: `admin@alsabbat.com` (SUPER_ADMIN).
-
-Create via `POST /api/users` while logged in as the Super Admin, e.g.:
-
-```json
-{ "email": "content@alsabbat.com", "name": "Content Admin", "role": "CONTENT_ADMIN", "password": "ContentAdmin123!" }
-```
-
-Available roles: `SUPER_ADMIN`, `CONTENT_ADMIN`, `GALLERY_ADMIN`, `SOCIAL_MEDIA_ADMIN`, `STORE_ADMIN`, `ORDER_ADMIN`.
-
-## Baraya ALSABBAT (customer) — akun test
-
-> Tidak ada akun Baraya permanen di database. Semua akun verifikasi Fase 13 sudah DIHAPUS.
-> Untuk menguji, daftar akun baru di `/daftar` (contoh pola yang dipakai saat verifikasi:
-> email `ui.phase13@barayaverify.dev`, kata sandi `UiVerify1234` — akun ini sudah dihapus).
-> Endpoint: POST /api/baraya/register, POST /api/baraya/login (token terpisah dari admin).
+## Catatan
+- Jangan menyeed data uji ke database produksi.
+- Testing Agent DILARANG oleh user; verifikasi memakai skrip Python + curl + screenshot.

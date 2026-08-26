@@ -59,6 +59,16 @@ class CustomerLoginRequest(AppBaseModel):
 class CustomerProfileUpdate(AppBaseModel):
     full_name: Optional[str] = Field(default=None, min_length=3, max_length=120)
     phone: Optional[str] = Field(default=None, min_length=8, max_length=25)
+    photo_url: Optional[str] = Field(default=None, max_length=800)
+
+    @field_validator("photo_url")
+    @classmethod
+    def _photo(cls, value):
+        if value in (None, ""):
+            return ""
+        if not str(value).startswith(("https://", "/api/media/")):
+            raise ValueError("Tautan foto harus https:// atau berkas Media ALSABBAT.")
+        return value
 
 
 class CustomerPasswordChange(AppBaseModel):
@@ -103,6 +113,10 @@ class Customer(DBModel):
     phone: str
     status: CustomerStatus = CustomerStatus.ACTIVE
     last_login_at: Optional[str] = None
+    member_number: Optional[str] = None
+    member_code: Optional[str] = None
+    photo_url: Optional[str] = None
+    joined_at: Optional[str] = None
 
 
 class CustomerAuthContext(AppBaseModel):

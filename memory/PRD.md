@@ -384,3 +384,25 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 ### Gap yang MASIH hard-coded (disengaja, kategori B/C)
 - Empty state, loading, error, aria/accessibility, navigasi, label taksonomi posisi (Penjaga Gawang/Belakang/Tengah/Depan), label fakta klub (Didirikan/Lokasi/Markas), teks Cart/Checkout/Lacak Pesanan/Login/Daftar/Akun, teks brand fallback hero.
 - Halaman detail (Match Detail, News Detail, Album Detail, Player Detail) memakai label sistem + data nyata; belum ada teks editorial ber-CMS di sana.
+
+## FASE 17 — Baraya ALSABBAT Member Card & Member Management (26 Jun 2026) · STOP GATE 17
+### Discovery
+- `customers` existing sudah punya: id, email, full_name, phone, status (ACTIVE/INACTIVE), created_at, last_login_at, sesi terpisah (`customer_sessions`, JWT `typ=baraya`). BELUM ada: member number, identifier publik, foto, QR. Tidak ada library QR.
+### Arsitektur (additive, TIDAK ada collection/auth kedua)
+- 3 field baru di `customers`: `member_number` (ALS-000001, sekuensial via `counters` `_id=baraya-member-number` + `$inc seq`, index unik sparse), `member_code` (`secrets.token_urlsafe(16)`, tak bisa ditebak, index unik sparse, HANYA untuk QR), `photo_url` (https:// atau /api/media/, divalidasi), `joined_at`.
+- `app/services/membership.py`: `ensure_member_identity` (idempotent, dipanggil saat register + `/baraya/me` + member-card → akun lama otomatis ter-backfill), `member_card_payload`, `member_verification_payload`.
+- Endpoint baru: `GET /api/baraya/member-card` (self-scoped), `GET /api/member/verify/{member_code}` (publik, rate-limited 60/10mnt, data minimum), `GET /api/baraya/admin/{id}/member-card` (permission `user:read`). Status memakai enum customer existing (ACTIVE/INACTIVE), tanpa RBAC baru.
+### Frontend
+- `components/member/MemberCard.js` = **satu-satunya renderer** (dipakai /akun, /akun/kartu, pratinjau Admin). Navy #012891 + emas #FCCF2B, Poppins, crest klub, "BARAYA ALSABBAT", nama, nomor member, foto/inisial, badge status, QR (`qrcode.react`) berisi **hanya URL verifikasi publik**.
+- `/akun/kartu` (BarayaRoute): kartu + **Bagikan** (Web Share API → fallback salin tautan, jujur bila tidak didukung), **Salin Tautan**, **Simpan Kartu** (`html-to-image` → PNG lokal, tanpa upload).
+- `/member/verifikasi/:code` publik: "Baraya ALSABBAT Terverifikasi" / "Keanggotaan Tidak Aktif" / "Member Tidak Ditemukan" + nomor, nama, status, bulan bergabung. Tidak menampilkan email/telepon/alamat/pesanan.
+- `/akun`: section "Kartu Member Baraya ALSABBAT" + nomor + tombol Lihat Kartu; field **Foto Profil** ditambahkan ke form profil (nama/foto berubah → kartu berubah, nomor tetap).
+- `/admin/baraya`: kolom **No. Member**, avatar, tombol **Kartu** (dialog pratinjau memakai renderer yang sama), toggle status existing tetap.
+### Verifikasi (tanpa Testing Agent)
+- `scripts/phase17_verify.py`: **39/39 PASS** di sandbox `alsabbat_phase17_sandbox` (**DI-DROP**) — M1–M15 termasuk: nomor unik & berformat, kartu self-scoped, customer B tidak bisa membuka kartu A (403), unauth 401, QR verify tanpa key sensitif & tanpa email/telepon, member_number tidak bisa dipakai sebagai identifier (anti-enumerasi), INACTIVE → verifikasi INACTIVE + tidak bisa login + akun tidak dihapus, foto/nama berubah → kartu berubah, nomor tetap, customer tidak bisa self-assign member_number/member_code/status, photo_url `javascript:` ditolak 422, admin list/preview tanpa password_hash + RBAC, checkout & riwayat pesanan member tetap jalan (payment logic tidak disentuh), isolasi token admin↔baraya, 6 regresi publik.
+- E2E UI produksi: daftar → login → /akun (ALS-000001) → /akun/kartu (QR + tombol) → /member/verifikasi/{code} (tanpa kebocoran email/telepon) → /admin/baraya (kolom No. Member + pratinjau kartu). Akun uji, sesi, dan counter **dihapus kembali** → produksi bersih.
+- `yarn build` Compiled successfully (272 kB gz), backend import OK, `/api/health` 200, overflow 0 px di 1920 & 390 (kartu wrap QR pada kolom sempit).
+- Bug ditemukan & diperbaiki saat verifikasi: index unik `counters.id` bentrok dengan counter nomor order existing → dihapus, member counter kini memakai konvensi `_id`/`seq` yang sama.
+### Catatan & batasan
+- Foto profil = tautan https (belum ada upload object storage untuk customer).
+- Tidak ada ticketing, poin loyalitas, diskon member, biaya membership, atau auto-post sosial (di luar scope).

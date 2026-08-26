@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Power, Search, Users } from 'lucide-react';
+import { CreditCard, Power, Search, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { LoadingState } from '../../components/shared/LoadingState';
@@ -8,6 +8,8 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { MemberCard } from '../../components/member/MemberCard';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -25,6 +27,7 @@ export default function AdminBarayaPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [previewCard, setPreviewCard] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,6 +58,15 @@ export default function AdminBarayaPage() {
       load();
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Gagal memperbarui status akun.'));
+    }
+  };
+
+  const openCard = async (customer) => {
+    try {
+      const { data } = await api.get(`/baraya/admin/${customer.id}/member-card`);
+      setPreviewCard(data);
+    } catch (e) {
+      toast.error(apiErrorMessage(e, 'Gagal memuat kartu member.'));
     }
   };
 
@@ -90,7 +102,7 @@ export default function AdminBarayaPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: 'var(--surface-2)' }}>
-                {['Nama', 'Email', 'WhatsApp', 'Status', 'Daftar', 'Login Terakhir', 'Aksi'].map((head) => (
+                {['No. Member', 'Nama', 'Email', 'WhatsApp', 'Status', 'Daftar', 'Login Terakhir', 'Aksi'].map((head) => (
                   <th key={head} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
                     {head}
                   </th>
@@ -100,7 +112,17 @@ export default function AdminBarayaPage() {
             <tbody>
               {items.map((customer) => (
                 <tr key={customer.id} className="border-t" style={{ borderColor: 'var(--border-soft)' }} data-testid={`admin-baraya-row-${customer.id}`}>
-                  <td className="px-4 py-3 font-semibold">{customer.full_name}</td>
+                  <td className="px-4 py-3 font-mono text-xs font-bold" data-testid={`admin-baraya-member-number-${customer.id}`}>
+                    {customer.member_number || '—'}
+                  </td>
+                  <td className="px-4 py-3 font-semibold">
+                    <span className="flex items-center gap-2">
+                      {customer.photo_url ? (
+                        <img src={customer.photo_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                      ) : null}
+                      {customer.full_name}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">{customer.email}</td>
                   <td className="px-4 py-3">{customer.phone}</td>
                   <td className="px-4 py-3">
@@ -111,15 +133,26 @@ export default function AdminBarayaPage() {
                   <td className="px-4 py-3">{formatDate(customer.created_at)}</td>
                   <td className="px-4 py-3">{formatDate(customer.last_login_at)}</td>
                   <td className="px-4 py-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleStatus(customer)}
-                      data-testid={`admin-baraya-toggle-${customer.id}`}
-                    >
-                      <Power className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                      {customer.status === 'ACTIVE' ? 'Nonaktifkan' : 'Aktifkan'}
-                    </Button>
+                    <span className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openCard(customer)}
+                        data-testid={`admin-baraya-card-${customer.id}`}
+                      >
+                        <CreditCard className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        Kartu
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleStatus(customer)}
+                        data-testid={`admin-baraya-toggle-${customer.id}`}
+                      >
+                        <Power className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        {customer.status === 'ACTIVE' ? 'Nonaktifkan' : 'Aktifkan'}
+                      </Button>
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -127,6 +160,18 @@ export default function AdminBarayaPage() {
           </table>
         </div>
       )}
+
+      <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
+        <DialogContent className="max-w-xl bg-white" data-testid="admin-baraya-card-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-display">Pratinjau Kartu Member</DialogTitle>
+            <DialogDescription>
+              Renderer sama dengan kartu milik Baraya. Tidak menampilkan kata sandi maupun token.
+            </DialogDescription>
+          </DialogHeader>
+          {previewCard ? <MemberCard card={previewCard} testId="admin-member-card" /> : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

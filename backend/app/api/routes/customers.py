@@ -46,9 +46,15 @@ from app.models.customer import (
 )
 from app.models.base import new_id, utcnow
 from app.services.mailer import send_customer_password_reset_email
+from app.services.membership import (
+    ensure_member_identity,
+    member_card_payload,
+    member_verification_payload,
+)
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["baraya"])
+member_router = APIRouter(tags=["member"])
 
 customers = Repository(Collections.CUSTOMERS)
 orders = Repository(Collections.ORDERS)
@@ -118,7 +124,8 @@ async def register(payload: CustomerRegisterRequest, request: Request) -> Dict[s
             "last_login_at": None,
         }
     )
-    logger.info("baraya.register email=%s", email)
+    created = await ensure_member_identity(created)
+    logger.info("baraya.register email=%s member=%s", email, created.get("member_number"))
     return {"success": True, "customer": _public_customer(created)}
 
 
@@ -151,6 +158,7 @@ async def me(customer: CustomerAuthContext = Depends(get_current_customer)) -> D
     doc = await customers.get(customer.customer_id)
     if not doc:
         raise UnauthorizedError("Akun tidak ditemukan.")
+    doc = await ensure_member_identity(doc)
     return _public_customer(doc)
 
 
@@ -275,6 +283,27 @@ async def reset_password(
     return {"success": True, "message": "Kata sandi berhasil diperbarui. Silakan login kembali."}
 
 
+# -------------------------------------------------------------- member card
+@router.get("/member-card", summary="Kartu member Baraya milik akun yang login")
+async def my_member_card(
+    customer: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    doc = await customers.get(customer.customer_id)
+    if not doc:
+        raise UnauthorizedError("Akun tidak ditemukan.")
+    doc = await ensure_member_identity(doc)
+    return member_card_payload(doc)
+
+
+@member_router.get("/verify/{member_code}", summary="Verifikasi publik kartu member (data minimum)")
+async def verify_member(member_code: str, request: Request) -> Dict[str, Any]:
+    await enforce(request, "member-verify", 60, 600)
+    if len(member_code) < 10 or len(member_code) > 120:
+        return member_verification_payload(None)
+    doc = await customers.get_by({"member_code": member_code})
+    return member_verification_payload(doc)
+
+
 # ------------------------------------------------------------------- orders
 @router.get("/orders", summary="Riwayat pesanan milik Baraya yang login")
 async def my_orders(
@@ -307,6 +336,15 @@ async def my_order_detail(
 
 
 # --------------------------------------------------- admin customer console
+@router.get("/admin/{customer_id}/member-card", summary="Admin: pratinjau kartu member Baraya")
+async def admin_member_card(customer_id: str, user: AuthContext = customer_read) -> Dict[str, Any]:
+    doc = await customers.get(customer_id)
+    if not doc:
+        raise NotFoundError("Akun Baraya tidak ditemukan.")
+    doc = await ensure_member_identity(doc)
+    return member_card_payload(doc)
+
+
 @router.get("/admin/list", summary="Admin: daftar akun Baraya")
 async def admin_list(
     q: Optional[str] = None,

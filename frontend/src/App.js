@@ -28,6 +28,8 @@ import BarayaForgotPasswordPage from './pages/public/BarayaForgotPasswordPage';
 import BarayaResetPasswordPage from './pages/public/BarayaResetPasswordPage';
 import BarayaAccountPage from './pages/public/BarayaAccountPage';
 import BarayaOrdersPage from './pages/public/BarayaOrdersPage';
+import BarayaMemberCardPage from './pages/public/BarayaMemberCardPage';
+import MemberVerifyPage from './pages/public/MemberVerifyPage';
 import BarayaOrderDetailPage from './pages/public/BarayaOrderDetailPage';
 import { BarayaAuthProvider } from './context/BarayaAuthContext';
 import { BarayaRoute } from './components/public/BarayaRoute';
@@ -106,6 +108,15 @@ function App() {
                   </BarayaRoute>
                 }
               />
+              <Route
+                path="/akun/kartu"
+                element={
+                  <BarayaRoute>
+                    <BarayaMemberCardPage />
+                  </BarayaRoute>
+                }
+              />
+              <Route path="/member/verifikasi/:code" element={<MemberVerifyPage />} />
               <Route
                 path="/akun/pesanan"
                 element={

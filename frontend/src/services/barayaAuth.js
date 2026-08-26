@@ -33,6 +33,11 @@ export const barayaUpdateProfile = async (payload) => {
   return data;
 };
 
+export const barayaMemberCard = async () => {
+  const { data } = await barayaApi.get('/baraya/member-card');
+  return data;
+};
+
 export const barayaChangePassword = (payload) => barayaApi.post('/baraya/change-password', payload);
 
 export const barayaForgotPassword = (email) => barayaApi.post('/baraya/forgot-password', { email });
