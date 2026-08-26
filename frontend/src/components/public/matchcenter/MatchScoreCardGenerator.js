@@ -110,6 +110,21 @@ const truncate = (ctx, text, maxWidth) => {
 };
 
 /**
+ * Jumlah kolom sponsor: dinamis mengikuti jumlah sponsor & rasio kartu.
+ * Feed (4:5) lebih horizontal, Story (9:16) lebih compact/vertical.
+ * Semua sponsor selalu tampil — tidak ada yang disembunyikan.
+ */
+const sponsorColumns = (count, isStory) => {
+  if (count <= 2) return Math.max(count, 1);
+  if (count === 3) return 3;
+  if (count === 4) return 2; // grid 2 x 2
+  if (count <= 6) return 3;
+  if (count <= 9) return isStory ? 3 : 4;
+  if (count <= 12) return isStory ? 4 : 5;
+  return isStory ? 5 : 6;
+};
+
+/**
  * Satu sel sponsor: pill terang (bukan hitam) + logo `contain` sehingga logo
  * tidak pernah terpotong dan transparansi logo tetap terjaga.
  */
@@ -285,27 +300,35 @@ export const MatchScoreCardGenerator = ({
     const lineH = W * 0.042;
     const blockH = W * 0.035 + lineH * details.length;
 
-    // Band sponsor: semua sponsor aktif tampil, ukuran menyesuaikan jumlah
-    const sponsorGap = W * 0.02;
-    const sponsorRowGap = W * 0.015;
-    const sponsorLabelH = W * 0.042;
-    const sponsorPerRow = sponsorItems.length
-      ? sponsorItems.length <= 4
-        ? sponsorItems.length
-        : Math.ceil(sponsorItems.length / Math.ceil(sponsorItems.length / 4))
-      : 0;
+    // Band sponsor: SEMUA sponsor aktif tampil; kolom + ukuran dinamis per jumlah & rasio kartu
+    const sponsorCount = sponsorItems.length;
+    const sponsorCols = sponsorColumns(sponsorCount, isStory);
+    const sponsorGap = W * (sponsorCols >= 4 ? 0.014 : 0.018);
+    const sponsorRowGap = W * 0.014;
+    const sponsorLabelH = W * 0.04;
     const sponsorRows = [];
-    for (let i = 0; i < sponsorItems.length; i += sponsorPerRow || 1) {
-      sponsorRows.push(sponsorItems.slice(i, i + (sponsorPerRow || 1)));
+    for (let i = 0; i < sponsorCount; i += sponsorCols) {
+      sponsorRows.push(sponsorItems.slice(i, i + sponsorCols));
     }
-    const sponsorCellW = sponsorPerRow
-      ? (W - pad * 2 - sponsorGap * (sponsorPerRow - 1)) / sponsorPerRow
+    const sponsorRowsCount = sponsorRows.length;
+    const sponsorCellW = sponsorCount
+      ? sponsorCount === 1
+        ? W * (isStory ? 0.5 : 0.44)
+        : (W - pad * 2 - sponsorGap * (sponsorCols - 1)) / sponsorCols
       : 0;
-    const sponsorCellH = sponsorPerRow
-      ? Math.min(W * 0.075, Math.max(W * 0.042, sponsorCellW * 0.42))
+    // Tinggi band dibatasi agar kartu tetap compact; aspect sel konsisten untuk semua sponsor
+    const sponsorBandCap = isStory ? H * 0.135 : H * 0.14;
+    const sponsorCellH = sponsorCount
+      ? Math.max(
+          W * 0.032,
+          Math.min(
+            sponsorCellW * (isStory ? 0.5 : 0.4),
+            (sponsorBandCap - sponsorLabelH - (sponsorRowsCount - 1) * sponsorRowGap) / sponsorRowsCount,
+          ),
+        )
       : 0;
-    const sponsorBandH = sponsorRows.length
-      ? sponsorLabelH + sponsorRows.length * sponsorCellH + (sponsorRows.length - 1) * sponsorRowGap
+    const sponsorBandH = sponsorRowsCount
+      ? sponsorLabelH + sponsorRowsCount * sponsorCellH + (sponsorRowsCount - 1) * sponsorRowGap
       : 0;
 
     // Susunan dari bawah: footer → sponsor → informasi pertandingan
