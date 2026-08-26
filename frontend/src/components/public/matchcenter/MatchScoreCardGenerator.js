@@ -3,6 +3,8 @@ import { Download, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../ui/button';
 import { useMatchCardDesign, MATCH_CARD_DEFAULT_TRANSPARENCY, clampTransparency } from '../../../lib/matchCardDesign';
+import { useResourceList } from '../../../hooks/useResourceList';
+import { resolveMediaUrl } from '../gallery/mediaUtils';
 
 const BRAND = {
   gold: '#FCCF2B',
@@ -108,6 +110,39 @@ const truncate = (ctx, text, maxWidth) => {
 };
 
 /**
+ * Satu sel sponsor: pill terang (bukan hitam) + logo `contain` sehingga logo
+ * tidak pernah terpotong dan transparansi logo tetap terjaga.
+ */
+const drawSponsorCell = (ctx, item, x, y, w, h) => {
+  ctx.save();
+  roundRect(ctx, x, y, w, h, h * 0.24);
+  ctx.fillStyle = 'rgba(254,254,254,0.94)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(1,40,145,0.16)';
+  ctx.lineWidth = Math.max(1, h * 0.03);
+  ctx.stroke();
+  ctx.restore();
+
+  if (item.img) {
+    const maxW = w * 0.84;
+    const maxH = h * 0.7;
+    const scale = Math.min(maxW / item.img.width, maxH / item.img.height);
+    const dw = item.img.width * scale;
+    const dh = item.img.height * scale;
+    ctx.drawImage(item.img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    return;
+  }
+
+  ctx.save();
+  ctx.fillStyle = BRAND.blue;
+  ctx.font = `700 ${h * 0.3}px Poppins, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(truncate(ctx, (item.name || '').toUpperCase(), w * 0.86), x + w / 2, y + h / 2);
+  ctx.restore();
+};
+
+/**
  * MatchScoreCardGenerator — renders a share-ready match card from REAL match
  * data on a canvas (no heavy dependency, no hard-coded content).
  */
@@ -120,9 +155,15 @@ export const MatchScoreCardGenerator = ({
   transparencyOverride = null,
   fixedRatio = null,
   bare = false,
+  sponsors = null,
 }) => {
   const canvasRef = useRef(null);
   const design = useMatchCardDesign();
+  const sponsorList = useResourceList('/sponsors', { status: 'ACTIVE', limit: 40 }, { enabled: sponsors === null });
+  const activeSponsors = sponsors === null ? sponsorList.items : sponsors;
+  const sponsorSignature = JSON.stringify(
+    (activeSponsors || []).map((s) => [s.id || s.name, s.logo || '']),
+  );
   const [ratio, setRatio] = useState(fixedRatio ? RATIOS.find((r) => r.id === fixedRatio) || RATIOS[0] : RATIOS[0]);
   const [rendering, setRendering] = useState(true);
   const transparency = clampTransparency(
@@ -156,6 +197,12 @@ export const MatchScoreCardGenerator = ({
       loadImage(match?.opponent?.logo),
       loadImage(match?.match_cover),
     ]);
+
+    // Sponsor aktif: semua tampil, logo dimuat contain (tidak pernah dipotong)
+    const sponsorSource = (activeSponsors || []).filter((s) => s && (s.logo || s.name));
+    const sponsorItems = await Promise.all(
+      sponsorSource.map(async (s) => ({ name: s.name, img: await loadImage(resolveMediaUrl(s.logo)) })),
+    );
 
     // 1. Foto pertandingan sebagai background (cover, boleh terpotong natural)
     const t = transparency / 100; // 1 = foto paling terlihat, 0 = warna kartu paling kuat
@@ -228,14 +275,45 @@ export const MatchScoreCardGenerator = ({
     const opponentGoals = hasScore ? (isHome ? match.away_score ?? 0 : match.home_score) : null;
     const scoreText = hasScore ? `${clubGoals} - ${opponentGoals}` : 'VS';
 
+    const venueLabel = isHome ? 'HOME' : match.venue_type === 'NEUTRAL' ? 'NEUTRAL' : 'AWAY';
     const details = [
       match.date ? `${formatCardDate(match.date)}${match.time ? ` · ${match.time.slice(0, 5)} WIB` : ''}` : null,
-      match.venue || null,
-      isHome ? 'HOME' : match.venue_type === 'NEUTRAL' ? 'NEUTRAL' : 'AWAY',
+      [match.venue, venueLabel].filter(Boolean).join(' · '),
     ].filter(Boolean);
 
-    const blockH = W * (0.05 + 0.05 * details.length);
-    const blockY = isStory ? H * 0.7 : H - pad * 1.3 - blockH;
+    // Panel info: compact (2 baris) agar foto pertandingan tetap focal point
+    const lineH = W * 0.042;
+    const blockH = W * 0.035 + lineH * details.length;
+
+    // Band sponsor: semua sponsor aktif tampil, ukuran menyesuaikan jumlah
+    const sponsorGap = W * 0.02;
+    const sponsorRowGap = W * 0.015;
+    const sponsorLabelH = W * 0.042;
+    const sponsorPerRow = sponsorItems.length
+      ? sponsorItems.length <= 4
+        ? sponsorItems.length
+        : Math.ceil(sponsorItems.length / Math.ceil(sponsorItems.length / 4))
+      : 0;
+    const sponsorRows = [];
+    for (let i = 0; i < sponsorItems.length; i += sponsorPerRow || 1) {
+      sponsorRows.push(sponsorItems.slice(i, i + (sponsorPerRow || 1)));
+    }
+    const sponsorCellW = sponsorPerRow
+      ? (W - pad * 2 - sponsorGap * (sponsorPerRow - 1)) / sponsorPerRow
+      : 0;
+    const sponsorCellH = sponsorPerRow
+      ? Math.min(W * 0.075, Math.max(W * 0.042, sponsorCellW * 0.42))
+      : 0;
+    const sponsorBandH = sponsorRows.length
+      ? sponsorLabelH + sponsorRows.length * sponsorCellH + (sponsorRows.length - 1) * sponsorRowGap
+      : 0;
+
+    // Susunan dari bawah: footer → sponsor → informasi pertandingan
+    const footerY = isStory ? H - pad * 1.2 : H - pad * 0.55;
+    const stackBottom = footerY - W * 0.05;
+    const sponsorY = sponsorBandH ? stackBottom - sponsorBandH : null;
+    const blockBottom = sponsorY !== null ? sponsorY - W * 0.03 : stackBottom;
+    const blockY = blockBottom - blockH;
 
     // Matchup compact: logo saling berdekatan di tengah, posisi menempel ke kotak informasi
     const scoreFont = W * (hasScore ? 0.085 : 0.062);
@@ -266,35 +344,57 @@ export const MatchScoreCardGenerator = ({
     ctx.fillText(truncate(ctx, clubName.toUpperCase(), nameMax), clubCx, nameY);
     ctx.fillText(truncate(ctx, (match?.opponent?.name || 'LAWAN').toUpperCase(), nameMax), opponentCx, nameY);
 
-    // Kotak informasi
+    // Kotak informasi (lebih kecil & lebih transparan)
     ctx.save();
-    roundRect(ctx, pad, blockY, W - pad * 2, blockH, W * 0.03);
-    ctx.fillStyle = 'rgba(1,40,145,0.45)';
+    roundRect(ctx, pad, blockY, W - pad * 2, blockH, W * 0.026);
+    ctx.fillStyle = 'rgba(1,40,145,0.30)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(252,207,43,0.32)';
-    ctx.lineWidth = W * 0.004;
+    ctx.strokeStyle = 'rgba(252,207,43,0.26)';
+    ctx.lineWidth = W * 0.003;
     ctx.stroke();
     ctx.restore();
 
     ctx.textAlign = 'left';
-    ctx.font = `500 ${W * 0.025}px Poppins, sans-serif`;
+    ctx.textBaseline = 'alphabetic';
     details.forEach((line, index) => {
-      ctx.fillStyle = index === 0 ? BRAND.light : 'rgba(254,254,254,0.82)';
-      ctx.fillText(truncate(ctx, line, W - pad * 2.6), pad + W * 0.045, blockY + W * 0.062 + index * W * 0.05);
+      ctx.fillStyle = index === 0 ? BRAND.light : 'rgba(254,254,254,0.8)';
+      ctx.font = `${index === 0 ? 600 : 500} ${W * (index === 0 ? 0.024 : 0.022)}px Poppins, sans-serif`;
+      ctx.fillText(
+        truncate(ctx, line, W - pad * 2.4),
+        pad + W * 0.04,
+        blockY + W * 0.0175 + lineH * (index + 0.72),
+      );
     });
+
+    // Band sponsor — tepat di atas footer, di bawah informasi pertandingan
+    if (sponsorY !== null) {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = 'rgba(252,207,43,0.9)';
+      ctx.font = `700 ${W * 0.019}px Poppins, sans-serif`;
+      ctx.fillText('DIDUKUNG OLEH'.split('').join(' '), W / 2, sponsorY + sponsorLabelH * 0.7);
+
+      sponsorRows.forEach((row, rowIndex) => {
+        const rowW = row.length * sponsorCellW + (row.length - 1) * sponsorGap;
+        let x = (W - rowW) / 2;
+        const y = sponsorY + sponsorLabelH + rowIndex * (sponsorCellH + sponsorRowGap);
+        row.forEach((item) => {
+          drawSponsorCell(ctx, item, x, y, sponsorCellW, sponsorCellH);
+          x += sponsorCellW + sponsorGap;
+        });
+      });
+    }
 
     // Footer signature
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = 'rgba(252,207,43,0.85)';
     ctx.font = `700 ${W * 0.02}px Poppins, sans-serif`;
-    ctx.fillText(
-      `${clubName.toUpperCase()} FOOTBALL CLUB`.split('').join(' '),
-      W / 2,
-      isStory ? H - pad * 1.5 : H - pad * 0.5,
-    );
+    ctx.fillText(`${clubName.toUpperCase()} FOOTBALL CLUB`.split('').join(' '), W / 2, footerY);
 
     setRendering(false);
-  }, [match, clubLogo, clubName, competitionName, seasonName, ratio, transparency]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [match, clubLogo, clubName, competitionName, seasonName, ratio, transparency, sponsorSignature]);
 
   useEffect(() => {
     if (!fixedRatio) return;

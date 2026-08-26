@@ -4,4 +4,4 @@ Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /cart
-Sitemap: https://inner-page-polish.preview.emergentagent.com/api/seo/sitemap.xml
+Sitemap: https://match-feed-dev.preview.emergentagent.com/api/seo/sitemap.xml

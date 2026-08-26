@@ -25,18 +25,18 @@ export const HeroNextMatchPanel = ({ match, clubName = 'ALSABBAT' }) => {
 
   return (
     <div
-      className="w-full max-w-[300px] rounded-[var(--radius-md)] px-3 py-2.5 sm:max-w-[360px] sm:px-3.5 lg:w-[320px] lg:max-w-none"
+      className="w-full max-w-[264px] rounded-[var(--radius-md)] px-2.5 py-2 sm:max-w-[300px] sm:px-3 lg:w-[300px] lg:max-w-none"
       style={{
-        backgroundColor: 'rgba(1,12,40,0.56)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        border: '1px solid rgba(252,207,43,0.22)',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.28)',
+        backgroundColor: 'rgba(1,12,40,0.38)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        border: '1px solid rgba(252,207,43,0.18)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
       }}
       data-testid="hero-next-match-panel"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-[8px] font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(254,254,254,0.7)' }}>
+        <p className="truncate text-[8px] font-bold uppercase tracking-[0.12em]" style={{ color: 'rgba(254,254,254,0.7)' }}>
           Pertandingan Berikutnya
         </p>
         <div className="flex shrink-0 items-center gap-1" aria-live="polite">

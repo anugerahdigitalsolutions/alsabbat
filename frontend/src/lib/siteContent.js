@@ -92,6 +92,16 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'store.header.title', group: 'Halaman Lain', label: 'Merchandise — Judul', value: 'Pakai Lambang Klub' },
   { key: 'store.header.description', group: 'Halaman Lain', label: 'Merchandise — Deskripsi', value: 'Produk resmi {club} Football Club.', multiline: true },
 
+  // YouTube di Beranda (link video, bukan media upload)
+  { key: 'home.label.youtube', group: 'YouTube', label: 'Label — Section YouTube', value: 'Video Terbaru' },
+  { key: 'home.label.youtube_action', group: 'YouTube', label: 'Aksi — Kanal YouTube', value: 'Kanal YouTube' },
+  { key: 'home.youtube.video_1', group: 'YouTube', label: 'Video 1 — Link YouTube', value: '', multiline: true },
+  { key: 'home.youtube.title_1', group: 'YouTube', label: 'Video 1 — Judul (opsional)', value: '' },
+  { key: 'home.youtube.video_2', group: 'YouTube', label: 'Video 2 — Link YouTube', value: '', multiline: true },
+  { key: 'home.youtube.title_2', group: 'YouTube', label: 'Video 2 — Judul (opsional)', value: '' },
+  { key: 'home.youtube.video_3', group: 'YouTube', label: 'Video 3 — Link YouTube', value: '', multiline: true },
+  { key: 'home.youtube.title_3', group: 'YouTube', label: 'Video 3 — Judul (opsional)', value: '' },
+
   // Member card design (background dikelola lewat Admin → Baraya → Desain Kartu Member)
   { key: 'member.card.background_url', group: 'Kartu Member', label: 'Latar Kartu (URL gambar)', value: '', multiline: true },
   { key: 'member.card.label', group: 'Kartu Member', label: 'Kartu — Label', value: 'Kartu Member Digital' },

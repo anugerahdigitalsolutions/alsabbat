@@ -8,6 +8,7 @@ import { UpcomingMatchCard } from '../../components/public/home/UpcomingMatchCar
 import { TeamStatsBlock } from '../../components/public/home/TeamStatsBlock';
 import { StorePromoCard } from '../../components/public/home/StorePromoCard';
 import { GalleryStrip } from '../../components/public/home/GalleryStrip';
+import { YoutubeShowcase, collectYoutubeVideos } from '../../components/public/home/YoutubeShowcase';
 import { NewsShowcase } from '../../components/public/home/NewsShowcase';
 import { JourneyCta } from '../../components/public/home/JourneyCta';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
@@ -24,19 +25,35 @@ import { bannerToSlide } from '../../lib/banners';
 const UPCOMING = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 const SOCIAL_ICONS = { instagram: Instagram, youtube: Youtube, facebook: Facebook, twitter: Twitter, tiktok: Music2 };
 
-const RowHeader = ({ label, to, actionLabel, testId }) => (
-  <div className="mb-4 flex items-end justify-between gap-3">
-    <p className="als-row-label" data-testid={testId}>
-      {label}
-    </p>
-    {to ? (
-      <Link to={to} className="als-view-all als-focus" data-testid={`${testId}-action`}>
-        {actionLabel}
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-      </Link>
-    ) : null}
-  </div>
-);
+const RowHeader = ({ label, to, actionLabel, testId }) => {
+  const external = typeof to === 'string' && /^https?:\/\//i.test(to);
+  return (
+    <div className="mb-4 flex items-end justify-between gap-3">
+      <p className="als-row-label" data-testid={testId}>
+        {label}
+      </p>
+      {to ? (
+        external ? (
+          <a
+            href={to}
+            target="_blank"
+            rel="noreferrer"
+            className="als-view-all als-focus"
+            data-testid={`${testId}-action`}
+          >
+            {actionLabel}
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        ) : (
+          <Link to={to} className="als-view-all als-focus" data-testid={`${testId}-action`}>
+            {actionLabel}
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        )
+      ) : null}
+    </div>
+  );
+};
 
 const Band = ({ children, className = '', testId }) => (
   <section className={`als-frame-inner py-10 sm:py-12 ${className}`} data-testid={testId}>
@@ -171,6 +188,8 @@ export default function HomePage() {
   }, [albums.items, news.items, players.items, nextMatch, lastMatch, badge, clubName, banners.items, t]);
 
   const storeImage = resolveMediaUrl(products.items[0]?.cover_url) || resolveMediaUrl(albums.items[1]?.cover_url_resolved);
+  const youtubeVideos = useMemo(() => collectYoutubeVideos(t), [t]);
+  const youtubeChannel = club?.social_media?.youtube || null;
 
   return (
     <div data-testid="page-home">
@@ -268,6 +287,19 @@ export default function HomePage() {
         <RowHeader label={t('home.label.gallery')} to="/gallery" actionLabel={t('home.label.gallery_action')} testId="home-label-gallery" />
         {albums.loading ? <LoadingState rows={2} testId="home-gallery-loading" /> : <GalleryStrip albums={albums.items} />}
       </Band>
+
+      {/* YouTube */}
+      {youtubeVideos.length || youtubeChannel ? (
+        <Band className="pt-0" testId="home-section-youtube">
+          <RowHeader
+            label={t('home.label.youtube')}
+            to={youtubeChannel || undefined}
+            actionLabel={t('home.label.youtube_action')}
+            testId="home-label-youtube"
+          />
+          <YoutubeShowcase videos={youtubeVideos} channelUrl={youtubeChannel} />
+        </Band>
+      ) : null}
 
       {/* Sponsors */}
       {sponsors.items.length ? (
