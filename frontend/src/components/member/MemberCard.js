@@ -13,14 +13,6 @@ const formatJoined = (value) => {
   }
 };
 
-const initials = (name) =>
-  (name || 'B')
-    .split(' ')
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
-
 /**
  * The one and only member card renderer (account page, member page, admin preview).
  * The QR only ever encodes the public verification URL — never tokens or credentials.
@@ -81,13 +73,17 @@ export const MemberCard = React.forwardRef(({ card, design, testId = 'member-car
           <div className="flex items-center gap-3">
             <span
               className="font-display grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-sm)] text-sm font-extrabold"
-              style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+              style={{
+                backgroundColor: '#FEFEFE',
+                color: 'var(--club-secondary)',
+                border: '1px solid rgba(252,207,43,0.35)',
+              }}
               aria-hidden="true"
             >
               {logo ? (
                 <img src={logo} alt="" className="h-9 w-9 object-contain" />
               ) : (
-                (shortName || 'ALS').slice(0, 3).toUpperCase()
+                (shortName || 'ALS').replace(/\s+/g, '').slice(0, 3).toUpperCase()
               )}
             </span>
             <span className="min-w-0">
@@ -115,8 +111,8 @@ export const MemberCard = React.forwardRef(({ card, design, testId = 'member-car
           </span>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
-          <div className="flex min-w-0 flex-1 basis-[190px] items-center gap-4">
+        <div className="mt-7 flex flex-wrap items-end justify-between gap-x-5 gap-y-6">
+          <div className="flex min-w-0 flex-1 basis-[200px] items-center gap-4">
             {card?.photo_url ? (
               <img
                 src={resolveMediaUrl(card.photo_url)}
@@ -125,31 +121,23 @@ export const MemberCard = React.forwardRef(({ card, design, testId = 'member-car
                 style={{ border: '2px solid var(--club-primary)' }}
                 data-testid={`${testId}-photo`}
               />
-            ) : (
-              <span
-                className="font-display grid h-20 w-20 shrink-0 place-items-center rounded-[var(--radius-sm)] text-xl font-extrabold"
-                style={{ backgroundColor: 'rgba(254,254,254,0.12)', color: 'var(--club-primary)', border: '2px solid rgba(252,207,43,0.5)' }}
-                data-testid={`${testId}-initials`}
-              >
-                {initials(card?.full_name)}
-              </span>
-            )}
+            ) : null}
             <span className="min-w-0">
               <span
-                className="font-display block truncate text-lg font-extrabold leading-tight sm:text-xl"
+                className="font-display block text-xl font-extrabold leading-[1.15] sm:text-[26px]"
                 style={{ color: 'var(--club-light)' }}
                 data-testid={`${testId}-name`}
               >
                 {card?.full_name || '—'}
               </span>
               <span
-                className="mt-1 block whitespace-nowrap font-mono text-sm font-bold tracking-wider"
+                className="mt-2 block whitespace-nowrap font-mono text-sm font-bold tracking-[0.14em]"
                 style={{ color: 'var(--club-primary)' }}
                 data-testid={`${testId}-number`}
               >
                 {card?.member_number || '—'}
               </span>
-              <span className="mt-1 block text-[11px]" style={{ color: 'rgba(254,254,254,0.82)' }}>
+              <span className="mt-1.5 block text-[11px]" style={{ color: 'rgba(254,254,254,0.82)' }}>
                 Member sejak {formatJoined(card?.joined_at)}
               </span>
             </span>
