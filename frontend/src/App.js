@@ -24,6 +24,12 @@ import ContactPage from './pages/public/ContactPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import BarayaLoginPage from './pages/public/BarayaLoginPage';
 import BarayaRegisterPage from './pages/public/BarayaRegisterPage';
+import BarayaAccountPage from './pages/public/BarayaAccountPage';
+import BarayaOrdersPage from './pages/public/BarayaOrdersPage';
+import BarayaOrderDetailPage from './pages/public/BarayaOrderDetailPage';
+import { BarayaAuthProvider } from './context/BarayaAuthContext';
+import { BarayaRoute } from './components/public/BarayaRoute';
+import AdminBarayaPage from './pages/admin/AdminBarayaPage';
 
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -63,6 +69,7 @@ function App() {
       <AuthProvider>
         <ClubProvider>
           <CartProvider>
+          <BarayaAuthProvider>
           <Routes>
             <Route element={<PublicLayout />}>
               <Route path="/" element={<HomePage />} />
@@ -86,6 +93,30 @@ function App() {
               <Route path="/club" element={<ClubPage />} />
               <Route path="/login" element={<BarayaLoginPage />} />
               <Route path="/daftar" element={<BarayaRegisterPage />} />
+              <Route
+                path="/akun"
+                element={
+                  <BarayaRoute>
+                    <BarayaAccountPage />
+                  </BarayaRoute>
+                }
+              />
+              <Route
+                path="/akun/pesanan"
+                element={
+                  <BarayaRoute>
+                    <BarayaOrdersPage />
+                  </BarayaRoute>
+                }
+              />
+              <Route
+                path="/akun/pesanan/:orderId"
+                element={
+                  <BarayaRoute>
+                    <BarayaOrderDetailPage />
+                  </BarayaRoute>
+                }
+              />
             </Route>
 
             <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -119,6 +150,7 @@ function App() {
               <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="achievements" element={<AdminAchievementsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
+              <Route path="baraya" element={<AdminBarayaPage />} />
               <Route path="system" element={<AdminSystemPage />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
@@ -132,6 +164,7 @@ function App() {
               }
             />
           </Routes>
+          </BarayaAuthProvider>
           </CartProvider>
           <Toaster position="top-right" richColors />
         </ClubProvider>

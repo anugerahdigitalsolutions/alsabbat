@@ -41,6 +41,8 @@ class Collections:
     PRODUCT_CATEGORIES = "product_categories"
     PRODUCT_VARIANTS = "product_variants"
     ORDERS = "orders"
+    CUSTOMERS = "customers"
+    CUSTOMER_SESSIONS = "customer_sessions"
     RATE_LIMITS = "rate_limits"
     SETTINGS = "site_settings"
 
@@ -129,6 +131,14 @@ async def ensure_indexes() -> None:
         await db[Collections.PRODUCT_VARIANTS].create_index([("product_id", ASCENDING), ("status", ASCENDING)])
         await db[Collections.ORDERS].create_index([("order_number", ASCENDING)], unique=True)
         await db[Collections.ORDERS].create_index([("customer.email", ASCENDING)])
+        await db[Collections.ORDERS].create_index([("customer_id", ASCENDING), ("created_at", DESCENDING)])
+
+        # Baraya ALSABBAT customer accounts (Phase 13)
+        await db[Collections.CUSTOMERS].create_index([("email", ASCENDING)], unique=True)
+        await db[Collections.CUSTOMERS].create_index([("id", ASCENDING)], unique=True)
+        await db[Collections.CUSTOMERS].create_index([("status", ASCENDING), ("created_at", DESCENDING)])
+        await db[Collections.CUSTOMER_SESSIONS].create_index([("jti", ASCENDING)], unique=True)
+        await db[Collections.CUSTOMER_SESSIONS].create_index([("customer_id", ASCENDING)])
         await db[Collections.ORDERS].create_index(
             [("order_status", ASCENDING), ("payment_status", ASCENDING), ("created_at", DESCENDING)]
         )

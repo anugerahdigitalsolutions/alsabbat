@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Menu, Search, UserRound } from 'lucide-react';
+import { Menu, Search, UserRound, LogOut, Receipt, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import { useBaraya } from '../../context/BarayaAuthContext';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { ClubCrestMark } from '../shared/ClubCrestMark';
@@ -26,6 +33,7 @@ export const SECONDARY_NAV = [
 
 export const PublicHeader = () => {
   const { clubName, shortName } = useClub();
+  const { customer, logout } = useBaraya();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -84,25 +92,59 @@ export const PublicHeader = () => {
             <Search className="h-[18px] w-[18px]" style={{ color: 'var(--club-secondary)' }} />
           </button>
 
-          <span
-            className="hidden text-[11px] font-medium xl:inline"
-            style={{ color: 'var(--muted-fg)' }}
-            data-testid="public-header-baraya-caption"
-          >
-            Login untuk Baraya ALSABBAT
-          </span>
+          {customer ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="als-focus font-display inline-flex min-h-[40px] max-w-[190px] items-center gap-2 rounded-full px-3.5 text-xs font-bold transition-transform duration-200 hover:-translate-y-0.5"
+                  style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+                  data-testid="public-header-baraya-menu"
+                >
+                  <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="truncate">{customer.full_name?.split(' ')[0] || 'Baraya'}</span>
+                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white" data-testid="public-header-baraya-dropdown">
+                <DropdownMenuItem asChild>
+                  <Link to="/akun" data-testid="baraya-menu-account">
+                    <UserRound className="mr-2 h-4 w-4" aria-hidden="true" /> Akun Saya
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/akun/pesanan" data-testid="baraya-menu-orders">
+                    <Receipt className="mr-2 h-4 w-4" aria-hidden="true" /> Pesanan Saya
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout} data-testid="baraya-menu-logout">
+                  <LogOut className="mr-2 h-4 w-4" aria-hidden="true" /> Keluar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <span
+                className="hidden text-[11px] font-medium xl:inline"
+                style={{ color: 'var(--muted-fg)' }}
+                data-testid="public-header-baraya-caption"
+              >
+                Login untuk Baraya ALSABBAT
+              </span>
 
-          <Link
-            to="/login"
-            className="als-focus font-display inline-flex min-h-[40px] items-center gap-2 rounded-full px-3.5 text-xs font-bold transition-transform duration-200 hover:-translate-y-0.5 sm:px-4"
-            style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-            title="Login untuk Baraya ALSABBAT"
-            aria-label="Login untuk Baraya ALSABBAT"
-            data-testid="public-header-baraya-login"
-          >
-            <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
-            Login
-          </Link>
+              <Link
+                to="/login"
+                className="als-focus font-display inline-flex min-h-[40px] items-center gap-2 rounded-full px-3.5 text-xs font-bold transition-transform duration-200 hover:-translate-y-0.5 sm:px-4"
+                style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+                title="Login untuk Baraya ALSABBAT"
+                aria-label="Login untuk Baraya ALSABBAT"
+                data-testid="public-header-baraya-login"
+              >
+                <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
+                Login
+              </Link>
+            </>
+          )}
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -136,14 +178,14 @@ export const PublicHeader = () => {
                   </NavLink>
                 ))}
                 <Link
-                  to="/login"
+                  to={customer ? '/akun' : '/login'}
                   onClick={() => setOpen(false)}
                   className="font-display mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 text-sm font-bold"
                   style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                   data-testid="public-mobile-baraya-login"
                 >
                   <UserRound className="h-4 w-4" aria-hidden="true" />
-                  Login untuk Baraya ALSABBAT
+                  {customer ? 'Akun Saya' : 'Login untuk Baraya ALSABBAT'}
                 </Link>
               </div>
             </SheetContent>

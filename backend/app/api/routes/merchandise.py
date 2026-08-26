@@ -14,7 +14,8 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.crud_factory import Repository, build_crud_router
-from app.api.deps import require_permission
+from app.api.deps import optional_customer, require_permission
+from app.models.customer import CustomerAuthContext
 from app.core.database import Collections, get_db
 from app.core.errors import NotFoundError, ValidationFailedError
 from app.core.logging_config import get_logger
@@ -255,7 +256,11 @@ async def payment_configuration() -> Dict[str, Any]:
 
 # ---------------------------------------------------------------- checkout
 @router.post("/checkout", status_code=201, summary="Create order + payment session")
-async def checkout(payload: CheckoutRequest, request: Request) -> Dict[str, Any]:
+async def checkout(
+    payload: CheckoutRequest,
+    request: Request,
+    customer: Optional[CustomerAuthContext] = Depends(optional_customer),
+) -> Dict[str, Any]:
     await checkout_guard(request)
     items = [await _price_and_stock(item.model_dump()) for item in payload.items]
     subtotal = sum(item["subtotal"] for item in items)
@@ -263,6 +268,7 @@ async def checkout(payload: CheckoutRequest, request: Request) -> Dict[str, Any]
     order = await orders.create(
         {
             "order_number": order_number,
+            "customer_id": customer.customer_id if customer else None,
             "customer": payload.customer.model_dump(),
             "shipping": payload.shipping.model_dump(),
             "items": items,

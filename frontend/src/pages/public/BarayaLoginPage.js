@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Info, LogIn, ShieldCheck } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AlertCircle, LogIn, ShieldCheck } from 'lucide-react';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { usePageSeo } from '../../hooks/usePageSeo';
-import { BARAYA_AUTH_ENABLED, BARAYA_AUTH_NOTICE, barayaLogin } from '../../services/barayaAuth';
+import { useBaraya } from '../../context/BarayaAuthContext';
 
 const BENEFITS = [
-  'Simpan data pengiriman untuk checkout merchandise yang lebih cepat',
+  'Simpan data pembeli agar checkout merchandise lebih cepat',
   'Lihat riwayat dan status pesanan kapan saja',
   'Kelola profil Baraya ALSABBAT dalam satu akun',
 ];
@@ -21,16 +21,25 @@ export default function BarayaLoginPage() {
     path: '/login',
     robots: 'noindex,follow',
   });
+  const { login } = useBaraya();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || '/akun';
   const [form, setForm] = useState({ email: '', password: '' });
-  const [notice, setNotice] = useState(null);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
-    try {
-      await barayaLogin(form);
-    } catch (e) {
-      setNotice(e.message || BARAYA_AUTH_NOTICE);
+    setSubmitting(true);
+    setError(null);
+    const result = await login(form.email, form.password);
+    setSubmitting(false);
+    if (result.ok) {
+      navigate(redirectTo, { replace: true });
+      return;
     }
+    setError(result.message);
   };
 
   return (
@@ -67,6 +76,7 @@ export default function BarayaLoginPage() {
               <Label className="mb-1.5 block">Email</Label>
               <Input
                 type="email"
+                required
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 placeholder="nama@email.com"
@@ -77,6 +87,7 @@ export default function BarayaLoginPage() {
               <Label className="mb-1.5 block">Kata Sandi</Label>
               <Input
                 type="password"
+                required
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 data-testid="baraya-login-password"
@@ -85,27 +96,28 @@ export default function BarayaLoginPage() {
 
             <Button
               type="submit"
+              disabled={submitting}
               className="w-full min-h-[44px] font-semibold"
               style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid="baraya-login-submit"
             >
               <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
-              Masuk
+              {submitting ? 'Memproses…' : 'Masuk'}
             </Button>
 
-            {!BARAYA_AUTH_ENABLED || notice ? (
+            {error ? (
               <p
                 className="flex items-start gap-2 rounded-[var(--radius-sm)] p-3 text-xs"
-                style={{ backgroundColor: 'rgba(252,207,43,0.16)', color: '#7A5A00' }}
-                data-testid="baraya-login-notice"
+                style={{ backgroundColor: 'rgba(220,38,38,0.10)', color: '#991B1B' }}
+                data-testid="baraya-login-error"
               >
-                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                {notice || BARAYA_AUTH_NOTICE}
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {error}
               </p>
             ) : null}
 
             <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>
-              Untuk sementara pembelian merchandise tetap bisa dilakukan tanpa akun melalui{' '}
+              Pembelian merchandise juga tetap bisa dilakukan tanpa akun melalui{' '}
               <Link to="/merchandise" className="font-semibold underline" style={{ color: 'var(--club-secondary)' }}>
                 halaman merchandise
               </Link>

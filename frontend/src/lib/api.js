@@ -8,6 +8,7 @@ export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 export const API_BASE = `${BACKEND_URL}/api`;
 
 const TOKEN_KEY = 'alsabbat.admin.token';
+const BARAYA_TOKEN_KEY = 'alsabbat.baraya.token';
 
 export const tokenStore = {
   get: () => localStorage.getItem(TOKEN_KEY),
@@ -38,6 +39,38 @@ api.interceptors.response.use(
       if (window.location.pathname.startsWith('/admin') && !window.location.pathname.endsWith('/login')) {
         window.location.replace('/admin/login?expired=1');
       }
+    }
+    return Promise.reject(error);
+  }
+);
+
+/** Baraya ALSABBAT (public customer) client — separate token, never mixed with admin. */
+export const barayaTokenStore = {
+  get: () => localStorage.getItem(BARAYA_TOKEN_KEY),
+  set: (token) => localStorage.setItem(BARAYA_TOKEN_KEY, token),
+  clear: () => localStorage.removeItem(BARAYA_TOKEN_KEY),
+};
+
+export const barayaApi = axios.create({
+  baseURL: API_BASE,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+barayaApi.interceptors.request.use((config) => {
+  const token = barayaTokenStore.get();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+barayaApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = error?.config?.url || '';
+    if (status === 401 && !url.includes('/baraya/login') && !url.includes('/baraya/register')) {
+      barayaTokenStore.clear();
     }
     return Promise.reject(error);
   }

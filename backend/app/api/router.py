@@ -8,6 +8,7 @@ from app.api.routes import (
     club,
     competitions,
     content,
+    customers,
     gallery,
     match_events,
     match_lineups,
@@ -49,3 +50,4 @@ api_router.include_router(analytics.router, prefix="/analytics")
 api_router.include_router(seo.router, prefix="/seo")
 api_router.include_router(social.router, prefix="/social")
 api_router.include_router(merchandise.router, prefix="/merchandise")
+api_router.include_router(customers.router, prefix="/baraya")

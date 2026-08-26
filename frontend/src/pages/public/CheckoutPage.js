@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Loader2, ShoppingCart } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertTriangle, Loader2, ShoppingCart, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
-import api, { apiErrorMessage } from '../../lib/api';
+import api, { apiErrorMessage, barayaApi } from '../../lib/api';
+import { useBaraya } from '../../context/BarayaAuthContext';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Button } from '../../components/ui/button';
@@ -25,6 +26,7 @@ const FIELDS = [
 export default function CheckoutPage() {
   usePageSeo({ title: 'Checkout', description: 'Checkout merchandise resmi ALSABBAT Football Club.', path: '/checkout', robots: 'noindex,follow' });
   const { lines, payload, clear } = useCart();
+  const { customer } = useBaraya();
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [paymentConfig, setPaymentConfig] = useState(null);
@@ -52,6 +54,19 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!customer) return;
+    setForm((f) => ({
+      ...f,
+      customer: {
+        name: f.customer.name || customer.full_name || '',
+        email: f.customer.email || customer.email || '',
+        phone: f.customer.phone || customer.phone || '',
+      },
+      shipping: { ...f.shipping, recipient: f.shipping.recipient || customer.full_name || '' },
+    }));
+  }, [customer]);
+
   const setField = (path, value) => {
     const [group, key] = path.split('.');
     setForm((f) => ({ ...f, [group]: { ...f[group], [key]: value } }));
@@ -60,7 +75,8 @@ export default function CheckoutPage() {
   const submit = async () => {
     setSubmitting(true);
     try {
-      const { data } = await api.post('/merchandise/checkout', {
+      const client = customer ? barayaApi : api;
+      const { data } = await client.post('/merchandise/checkout', {
         items: payload,
         customer: form.customer,
         shipping: form.shipping,
@@ -122,6 +138,24 @@ export default function CheckoutPage() {
         ) : (
           <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
             <div className="als-card space-y-4 p-6">
+              {customer ? (
+                <p
+                  className="flex items-center gap-2 rounded-[var(--radius-sm)] p-3 text-xs"
+                  style={{ backgroundColor: 'rgba(252,207,43,0.16)', color: '#7A5A00' }}
+                  data-testid="checkout-baraya-banner"
+                >
+                  <UserRound className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  Checkout sebagai Baraya ALSABBAT ({customer.email}). Pesanan otomatis tersimpan di akun Anda.
+                </p>
+              ) : (
+                <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="checkout-baraya-login-cta">
+                  Punya akun?{' '}
+                  <Link to="/login" state={{ from: '/checkout' }} className="font-semibold underline" style={{ color: 'var(--club-secondary)' }}>
+                    Login sebagai Baraya ALSABBAT
+                  </Link>{' '}
+                  agar pesanan tersimpan di riwayat akun. Checkout tanpa akun tetap bisa dilanjutkan.
+                </p>
+              )}
               <p className="als-section-label">Data Pembeli &amp; Pengiriman</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 {FIELDS.map(([path, label]) => (

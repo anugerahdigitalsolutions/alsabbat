@@ -12,6 +12,7 @@ from app.core.errors import ForbiddenError, UnauthorizedError
 from app.core.rbac import has_permission, permissions_for_role
 from app.core.security import decode_token
 from app.models.auth import AuthContext
+from app.models.customer import CustomerAuthContext
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -70,6 +71,50 @@ async def optional_user(
         return None
     try:
         return await get_current_user(credentials)
+    except Exception:
+        return None
+
+
+async def get_current_customer(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+) -> CustomerAuthContext:
+    """Baraya (public customer) authentication — never accepts an admin token."""
+    if credentials is None or not credentials.credentials:
+        raise UnauthorizedError("Silakan login sebagai Baraya ALSABBAT.")
+    try:
+        payload = decode_token(credentials.credentials)
+    except jwt.ExpiredSignatureError:
+        raise UnauthorizedError("Sesi berakhir, silakan login kembali.")
+    except jwt.PyJWTError:
+        raise UnauthorizedError("Token tidak valid.")
+
+    if payload.get("typ") != "baraya":
+        raise UnauthorizedError("Token ini bukan token Baraya ALSABBAT.")
+
+    db = get_db()
+    session = await db[Collections.CUSTOMER_SESSIONS].find_one({"jti": payload.get("jti", "")})
+    if not session or session.get("revoked"):
+        raise UnauthorizedError("Sesi sudah tidak berlaku.")
+
+    customer = await db[Collections.CUSTOMERS].find_one({"id": payload.get("sub")})
+    if not customer or customer.get("status") != "ACTIVE":
+        raise UnauthorizedError("Akun tidak aktif atau tidak ditemukan.")
+
+    return CustomerAuthContext(
+        customer_id=customer["id"],
+        email=customer["email"],
+        full_name=customer.get("full_name", ""),
+        jti=payload.get("jti", ""),
+    )
+
+
+async def optional_customer(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+) -> Optional[CustomerAuthContext]:
+    if credentials is None:
+        return None
+    try:
+        return await get_current_customer(credentials)
     except Exception:
         return None
 

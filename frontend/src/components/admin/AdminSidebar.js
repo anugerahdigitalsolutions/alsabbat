@@ -72,6 +72,7 @@ export const ADMIN_NAV = [
     group: 'Sistem',
     items: [
       { id: 'users', to: '/admin/users', label: 'Admin Users', Icon: UserCog },
+      { id: 'baraya', to: '/admin/baraya', label: 'Baraya ALSABBAT', Icon: UserCog },
       { id: 'system', to: '/admin/system', label: 'System Status', Icon: Activity },
     ],
   },

@@ -25,3 +25,10 @@ Create via `POST /api/users` while logged in as the Super Admin, e.g.:
 ```
 
 Available roles: `SUPER_ADMIN`, `CONTENT_ADMIN`, `GALLERY_ADMIN`, `SOCIAL_MEDIA_ADMIN`, `STORE_ADMIN`, `ORDER_ADMIN`.
+
+## Baraya ALSABBAT (customer) — akun test
+
+> Tidak ada akun Baraya permanen di database. Semua akun verifikasi Fase 13 sudah DIHAPUS.
+> Untuk menguji, daftar akun baru di `/daftar` (contoh pola yang dipakai saat verifikasi:
+> email `ui.phase13@barayaverify.dev`, kata sandi `UiVerify1234` — akun ini sudah dihapus).
+> Endpoint: POST /api/baraya/register, POST /api/baraya/login (token terpisah dari admin).

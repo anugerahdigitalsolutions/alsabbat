@@ -50,6 +50,26 @@ def create_access_token(
     return token, jti, expires_at
 
 
+def create_customer_access_token(
+    subject: str, expires_minutes: Optional[int] = None
+) -> tuple[str, str, datetime]:
+    """Baraya (public customer) token — separate audience from admin tokens."""
+    jti = uuid.uuid4().hex
+    expires_at = utcnow() + timedelta(
+        minutes=expires_minutes or settings.CUSTOMER_TOKEN_EXPIRE_MINUTES
+    )
+    payload: Dict[str, Any] = {
+        "sub": subject,
+        "typ": "baraya",
+        "jti": jti,
+        "iat": int(utcnow().timestamp()),
+        "exp": int(expires_at.timestamp()),
+        "iss": "alsabbat-api",
+    }
+    token = jwt.encode(payload, settings.resolved_jwt_secret(), algorithm=settings.JWT_ALGORITHM)
+    return token, jti, expires_at
+
+
 def decode_token(token: str) -> Dict[str, Any]:
     return jwt.decode(
         token,

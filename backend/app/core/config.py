@@ -60,6 +60,7 @@ class Settings:
     JWT_SECRET: str = os.environ.get("JWT_SECRET") or os.environ.get("SECRET_KEY") or ""
     JWT_ALGORITHM: str = os.environ.get("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "720"))
+    CUSTOMER_TOKEN_EXPIRE_MINUTES: int = int(os.environ.get("CUSTOMER_TOKEN_EXPIRE_MINUTES", "1440"))
 
     # Bootstrap super admin (idempotent seed). Password is only read from env.
     BOOTSTRAP_ADMIN_EMAIL: str = os.environ.get("BOOTSTRAP_ADMIN_EMAIL", "admin@alsabbat.com")

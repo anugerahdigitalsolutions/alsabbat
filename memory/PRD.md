@@ -293,3 +293,23 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 - Header kanan atas: pill "Login" + keterangan "Login untuk Baraya ALSABBAT" (xl+), mobile menu punya entri "Login untuk Baraya ALSABBAT". Staff Access tetap hanya di baris paling bawah footer.
 - Verifikasi: yarn build sukses; desktop 1920 & mobile 390 (header tanpa Staff Access, footer ada Staff Access, pill Login tampil); tidak ada kata "keluarga" tersisa; /login & /daftar 200; POST /api/auth/login admin 200.
 - BACKLOG: backend auth Baraya (koleksi customers, JWT terpisah), checkout dengan akun, riwayat pesanan, profil.
+
+## FASE 13 — Baraya ALSABBAT Account & Customer Commerce (26 Jun 2026)
+### Backend (additive)
+- Koleksi baru: `customers`, `customer_sessions` (+index unique email/id, jti). Password bcrypt (rounds 12), tidak pernah plaintext, tidak pernah keluar di response.
+- JWT Baraya terpisah: claim `typ="baraya"` via `create_customer_access_token` (exp default 1440 menit, env CUSTOMER_TOKEN_EXPIRE_MINUTES). Admin JWT tidak diubah.
+- `app/api/deps.py`: `get_current_customer` (tolak token admin), `optional_customer`.
+- `app/api/routes/customers.py` -> prefix `/api/baraya`: register, login, logout, me (GET/PATCH), change-password, orders, orders/{id}, admin/list, admin/{id}/status.
+- Rate limit: login_guard (existing), register 8/jam, profil 20/10mnt, password 10/15mnt. Validasi server-side + email normalization + password policy (8+, huruf+angka).
+- Orders dapat `customer_id` saat checkout dengan token Baraya (REUSE endpoint checkout existing, cart/stock/Midtrans tidak diduplikasi).
+### Frontend
+- `lib/api.js`: `barayaApi` + `barayaTokenStore` (localStorage key `alsabbat.baraya.token`) terpisah dari token admin.
+- `context/BarayaAuthContext.js`, `services/barayaAuth.js` (BARAYA_AUTH_ENABLED=true), `components/public/BarayaRoute.js`.
+- Halaman: /login, /daftar, /akun, /akun/pesanan, /akun/pesanan/:orderId. Header: dropdown akun (Akun Saya / Pesanan Saya / Keluar) saat login, pill Login + keterangan saat belum login. Staff Access tetap hanya di footer.
+- Checkout: prefill nama/email/WA dari profil, banner Baraya, guest checkout tetap jalan.
+- Admin Panel: `/admin/baraya` (lihat + aktif/nonaktif, tanpa akses password) memakai permission existing user:read / user:write.
+### Verifikasi (tanpa Testing Agent)
+- scripts/phase13_verify.py 27/27 PASS; scripts/phase13_checkout_verify.py 9/9 PASS. Semua data throwaway dihapus (customers=0, customer_sessions=0, orders=0, products=0).
+- yarn build OK, backend import OK, admin login 200, /admin/login 200, mobile 390px tanpa overflow.
+### Limitasi
+- Belum ada verifikasi email / reset password / OAuth. Order guest lama tidak otomatis terhubung ke akun Baraya. Ongkir masih flat 0 (kebijakan klub).

@@ -1,20 +1,46 @@
-/**
- * Integration point for Baraya ALSABBAT (public customer) authentication.
- *
- * Backend endpoints for public accounts do NOT exist yet — this module is the
- * single place to wire them up in the next phase (register, login, profile,
- * order history). Nothing here fakes a session or stores credentials.
- */
-export const BARAYA_AUTH_ENABLED = false;
+import { barayaApi, barayaTokenStore } from '../lib/api';
 
-export const BARAYA_AUTH_NOTICE =
-  'Akun Baraya ALSABBAT sedang disiapkan. Login dan pendaftaran akan aktif pada fase berikutnya.';
+/** Baraya ALSABBAT (public customer) auth — separate from Admin/RBAC. */
+export const BARAYA_AUTH_ENABLED = true;
 
-const notReady = () => {
-  const error = new Error(BARAYA_AUTH_NOTICE);
-  error.code = 'BARAYA_AUTH_NOT_AVAILABLE';
-  return Promise.reject(error);
+export const barayaLogin = async ({ email, password }) => {
+  const { data } = await barayaApi.post('/baraya/login', { email, password });
+  barayaTokenStore.set(data.access_token);
+  return data.customer;
 };
 
-export const barayaLogin = notReady;
-export const barayaRegister = notReady;
+export const barayaRegister = async (payload) => {
+  const { data } = await barayaApi.post('/baraya/register', payload);
+  return data.customer;
+};
+
+export const barayaLogout = async () => {
+  try {
+    await barayaApi.post('/baraya/logout');
+  } catch (e) {
+    /* session may already be invalid */
+  }
+  barayaTokenStore.clear();
+};
+
+export const barayaMe = async () => {
+  const { data } = await barayaApi.get('/baraya/me');
+  return data;
+};
+
+export const barayaUpdateProfile = async (payload) => {
+  const { data } = await barayaApi.patch('/baraya/me', payload);
+  return data;
+};
+
+export const barayaChangePassword = (payload) => barayaApi.post('/baraya/change-password', payload);
+
+export const barayaOrders = async () => {
+  const { data } = await barayaApi.get('/baraya/orders');
+  return data;
+};
+
+export const barayaOrderDetail = async (orderId) => {
+  const { data } = await barayaApi.get(`/baraya/orders/${orderId}`);
+  return data;
+};
