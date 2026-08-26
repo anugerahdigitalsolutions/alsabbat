@@ -39,7 +39,7 @@ export const HeroNextMatchPanel = ({ match, clubName = 'AL SABBAT' }) => {
     .join(' · ');
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2" data-testid="hero-next-match-panel">
+    <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-3" data-testid="hero-next-match-panel">
       <p
         className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em]"
         style={{ color: 'var(--club-primary)' }}
