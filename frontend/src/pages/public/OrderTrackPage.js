@@ -8,8 +8,10 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Badge } from '../../components/ui/badge';
 import { formatIDR } from '../../context/CartContext';
+import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function OrderTrackPage() {
+  usePageSeo({ title: 'Lacak Order', description: 'Lacak status order merchandise ALSABBAT Football Club.', path: '/order', robots: 'noindex,follow' });
   const [params] = useSearchParams();
   const [form, setForm] = useState({
     order_number: params.get('order_number') || '',

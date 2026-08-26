@@ -53,3 +53,4 @@ coverage/
 
 # Test artifacts
 test_reports/
+frontend/node_modules/.cache/default-development/0.pack

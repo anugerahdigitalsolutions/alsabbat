@@ -128,7 +128,7 @@ export const AdminSidebar = ({ onNavigate }) => (
     </nav>
 
     <div className="px-5 py-4 text-[11px]" style={{ borderTop: '1px solid rgba(254,254,254,0.10)', color: 'rgba(254,254,254,0.45)' }}>
-      Fase 4 — Match Gallery & Media
+      ALSABBAT Football Club · Admin
     </div>
   </div>
 );

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Home, Search } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { ClubCrestMark } from '../../components/shared/ClubCrestMark';
+import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function NotFoundPage() {
+  usePageSeo({ title: 'Halaman tidak ditemukan', description: 'Halaman yang Anda cari tidak tersedia.', robots: 'noindex,follow' });
   return (
     <div
       className="relative flex min-h-[70vh] items-center overflow-hidden"

@@ -23,6 +23,8 @@ function upsertLink(rel, href) {
   el.setAttribute('href', href);
 }
 
+let pageAppliedPath = null;
+
 export function applySeo({ title, description, image, canonical, siteName, robots }) {
   if (title) document.title = title;
   upsertMeta('name', 'description', description);
@@ -36,6 +38,18 @@ export function applySeo({ title, description, image, canonical, siteName, robot
   upsertMeta('name', 'twitter:title', title);
   upsertMeta('name', 'twitter:description', description);
   upsertLink('canonical', canonical || window.location.href);
+}
+
+/** Page-level SEO wins over the club-wide defaults for the current route. */
+export function applyPageSeo(options) {
+  pageAppliedPath = window.location.pathname;
+  applySeo(options);
+}
+
+/** Club-wide defaults: never overwrite SEO already set by the current page. */
+export function applyDefaultSeo(options) {
+  if (pageAppliedPath === window.location.pathname) return;
+  applySeo(options);
 }
 
 export const SITEMAP_URL = `${API_BASE}/seo/sitemap.xml`;

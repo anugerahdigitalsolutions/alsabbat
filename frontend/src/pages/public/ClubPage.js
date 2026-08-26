@@ -6,8 +6,10 @@ import { ErrorState } from '../../components/shared/ErrorState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { ClubCrestMark } from '../../components/shared/ClubCrestMark';
+import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function ClubPage() {
+  usePageSeo({ title: 'Profil Klub', description: 'Profil resmi ALSABBAT Football Club.', path: '/club' });
   const { club, clubName, loading, error, reload } = useClub();
   const teams = useResourceList('/teams', { status: 'ACTIVE', limit: 20 });
 

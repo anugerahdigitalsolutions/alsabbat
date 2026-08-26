@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { formatIDR, useCart } from '../../context/CartContext';
+import { usePageSeo } from '../../hooks/usePageSeo';
 
 const FIELDS = [
   ['customer.name', 'Nama Lengkap'],
@@ -22,6 +23,7 @@ const FIELDS = [
 ];
 
 export default function CheckoutPage() {
+  usePageSeo({ title: 'Checkout', description: 'Checkout merchandise resmi ALSABBAT Football Club.', path: '/checkout', robots: 'noindex,follow' });
   const { lines, payload, clear } = useCart();
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);

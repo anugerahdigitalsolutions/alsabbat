@@ -6,8 +6,10 @@ import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Button } from '../../components/ui/button';
 import { formatIDR, useCart } from '../../context/CartContext';
+import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function CartPage() {
+  usePageSeo({ title: 'Keranjang', description: 'Keranjang merchandise resmi ALSABBAT Football Club.', path: '/cart', robots: 'noindex,follow' });
   const { lines, payload, updateQuantity, removeItem, count } = useCart();
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);

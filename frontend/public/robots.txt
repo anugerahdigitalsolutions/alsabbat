@@ -1,8 +1,7 @@
-# ALSABBAT Football Club
-# This file is REGENERATED at build time by scripts/generate-seo-files.js
-# (the Sitemap directive uses REACT_APP_BACKEND_URL — never a hard-coded domain).
+# ALSABBAT Football Club — generated at build time, do not edit by hand
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /cart
+Sitemap: https://inner-page-polish.preview.emergentagent.com/api/seo/sitemap.xml

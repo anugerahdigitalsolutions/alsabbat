@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Newspaper } from 'lucide-react';
+import { ArrowLeft, FileText, Newspaper } from 'lucide-react';
 import api, { apiErrorMessage } from '../../lib/api';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
@@ -14,6 +14,9 @@ import { MatchdayCountdown } from '../../components/public/MatchdayCountdown';
 import { MatchTimeline } from '../../components/public/matchcenter/MatchTimeline';
 import { MatchMediaPanel } from '../../components/public/matchcenter/MatchMediaPanel';
 import { MatchGallerySection } from '../../components/public/matchcenter/MatchGallerySection';
+import { HeadToHeadPanel } from '../../components/public/matchcenter/HeadToHeadPanel';
+import { MatchScoreCardGenerator } from '../../components/public/matchcenter/MatchScoreCardGenerator';
+import { ShareMatchday } from '../../components/public/ShareMatchday';
 import { Reveal } from '../../components/public/Reveal';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { useClub } from '../../context/ClubContext';
@@ -34,6 +37,8 @@ const EMPTY = {
   images: [],
   videos: [],
   social_content: [],
+  match_report: null,
+  head_to_head: null,
 };
 
 export default function MatchDetailPage() {
@@ -129,7 +134,8 @@ export default function MatchDetailPage() {
         </Link>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Reveal className="lg:col-span-2">
+          <div className="space-y-6 lg:col-span-2">
+          <Reveal>
             <Tabs defaultValue="lineup">
               <TabsList data-testid="match-detail-tabs">
                 <TabsTrigger value="lineup" data-testid="match-tab-lineup">
@@ -184,6 +190,47 @@ export default function MatchDetailPage() {
               </TabsContent>
             </Tabs>
           </Reveal>
+
+          <Reveal className="space-y-6" delay={80}>
+            <HeadToHeadPanel h2h={data.head_to_head} clubName={shortName || clubName} />
+
+            {data.match_report ? (
+              <div className="als-card p-5 sm:p-6" data-testid="match-report-card">
+                <p className="als-section-label">Match Report</p>
+                <span className="als-gold-rule mt-2" aria-hidden="true" />
+                <h2 className="font-display mt-4 text-lg font-bold">{data.match_report.title}</h2>
+                {data.match_report.excerpt ? (
+                  <p className="mt-2 text-sm leading-[1.8]" style={{ color: 'var(--muted-fg)' }}>
+                    {data.match_report.excerpt}
+                  </p>
+                ) : null}
+                <Link
+                  to={`/news/${data.match_report.slug}`}
+                  className="mt-4 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold transition-colors duration-200 hover:underline"
+                  style={{ color: 'var(--club-secondary)' }}
+                  data-testid="match-report-link"
+                >
+                  <FileText className="h-4 w-4" aria-hidden="true" />
+                  Baca laporan pertandingan
+                </Link>
+              </div>
+            ) : null}
+
+            <MatchScoreCardGenerator
+              match={match}
+              clubName={shortName || clubName}
+              clubLogo={club?.logo}
+              competitionName={data.competition?.name}
+              seasonName={data.season?.name}
+            />
+
+            <ShareMatchday
+              match={match}
+              clubName={shortName || clubName}
+              competitionName={data.competition?.name}
+            />
+          </Reveal>
+          </div>
 
           <Reveal className="space-y-6" delay={120}>
             {['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'].includes(match.status) ? (

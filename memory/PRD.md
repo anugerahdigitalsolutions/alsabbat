@@ -35,6 +35,32 @@ secara bertahap per fase, dengan identitas brand ketat:
 | 8 | Social Publishing | **SELESAI (25 Jun 2026)** — STOP GATE 8 |
 | 9 | Merchandise & Commerce | SELESAI (25 Jun 2026) — STOP GATE 9 |
 | 10 | Production Finalization | **SELESAI (26 Jun 2026)** — STOP GATE 10 |
+| 11 | Final Feature Completion & Experience Polish | **SELESAI (26 Jun 2026)** — STOP GATE 11 |
+
+## Fase 11 — Final Feature Completion & Experience Polish (2026-06-26)
+Laporan lengkap: `/app/docs/PHASE_11_REPORT.md`. Additive; Fase 1–10 tidak dirombak; tanpa data dummy.
+- **Social Publishing final UI**: sumber konten eksplisit (Berita/Match Report, Pertandingan, Album, Merchandise,
+  manual) yang mengisi caption/judul + `match_id`; platform tetap independen; preview diperkaya
+  (status per platform termasuk NOT_SELECTED/NOT_CONFIGURED, thumbnail media, blok YouTube + indikator Shorts);
+  field deskripsi YouTube. Arsitektur/idempotency/retry Fase 8 tidak diubah.
+- **Player Season Statistics** (derived, tanpa model baru): `GET /api/players/{id}/statistics` dari
+  MatchLineup + MatchEvent + Match + Season; musim tanpa event → `null` (bukan 0 palsu);
+  section "Statistik Musim" + season selector di `/players/:id`.
+- **Head-to-Head** (derived dari `matches`, tanpa koleksi baru): `GET /api/matches/{id}/head-to-head`
+  + disertakan di `relations` (0 request tambahan); W/D/L, gol, 5 pertemuan terakhir; empty state jujur.
+- **Match Report** memakai CMS existing: field additive `posts.post_type`
+  (ARTICLE/MATCH_REPORT/ANNOUNCEMENT) + filter/kolom/field Admin + `relations.match_report`
+  → CTA hanya muncul bila report published tertaut match.
+- **Share Matchday**: Web Share API, WhatsApp, Copy Link (tanpa klaim auto-post Instagram Story).
+- **Auto Score Card**: `MatchScoreCardGenerator` berbasis Canvas (tanpa dependency baru), 1:1 & 9:16,
+  data nyata match, crest adaptif anti-overlap, Download PNG + Share file.
+- **Polish**: label opsi match terbaca di Admin (`adminOptions.js` + `labelFn`), `useRemoteOptions`
+  distabilkan (hentikan fetch berulang), footer sidebar diperbarui.
+- **SEO bug diperbaiki**: `ClubContext` sebelumnya menimpa SEO per halaman → kini `applyPageSeo`
+  (prioritas halaman) vs `applyDefaultSeo`; 7 halaman publik mendapat SEO; cart/checkout/order/404 `noindex`.
+- Verifikasi: build 242.2 kB gz tanpa warning, logic check pada database sekali-pakai (di-drop otomatis),
+  verifikasi visual pada database sementara lalu dikembalikan → **database produksi tetap bersih**.
+- BLOCKER: kredensial sosial media & Midtrans, domain final (Fase 12).
 
 ## Fase 10 — Production Finalization (2026-06-26)
 Laporan lengkap: `/app/docs/PHASE_10_REPORT.md`. Additive & minimal; Fase 1–9 tidak dirombak.
@@ -192,7 +218,8 @@ tetapi DATA hanya boleh berisi satu team aktif bernama `ALSABBAT`.
 
 ## Backlog
 ### P0
-- (kosong) — Fase 1–10 selesai; menunggu domain produksi & kredensial gateway/sosial dari user.
+- **Fase 12 — Final Production Deployment**: MongoDB Atlas → Railway → Vercel → domain → CORS →
+  Storage/CDN → Midtrans → Instagram/TikTok/YouTube → HTTPS → final smoke test → GO LIVE.
 ### P1
 - Route-level code splitting halaman admin (perf; butuh perubahan struktur App.js)
 - Audit log administratif & 2FA Super Admin

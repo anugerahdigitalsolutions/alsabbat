@@ -5,6 +5,7 @@ import api, { apiErrorMessage } from '../../lib/api';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { Reveal } from '../../components/public/Reveal';
+import { PlayerSeasonStats } from '../../components/public/PlayerSeasonStats';
 import { Badge } from '../../components/ui/badge';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
@@ -205,6 +206,10 @@ export default function PlayerDetailPage() {
                 ))}
               </Reveal>
             ) : null}
+
+            <Reveal delay={80}>
+              <PlayerSeasonStats playerId={playerId} />
+            </Reveal>
 
             <Reveal className="als-card p-6 sm:p-8" delay={80}>
               <p className="als-section-label">Biografi</p>

@@ -9,8 +9,10 @@ import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
+import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function NewsPage() {
+  usePageSeo({ title: 'Berita', description: 'Berita resmi, match report, dan pengumuman ALSABBAT Football Club.', path: '/news' });
   const [query, setQuery] = useState('');
   const { items, total, loading, error, reload } = useResourceList('/content/posts', {
     status: 'PUBLISHED',

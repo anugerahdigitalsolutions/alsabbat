@@ -100,13 +100,20 @@ const preparePayload = (fields, values) => {
 
 /* --------------------------- option loading --------------------------- */
 function useRemoteOptions(fields, filters) {
+  const sourceKey = [...fields, ...filters]
+    .filter((item) => item.optionsFrom)
+    .map((item) => item.optionsFrom.endpoint)
+    .join('|');
+
   const sources = useMemo(() => {
     const list = [];
     [...fields, ...filters].forEach((item) => {
       if (item.optionsFrom) list.push(item.optionsFrom);
     });
     return list;
-  }, [fields, filters]);
+    // Stable by endpoint set: inline field arrays must not retrigger fetches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceKey]);
 
   const [optionMap, setOptionMap] = useState({});
 
@@ -119,7 +126,9 @@ function useRemoteOptions(fields, filters) {
             const { data } = await api.get(source.endpoint, { params: { limit: 200 } });
             const options = (data?.items || []).map((item) => ({
               value: item[source.valueKey || 'id'],
-              label: item[source.labelKey || 'name'] || item.title || item.id,
+              label: source.labelFn
+                ? source.labelFn(item)
+                : item[source.labelKey || 'name'] || item.title || item.id,
             }));
             return [source.endpoint, options];
           } catch (e) {

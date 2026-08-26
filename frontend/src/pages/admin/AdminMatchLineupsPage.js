@@ -3,6 +3,7 @@ import { ClipboardList } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { matchOptions } from './adminOptions';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -31,7 +32,7 @@ export default function AdminMatchLineupsPage() {
         {
           name: 'match_id',
           label: 'Pertandingan',
-          optionsFrom: { endpoint: '/matches', labelKey: 'date' },
+          optionsFrom: matchOptions,
         },
         { name: 'team_id', label: 'Tim', optionsFrom: { endpoint: '/teams', labelKey: 'name' } },
         { name: 'role', label: 'Peran', options: opts(meta?.lineup_roles) },
@@ -58,7 +59,7 @@ export default function AdminMatchLineupsPage() {
           label: 'Pertandingan',
           type: 'select',
           required: true,
-          optionsFrom: { endpoint: '/matches', labelKey: 'date' },
+          optionsFrom: matchOptions,
           help: 'Daftar tampil sebagai tanggal pertandingan.',
         },
         {

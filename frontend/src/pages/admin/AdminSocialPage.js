@@ -42,6 +42,9 @@ export default function AdminSocialPage() {
   const [summary, setSummary] = useState([]);
   const [posts, setPosts] = useState([]);
   const [media, setMedia] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [albums, setAlbums] = useState([]);
+  const [products, setProducts] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
@@ -49,7 +52,10 @@ export default function AdminSocialPage() {
 
   const [form, setForm] = useState({
     platforms: [],
+    source_type: 'NONE',
+    source_id: '',
     post_id: '',
+    match_id: '',
     media_ids: [],
     caption: '',
     title: '',
@@ -61,18 +67,24 @@ export default function AdminSocialPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [p, s, pubs, postRes, mediaRes] = await Promise.all([
+      const [p, s, pubs, postRes, mediaRes, matchRes, albumRes, productRes] = await Promise.all([
         api.get('/social/platforms'),
         api.get('/social/summary'),
         api.get('/social/publications', { params: { limit: 50 } }),
         api.get('/content/posts', { params: { limit: 50 } }),
         api.get('/media', { params: { limit: 50 } }),
+        api.get('/matches', { params: { limit: 50 } }),
+        api.get('/gallery/albums', { params: { limit: 50 } }),
+        api.get('/merchandise/catalog/products', { params: { limit: 50 } }),
       ]);
       setPlatforms(p.data?.items || []);
       setSummary(s.data?.items || []);
       setItems(pubs.data?.items || []);
       setPosts(postRes.data?.items || []);
       setMedia(mediaRes.data?.items || []);
+      setMatches(matchRes.data?.items || []);
+      setAlbums(albumRes.data?.items || []);
+      setProducts(productRes.data?.items || []);
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Gagal memuat data Social Publishing.'));
     } finally {
@@ -103,6 +115,58 @@ export default function AdminSocialPage() {
     [media, form.media_ids]
   );
 
+  const SOURCE_TYPES = [
+    ['NONE', 'Tanpa sumber (manual)'],
+    ['POST', 'Berita / Match Report'],
+    ['MATCH', 'Pertandingan'],
+    ['ALBUM', 'Album Galeri'],
+    ['PRODUCT', 'Merchandise'],
+  ];
+
+  const sourceItems = useMemo(() => {
+    if (form.source_type === 'POST') return posts.map((p) => [p.id, `${p.post_type || 'ARTICLE'} · ${p.title}`]);
+    if (form.source_type === 'MATCH')
+      return matches.map((m) => [m.id, `${m.date || '—'} · vs ${m.opponent?.name || 'Lawan'}`]);
+    if (form.source_type === 'ALBUM') return albums.map((a) => [a.id, a.title]);
+    if (form.source_type === 'PRODUCT') return products.map((p) => [p.id, p.name]);
+    return [];
+  }, [form.source_type, posts, matches, albums, products]);
+
+  const applySource = (sourceId) => {
+    const type = form.source_type;
+    const next = { source_id: sourceId, post_id: '', match_id: '' };
+    if (type === 'POST') {
+      const post = posts.find((p) => p.id === sourceId);
+      next.post_id = sourceId;
+      next.match_id = post?.match_id || '';
+      next.caption = post ? [post.title, post.excerpt].filter(Boolean).join('\n\n') : form.caption;
+      next.title = post?.title?.slice(0, 100) || form.title;
+    } else if (type === 'MATCH') {
+      const match = matches.find((m) => m.id === sourceId);
+      next.match_id = sourceId;
+      const hasScore = match?.home_score !== null && match?.home_score !== undefined;
+      next.caption = match
+        ? `${hasScore ? 'FULL TIME' : 'MATCHDAY'} — ALSABBAT vs ${match.opponent?.name || 'Lawan'}${
+            hasScore ? ` ${match.home_score}-${match.away_score ?? 0}` : ''
+          }\n${match.date || ''}${match.time ? ` · ${match.time} WIB` : ''}${
+            match.venue ? `\n${match.venue}` : ''
+          }`
+        : form.caption;
+      next.title = match ? `ALSABBAT vs ${match.opponent?.name || 'Lawan'}`.slice(0, 100) : form.title;
+    } else if (type === 'ALBUM') {
+      const album = albums.find((a) => a.id === sourceId);
+      next.caption = album ? [album.title, album.description].filter(Boolean).join('\n\n') : form.caption;
+      next.title = album?.title?.slice(0, 100) || form.title;
+    } else if (type === 'PRODUCT') {
+      const product = products.find((p) => p.id === sourceId);
+      next.caption = product
+        ? `${product.name}\n${product.short_description || product.description || ''}`.trim()
+        : form.caption;
+      next.title = product?.name?.slice(0, 100) || form.title;
+    }
+    setForm((f) => ({ ...f, ...next }));
+  };
+
   const submit = async () => {
     if (!form.platforms.length) {
       toast.error('Pilih minimal satu platform.');
@@ -113,6 +177,7 @@ export default function AdminSocialPage() {
       const payload = {
         platforms: form.platforms,
         post_id: form.post_id || null,
+        match_id: form.match_id || null,
         media_ids: form.media_ids,
         caption: form.caption,
         title: form.title || null,
@@ -122,7 +187,19 @@ export default function AdminSocialPage() {
       };
       const { data } = await api.post('/social/publications', payload);
       toast.success(`${data.total} draft publikasi dibuat.`);
-      setForm({ platforms: [], post_id: '', media_ids: [], caption: '', title: '', description: '', tags: '', visibility: 'private' });
+      setForm({
+        platforms: [],
+        source_type: 'NONE',
+        source_id: '',
+        post_id: '',
+        match_id: '',
+        media_ids: [],
+        caption: '',
+        title: '',
+        description: '',
+        tags: '',
+        visibility: 'private',
+      });
       load();
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Gagal membuat publikasi.'));
@@ -207,6 +284,47 @@ export default function AdminSocialPage() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label className="mb-1.5 block">Sumber Konten</Label>
+                <Select
+                  value={form.source_type}
+                  onValueChange={(v) => setForm((f) => ({ ...f, source_type: v, source_id: '', post_id: '', match_id: '' }))}
+                >
+                  <SelectTrigger data-testid="social-source-type-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SOURCE_TYPES.map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-1.5 block">Pilih Item</Label>
+                <Select
+                  value={form.source_id || 'none'}
+                  onValueChange={(v) => (v === 'none' ? setForm((f) => ({ ...f, source_id: '' })) : applySource(v))}
+                  disabled={form.source_type === 'NONE' || !sourceItems.length}
+                >
+                  <SelectTrigger data-testid="social-source-item-select">
+                    <SelectValue placeholder={sourceItems.length ? 'Pilih…' : 'Belum ada data'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Tidak dipilih</SelectItem>
+                    {sourceItems.map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div>
               <Label className="mb-1.5 block">Post / Berita (untuk publish Website)</Label>
               <Select value={form.post_id || 'none'} onValueChange={(v) => setForm((f) => ({ ...f, post_id: v === 'none' ? '' : v }))}>
@@ -259,6 +377,17 @@ export default function AdminSocialPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div>
+              <Label className="mb-1.5 block">Deskripsi (YouTube)</Label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                maxLength={5000}
+                rows={3}
+                data-testid="social-description-input"
+              />
             </div>
 
             <div>
@@ -325,17 +454,78 @@ export default function AdminSocialPage() {
         </div>
 
         {/* Preview */}
-        <div className="mt-6 rounded-[var(--radius-md)] p-4" style={{ backgroundColor: '#000000' }} data-testid="social-preview">
+        <div className="mt-6 rounded-[var(--radius-md)] p-5" style={{ backgroundColor: '#000000' }} data-testid="social-preview">
           <p className="font-display text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--club-primary)' }}>
             Preview
           </p>
-          <p className="mt-2 whitespace-pre-line text-sm" style={{ color: 'var(--club-light)' }}>
+
+          <div className="mt-3 flex flex-wrap gap-2" data-testid="social-preview-platforms">
+            {platforms.map((p) => {
+              const selected = form.platforms.includes(p.platform);
+              const state = !selected ? 'NOT_SELECTED' : p.status === 'CONNECTED' ? 'READY' : p.status;
+              return (
+                <span
+                  key={p.platform}
+                  className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  style={{
+                    backgroundColor: selected ? 'rgba(252,207,43,0.18)' : 'rgba(254,254,254,0.08)',
+                    color: selected ? '#FCCF2B' : 'rgba(254,254,254,0.55)',
+                  }}
+                  data-testid={`social-preview-platform-${p.platform}`}
+                >
+                  {p.platform} · {state}
+                </span>
+              );
+            })}
+          </div>
+
+          <p className="mt-4 whitespace-pre-line text-sm" style={{ color: 'var(--club-light)' }} data-testid="social-preview-caption">
             {form.caption || 'Caption belum diisi.'}
           </p>
-          <p className="mt-3 text-xs" style={{ color: 'rgba(254,254,254,0.6)' }}>
-            {form.platforms.length ? form.platforms.join(' · ') : 'Belum ada platform dipilih'} ·{' '}
-            {selectedMedia.length} media
-          </p>
+
+          {selectedMedia.length ? (
+            <div className="mt-4 flex flex-wrap gap-2" data-testid="social-preview-media">
+              {selectedMedia.map((m) => (
+                <span key={m.id} className="overflow-hidden rounded-[var(--radius-sm)]" style={{ backgroundColor: 'rgba(254,254,254,0.08)' }}>
+                  {m.file_type === 'IMAGE' && (m.thumbnail_url || m.url) ? (
+                    <img
+                      src={m.thumbnail_url || m.url}
+                      alt={m.alt_text || m.file_name}
+                      className="h-16 w-16 object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="flex h-16 w-16 items-center justify-center text-[10px] font-semibold" style={{ color: 'rgba(254,254,254,0.7)' }}>
+                      {m.file_type}
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-xs" style={{ color: 'rgba(254,254,254,0.55)' }}>
+              Belum ada media dipilih.
+            </p>
+          )}
+
+          {form.platforms.some((p) => p.startsWith('YOUTUBE')) ? (
+            <div className="mt-4 border-t pt-3 text-xs" style={{ borderColor: 'rgba(254,254,254,0.12)', color: 'rgba(254,254,254,0.72)' }} data-testid="social-preview-youtube">
+              <p>
+                <span style={{ color: '#FCCF2B' }}>YouTube · Judul:</span> {form.title || '(belum diisi)'}
+              </p>
+              <p className="mt-1">
+                <span style={{ color: '#FCCF2B' }}>Deskripsi:</span> {form.description || form.caption || '(belum diisi)'}
+              </p>
+              <p className="mt-1">
+                <span style={{ color: '#FCCF2B' }}>Visibility:</span> {form.visibility}
+              </p>
+              {form.platforms.includes('YOUTUBE_SHORTS') ? (
+                <p className="mt-1" data-testid="social-preview-shorts">
+                  <span style={{ color: '#FCCF2B' }}>Shorts:</span> video wajib vertikal/persegi dan ≤ 180 detik.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <Button

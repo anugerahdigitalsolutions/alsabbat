@@ -9,10 +9,12 @@ import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
+import { usePageSeo } from '../../hooks/usePageSeo';
 
 const UPCOMING = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 
 export default function MatchesPage() {
+  usePageSeo({ title: 'Pertandingan', description: 'Jadwal, hasil, dan Match Center ALSABBAT Football Club.', path: '/matches' });
   const [seasonId, setSeasonId] = useState('all');
   const [tab, setTab] = useState('upcoming');
 

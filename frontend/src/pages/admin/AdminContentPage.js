@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { matchOptions } from './adminOptions';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -32,20 +33,22 @@ export default function AdminContentPage() {
         <TabsContent value="posts" className="mt-6">
           <ResourceManager
             title="Post"
-            description="Berita dan artikel klub dengan slug SEO-friendly."
+            description="Berita, artikel, dan Match Report klub dengan slug SEO-friendly."
             endpoint="/content/posts"
             writePermission="content:write"
             testPrefix="admin-posts"
             emptyIcon={Newspaper}
             emptyTitle="Belum ada berita"
             emptyDescription="Tulis berita pertama klub."
-            defaults={{ status: 'DRAFT' }}
+            defaults={{ status: 'DRAFT', post_type: 'ARTICLE' }}
             filters={[
               { name: 'status', label: 'Status', options: opts(meta?.post_status) },
+              { name: 'post_type', label: 'Tipe', options: opts(meta?.post_types) },
               { name: 'category_id', label: 'Kategori', optionsFrom: { endpoint: '/content/categories', labelKey: 'name' } },
             ]}
             columns={[
               { key: 'title', label: 'Judul' },
+              { key: 'post_type', label: 'Tipe', render: (r) => <Badge variant="outline">{r.post_type || 'ARTICLE'}</Badge> },
               { key: 'slug', label: 'Slug', className: 'font-mono text-xs' },
               { key: 'status', label: 'Status', render: (r) => <Badge variant="outline">{r.status}</Badge> },
               { key: 'published_at', label: 'Dipublikasikan' },
@@ -53,13 +56,21 @@ export default function AdminContentPage() {
             fields={[
               { name: 'title', label: 'Judul', type: 'text', required: true, full: true },
               { name: 'slug', label: 'Slug', type: 'text', help: 'Kosongkan untuk dibuat otomatis dari judul.' },
+              {
+                name: 'post_type',
+                label: 'Tipe Konten',
+                type: 'select',
+                options: opts(meta?.post_types),
+                required: true,
+                help: 'Pilih MATCH_REPORT agar tampil sebagai laporan pertandingan di Match Center.',
+              },
               { name: 'status', label: 'Status', type: 'select', options: opts(meta?.post_status), required: true },
               { name: 'thumbnail', label: 'Thumbnail URL', type: 'text', full: true },
               { name: 'excerpt', label: 'Ringkasan', type: 'textarea', full: true },
               { name: 'content', label: 'Isi Berita', type: 'textarea', full: true, rows: 8 },
               { name: 'category_id', label: 'Kategori', type: 'select', optionsFrom: { endpoint: '/content/categories', labelKey: 'name' } },
               { name: 'author_id', label: 'Author', type: 'select', optionsFrom: { endpoint: '/content/authors', labelKey: 'name' } },
-              { name: 'match_id', label: 'Terkait Match', type: 'select', optionsFrom: { endpoint: '/matches', labelKey: 'id' } },
+              { name: 'match_id', label: 'Terkait Match', type: 'select', optionsFrom: matchOptions },
               { name: 'team_id', label: 'Terkait Tim', type: 'select', optionsFrom: { endpoint: '/teams', labelKey: 'name' } },
               { name: 'published_at', label: 'Tanggal Publikasi', type: 'date' },
               { name: 'seo.title', label: 'SEO Title', type: 'text', full: true },

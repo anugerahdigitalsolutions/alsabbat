@@ -7,6 +7,8 @@ referenced resources (no media arrays embedded in Match).
 """
 from typing import Any, Dict, List
 
+import re
+
 from fastapi import APIRouter
 
 from app.api.crud_factory import Repository, build_crud_router
@@ -48,6 +50,91 @@ async def _players_map(ids: List[str]) -> Dict[str, Dict[str, Any]]:
     return {doc["id"]: _player_summary(doc) for doc in docs}
 
 
+def _club_scores(match: Dict[str, Any]) -> tuple[int, int] | None:
+    """(club goals, opponent goals) using the existing home/away convention."""
+    home, away = match.get("home_score"), match.get("away_score")
+    if home is None or away is None:
+        return None
+    is_home = match.get("venue_type") != "AWAY"
+    return (int(home), int(away)) if is_home else (int(away), int(home))
+
+
+async def _head_to_head(match: Dict[str, Any]) -> Dict[str, Any]:
+    """Derived from existing Match data only — no separate H2H collection."""
+    opponent = ((match.get("opponent") or {}).get("name") or "").strip()
+    empty = {
+        "opponent": opponent or None,
+        "available": False,
+        "matches_played": 0,
+        "wins": 0,
+        "draws": 0,
+        "losses": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0,
+        "recent": [],
+    }
+    if not opponent:
+        return empty
+    history, _ = await matches.list(
+        {
+            "status": "FINISHED",
+            "opponent.name": {"$regex": f"^{re.escape(opponent)}$", "$options": "i"},
+        },
+        limit=100,
+        sort=(("date", -1),),
+    )
+    played = [m for m in history if _club_scores(m) is not None]
+    if not played:
+        return empty
+
+    wins = draws = losses = scored = conceded = 0
+    recent: List[Dict[str, Any]] = []
+    for item in played:
+        club_goals, opponent_goals = _club_scores(item)
+        scored += club_goals
+        conceded += opponent_goals
+        if club_goals > opponent_goals:
+            wins += 1
+            outcome = "WIN"
+        elif club_goals == opponent_goals:
+            draws += 1
+            outcome = "DRAW"
+        else:
+            losses += 1
+            outcome = "LOSS"
+        if len(recent) < 5:
+            recent.append(
+                {
+                    "id": item.get("id"),
+                    "date": item.get("date"),
+                    "venue_type": item.get("venue_type"),
+                    "club_goals": club_goals,
+                    "opponent_goals": opponent_goals,
+                    "outcome": outcome,
+                    "is_current": item.get("id") == match.get("id"),
+                }
+            )
+    return {
+        "opponent": opponent,
+        "available": True,
+        "matches_played": len(played),
+        "wins": wins,
+        "draws": draws,
+        "losses": losses,
+        "goals_scored": scored,
+        "goals_conceded": conceded,
+        "recent": recent,
+    }
+
+
+@router.get("/{match_id}/head-to-head", summary="Head-to-head record vs the same opponent")
+async def head_to_head(match_id: str):
+    match = await matches.get(match_id)
+    if not match:
+        raise NotFoundError("Match not found")
+    return await _head_to_head(match)
+
+
 @router.get("/{match_id}/relations", summary="Match Center payload (relations + lineups + events)")
 async def match_relations(match_id: str):
     match = await matches.get(match_id)
@@ -55,6 +142,14 @@ async def match_relations(match_id: str):
         raise NotFoundError("Match not found")
 
     news, _ = await posts.list({"match_id": match_id}, limit=50)
+    match_report = next(
+        (
+            p
+            for p in news
+            if p.get("post_type") == "MATCH_REPORT" and p.get("status") == "PUBLISHED"
+        ),
+        None,
+    )
     gallery, _ = await albums.list({"match_id": match_id}, limit=50)
     images, _ = await media.list({"match_id": match_id, "file_type": "IMAGE"}, limit=100)
     videos, _ = await media.list({"match_id": match_id, "file_type": "VIDEO"}, limit=100)
@@ -107,6 +202,8 @@ async def match_relations(match_id: str):
         "players": players_by_id,
         # Integration points (referenced resources, never embedded arrays)
         "news": news,
+        "match_report": match_report,
+        "head_to_head": await _head_to_head(match),
         "gallery_albums": gallery,
         "published_gallery_albums": published_albums,
         "match_media": match_media,

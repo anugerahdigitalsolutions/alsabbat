@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import api from '../lib/api';
-import { applySeo } from '../lib/seo';
+import { applyDefaultSeo } from '../lib/seo';
 
 const ClubContext = createContext(null);
 
@@ -54,7 +54,7 @@ export function ClubProvider({ children }) {
 
   useEffect(() => {
     if (!seo) return;
-    applySeo({
+    applyDefaultSeo({
       title: seo.title,
       description: seo.description,
       image: seo.open_graph?.image,

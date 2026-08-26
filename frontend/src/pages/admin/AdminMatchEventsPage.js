@@ -3,6 +3,7 @@ import { Activity } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { useClub } from '../../context/ClubContext';
+import { matchOptions } from './adminOptions';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -24,7 +25,7 @@ export default function AdminMatchEventsPage() {
         {
           name: 'match_id',
           label: 'Pertandingan',
-          optionsFrom: { endpoint: '/matches', labelKey: 'date' },
+          optionsFrom: matchOptions,
         },
         { name: 'type', label: 'Tipe', options: opts(meta?.match_event_types) },
         { name: 'side', label: 'Sisi', options: opts(meta?.match_event_sides) },
@@ -43,7 +44,7 @@ export default function AdminMatchEventsPage() {
           label: 'Pertandingan',
           type: 'select',
           required: true,
-          optionsFrom: { endpoint: '/matches', labelKey: 'date' },
+          optionsFrom: matchOptions,
         },
         {
           name: 'type',

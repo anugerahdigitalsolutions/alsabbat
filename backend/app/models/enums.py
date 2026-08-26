@@ -106,6 +106,14 @@ class MatchEventSide(str, Enum):
     OPPONENT = "OPPONENT"
 
 
+class PostType(str, Enum):
+    """Editorial type of a CMS post (single CMS, no second content system)."""
+
+    ARTICLE = "ARTICLE"
+    MATCH_REPORT = "MATCH_REPORT"
+    ANNOUNCEMENT = "ANNOUNCEMENT"
+
+
 class PostStatus(str, Enum):
     DRAFT = "DRAFT"
     SCHEDULED = "SCHEDULED"

@@ -5,6 +5,7 @@ import { ResourceManager } from '../../components/admin/ResourceManager';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { useClub } from '../../context/ClubContext';
+import { matchOptions } from './adminOptions';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
@@ -30,7 +31,7 @@ export default function AdminGalleryPage() {
       defaults={{ status: 'ACTIVE', publish_status: 'DRAFT' }}
       filters={[
         { name: 'publish_status', label: 'Publikasi', options: opts(meta?.gallery_status) },
-        { name: 'match_id', label: 'Match', optionsFrom: { endpoint: '/matches', labelKey: 'date' } },
+        { name: 'match_id', label: 'Match', optionsFrom: matchOptions },
       ]}
       rowActions={(row) => (
         <Link to={`/admin/gallery/${row.id}`} data-testid={`admin-gallery-manage-${row.id}`}>
@@ -70,7 +71,7 @@ export default function AdminGalleryPage() {
           name: 'match_id',
           label: 'Terkait Match',
           type: 'select',
-          optionsFrom: { endpoint: '/matches', labelKey: 'date' },
+          optionsFrom: matchOptions,
         },
         { name: 'status', label: 'Status Entitas', type: 'select', options: opts(meta?.entity_status), required: true },
         { name: 'cover_url', label: 'Cover URL (opsional)', type: 'text', full: true, help: 'Cover utama sebaiknya dipilih dari Media Library pada halaman kelola album.' },

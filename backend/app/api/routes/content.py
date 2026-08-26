@@ -39,6 +39,7 @@ build_crud_router(
     search_fields=("title", "excerpt"),
     filter_fields=(
         "status",
+        "post_type",
         "category_id",
         "author_id",
         "match_id",

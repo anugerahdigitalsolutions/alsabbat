@@ -41,6 +41,7 @@ from app.models.enums import (
     PlayerPosition,
     PlayerStatus,
     PostStatus,
+    PostType,
     SeasonStatus,
     StaffRole,
     StorageProvider,
@@ -360,6 +361,7 @@ class PostBase(AppBaseModel):
     tag_ids: List[str] = Field(default_factory=list)
     author_id: Optional[str] = None
     status: PostStatus = PostStatus.DRAFT
+    post_type: PostType = PostType.ARTICLE
     published_at: Optional[_dt.datetime] = None
     seo: SeoMeta = Field(default_factory=SeoMeta)
     # Optional relations to football domain
