@@ -124,6 +124,11 @@ class Settings:
     YOUTUBE_REDIRECT_URI: str = os.environ.get("YOUTUBE_REDIRECT_URI", "")
     SOCIAL_TOKEN_ENCRYPTION_KEY: str = os.environ.get("SOCIAL_TOKEN_ENCRYPTION_KEY", "")
 
+    # ---------------------------- galeri Google Drive (folder publik + API key)
+    # Kosong => album Drive melaporkan NOT_CONFIGURED (tidak pernah mengklaim
+    # berhasil). Tidak ada OAuth dan tidak ada password Google yang disimpan.
+    GOOGLE_DRIVE_API_KEY: str = os.environ.get("GOOGLE_DRIVE_API_KEY", "")
+
     # -------------------------------------------------------------- seo
     PUBLIC_SITE_URL: str = os.environ.get("PUBLIC_SITE_URL", "")
 

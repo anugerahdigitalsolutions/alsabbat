@@ -69,6 +69,13 @@ export default function AdminGalleryPage() {
         },
         { name: 'date', label: 'Tanggal', type: 'date' },
         {
+          name: 'drive_folder_url',
+          label: 'Link Folder Google Drive',
+          type: 'text',
+          full: true,
+          help: 'Satu link folder saja (contoh: https://drive.google.com/drive/folders/XXXX). Folder harus di-share "Anyone with the link". Foto diambil otomatis, tidak perlu upload satu per satu.',
+        },
+        {
           name: 'match_id',
           label: 'Terkait Match',
           type: 'select',

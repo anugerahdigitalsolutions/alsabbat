@@ -20,6 +20,7 @@ from app.core.rate_limit import write_rate_limit
 from app.models.auth import AuthContext
 from app.models.base import AppBaseModel, utcnow
 from app.models.domain import GalleryAlbumBase, GalleryAlbumUpdate
+from app.services import drive
 
 router = APIRouter(tags=["gallery"])
 albums = Repository(Collections.GALLERY_ALBUMS)
@@ -99,13 +100,22 @@ async def public_albums(
     match_id: Optional[str] = Query(None),
     limit: int = Query(24, ge=1, le=100),
     skip: int = Query(0, ge=0),
+    include_media: bool = Query(False, description="Sertakan media album (untuk carousel galeri)"),
 ):
     query = _published_query({"match_id": match_id} if match_id else None)
     items, total = await albums.list(
         query, limit=limit, skip=skip, sort=(("published_at", -1), ("created_at", -1))
     )
-    enriched = [await _enrich_album(album) for album in items]
+    enriched = [await _enrich_album(album, with_media=include_media) for album in items]
     return {"items": enriched, "total": total, "limit": limit, "skip": skip}
+
+
+@public_router.get("/albums/{album_id}/drive-photos", summary="Foto album dari folder Google Drive (publik)")
+async def public_album_drive_photos(album_id: str):
+    album = await albums.get_by(_published_query({"id": album_id}))
+    if not album:
+        raise NotFoundError("Gallery album not found")
+    return await drive.list_folder_images(album.get("drive_folder_url"))
 
 
 @public_router.get("/albums/{album_id}", summary="Published album detail with ordered media (public)")
@@ -117,6 +127,14 @@ async def public_album_detail(album_id: str):
 
 
 # -------------------------------------------------- admin album <-> media
+@albums_router.get("/{album_id}/drive-photos", summary="Cek folder Google Drive album (admin)")
+async def album_drive_photos(album_id: str, user: AuthContext = gallery_write) -> Dict[str, Any]:
+    album = await albums.get(album_id)
+    if not album:
+        raise NotFoundError("Gallery album not found")
+    return await drive.list_folder_images(album.get("drive_folder_url"))
+
+
 @albums_router.get("/{album_id}/media", summary="Media items inside an album (ordered)")
 async def album_media(
     album_id: str,

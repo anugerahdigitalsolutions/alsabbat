@@ -475,6 +475,10 @@ class GalleryAlbumBase(AppBaseModel):
     match_id: Optional[str] = None
     team_id: Optional[str] = None
     date: Optional[_dt.date] = None
+    # Sumber foto album dari SATU link folder Google Drive (folder harus di-share
+    # "anyone with the link"). Foto tidak diunduh/di-scrape; hanya dibaca lewat
+    # Google Drive API resmi di server.
+    drive_folder_url: Optional[str] = Field(default=None, max_length=500)
     status: EntityStatus = EntityStatus.ACTIVE
     # Phase 4 — publication workflow (DRAFT -> PUBLISHED). Public endpoints only
     # ever expose PUBLISHED albums.

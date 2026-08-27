@@ -5,12 +5,12 @@ import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
-import { AlbumCard } from '../../components/public/gallery/AlbumCard';
+import { MatchAlbumCarousel } from '../../components/public/gallery/MatchAlbumCarousel';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useSiteText } from '../../lib/siteContent';
 import { useClub } from '../../context/ClubContext';
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 8;
 
 export default function GalleryPage() {
   const { clubName, shortName } = useClub();
@@ -34,7 +34,7 @@ export default function GalleryPage() {
     setError(null);
     try {
       const { data } = await api.get('/gallery/public/albums', {
-        params: { limit: PAGE_SIZE, skip: nextSkip },
+        params: { limit: PAGE_SIZE, skip: nextSkip, include_media: true },
       });
       setAlbums((prev) => (nextSkip === 0 ? data.items || [] : [...prev, ...(data.items || [])]));
       setTotal(data.total || 0);
@@ -78,9 +78,9 @@ export default function GalleryPage() {
           />
         ) : (
           <>
-            <div className="als-stagger grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="space-y-5">
               {albums.map((album, index) => (
-                <AlbumCard
+                <MatchAlbumCarousel
                   key={album.id}
                   album={album}
                   index={index}
