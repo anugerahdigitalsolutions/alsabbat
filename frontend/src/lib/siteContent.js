@@ -96,12 +96,15 @@ export const SITE_CONTENT_ENTRIES = [
   // YouTube di Beranda (link video, bukan media upload)
   { key: 'home.label.youtube', group: 'YouTube', label: 'Label — Section YouTube', value: 'Video Terbaru' },
   { key: 'home.label.youtube_action', group: 'YouTube', label: 'Aksi — Kanal YouTube', value: 'Kanal YouTube' },
-  { key: 'home.youtube.video_1', group: 'YouTube', label: 'Video 1 — Link YouTube', value: '', multiline: true },
-  { key: 'home.youtube.title_1', group: 'YouTube', label: 'Video 1 — Judul (opsional)', value: '' },
-  { key: 'home.youtube.video_2', group: 'YouTube', label: 'Video 2 — Link YouTube', value: '', multiline: true },
-  { key: 'home.youtube.title_2', group: 'YouTube', label: 'Video 2 — Judul (opsional)', value: '' },
-  { key: 'home.youtube.video_3', group: 'YouTube', label: 'Video 3 — Link YouTube', value: '', multiline: true },
-  { key: 'home.youtube.title_3', group: 'YouTube', label: 'Video 3 — Judul (opsional)', value: '' },
+  // Daftar video dikelola di Admin → Konten Halaman → Video YouTube (disimpan sebagai JSON)
+  { key: 'home.youtube.videos', group: 'YouTube', label: 'Daftar Video YouTube Beranda', value: '', multiline: true, hidden: true },
+  // Key lama (tetap dibaca sebagai fallback bila daftar baru masih kosong)
+  { key: 'home.youtube.video_1', group: 'YouTube', label: 'Video 1 — Link YouTube', value: '', multiline: true, hidden: true },
+  { key: 'home.youtube.title_1', group: 'YouTube', label: 'Video 1 — Judul (opsional)', value: '', hidden: true },
+  { key: 'home.youtube.video_2', group: 'YouTube', label: 'Video 2 — Link YouTube', value: '', multiline: true, hidden: true },
+  { key: 'home.youtube.title_2', group: 'YouTube', label: 'Video 2 — Judul (opsional)', value: '', hidden: true },
+  { key: 'home.youtube.video_3', group: 'YouTube', label: 'Video 3 — Link YouTube', value: '', multiline: true, hidden: true },
+  { key: 'home.youtube.title_3', group: 'YouTube', label: 'Video 3 — Judul (opsional)', value: '', hidden: true },
 
   // Member card design (background dikelola lewat Admin → Baraya → Desain Kartu Member)
   { key: 'member.card.background_url', group: 'Kartu Member', label: 'Latar Kartu (URL gambar)', value: '', multiline: true },
@@ -113,7 +116,10 @@ export const SITE_CONTENT_DEFAULTS = Object.fromEntries(
   SITE_CONTENT_ENTRIES.map((entry) => [entry.key, entry.value])
 );
 
-export const SITE_CONTENT_GROUPS = SITE_CONTENT_ENTRIES.reduce((groups, entry) => {
+/** Entri yang tampil di editor teks (entri `hidden` dikelola di UI khusus). */
+export const SITE_CONTENT_EDITABLE_ENTRIES = SITE_CONTENT_ENTRIES.filter((entry) => !entry.hidden);
+
+export const SITE_CONTENT_GROUPS = SITE_CONTENT_EDITABLE_ENTRIES.reduce((groups, entry) => {
   const found = groups.find((g) => g.id === entry.group);
   if (found) found.entries.push(entry);
   else groups.push({ id: entry.group, entries: [entry] });

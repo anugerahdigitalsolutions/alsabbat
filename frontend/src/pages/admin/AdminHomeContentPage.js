@@ -3,6 +3,7 @@ import { BannerManager } from '../../components/admin/BannerManager';
 import { BackgroundManager } from '../../components/admin/BackgroundManager';
 import { FaviconManager } from '../../components/admin/FaviconManager';
 import { SiteContentForm } from '../../components/admin/SiteContentForm';
+import { YoutubeVideosManager } from '../../components/admin/YoutubeVideosManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { useClub } from '../../context/ClubContext';
 
@@ -29,6 +30,9 @@ export default function AdminHomeContentPage() {
           <TabsTrigger value="content" data-testid="admin-home-content-tab-content">
             Teks Halaman
           </TabsTrigger>
+          <TabsTrigger value="youtube" data-testid="admin-home-content-tab-youtube">
+            Video YouTube
+          </TabsTrigger>
           <TabsTrigger value="background" data-testid="admin-home-content-tab-background">
             Background Website
           </TabsTrigger>
@@ -41,6 +45,9 @@ export default function AdminHomeContentPage() {
         </TabsContent>
         <TabsContent value="content" className="mt-6">
           <SiteContentForm clubName={clubName} />
+        </TabsContent>
+        <TabsContent value="youtube" className="mt-6">
+          <YoutubeVideosManager />
         </TabsContent>
         <TabsContent value="background" className="mt-6">
           <BackgroundManager />

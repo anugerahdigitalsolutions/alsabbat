@@ -3,7 +3,7 @@ import { Loader2, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import { SITE_CONTENT_ENTRIES, SITE_CONTENT_GROUPS } from '../../lib/siteContent';
+import { SITE_CONTENT_EDITABLE_ENTRIES, SITE_CONTENT_GROUPS } from '../../lib/siteContent';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -40,7 +40,7 @@ export const SiteContentForm = ({ clubName = 'AL SABBAT' }) => {
   const save = async () => {
     setSaving(true);
     try {
-      const items = SITE_CONTENT_ENTRIES.map((entry) => ({
+      const items = SITE_CONTENT_EDITABLE_ENTRIES.map((entry) => ({
         key: entry.key,
         value: (values[entry.key] || '').trim(),
         label: entry.label,
