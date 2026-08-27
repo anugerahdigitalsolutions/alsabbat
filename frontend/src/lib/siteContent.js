@@ -18,12 +18,20 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'home.hero.cta_secondary', group: 'Hero', label: 'Hero — Tombol Sekunder', value: 'Tentang Kami' },
 
   // Brand pillars
+  { key: 'home.pillar.club.number', group: 'Pilar Brand', label: 'Pilar 1 — Nomor', value: '01' },
+  { key: 'home.pillar.club.icon', group: 'Pilar Brand', label: 'Pilar 1 — Ikon', value: 'shield', help: 'Pilihan: shield, users, handshake, award, star, target, flag, flame.' },
   { key: 'home.pillar.club.title', group: 'Pilar Brand', label: 'Pilar 1 — Judul', value: 'Satu Klub' },
   { key: 'home.pillar.club.text', group: 'Pilar Brand', label: 'Pilar 1 — Teks', value: '{club} adalah satu klub dengan satu misi.', multiline: true },
+  { key: 'home.pillar.team.number', group: 'Pilar Brand', label: 'Pilar 2 — Nomor', value: '02' },
+  { key: 'home.pillar.team.icon', group: 'Pilar Brand', label: 'Pilar 2 — Ikon', value: 'users', help: 'Pilihan: shield, users, handshake, award, star, target, flag, flame.' },
   { key: 'home.pillar.team.title', group: 'Pilar Brand', label: 'Pilar 2 — Judul', value: 'Satu Tim' },
   { key: 'home.pillar.team.text', group: 'Pilar Brand', label: 'Pilar 2 — Teks', value: 'Satu tim. Satu perjuangan. Satu detak jantung.', multiline: true },
+  { key: 'home.pillar.dream.number', group: 'Pilar Brand', label: 'Pilar 3 — Nomor', value: '03' },
+  { key: 'home.pillar.dream.icon', group: 'Pilar Brand', label: 'Pilar 3 — Ikon', value: 'star', help: 'Pilihan: shield, users, handshake, award, star, target, flag, flame.' },
   { key: 'home.pillar.dream.title', group: 'Pilar Brand', label: 'Pilar 3 — Judul', value: 'Satu Mimpi' },
   { key: 'home.pillar.dream.text', group: 'Pilar Brand', label: 'Pilar 3 — Teks', value: 'Bermimpi bersama. Meraih bersama.', multiline: true },
+  { key: 'home.pillar.glory.number', group: 'Pilar Brand', label: 'Pilar 4 — Nomor', value: '04' },
+  { key: 'home.pillar.glory.icon', group: 'Pilar Brand', label: 'Pilar 4 — Ikon', value: 'award', help: 'Pilihan: shield, users, handshake, award, star, target, flag, flame.' },
   { key: 'home.pillar.glory.title', group: 'Pilar Brand', label: 'Pilar 4 — Judul', value: 'Satu Kejayaan' },
   { key: 'home.pillar.glory.text', group: 'Pilar Brand', label: 'Pilar 4 — Teks', value: 'Untuk lambang. Untuk Baraya. Untuk {club}.', multiline: true },
 
