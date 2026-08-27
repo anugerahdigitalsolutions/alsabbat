@@ -134,6 +134,12 @@ class PlayerBase(AppBaseModel):
     weight_kg: Optional[int] = Field(default=None, ge=30, le=180)
     bio: Optional[str] = Field(default=None, max_length=4000)
     status: PlayerStatus = PlayerStatus.ACTIVE
+    # Statistik pemain (dikelola manual di Admin, additive pada struktur existing)
+    goals: int = Field(default=0, ge=0, le=9999)
+    assists: int = Field(default=0, ge=0, le=9999)
+    appearances: int = Field(default=0, ge=0, le=9999)
+    yellow_cards: int = Field(default=0, ge=0, le=9999)
+    red_cards: int = Field(default=0, ge=0, le=9999)
     social_media: SocialLinks = Field(default_factory=SocialLinks)
     gallery_images: List[str] = Field(default_factory=list, max_length=3)
 

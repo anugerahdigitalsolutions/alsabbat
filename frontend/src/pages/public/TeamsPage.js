@@ -4,6 +4,7 @@ import { Users } from 'lucide-react';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { Reveal } from '../../components/public/Reveal';
 import { SquadShowcase } from '../../components/public/home/SquadShowcase';
+import { PlayerStatsBoard } from '../../components/public/players/PlayerStatsBoard';
 import { PlayerSpotlight, pickSpotlightPlayer } from '../../components/public/PlayerSpotlight';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
@@ -75,6 +76,11 @@ export default function TeamsPage() {
                 <PlayerSpotlight player={spotlight} />
               </Reveal>
             ) : null}
+
+            <div data-testid="teams-player-stats">
+              <p className="als-row-label mb-4">Statistik Pemain</p>
+              <PlayerStatsBoard players={players.items} />
+            </div>
 
             {[...grouped, ...(others.length ? [['Lainnya', others]] : [])].map(([label, list], index) => (
               <Reveal key={label} delay={Math.min(index, 4) * 70}>

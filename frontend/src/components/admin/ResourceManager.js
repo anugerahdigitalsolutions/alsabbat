@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Pencil, Plus, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
@@ -355,6 +355,20 @@ export const ResourceManager = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [values, setValues] = useState({});
+
+  // Form tidak boleh tertutup karena klik di luar. Tutup hanya lewat X / Batal /
+  // Simpan; bila ada perubahan belum disimpan, minta konfirmasi dulu.
+  const formSnapshot = useRef('');
+  useEffect(() => {
+    if (dialogOpen) formSnapshot.current = JSON.stringify(values ?? {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialogOpen]);
+
+  const requestCloseDialog = useCallback(() => {
+    const dirty = JSON.stringify(values ?? {}) !== formSnapshot.current;
+    if (dirty && !window.confirm('Perubahan belum disimpan. Yakin ingin keluar?')) return;
+    setDialogOpen(false);
+  }, [values]);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -639,9 +653,18 @@ export const ResourceManager = ({
         ) : null}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (open) setDialogOpen(true);
+          else requestCloseDialog();
+        }}
+      >
         <DialogContent
           className="max-h-[88vh] max-w-2xl overflow-y-auto bg-white"
+          onPointerDownOutside={(event) => event.preventDefault()}
+          onInteractOutside={(event) => event.preventDefault()}
+          onEscapeKeyDown={(event) => event.preventDefault()}
           data-testid={`${testPrefix}-form-dialog`}
         >
           <DialogHeader>
@@ -689,7 +712,7 @@ export const ResourceManager = ({
           ) : null}
 
           <DialogFooter className="mt-2 gap-2">
-            <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid={`${testPrefix}-form-cancel`}>
+            <Button variant="outline" onClick={requestCloseDialog} data-testid={`${testPrefix}-form-cancel`}>
               Batal
             </Button>
             <Button

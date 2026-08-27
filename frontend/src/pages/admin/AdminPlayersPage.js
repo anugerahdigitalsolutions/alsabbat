@@ -59,6 +59,11 @@ export default function AdminPlayersPage() {
         { name: 'nationality', label: 'Kebangsaan', type: 'text' },
         { name: 'height_cm', label: 'Tinggi (cm)', type: 'number' },
         { name: 'weight_kg', label: 'Berat (kg)', type: 'number' },
+        { name: 'goals', label: 'Statistik — Gol', type: 'number', help: 'Angka bulat, minimal 0.' },
+        { name: 'assists', label: 'Statistik — Assist', type: 'number', help: 'Angka bulat, minimal 0.' },
+        { name: 'appearances', label: 'Statistik — Penampilan', type: 'number', help: 'Angka bulat, minimal 0.' },
+        { name: 'yellow_cards', label: 'Statistik — Kartu Kuning', type: 'number', help: 'Angka bulat, minimal 0.' },
+        { name: 'red_cards', label: 'Statistik — Kartu Merah', type: 'number', help: 'Angka bulat, minimal 0.' },
         {
           name: 'photo',
           label: 'Foto Pemain',
