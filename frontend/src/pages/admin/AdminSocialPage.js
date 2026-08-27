@@ -239,7 +239,7 @@ export default function AdminSocialPage() {
   return (
     <div className="space-y-8" data-testid="admin-social-page">
       <div>
-        <h1 className="font-display text-2xl font-bold">Social Publishing</h1>
+        <h1 className="font-display text-2xl font-bold">Media Sosial</h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--muted-fg)' }}>
           Buat satu konten, lalu pilih platform tujuan secara eksplisit. Hanya API resmi platform yang digunakan.
         </p>

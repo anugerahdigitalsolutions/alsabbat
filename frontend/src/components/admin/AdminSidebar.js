@@ -62,7 +62,7 @@ export const ADMIN_NAV = [
       { id: 'media', to: '/admin/media', label: 'Media', Icon: Upload },
       { id: 'sponsors', to: '/admin/sponsors', label: 'Sponsors', Icon: Handshake },
       { id: 'achievements', to: '/admin/achievements', label: 'Achievements', Icon: Trophy },
-      { id: 'social', to: '/admin/social', label: 'Social Publishing', Icon: Share2 },
+      { id: 'social', to: '/admin/social', label: 'Media Sosial', Icon: Share2 },
     ],
   },
   {
