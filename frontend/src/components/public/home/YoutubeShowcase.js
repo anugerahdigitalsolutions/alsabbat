@@ -205,7 +205,12 @@ export const YoutubeShowcase = ({ videos = [], channelUrl = null }) => {
   const label = active.title || 'Video YouTube AL SABBAT';
 
   return (
-    <div className="mx-auto w-full max-w-4xl" data-testid="home-youtube-slider">
+    <div
+      className={`grid w-full gap-4 lg:items-start lg:gap-5 ${
+        total > 1 ? 'lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]' : 'mx-auto max-w-4xl'
+      }`}
+      data-testid="home-youtube-slider"
+    >
       <figure className="als-card overflow-hidden">
         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16 / 9', backgroundColor: '#000000' }}>
           {playing && !failed ? (
@@ -296,7 +301,7 @@ export const YoutubeShowcase = ({ videos = [], channelUrl = null }) => {
               {active.title || ''}
             </span>
             {total > 1 ? (
-              <span className="flex shrink-0 items-center gap-2" role="tablist" aria-label="Pilih video">
+              <span className="flex shrink-0 items-center gap-2 lg:hidden" role="tablist" aria-label="Pilih video">
                 {list.map((video, dotIndex) => (
                   <button
                     key={video.id + dotIndex}
@@ -318,6 +323,66 @@ export const YoutubeShowcase = ({ videos = [], channelUrl = null }) => {
           </figcaption>
         ) : null}
       </figure>
+
+      {total > 1 ? (
+        <aside className="als-card hidden flex-col overflow-hidden lg:flex" data-testid="home-youtube-playlist">
+          <p
+            className="font-display px-4 pt-4 text-[11px] font-bold uppercase tracking-[0.18em]"
+            style={{ color: 'var(--club-secondary)' }}
+          >
+            Daftar Video
+          </p>
+          <div className="mt-3 flex-1 space-y-1.5 overflow-y-auto px-2 pb-3" style={{ maxHeight: 430 }}>
+            {list.map((video, itemIndex) => {
+              const isActive = itemIndex === index;
+              return (
+                <button
+                  key={`${video.id}-${itemIndex}`}
+                  type="button"
+                  onClick={() => go(itemIndex, playing && !failed)}
+                  aria-current={isActive}
+                  className="als-focus flex w-full items-start gap-3 rounded-[var(--radius-sm)] p-2 text-left transition-colors duration-300 hover:bg-[rgba(1,40,145,0.05)]"
+                  style={{ backgroundColor: isActive ? 'rgba(1,40,145,0.08)' : 'transparent' }}
+                  data-testid={`home-youtube-playlist-item-${itemIndex}`}
+                >
+                  <span
+                    className="relative block w-24 shrink-0 overflow-hidden rounded-[var(--radius-sm)] xl:w-28"
+                    style={{ aspectRatio: '16 / 9', backgroundColor: '#000000' }}
+                  >
+                    <img
+                      src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    {isActive ? (
+                      <span
+                        className="absolute inset-0 grid place-items-center"
+                        style={{ backgroundColor: 'rgba(1,40,145,0.42)' }}
+                        aria-hidden="true"
+                      >
+                        <Play className="h-4 w-4" style={{ color: 'var(--club-primary)' }} fill="#FCCF2B" />
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className="font-display line-clamp-2 block text-[13px] font-semibold leading-snug"
+                      style={{ color: isActive ? 'var(--club-secondary)' : 'var(--fg)' }}
+                    >
+                      {video.title || `Video ${itemIndex + 1}`}
+                    </span>
+                    <span className="mt-1 block text-[11px]" style={{ color: 'var(--muted-fg)' }}>
+                      {isActive ? 'Sedang diputar' : 'Putar video'}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+      ) : null}
     </div>
   );
 };
