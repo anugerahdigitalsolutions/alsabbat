@@ -12,6 +12,7 @@ import {
   parseBackgroundConfig,
 } from '../../lib/siteBackground';
 import { SiteBackgroundLayers } from '../public/SiteBackgroundLayers';
+import { MEDIA_SPECS } from '../../lib/mediaHints';
 import { MediaPicker } from '../shared/MediaPicker';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -274,7 +275,8 @@ export const BackgroundManager = () => {
                 value={config.image_url || ''}
                 onChange={(v) => patch({ image_url: v || '' })}
                 testId="admin-background-image"
-                hint="Upload dari perangkat atau pilih dari Media Library. Gambar besar (≥1920px) membuat latar tetap tajam di desktop."
+                spec={MEDIA_SPECS.websiteBackground}
+                hint="Ukuran yang disarankan: 1080 × 1920 px (9:16 / Portrait). Upload dari perangkat atau pilih dari Media Library — gambar ukuran lain tetap boleh, nanti disesuaikan lewat crop 9:16."
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

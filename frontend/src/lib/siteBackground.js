@@ -11,7 +11,7 @@ export const BACKGROUND_DEFAULT = {
   gradient: { color1: '#FEFEFE', color2: '#E8EDF5', direction: 'to-right' },
   image_url: '',
   image_size: 'cover',
-  image_position: 'center',
+  image_position: 'center top',
   opacity: 0.1,
   overlay_enabled: false,
   overlay_color: '#012891',
@@ -33,6 +33,7 @@ export const IMAGE_SIZES = [
 ];
 
 export const IMAGE_POSITIONS = [
+  { value: 'center top', label: 'Tengah Atas (disarankan untuk 9:16)' },
   { value: 'center', label: 'Tengah' },
   { value: 'top', label: 'Atas' },
   { value: 'bottom', label: 'Bawah' },

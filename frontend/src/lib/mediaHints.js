@@ -39,6 +39,13 @@ export const MEDIA_SPECS = {
   // Kartu member digital: 440 × 288 px (≈ 3:2 landscape)
   memberCardBackground: { aspect: 3 / 2, ratio: '3:2 (landscape)', size: '1200 × 800 px', note: `Sisakan area kosong di tengah/kanan agar nama, nomor, dan QR tetap terbaca. ${CROP_NOTE}` },
   barayaPhoto: { aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: `Foto wajah, terang, dan jelas. ${CROP_NOTE}` },
+  // Background website: latar DI LUAR frame utama, memanjang ke bawah mengikuti halaman
+  websiteBackground: {
+    aspect: 9 / 16,
+    ratio: '9:16 (portrait)',
+    size: '1080 × 1920 px',
+    note: 'Latar di luar frame utama website. Crop terkunci 9:16 — geser (dan zoom) untuk memilih bagian yang tampil.',
+  },
 };
 
 export default MEDIA_SPECS;
