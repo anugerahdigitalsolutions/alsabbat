@@ -28,6 +28,128 @@ matches = Repository(Collections.MATCHES)
 seasons = Repository(Collections.SEASONS)
 
 GOAL_TYPES = {"GOAL", "PENALTY_SCORED"}
+YELLOW_TYPES = {"YELLOW_CARD", "SECOND_YELLOW_CARD"}
+
+
+async def _resolve_season(season_id: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Season yang dipakai: pilihan admin -> season ACTIVE -> season terbaru."""
+    if season_id:
+        return await seasons.get(season_id)
+    items, _ = await seasons.list({"status": "ACTIVE"}, limit=1, sort=(("start_date", -1),))
+    if items:
+        return items[0]
+    items, _ = await seasons.list({}, limit=1, sort=(("start_date", -1),))
+    return items[0] if items else None
+
+
+def _season_brief(season: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not season:
+        return None
+    return {"id": season.get("id"), "name": season.get("name"), "status": season.get("status")}
+
+
+@router.get(
+    "/stats/leaderboard",
+    summary="Papan statistik pemain per musim (dihitung otomatis dari Match Events)",
+)
+async def player_stats_leaderboard(
+    season_id: Optional[str] = Query(default=None),
+    limit: int = Query(default=60, ge=1, le=200),
+) -> Dict[str, Any]:
+    """Gol/assist/kartu dari MatchEvent, penampilan dari MatchLineup, dipisah per Season.
+
+    Tidak ada input manual dan tidak ada angka yang dikarang: bila belum ada match
+    event pada musim tersebut, daftar dikembalikan kosong dengan events_available=False.
+    """
+    season_items, _ = await seasons.list({}, limit=100, sort=(("start_date", -1),))
+    season_list = [_season_brief(s) for s in season_items]
+    season = await _resolve_season(season_id)
+
+    empty = {
+        "season": _season_brief(season),
+        "seasons": season_list,
+        "items": [],
+        "events_available": False,
+        "matches": 0,
+    }
+    if not season:
+        return empty
+
+    match_items, _ = await matches.list({"season_id": season["id"]}, limit=500)
+    match_ids = [m["id"] for m in match_items if m.get("id")]
+    if not match_ids:
+        return empty
+
+    lineup_items, _ = await lineups.list({"match_id": {"$in": match_ids}}, limit=2000)
+    event_items, _ = await events.list({"match_id": {"$in": match_ids}}, limit=2000)
+
+    buckets: Dict[str, Dict[str, int]] = {}
+
+    def bucket(player_id: str) -> Dict[str, int]:
+        return buckets.setdefault(
+            player_id,
+            {"goals": 0, "assists": 0, "appearances": 0, "yellow_cards": 0, "red_cards": 0},
+        )
+
+    for item in lineup_items:
+        pid = item.get("player_id")
+        if pid and item.get("role") in {"STARTING", "SUBSTITUTE"}:
+            bucket(pid)["appearances"] += 1
+
+    for event in event_items:
+        if event.get("status") not in (None, "ACTIVE"):
+            continue
+        event_type = event.get("type")
+        pid = event.get("player_id")
+        if pid:
+            target = bucket(pid)
+            if event_type in GOAL_TYPES:
+                target["goals"] += 1
+            elif event_type == "ASSIST":
+                target["assists"] += 1
+            elif event_type in YELLOW_TYPES:
+                target["yellow_cards"] += 1
+            elif event_type == "RED_CARD":
+                target["red_cards"] += 1
+        related = event.get("related_player_id")
+        if related and event_type in GOAL_TYPES:
+            bucket(related)["assists"] += 1
+
+    player_ids = list(buckets.keys())
+    player_items, _ = (
+        await players.list({"id": {"$in": player_ids}}, limit=500) if player_ids else ([], 0)
+    )
+
+    items: List[Dict[str, Any]] = []
+    for player in player_items:
+        stats = buckets.get(player["id"], {})
+        items.append(
+            {
+                "id": player["id"],
+                "player_id": player["id"],
+                "full_name": player.get("full_name"),
+                "display_name": player.get("display_name"),
+                "photo": player.get("photo"),
+                "jersey_number": player.get("jersey_number"),
+                "position": player.get("position"),
+                "goals": stats.get("goals", 0),
+                "assists": stats.get("assists", 0),
+                "appearances": stats.get("appearances", 0),
+                "yellow_cards": stats.get("yellow_cards", 0),
+                "red_cards": stats.get("red_cards", 0),
+            }
+        )
+
+    items.sort(
+        key=lambda i: (-i["goals"], -i["assists"], -i["appearances"], i.get("full_name") or "")
+    )
+    return {
+        "season": _season_brief(season),
+        "seasons": season_list,
+        "items": items[:limit],
+        "events_available": bool(event_items),
+        "matches": len(match_ids),
+    }
 
 
 @router.get("/{player_id}/statistics", summary="Player season statistics (derived, never invented)")

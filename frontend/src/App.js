@@ -48,6 +48,7 @@ import AdminCompetitionsPage from './pages/admin/AdminCompetitionsPage';
 import AdminMatchesPage from './pages/admin/AdminMatchesPage';
 import AdminMatchLineupsPage from './pages/admin/AdminMatchLineupsPage';
 import AdminMatchEventsPage from './pages/admin/AdminMatchEventsPage';
+import AdminPlayerStatsPage from './pages/admin/AdminPlayerStatsPage';
 import AdminContentPage from './pages/admin/AdminContentPage';
 import AdminHomeContentPage from './pages/admin/AdminHomeContentPage';
 import AdminGalleryPage from './pages/admin/AdminGalleryPage';
@@ -160,6 +161,7 @@ function App() {
               <Route path="matches" element={<AdminMatchesPage />} />
               <Route path="match-lineups" element={<AdminMatchLineupsPage />} />
               <Route path="match-events" element={<AdminMatchEventsPage />} />
+              <Route path="player-stats" element={<AdminPlayerStatsPage />} />
               <Route path="content" element={<AdminContentPage />} />
               <Route path="home-content" element={<AdminHomeContentPage />} />
               <Route path="gallery" element={<AdminGalleryPage />} />

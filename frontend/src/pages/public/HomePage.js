@@ -10,6 +10,7 @@ import { StorePromoCard } from '../../components/public/home/StorePromoCard';
 import { GalleryStrip } from '../../components/public/home/GalleryStrip';
 import { YoutubeShowcase, collectYoutubeVideos } from '../../components/public/home/YoutubeShowcase';
 import { NewsShowcase } from '../../components/public/home/NewsShowcase';
+import { TopScorersShowcase } from '../../components/public/home/TopScorersShowcase';
 import { JourneyCta } from '../../components/public/home/JourneyCta';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { SponsorsStrip } from '../../components/public/SponsorsStrip';
@@ -280,6 +281,11 @@ export default function HomePage() {
             )}
           </div>
         </div>
+      </Band>
+
+      {/* Top Skor / Top Assist — otomatis dari Match Events */}
+      <Band className="pt-0" testId="home-section-top-scorers">
+        <TopScorersShowcase />
       </Band>
 
       {/* Gallery */}

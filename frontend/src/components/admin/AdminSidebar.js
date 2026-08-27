@@ -51,6 +51,7 @@ export const ADMIN_NAV = [
       { id: 'matches', to: '/admin/matches', label: 'Matches', Icon: Swords },
       { id: 'match-lineups', to: '/admin/match-lineups', label: 'Match Lineups', Icon: ClipboardList },
       { id: 'match-events', to: '/admin/match-events', label: 'Match Events', Icon: Activity },
+      { id: 'player-stats', to: '/admin/player-stats', label: 'Statistik Pemain', Icon: Activity },
     ],
   },
   {

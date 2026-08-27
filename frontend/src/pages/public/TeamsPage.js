@@ -79,7 +79,7 @@ export default function TeamsPage() {
 
             <div data-testid="teams-player-stats">
               <p className="als-row-label mb-4">Statistik Pemain</p>
-              <PlayerStatsBoard players={players.items} />
+              <PlayerStatsBoard />
             </div>
 
             {[...grouped, ...(others.length ? [['Lainnya', others]] : [])].map(([label, list], index) => (

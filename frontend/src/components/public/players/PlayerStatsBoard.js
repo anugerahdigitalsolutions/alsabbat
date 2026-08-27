@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Award, Goal, Handshake, Square, Trophy } from 'lucide-react';
+import api from '../../../lib/api';
 import { Reveal } from '../Reveal';
 import { EmptyState } from '../../shared/EmptyState';
 
@@ -89,7 +90,28 @@ const StatCard = ({ category, players, index }) => {
  * Section STATISTIK PEMAIN — peringkat otomatis dari data pemain existing.
  * Kategori dengan seluruh nilai 0 tidak ditampilkan; bila semua 0 => empty state.
  */
-export const PlayerStatsBoard = ({ players = [] }) => {
+export const PlayerStatsBoard = ({ players: playersProp = null }) => {
+  const [payload, setPayload] = useState(null);
+
+  useEffect(() => {
+    if (playersProp) return undefined;
+    let cancelled = false;
+    api
+      .get('/players/stats/leaderboard', { params: { limit: 60 } })
+      .then(({ data }) => {
+        if (!cancelled) setPayload(data);
+      })
+      .catch(() => {
+        if (!cancelled) setPayload(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [playersProp]);
+
+  const players = playersProp || payload?.items || [];
+  const seasonName = payload?.season?.name || null;
+
   const cards = useMemo(
     () =>
       CATEGORIES.filter((category) => players.some((p) => Number(p[category.key] || 0) > 0)),
@@ -101,20 +123,29 @@ export const PlayerStatsBoard = ({ players = [] }) => {
       <EmptyState
         icon={Award}
         title="Statistik pemain belum tersedia"
-        description="Gol, assist, penampilan, dan kartu akan tampil di sini setelah statistik pemain diperbarui di Admin Panel."
+        description="Gol, assist, penampilan, dan kartu dihitung otomatis dari Match Events dan Match Lineups. Statistik akan tampil setelah event pertandingan dicatat di Admin Panel."
         testId="player-stats-empty"
       />
     );
   }
 
   return (
-    <div
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-      data-testid="player-stats-board"
-    >
-      {cards.map((category, index) => (
-        <StatCard key={category.key} category={category} players={players} index={index} />
-      ))}
+    <div className="space-y-3" data-testid="player-stats-wrap">
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+        style={{ color: 'var(--muted-fg)' }}
+        data-testid="player-stats-season"
+      >
+        {seasonName ? `Musim ${seasonName}` : 'Musim aktif'} · dihitung otomatis dari match events
+      </p>
+      <div
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+        data-testid="player-stats-board"
+      >
+        {cards.map((category, index) => (
+          <StatCard key={category.key} category={category} players={players} index={index} />
+        ))}
+      </div>
     </div>
   );
 };
