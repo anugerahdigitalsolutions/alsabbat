@@ -301,13 +301,15 @@ const FieldControl = ({ field, value, onChange, optionMap, testPrefix }) => {
           ? 'number'
           : field.type === 'date'
             ? 'date'
-            : field.type === 'time'
-              ? 'time'
-              : field.type === 'password'
-                ? 'password'
-                : 'text'
+            : field.type === 'datetime'
+              ? 'datetime-local'
+              : field.type === 'time'
+                ? 'time'
+                : field.type === 'password'
+                  ? 'password'
+                  : 'text'
       }
-      value={value ?? ''}
+      value={field.type === 'datetime' ? String(value ?? '').slice(0, 16) : value ?? ''}
       onChange={(e) => onChange(e.target.value)}
       placeholder={field.placeholder}
       className="bg-white"

@@ -3,15 +3,9 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, Newspaper } from 'lucide-react';
 import { resolveMediaUrl } from '../gallery/mediaUtils';
 import { EmptyState } from '../../shared/EmptyState';
+import { formatPublishDateTime } from '../../../lib/publishTime';
 
-const formatDate = (value) => {
-  if (!value) return null;
-  try {
-    return new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-  } catch (e) {
-    return value;
-  }
-};
+const formatDate = (value) => formatPublishDateTime(value);
 
 const SmallItem = ({ post }) => (
   <Link
@@ -72,6 +66,15 @@ export const NewsShowcase = ({ posts = [] }) => {
         <span className="als-scrim-bottom absolute inset-0" aria-hidden="true" />
         <span className="relative flex h-full flex-col justify-end p-6 sm:p-8">
           <span className="als-eyebrow">Berita Utama</span>
+          {formatDate(feature.published_at || feature.created_at) ? (
+            <span
+              className="mt-2 block text-[11px] font-semibold uppercase tracking-[0.16em]"
+              style={{ color: 'rgba(254,254,254,0.78)' }}
+              data-testid="home-news-feature-date"
+            >
+              {formatDate(feature.published_at || feature.created_at)}
+            </span>
+          ) : null}
           <span
             className="font-display mt-3 text-xl font-extrabold leading-tight sm:text-3xl"
             style={{ color: 'var(--club-light)' }}

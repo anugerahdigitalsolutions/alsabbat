@@ -9,15 +9,9 @@ import { NewsCardShell } from '../../components/public/NewsCardShell';
 import { Reveal } from '../../components/public/Reveal';
 import { Badge } from '../../components/ui/badge';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { formatPublishDateTime } from '../../lib/publishTime';
 
-const fmt = (v) => {
-  if (!v) return null;
-  try {
-    return new Date(v).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-  } catch (e) {
-    return v;
-  }
-};
+const fmt = (v) => formatPublishDateTime(v);
 
 export default function NewsDetailPage() {
   const { slug } = useParams();

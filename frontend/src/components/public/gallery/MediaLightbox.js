@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Share2, X } from 'lucide-react';
 import { resolveMediaUrl } from './mediaUtils';
+import { downloadPhoto, sharePhoto } from './photoActions';
 
 /**
  * Lightweight photo lightbox (no extra dependency).
  * Keyboard: Escape closes, ArrowLeft / ArrowRight navigate.
  */
-export const MediaLightbox = ({ items = [], index = 0, onClose, onPrev, onNext }) => {
+export const MediaLightbox = ({ items = [], index = 0, onClose, onPrev, onNext, albumTitle = '', shareUrl = '' }) => {
   const item = items[index];
 
   const handleKey = useCallback(
@@ -74,6 +75,29 @@ export const MediaLightbox = ({ items = [], index = 0, onClose, onPrev, onNext }
             {index + 1} / {items.length}
           </span>
         </figcaption>
+
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => downloadPhoto(item, { albumTitle, index })}
+            className="font-display inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2"
+            style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+            data-testid="gallery-lightbox-download"
+          >
+            <Download className="h-4 w-4" />
+            Download
+          </button>
+          <button
+            type="button"
+            onClick={() => sharePhoto(item, { albumTitle, url: shareUrl })}
+            className="font-display inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2"
+            style={{ backgroundColor: 'rgba(254,254,254,0.14)', color: 'var(--club-light)' }}
+            data-testid="gallery-lightbox-share"
+          >
+            <Share2 className="h-4 w-4" />
+            Share
+          </button>
+        </div>
       </figure>
 
       {items.length > 1 ? (

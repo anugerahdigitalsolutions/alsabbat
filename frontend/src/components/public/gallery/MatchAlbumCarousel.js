@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Images, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Images, Info, Share2 } from 'lucide-react';
 import api from '../../../lib/api';
 import { Reveal } from '../Reveal';
 import { MediaLightbox } from './MediaLightbox';
+import { downloadPhoto, sharePhoto } from './photoActions';
 import { formatAlbumDate, resolveMediaUrl } from './mediaUtils';
 
 /**
@@ -136,29 +137,59 @@ export const MatchAlbumCarousel = ({ album, index = 0, testId }) => {
           data-testid={`${testId}-scroller`}
         >
           {photos.map((photo, photoIndex) => (
-            <button
+            <div
               key={photo.id || `${photo.url}-${photoIndex}`}
-              type="button"
-              onClick={() => setLightbox(photoIndex)}
-              className="als-focus group relative w-[78%] shrink-0 snap-start overflow-hidden rounded-[var(--radius-md)] sm:w-[46%] lg:w-[31%] xl:w-[23.5%]"
+              className="group relative w-[78%] shrink-0 snap-start overflow-hidden rounded-[var(--radius-md)] sm:w-[46%] lg:w-[31%] xl:w-[23.5%]"
               style={{ aspectRatio: '4 / 3', backgroundColor: 'rgba(0,0,0,0.06)' }}
-              aria-label={`Lihat foto ${photoIndex + 1} dari ${album?.title}`}
               data-testid={`${testId}-photo-${photoIndex}`}
             >
-              <img
-                src={resolveMediaUrl(photo.thumbnail_url || photo.url)}
-                alt={photo.alt_text || photo.file_name || `Foto ${photoIndex + 1}`}
-                loading="lazy"
-                decoding="async"
-                referrerPolicy="no-referrer"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-              />
-              <span
-                className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(1,40,145,0.55) 100%)' }}
-                aria-hidden="true"
-              />
-            </button>
+              <button
+                type="button"
+                onClick={() => setLightbox(photoIndex)}
+                className="als-focus absolute inset-0 h-full w-full"
+                aria-label={`Lihat foto ${photoIndex + 1} dari ${album?.title}`}
+                data-testid={`${testId}-photo-open-${photoIndex}`}
+              >
+                <img
+                  src={resolveMediaUrl(photo.thumbnail_url || photo.url)}
+                  alt={photo.alt_text || photo.file_name || `Foto ${photoIndex + 1}`}
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                />
+                <span
+                  className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(1,40,145,0.55) 100%)' }}
+                  aria-hidden="true"
+                />
+              </button>
+
+              <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => downloadPhoto(photo, { albumTitle: album?.title, index: photoIndex })}
+                  aria-label={`Download foto ${photoIndex + 1}`}
+                  title="Download"
+                  className="als-focus inline-flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105"
+                  style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+                  data-testid={`${testId}-download-${photoIndex}`}
+                >
+                  <Download className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sharePhoto(photo, { albumTitle: album?.title })}
+                  aria-label={`Share foto ${photoIndex + 1}`}
+                  title="Share"
+                  className="als-focus inline-flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105"
+                  style={{ backgroundColor: 'rgba(254,254,254,0.92)', color: 'var(--club-secondary)' }}
+                  data-testid={`${testId}-share-${photoIndex}`}
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -167,6 +198,7 @@ export const MatchAlbumCarousel = ({ album, index = 0, testId }) => {
         <MediaLightbox
           items={photos}
           index={lightbox}
+          albumTitle={album?.title}
           onClose={() => setLightbox(-1)}
           onPrev={() => setLightbox((prev) => (prev - 1 + total) % total)}
           onNext={() => setLightbox((prev) => (prev + 1) % total)}

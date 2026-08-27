@@ -1,19 +1,9 @@
 import React from 'react';
 import { ArrowUpRight, CalendarDays, Tag } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { formatPublishDateTime } from '../../lib/publishTime';
 
-const formatDate = (value) => {
-  if (!value) return 'Tanggal belum diatur';
-  try {
-    return new Date(value).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  } catch (e) {
-    return value;
-  }
-};
+const formatDate = (value) => formatPublishDateTime(value) || 'Tanggal belum diatur';
 
 const Thumb = ({ post, heightClass, eager }) => (
   <div className={`relative w-full overflow-hidden ${heightClass}`} style={{ backgroundColor: 'var(--surface-3)' }}>

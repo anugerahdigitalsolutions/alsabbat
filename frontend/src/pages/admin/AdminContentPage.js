@@ -81,7 +81,12 @@ export default function AdminContentPage() {
               { name: 'author_id', label: 'Author', type: 'select', optionsFrom: { endpoint: '/content/authors', labelKey: 'name' } },
               { name: 'match_id', label: 'Terkait Match', type: 'select', optionsFrom: matchOptions },
               { name: 'team_id', label: 'Terkait Tim', type: 'select', optionsFrom: { endpoint: '/teams', labelKey: 'name' } },
-              { name: 'published_at', label: 'Tanggal Publikasi', type: 'date' },
+              {
+                name: 'published_at',
+                label: 'Tanggal & Waktu Publikasi (WIB)',
+                type: 'datetime',
+                help: 'Waktu yang diisi di sini tampil apa adanya sebagai WIB di website. Kosongkan bila belum dipublikasikan.',
+              },
               { name: 'seo.title', label: 'SEO Title', type: 'text', full: true },
               { name: 'seo.description', label: 'SEO Description', type: 'textarea', full: true },
             ]}
