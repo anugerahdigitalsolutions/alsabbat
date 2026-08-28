@@ -1,5 +1,6 @@
 import React from 'react';
 import { Handshake } from 'lucide-react';
+import { resolveMediaUrl } from './gallery/mediaUtils';
 
 export const SponsorsStrip = ({ sponsors = [] }) => {
   if (!sponsors.length) {
@@ -27,7 +28,7 @@ export const SponsorsStrip = ({ sponsors = [] }) => {
           data-testid={`sponsor-item-${sponsor.id}`}
         >
           {sponsor.logo ? (
-            <img src={sponsor.logo} alt={sponsor.name} className="max-h-12 max-w-full object-contain" loading="lazy" />
+            <img src={resolveMediaUrl(sponsor.logo)} alt={sponsor.name} className="max-h-12 max-w-full object-contain" loading="lazy" />
           ) : (
             <span className="font-display text-center text-sm font-semibold" style={{ color: 'var(--fg)' }}>
               {sponsor.name}

@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Button } from '../../components/ui/button';
 import { formatIDR, useCart } from '../../context/CartContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 export default function CartPage() {
   usePageSeo({ title: 'Keranjang', description: 'Keranjang merchandise resmi AL SABBAT Football Club.', path: '/cart', robots: 'noindex,follow' });
@@ -57,12 +58,12 @@ export default function CartPage() {
               {lines.map((line, index) => (
                 <div key={`${line.product_id}-${line.variant_id || 'base'}`} className="als-card flex items-center gap-4 p-4" data-testid={`cart-line-${index}`}>
                   {line.image ? (
-                    <img src={line.image} alt={line.name} className="h-16 w-16 shrink-0 rounded-[8px] object-cover" loading="lazy" />
+                    <img src={resolveMediaUrl(line.image)} alt={line.name} className="h-16 w-16 shrink-0 rounded-[8px] object-cover" loading="lazy" />
                   ) : (
                     <span className="h-16 w-16 shrink-0 rounded-[8px]" style={{ backgroundColor: 'var(--surface-3)' }} aria-hidden="true" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <Link to={`/merchandise/${line.slug}`} className="font-display block truncate text-sm font-semibold">
+                    <Link to={`/merchandise/${line.slug || line.product_id}`} className="font-display block truncate text-sm font-semibold">
                       {line.name}
                     </Link>
                     {line.variant_name ? (

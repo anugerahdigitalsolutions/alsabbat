@@ -11,6 +11,7 @@ import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { MemberCard } from '../../components/member/MemberCard';
 import { MemberCardDesign } from '../../components/admin/MemberCardDesign';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -145,7 +146,7 @@ export default function AdminBarayaPage() {
                   <td className="px-4 py-3 font-semibold">
                     <span className="flex items-center gap-2">
                       {customer.photo_url ? (
-                        <img src={customer.photo_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                        <img src={resolveMediaUrl(customer.photo_url)} alt="" className="h-8 w-8 rounded-full object-cover" />
                       ) : null}
                       {customer.full_name}
                     </span>

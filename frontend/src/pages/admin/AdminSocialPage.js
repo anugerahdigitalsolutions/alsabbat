@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { EmptyState } from '../../components/shared/EmptyState';
 import { SocialConnections } from '../../components/admin/SocialConnections';
 import { toast } from 'sonner';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 const STATUS_TONE = {
   PUBLISHED: { bg: 'rgba(22,163,74,0.12)', fg: '#166534' },
@@ -492,7 +493,7 @@ export default function AdminSocialPage() {
                 <span key={m.id} className="overflow-hidden rounded-[var(--radius-sm)]" style={{ backgroundColor: 'rgba(254,254,254,0.08)' }}>
                   {m.file_type === 'IMAGE' && (m.thumbnail_url || m.url) ? (
                     <img
-                      src={m.thumbnail_url || m.url}
+                      src={resolveMediaUrl(m.thumbnail_url || m.url)}
                       alt={m.alt_text || m.file_name}
                       className="h-16 w-16 object-cover"
                       loading="lazy"

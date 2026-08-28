@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Badge } from '../../components/ui/badge';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 export default function AchievementsPage() {
   usePageSeo({ title: 'Prestasi', description: 'Prestasi dan trofi AL SABBAT Football Club.', path: '/achievements' });
@@ -37,7 +38,7 @@ export default function AchievementsPage() {
               <article key={item.id} className="als-card overflow-hidden" data-testid={`achievement-card-${item.id}`}>
                 <div className="flex h-32 items-center justify-center" style={{ backgroundColor: 'var(--club-tertiary)' }}>
                   {item.trophy_image ? (
-                    <img src={item.trophy_image} alt={item.title} className="h-full w-full object-cover" loading="lazy" />
+                    <img src={resolveMediaUrl(item.trophy_image)} alt={item.title} className="h-full w-full object-cover" loading="lazy" />
                   ) : (
                     <Trophy className="h-10 w-10" style={{ color: 'var(--club-primary)' }} />
                   )}

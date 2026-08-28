@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { formatIDR, useCart } from '../../context/CartContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
@@ -66,7 +67,7 @@ export default function ProductDetailPage() {
       variant_name: selected?.name || null,
       unit_price: price,
       image: product.cover_url || null,
-      slug: product.slug,
+      slug: product.slug || product.id,
     });
     toast.success('Ditambahkan ke keranjang.');
   };
@@ -91,7 +92,7 @@ export default function ProductDetailPage() {
             <div className="space-y-4">
               <div className="als-card als-zoom h-80 overflow-hidden sm:h-[420px]" style={{ backgroundColor: 'var(--surface-3)' }}>
                 {product.cover_url ? (
-                  <img src={product.cover_url} alt={product.name} className="h-full w-full object-cover" loading="eager" />
+                  <img src={resolveMediaUrl(product.cover_url)} alt={product.name} className="h-full w-full object-cover" loading="eager" />
                 ) : (
                   <div className="als-stadium-glow flex h-full items-center justify-center" style={{ backgroundColor: '#000000' }}>
                     <ShoppingBag className="h-12 w-12" style={{ color: 'rgba(252,207,43,0.5)' }} />
@@ -101,7 +102,7 @@ export default function ProductDetailPage() {
               {(product.gallery || []).length ? (
                 <div className="grid grid-cols-4 gap-3">
                   {product.gallery.map((m) => (
-                    <img key={m.id} src={m.url} alt={m.alt_text || product.name} className="h-20 w-full rounded-[8px] object-cover" loading="lazy" />
+                    <img key={m.id} src={resolveMediaUrl(m.url)} alt={m.alt_text || product.name} className="h-20 w-full rounded-[8px] object-cover" loading="lazy" />
                   ))}
                 </div>
               ) : null}

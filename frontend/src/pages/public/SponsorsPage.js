@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Badge } from '../../components/ui/badge';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 export default function SponsorsPage() {
   usePageSeo({ title: 'Sponsor', description: 'Sponsor dan partner resmi AL SABBAT Football Club.', path: '/sponsors' });
@@ -33,7 +34,7 @@ export default function SponsorsPage() {
               <article key={sponsor.id} className="als-card p-6" data-testid={`sponsor-card-${sponsor.id}`}>
                 <div className="mb-4 flex h-20 items-center justify-center rounded-[var(--radius-md)]" style={{ backgroundColor: 'var(--surface-2)' }}>
                   {sponsor.logo ? (
-                    <img src={sponsor.logo} alt={sponsor.name} className="max-h-16 max-w-full object-contain" loading="lazy" />
+                    <img src={resolveMediaUrl(sponsor.logo)} alt={sponsor.name} className="max-h-16 max-w-full object-contain" loading="lazy" />
                   ) : (
                     <span className="font-display text-base font-bold">{sponsor.name}</span>
                   )}

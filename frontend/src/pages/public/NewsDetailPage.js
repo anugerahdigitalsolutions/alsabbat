@@ -10,6 +10,7 @@ import { Reveal } from '../../components/public/Reveal';
 import { Badge } from '../../components/ui/badge';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { formatPublishDateTime } from '../../lib/publishTime';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 const fmt = (v) => formatPublishDateTime(v);
 
@@ -105,7 +106,7 @@ export default function NewsDetailPage() {
             {post?.thumbnail ? (
               <Reveal className="als-card als-zoom mb-10 block overflow-hidden">
                 <img
-                  src={post.thumbnail}
+                  src={resolveMediaUrl(post.thumbnail)}
                   alt={post.title}
                   className="h-auto max-h-[520px] w-full object-cover"
                   loading="eager"
