@@ -3,7 +3,15 @@ import { resolveMediaUrl } from '../gallery/mediaUtils';
 import { Download, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../ui/button';
-import { useMatchCardDesign, MATCH_CARD_DEFAULT_TRANSPARENCY, clampTransparency } from '../../../lib/matchCardDesign';
+import {
+  useMatchCardDesign,
+  MATCH_CARD_DEFAULT_TRANSPARENCY,
+  MATCH_CARD_DEFAULTS,
+  clampTransparency,
+  clampPercent,
+  clampLogoZoom,
+  hexToRgba,
+} from '../../../lib/matchCardDesign';
 import { useResourceList } from '../../../hooks/useResourceList';
 
 const BRAND = {
@@ -69,7 +77,7 @@ const initials = (name = '') =>
     .join('')
     .toUpperCase() || '?';
 
-const drawCrest = (ctx, img, cx, cy, size, label) => {
+const drawCrest = (ctx, img, cx, cy, size, label, zoomPercent = 100) => {
   // Container tetap + gaya kartu AL SABBAT
   ctx.save();
   roundRect(ctx, cx - size / 2, cy - size / 2, size, size, size * 0.22);
@@ -82,8 +90,13 @@ const drawCrest = (ctx, img, cx, cy, size, label) => {
 
   if (img) {
     // LOGO = contain (tidak pernah dipotong), dengan safe padding di dalam container.
-    const inner = size * 0.78;
-    const scale = Math.min(inner / img.width, inner / img.height);
+    // Zoom admin hanya mengubah besar logo DI DALAM container; hasil akhir tetap
+    // dibatasi (clamp) ke area aman sehingga ujung logo tidak pernah terpotong
+    // dan aspect ratio asli selalu dipertahankan.
+    const zoom = Math.min(130, Math.max(60, Number(zoomPercent) || 100)) / 100;
+    const inner = size * 0.78 * zoom;
+    const safe = size * 0.94; // batas mutlak: logo wajib tetap di dalam container
+    const scale = Math.min(inner / img.width, inner / img.height, safe / img.width, safe / img.height);
     const w = img.width * scale;
     const h = img.height * scale;
     ctx.save();
@@ -168,6 +181,7 @@ export const MatchScoreCardGenerator = ({
   competitionName,
   seasonName,
   transparencyOverride = null,
+  designOverride = null,
   fixedRatio = null,
   bare = false,
   sponsors = null,
@@ -189,6 +203,17 @@ export const MatchScoreCardGenerator = ({
       : transparencyOverride,
   );
 
+  // Admin preview boleh mengirim nilai yang belum tersimpan lewat `designOverride`.
+  const pick = (key) =>
+    designOverride && designOverride[key] !== undefined && designOverride[key] !== null
+      ? designOverride[key]
+      : design[key];
+  const customBackground = ratio.id === 'story' ? pick('storyBackground') : pick('feedBackground');
+  const overlayEnabled = pick('overlayEnabled') !== false;
+  const overlayColor = pick('overlayColor') || MATCH_CARD_DEFAULTS.overlayColor;
+  const overlayOpacity = clampPercent(pick('overlayOpacity'), MATCH_CARD_DEFAULTS.overlayOpacity);
+  const logoZoom = clampLogoZoom(pick('logoZoom'));
+
   const render = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas || !match) return;
@@ -207,10 +232,11 @@ export const MatchScoreCardGenerator = ({
       }
     }
 
-    const [clubImg, opponentImg, coverImg] = await Promise.all([
+    const [clubImg, opponentImg, coverImg, customBgImg] = await Promise.all([
       loadImage(clubLogo),
       loadImage(match?.opponent?.logo),
       loadImage(match?.match_cover),
+      loadImage(customBackground ? resolveMediaUrl(customBackground) : null),
     ]);
 
     // Sponsor aktif: semua tampil, logo dimuat contain (tidak pernah dipotong)
@@ -219,49 +245,77 @@ export const MatchScoreCardGenerator = ({
       sponsorSource.map(async (s) => ({ name: s.name, img: await loadImage(resolveMediaUrl(s.logo)) })),
     );
 
-    // 1. Foto pertandingan sebagai background (cover, boleh terpotong natural)
-    const t = transparency / 100; // 1 = foto paling terlihat, 0 = warna kartu paling kuat
     ctx.fillStyle = BRAND.dark;
     ctx.fillRect(0, 0, W, H);
-    if (coverImg) {
-      const scale = Math.max(W / coverImg.width, H / coverImg.height);
-      const dw = coverImg.width * scale;
-      const dh = coverImg.height * scale;
-      ctx.drawImage(coverImg, (W - dw) / 2, (H - dh) * 0.35, dw, dh);
+
+    if (customBgImg) {
+      // ---- MODE BACKGROUND CUSTOM (diatur Admin per rasio) ----
+      // Urutan layer: background image -> overlay -> scrim -> logo/teks/data.
+      const scale = Math.max(W / customBgImg.width, H / customBgImg.height);
+      const dw = customBgImg.width * scale;
+      const dh = customBgImg.height * scale;
+      ctx.drawImage(customBgImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+
+      if (overlayEnabled) {
+        ctx.fillStyle = hexToRgba(overlayColor, overlayOpacity);
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Scrim atas & bawah tetap dipakai agar teks selalu terbaca di atas foto apa pun.
+      const topScrimC = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+      topScrimC.addColorStop(0, 'rgba(0,0,0,0.58)');
+      topScrimC.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = topScrimC;
+      ctx.fillRect(0, 0, W, H * 0.3);
+      const bottomScrimC = ctx.createLinearGradient(0, H, 0, H * 0.4);
+      bottomScrimC.addColorStop(0, 'rgba(0,0,0,0.82)');
+      bottomScrimC.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = bottomScrimC;
+      ctx.fillRect(0, H * 0.4, W, H * 0.6);
+    } else {
+      // ---- MODE DEFAULT (tidak diubah) ----
+      // 1. Foto pertandingan sebagai background (cover, boleh terpotong natural)
+      const t = transparency / 100; // 1 = foto paling terlihat, 0 = warna kartu paling kuat
+      if (coverImg) {
+        const scale = Math.max(W / coverImg.width, H / coverImg.height);
+        const dw = coverImg.width * scale;
+        const dh = coverImg.height * scale;
+        ctx.drawImage(coverImg, (W - dw) / 2, (H - dh) * 0.35, dw, dh);
+      }
+
+      // 2. Identitas warna AL SABBAT (navy + gold) — kekuatan mengikuti slider Admin
+      const a = (full, min) => (coverImg ? full - (full - min) * t : full);
+      const navy = ctx.createLinearGradient(0, 0, W * 0.35, H);
+      navy.addColorStop(0, `rgba(1,40,145,${a(0.9, 0.2).toFixed(3)})`);
+      navy.addColorStop(0.55, `rgba(1,40,145,${a(0.68, 0.1).toFixed(3)})`);
+      navy.addColorStop(1, `rgba(1,40,145,${a(0.5, 0.04).toFixed(3)})`);
+      ctx.fillStyle = navy;
+      ctx.fillRect(0, 0, W, H);
+
+      const goldGlow = ctx.createRadialGradient(W * 0.12, H * 0.08, 0, W * 0.12, H * 0.08, W * 0.85);
+      goldGlow.addColorStop(0, `rgba(252,207,43,${a(0.3, 0.1).toFixed(3)})`);
+      goldGlow.addColorStop(1, 'rgba(252,207,43,0)');
+      ctx.fillStyle = goldGlow;
+      ctx.fillRect(0, 0, W, H);
+
+      const blueGlow = ctx.createRadialGradient(W * 0.9, H * 0.95, 0, W * 0.9, H * 0.95, W * 0.9);
+      blueGlow.addColorStop(0, `rgba(1,40,145,${a(0.6, 0.14).toFixed(3)})`);
+      blueGlow.addColorStop(1, 'rgba(1,40,145,0)');
+      ctx.fillStyle = blueGlow;
+      ctx.fillRect(0, 0, W, H);
+
+      // 3. Scrim gelap hanya di area teks (atas & bawah) agar informasi selalu terbaca
+      const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+      topScrim.addColorStop(0, `rgba(0,0,0,${a(0.66, 0.4).toFixed(3)})`);
+      topScrim.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = topScrim;
+      ctx.fillRect(0, 0, W, H * 0.3);
+      const bottomScrim = ctx.createLinearGradient(0, H, 0, H * 0.4);
+      bottomScrim.addColorStop(0, `rgba(0,0,0,${a(0.88, 0.62).toFixed(3)})`);
+      bottomScrim.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = bottomScrim;
+      ctx.fillRect(0, H * 0.4, W, H * 0.6);
     }
-
-    // 2. Identitas warna AL SABBAT (navy + gold) — kekuatan mengikuti slider Admin
-    const a = (full, min) => (coverImg ? full - (full - min) * t : full);
-    const navy = ctx.createLinearGradient(0, 0, W * 0.35, H);
-    navy.addColorStop(0, `rgba(1,40,145,${a(0.9, 0.2).toFixed(3)})`);
-    navy.addColorStop(0.55, `rgba(1,40,145,${a(0.68, 0.1).toFixed(3)})`);
-    navy.addColorStop(1, `rgba(1,40,145,${a(0.5, 0.04).toFixed(3)})`);
-    ctx.fillStyle = navy;
-    ctx.fillRect(0, 0, W, H);
-
-    const goldGlow = ctx.createRadialGradient(W * 0.12, H * 0.08, 0, W * 0.12, H * 0.08, W * 0.85);
-    goldGlow.addColorStop(0, `rgba(252,207,43,${a(0.3, 0.1).toFixed(3)})`);
-    goldGlow.addColorStop(1, 'rgba(252,207,43,0)');
-    ctx.fillStyle = goldGlow;
-    ctx.fillRect(0, 0, W, H);
-
-    const blueGlow = ctx.createRadialGradient(W * 0.9, H * 0.95, 0, W * 0.9, H * 0.95, W * 0.9);
-    blueGlow.addColorStop(0, `rgba(1,40,145,${a(0.6, 0.14).toFixed(3)})`);
-    blueGlow.addColorStop(1, 'rgba(1,40,145,0)');
-    ctx.fillStyle = blueGlow;
-    ctx.fillRect(0, 0, W, H);
-
-    // 3. Scrim gelap hanya di area teks (atas & bawah) agar informasi selalu terbaca
-    const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.3);
-    topScrim.addColorStop(0, `rgba(0,0,0,${a(0.66, 0.4).toFixed(3)})`);
-    topScrim.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = topScrim;
-    ctx.fillRect(0, 0, W, H * 0.3);
-    const bottomScrim = ctx.createLinearGradient(0, H, 0, H * 0.4);
-    bottomScrim.addColorStop(0, `rgba(0,0,0,${a(0.88, 0.62).toFixed(3)})`);
-    bottomScrim.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = bottomScrim;
-    ctx.fillRect(0, H * 0.4, W, H * 0.6);
 
     const pad = W * 0.08;
     const isStory = ratio.id === 'story';
@@ -349,8 +403,8 @@ export const MatchScoreCardGenerator = ({
     const opponentCx = W / 2 + crestOffset;
     const crestY = blockY - W * 0.1 - crestSize / 2;
 
-    drawCrest(ctx, clubImg, clubCx, crestY, crestSize, clubName);
-    drawCrest(ctx, opponentImg, opponentCx, crestY, crestSize, match?.opponent?.name || 'OPP');
+    drawCrest(ctx, clubImg, clubCx, crestY, crestSize, clubName, logoZoom);
+    drawCrest(ctx, opponentImg, opponentCx, crestY, crestSize, match?.opponent?.name || 'OPP', logoZoom);
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
@@ -417,7 +471,21 @@ export const MatchScoreCardGenerator = ({
 
     setRendering(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match, clubLogo, clubName, competitionName, seasonName, ratio, transparency, sponsorSignature]);
+  }, [
+    match,
+    clubLogo,
+    clubName,
+    competitionName,
+    seasonName,
+    ratio,
+    transparency,
+    sponsorSignature,
+    customBackground,
+    overlayEnabled,
+    overlayColor,
+    overlayOpacity,
+    logoZoom,
+  ]);
 
   useEffect(() => {
     if (!fixedRatio) return;
