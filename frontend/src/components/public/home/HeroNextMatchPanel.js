@@ -19,7 +19,7 @@ const Unit = ({ value, label, testId }) => (
 
 const Divider = () => (
   <span
-    className="hidden h-5 w-px shrink-0 sm:inline-block"
+    className="hidden h-8 w-px shrink-0 sm:inline-block"
     style={{ backgroundColor: 'rgba(254,254,254,0.16)' }}
     aria-hidden="true"
   />
@@ -39,7 +39,7 @@ export const HeroNextMatchPanel = ({ match, clubName = 'AL SABBAT' }) => {
     .join(' · ');
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-3" data-testid="hero-next-match-panel">
+    <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-4 sm:gap-x-4" data-testid="hero-next-match-panel">
       <p
         className="shrink-0 text-[9px] font-bold uppercase tracking-[0.16em]"
         style={{ color: 'var(--club-primary)' }}
@@ -89,7 +89,7 @@ export const HeroNextMatchPanel = ({ match, clubName = 'AL SABBAT' }) => {
 
       <Link
         to={`/matches/${match.id}`}
-        className="als-focus font-display ml-auto inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-full px-3 text-[10px] font-bold transition-transform duration-200 hover:-translate-y-px"
+        className="als-focus font-display ml-auto inline-flex min-h-[38px] shrink-0 items-center gap-1 rounded-full px-4 text-[10px] font-bold transition-transform duration-200 hover:-translate-y-px"
         style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
         data-testid="hero-next-match-cta"
       >
