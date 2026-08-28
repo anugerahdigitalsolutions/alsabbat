@@ -28,3 +28,23 @@
 ## Catatan
 - Jangan menyeed data uji ke database produksi.
 - Testing Agent DILARANG oleh user; verifikasi memakai skrip Python + curl + screenshot.
+
+## Update — konfigurasi staging aaPanel (Agustus 2026)
+Environment preview/staging sekarang diselaraskan dengan deployment aaPanel staging:
+
+| Setelan | Nilai staging |
+| --- | --- |
+| `ENVIRONMENT` | `staging` |
+| `MONGODB_DB_NAME` | `alsabbat_platform_staging` |
+| `MEDIA_STORAGE_PROVIDER` | `LOCAL` |
+| `MEDIA_LOCAL_PERSISTENT` | `false` di container preview, `true` di server aaPanel |
+
+- Akun admin di atas (`admin@alsabbat.com` / `Alsabbat2026!`) **tetap valid** dan sudah
+  diverifikasi ulang pada database `alsabbat_platform_staging`:
+  `POST /api/auth/login` → 200 dan login UI `/admin/login` masuk ke dashboard.
+- Database lama `alsabbat_platform` di container TIDAK dihapus (dibiarkan utuh sebagai
+  cadangan). Database aaPanel tidak disentuh sama sekali.
+- Verifikasi konfigurasi menyeluruh (33 pemeriksaan, bersih tanpa sisa data uji):
+  `python scripts/staging_config_verify.py [base_url]`
+- Skrip verifikasi mengunggah satu berkas uji lalu menghapusnya sendiri (hard delete),
+  jadi aman dijalankan terhadap `https://api-staging.alsabbat.com`.

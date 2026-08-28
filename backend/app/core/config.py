@@ -85,9 +85,15 @@ class Settings:
     RATE_LIMIT_WEBHOOK_WINDOW: int = int(os.environ.get("RATE_LIMIT_WEBHOOK_WINDOW", "60"))
 
     # -------------------------------------------------------------- media
-    # Storage is pluggable: LOCAL (default / dev) or S3 (Atlas-era CDN target).
+    # Storage is pluggable: LOCAL (default — dev and self-hosted/aaPanel), S3 or
+    # EMERGENT (managed object storage).
     MEDIA_STORAGE_PROVIDER: str = os.environ.get("MEDIA_STORAGE_PROVIDER", "LOCAL").upper()
     MEDIA_LOCAL_DIR: str = os.environ.get("MEDIA_LOCAL_DIR", str(ROOT_DIR / "media_storage"))
+    # On a self-hosted deployment (aaPanel + Nginx) the LOCAL directory lives on a
+    # real server disk and IS persistent across releases — as long as MEDIA_LOCAL_DIR
+    # points outside the deployment folder. Ephemeral containers must leave this
+    # false so the platform never over-claims durability.
+    MEDIA_LOCAL_PERSISTENT: bool = _bool(os.environ.get("MEDIA_LOCAL_PERSISTENT"), False)
     MEDIA_PUBLIC_PATH: str = "/api/media/files"
     MEDIA_CDN_BASE_URL: str = os.environ.get("MEDIA_STORAGE_PUBLIC_BASE_URL", "") or os.environ.get("MEDIA_CDN_BASE_URL", "")
     MEDIA_STORAGE_BUCKET: str = os.environ.get("MEDIA_STORAGE_BUCKET", "")
@@ -155,6 +161,10 @@ class Settings:
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() in {"production", "prod"}
+
+    @property
+    def is_staging(self) -> bool:
+        return self.ENVIRONMENT.lower() in {"staging", "stage"}
 
     def resolved_jwt_secret(self) -> str:
         """Return the JWT secret; generate an ephemeral one in development."""

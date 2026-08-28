@@ -375,17 +375,31 @@ class MediaService:
             return False
 
     def status(self) -> dict:
+        is_local = self.backend.provider == StorageProvider.LOCAL
+        # LOCAL on a self-hosted server (aaPanel + Nginx) is genuinely persistent
+        # when MEDIA_LOCAL_DIR points at a directory outside the release folder.
+        local_persistent = is_local and settings.MEDIA_LOCAL_PERSISTENT
+        if not is_local:
+            note = "Penyimpanan objek persisten aktif."
+        elif local_persistent:
+            note = (
+                "Penyimpanan LOCAL pada disk server (self-hosted/aaPanel) aktif dan persisten. "
+                f"Direktori: {settings.MEDIA_LOCAL_DIR}. Pastikan direktori ini berada di luar "
+                "folder rilis dan ikut dicadangkan secara berkala."
+            )
+        else:
+            note = (
+                "Penyimpanan LOCAL bersifat sementara di lingkungan ini — berkas bisa hilang saat "
+                "deployment. Untuk server sendiri (aaPanel) set MEDIA_LOCAL_PERSISTENT=true dengan "
+                "MEDIA_LOCAL_DIR di luar folder rilis, atau gunakan MEDIA_STORAGE_PROVIDER=S3/EMERGENT."
+            )
         return {
             "provider": self.backend.provider.value,
             "configured": self.backend.is_configured(),
             "cdn_enabled": bool(settings.MEDIA_CDN_BASE_URL),
-            "persistent": self.backend.provider != StorageProvider.LOCAL,
-            "note": (
-                "Penyimpanan LOCAL hanya untuk pengembangan — berkas bisa hilang saat deployment. "
-                "Set MEDIA_STORAGE_PROVIDER=EMERGENT (atau S3) untuk penyimpanan permanen."
-                if self.backend.provider == StorageProvider.LOCAL
-                else "Penyimpanan objek persisten aktif."
-            ),
+            "persistent": (not is_local) or local_persistent,
+            "local_dir": settings.MEDIA_LOCAL_DIR if is_local else None,
+            "note": note,
             "limits_mb": {k.value: v for k, v in MAX_SIZE_MB.items()},
             "allowed_mime_types": {k.value: sorted(v) for k, v in ALLOWED_MIME_TYPES.items()},
         }

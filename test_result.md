@@ -101,3 +101,120 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Develop ALSABBAT ONLY on the `staging` branch (repo anugerahdigitalsolutions/alsabbat).
+  `main`/production must never be modified. Keep the app fully compatible with the current
+  aaPanel + Nginx deployment (Node 20, React+CRACO, FastAPI, MongoDB, LOCAL media).
+  Approved scope: configuration/environment hygiene + aaPanel compatibility only.
+  Target staging config: DB `alsabbat_platform_staging`, media LOCAL,
+  frontend https://staging.alsabbat.com, API https://api-staging.alsabbat.com.
+  Constraints: no destructive changes, no DB rename/drop/migrate, no media deletion,
+  no dependency upgrades, no architectural changes, TESTING AGENT FORBIDDEN.
+
+backend:
+  - task: "Media storage forced to LOCAL for aaPanel (remove duplicate env key)"
+    implemented: true
+    working: true
+    file: "backend/.env, backend/.env.example"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Root cause: backend/.env declared MEDIA_STORAGE_PROVIDER twice (LOCAL then
+          EMERGENT). python-dotenv keeps the LAST value, so the service resolved to
+          EMERGENT (cloud object storage requiring EMERGENT_LLM_KEY) instead of the
+          LOCAL disk used by the aaPanel deployment. Removed the duplicate.
+          Verified in logs: "MediaService initialised with provider=LOCAL" (was EMERGENT).
+          Upload round-trip verified: file written to disk, served via /api/media/files, 200.
+
+  - task: "Staging isolated from production database name"
+    implemented: true
+    working: true
+    file: "backend/.env"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          MONGODB_DB_NAME was `alsabbat_platform` (the PRODUCTION name) and a stale
+          `DB_NAME=test_database` was also present. Now `alsabbat_platform_staging`,
+          matching the existing aaPanel staging DB. Stale DB_NAME removed.
+          NON-DESTRUCTIVE: the old local DB was left fully intact (nothing dropped);
+          its 6 dev docs were copied into the staging-named DB so the preview keeps
+          working. The aaPanel database was never touched.
+          Verified: /api/health -> database "connected", environment "staging".
+
+  - task: "Accurate media persistence reporting for self-hosted LOCAL storage"
+    implemented: true
+    working: true
+    file: "backend/app/core/config.py, backend/app/services/media_service.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          media_service.status() hard-coded `persistent = provider != LOCAL` and told
+          admins to switch to EMERGENT/S3 — wrong and misleading on aaPanel, where the
+          LOCAL directory IS a persistent server disk. Added env flag
+          MEDIA_LOCAL_PERSISTENT (default false, so nothing changes unless declared)
+          plus a `local_dir` field and accurate notes. Never changes where files are
+          written. Also added Settings.is_staging.
+          Verified: status reports provider LOCAL, local_dir, persistent mirroring the flag.
+
+frontend:
+  - task: "Production build verified for aaPanel static hosting"
+    implemented: true
+    working: true
+    file: "frontend/.env.example"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          No frontend source code changed. `yarn build` (CI=false, GENERATE_SOURCEMAP=false)
+          succeeds: 296.42 kB gzip main.js, lint warnings only, no errors.
+          Audited src/ for hard-coded environment URLs: none — the API origin comes only
+          from REACT_APP_BACKEND_URL (src/lib/api.js). Remaining absolute URLs are
+          third-party (YouTube/Drive/WhatsApp) and are legitimate.
+          Homepage renders and /admin/login -> dashboard works (auth 200).
+
+metadata:
+  created_by: "main_agent"
+  version: "1.1"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    -agent: "main"
+    -message: |
+      TESTING AGENT MUST NOT BE USED — explicitly forbidden by the user (see
+      memory/test_credentials.md). Verification was done with a self-cleaning Python
+      script, curl, a production build and screenshots.
+
+      Verification: `python scripts/staging_config_verify.py [base_url]` -> 33/33 PASS.
+      Covers env hygiene (no duplicate keys, LOCAL media, isolated DB), committed env
+      templates contain no real secrets, health, admin login, media storage status,
+      a full LOCAL upload/serve round-trip, and 7 existing public routes still 200.
+      The script hard-deletes its own upload, so it is safe to run against
+      https://api-staging.alsabbat.com and leaves no test data (verified: 0 media
+      records, 0 files remaining).
+
+      Scope respected: no data dropped/migrated, no media deleted, no dependency or
+      architecture changes, all API routes preserved, work only on `staging`.
+      NOT COMMITTED/PUSHED — the user should use "Save to Github" to publish to `staging`.
