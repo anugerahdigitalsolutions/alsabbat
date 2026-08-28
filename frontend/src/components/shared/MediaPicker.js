@@ -140,7 +140,7 @@ export const MediaPicker = ({
         onChange(next);
         toast.success('Gambar berhasil diunggah.');
         if (spec?.aspect) {
-          setCropSource(media.url ? resolveMediaUrl(media.url) : file);
+          setCropSource(file);
           setCropOpen(true);
         }
       } catch (e) {

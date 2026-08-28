@@ -45,19 +45,43 @@ export const ImageCropper = ({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [fitMode, setFitMode] = useState(spec?.fit === 'contain' ? 'contain' : 'cover');
 
-  const src = useMemo(() => {
-    if (!source) return null;
-    return typeof source === 'string' ? source : objectUrl;
-  }, [source, objectUrl]);
+  const src = objectUrl || (typeof source === 'string' ? source : null);
 
   useEffect(() => {
-    if (source && typeof source !== 'string') {
-      const url = URL.createObjectURL(source);
-      setObjectUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-    setObjectUrl(null);
-    return undefined;
+    let cancelled = false;
+    let url = null;
+
+    const loadSource = async () => {
+      if (!source) {
+        setObjectUrl(null);
+        return;
+      }
+
+      if (typeof source !== 'string') {
+        url = URL.createObjectURL(source);
+        if (!cancelled) setObjectUrl(url);
+        return;
+      }
+
+      try {
+        const response = await fetch(source, { credentials: 'omit' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const blob = await response.blob();
+        url = URL.createObjectURL(blob);
+
+        if (!cancelled) setObjectUrl(url);
+      } catch (error) {
+        console.error('CROPPER SOURCE LOAD FAILED:', error);
+      }
+    };
+
+    loadSource();
+
+    return () => {
+      cancelled = true;
+      if (url) URL.revokeObjectURL(url);
+    };
   }, [source]);
 
   useEffect(() => {
@@ -230,6 +254,7 @@ export const ImageCropper = ({
             <img
               ref={imgRef}
               src={src}
+              crossOrigin="anonymous"
               alt=""
               onLoad={(e) => {
                 setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight });

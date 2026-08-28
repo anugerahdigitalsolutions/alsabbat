@@ -1,5 +1,6 @@
 import React from 'react';
 import { useClub } from '../../context/ClubContext';
+import { resolveMediaUrl } from '../public/gallery/mediaUtils';
 
 /** Club crest mark — uses the club logo when configured, otherwise a monogram. */
 export const ClubCrestMark = ({ size = 40, onDark = false, testId = 'club-crest' }) => {
@@ -9,7 +10,7 @@ export const ClubCrestMark = ({ size = 40, onDark = false, testId = 'club-crest'
   if (club?.logo) {
     return (
       <img
-        src={club.logo}
+        src={resolveMediaUrl(club.logo)}
         alt={`${shortName} logo`}
         width={size}
         height={size}

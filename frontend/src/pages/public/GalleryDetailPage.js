@@ -30,7 +30,29 @@ export default function GalleryDetailPage() {
     setError(null);
     try {
       const { data } = await api.get(`/gallery/public/albums/${albumId}`);
-      setAlbum(data);
+
+      let albumData = data;
+
+      // Jika album belum memiliki media lokal, ambil foto langsung dari Google Drive.
+      if (!albumData.media || albumData.media.length === 0) {
+        try {
+          const { data: driveData } = await api.get(
+            `/gallery/public/albums/${albumId}/drive-photos`
+          );
+
+          if (driveData?.items?.length) {
+            albumData = {
+              ...albumData,
+              media: driveData.items,
+            };
+          }
+        } catch (driveError) {
+          // Album tetap ditampilkan meskipun Drive gagal dibaca.
+          console.warn('Google Drive album fallback failed:', driveError);
+        }
+      }
+
+      setAlbum(albumData);
     } catch (e) {
       setError(apiErrorMessage(e, 'Album tidak ditemukan atau belum dipublikasikan.'));
     } finally {

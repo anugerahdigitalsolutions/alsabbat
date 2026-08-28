@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { resolveMediaUrl } from '../gallery/mediaUtils';
 import { Download, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../ui/button';
 import { useMatchCardDesign, MATCH_CARD_DEFAULT_TRANSPARENCY, clampTransparency } from '../../../lib/matchCardDesign';
 import { useResourceList } from '../../../hooks/useResourceList';
-import { resolveMediaUrl } from '../gallery/mediaUtils';
 
 const BRAND = {
   gold: '#FCCF2B',
@@ -47,7 +47,7 @@ const loadImage = (src) =>
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = src;
+    img.src = resolveMediaUrl(src);
   });
 
 const roundRect = (ctx, x, y, w, h, r) => {

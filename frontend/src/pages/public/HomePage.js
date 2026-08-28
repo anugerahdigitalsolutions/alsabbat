@@ -117,8 +117,8 @@ export default function HomePage() {
 
     const galleryCover = resolveMediaUrl(albums.items[0]?.cover_url_resolved);
     const newsCover = resolveMediaUrl(news.items[0]?.thumbnail);
-    const playerPhoto = players.items.find((p) => p.photo)?.photo;
-    const brandImage = galleryCover || newsCover || playerPhoto || null;
+    const playerPhoto = resolveMediaUrl(players.items.find((p) => p.photo)?.photo);
+    const brandImage = galleryCover || newsCover || null;
     const slides = [
       {
         id: 'brand',

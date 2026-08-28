@@ -150,6 +150,7 @@ def sanitize_upload(file_name: str, content: bytes, mime_type: str) -> Tuple[str
         except ValidationFailedError:
             raise
         except Exception as exc:
+            logger.exception("MEDIA IMAGE PROCESSING FAILED: %s", exc)
             raise ValidationFailedError("Gambar tidak dapat diproses. Gunakan JPG, PNG, atau WEBP.") from exc
         base = os.path.basename(file_name or "gambar")
         stem = base.rsplit(".", 1)[0][:80] or "gambar"

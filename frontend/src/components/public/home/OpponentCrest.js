@@ -1,4 +1,5 @@
 import React from 'react';
+import { resolveMediaUrl } from '../gallery/mediaUtils';
 
 const initials = (name = '') =>
   name
@@ -15,7 +16,7 @@ export const OpponentCrest = ({ name, logo, size = 48, onDark = false }) => {
   if (logo) {
     return (
       <img
-        src={logo}
+        src={resolveMediaUrl(logo)}
         alt={`Logo ${name || 'lawan'}`}
         className="rounded-[12px] object-contain"
         style={style}

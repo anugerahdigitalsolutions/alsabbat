@@ -107,7 +107,11 @@ async def serve_file(file_path: str):
         return Response(
             content=content,
             media_type=content_type,
-            headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "public, max-age=86400"},
+            headers={
+                "X-Content-Type-Options": "nosniff",
+                "Cache-Control": "public, max-age=86400",
+                "Access-Control-Allow-Origin": "*",
+            },
         )
     base = Path(settings.MEDIA_LOCAL_DIR).resolve()
     target = (base / file_path).resolve()

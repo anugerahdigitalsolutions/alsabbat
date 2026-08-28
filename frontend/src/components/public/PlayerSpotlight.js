@@ -1,4 +1,5 @@
 import React from 'react';
+import { resolveMediaUrl } from './gallery/mediaUtils';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Shirt } from 'lucide-react';
 
@@ -38,7 +39,7 @@ export const PlayerSpotlight = ({ player }) => {
       <div className="als-zoom relative h-72 lg:h-full lg:min-h-[320px]">
         {player.photo ? (
           <img
-            src={player.photo}
+            src={resolveMediaUrl(player.photo)}
             alt={name}
             className="h-full w-full object-cover object-top"
             loading="lazy"

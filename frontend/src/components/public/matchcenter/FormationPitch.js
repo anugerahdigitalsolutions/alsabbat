@@ -1,4 +1,5 @@
 import React from 'react';
+import { resolveMediaUrl } from '../gallery/mediaUtils';
 import { Link } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { Badge } from '../../ui/badge';
@@ -70,7 +71,7 @@ const Marker = ({ entry, player, testId }) => {
           }}
         >
           {player?.photo ? (
-            <img src={player.photo} alt={name} className="h-full w-full object-cover" loading="lazy" />
+            <img src={resolveMediaUrl(player.photo)} alt={name} className="h-full w-full object-cover" loading="lazy" />
           ) : (
             initials
           )}

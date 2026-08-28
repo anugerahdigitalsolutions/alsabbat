@@ -1,4 +1,5 @@
 import React from 'react';
+import { resolveMediaUrl } from '../gallery/mediaUtils';
 import { CalendarDays, Clock, MapPin, Shield } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { STATUS_STYLE, formatMatchDate } from './eventMeta';
@@ -11,7 +12,7 @@ const TeamSide = ({ name, logo, align = 'right', isClub, sideLabel, testId }) =>
   >
     {logo ? (
       <img
-        src={logo}
+        src={resolveMediaUrl(logo)}
         alt={name}
         className="h-16 w-16 rounded-[var(--radius-sm)] object-contain sm:h-20 sm:w-20"
         style={{ backgroundColor: 'rgba(254,254,254,0.06)' }}
