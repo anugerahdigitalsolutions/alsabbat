@@ -612,6 +612,37 @@ export const MatchScoreCardGenerator = ({
         ) : null}
       </div>
 
+      {/* Logo sponsor tepat di bawah kartu — GAMBAR (object-contain, tidak terpotong) */}
+      {(activeSponsors || []).some((s) => s && s.logo) ? (
+        <div className="mt-4" data-testid="score-card-sponsors">
+          <p
+            className="font-display mb-2 text-[10px] font-semibold uppercase tracking-[0.16em]"
+            style={{ color: 'var(--muted-fg)' }}
+          >
+            Didukung oleh
+          </p>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+            {(activeSponsors || [])
+              .filter((s) => s && s.logo)
+              .map((s, i) => (
+                <div
+                  key={s.id || `${s.name}-${i}`}
+                  className="flex h-16 items-center justify-center rounded-[var(--radius-sm)] px-2"
+                  style={{ backgroundColor: 'rgba(1,40,145,0.05)', border: '1px solid rgba(1,40,145,0.10)' }}
+                  data-testid={`score-card-sponsor-${i}`}
+                >
+                  <img
+                    src={resolveMediaUrl(s.logo)}
+                    alt={s.name || 'Sponsor'}
+                    className="max-h-11 max-w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-4 flex flex-wrap gap-2">
         <Button
           type="button"

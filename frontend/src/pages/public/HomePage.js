@@ -207,6 +207,14 @@ export default function HomePage() {
         <PillarStrip t={t} />
       </Band>
 
+      {/* Sponsors */}
+      {sponsors.items.length ? (
+        <Band className="pt-0" testId="home-section-sponsors">
+          <RowHeader label={t('home.label.sponsors')} to="/sponsors" actionLabel={t('home.label.sponsors_action')} testId="home-label-sponsors" />
+          <SponsorsStrip sponsors={sponsors.items} />
+        </Band>
+      ) : null}
+
       {/* Matchday + Newsroom */}
       <Band className="pt-0" testId="home-section-matchday-news">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,330px)_minmax(0,1fr)]">
@@ -304,14 +312,6 @@ export default function HomePage() {
             testId="home-label-youtube"
           />
           <YoutubeShowcase videos={youtubeVideos} channelUrl={youtubeChannel} />
-        </Band>
-      ) : null}
-
-      {/* Sponsors */}
-      {sponsors.items.length ? (
-        <Band className="pt-0" testId="home-section-sponsors">
-          <RowHeader label={t('home.label.sponsors')} to="/sponsors" actionLabel={t('home.label.sponsors_action')} testId="home-label-sponsors" />
-          <SponsorsStrip sponsors={sponsors.items} />
         </Band>
       ) : null}
 
