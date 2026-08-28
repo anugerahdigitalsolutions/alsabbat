@@ -102,22 +102,43 @@ MAX_GALLERY_IMAGES = 3
 
 
 def normalise_gallery(value):
-    """Maksimal 3 referensi media (URL Media Library), tanpa duplikat/kosong."""
+    """Maksimal 3 referensi media dengan POSISI SLOT yang dipertahankan.
+
+    Slot 1/2/3 harus independen sampai ke database: slot kosong disimpan sebagai
+    string kosong agar foto di slot 3 tidak bergeser ke slot 1 setelah save.
+    Sebelumnya semua nilai kosong dibuang sehingga urutan slot ikut mengecil.
+
+    Backward-compatible: data lama yang rapat (mis. ["a","b"]) tetap valid dan
+    tidak berubah, karena kosong di ekor tetap dipangkas. Konsumen frontend sudah
+    aman terhadap lubang (`personPhotos.js` memfilter falsy, `TeamsPage` memakai
+    fallback `|| photo`).
+    """
     if value is None:
         return []
     if isinstance(value, str):
         value = [value]
     if not isinstance(value, (list, tuple)):
         return []
-    cleaned = []
-    for item in value:
+
+    slots = []
+    seen = set()
+    for item in value[:MAX_GALLERY_IMAGES]:
         if not isinstance(item, str):
+            slots.append("")
             continue
         item = item.strip()
-        if not item or len(item) > 800 or item in cleaned:
+        # Duplikat tidak boleh menggandakan media: slot kedua dikosongkan,
+        # tetapi posisi slot lain tetap utuh.
+        if not item or len(item) > 800 or item in seen:
+            slots.append("")
             continue
-        cleaned.append(item)
-    return cleaned[:MAX_GALLERY_IMAGES]
+        seen.add(item)
+        slots.append(item)
+
+    # Pangkas hanya slot kosong di ekor supaya data lama tetap identik.
+    while slots and not slots[-1]:
+        slots.pop()
+    return slots[:MAX_GALLERY_IMAGES]
 
 
 # --------------------------------------------------------------- Player

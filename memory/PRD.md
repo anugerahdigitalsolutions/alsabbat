@@ -1,5 +1,19 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## P0 FIX — Slot Foto Pemain & Staf tidak bergeser (28 Agu 2026) · SELESAI
+- Akar masalah terakhir: `frontend/src/components/admin/ResourceManager.js` memakai `.filter(Boolean)`
+  pada field `type: 'gallery'` di `buildInitialValues` (load form) dan `preparePayload` (submit),
+  sehingga slot kosong `""` dibuang → foto Slot 3 bergeser ke Slot 1.
+- Perbaikan: load form kini **pad ke `max` slot** (`['', '', url]`); submit **mempertahankan posisi**
+  dan hanya memangkas kosong di ekor (kompatibel dengan data lama yang rapat).
+- Backend (`normalise_gallery`) & `MediaGalleryField.js` sudah benar sebelumnya → tidak diubah.
+- Verifikasi (tanpa Testing Agent): `scripts/p0_gallery_slots_verify.py` **13/13 PASS**
+  (slot1 kosong+slot3 terisi, reload tetap, slot1+slot3, hapus slot1 tak menggeser slot3,
+  ganti slot2 saja, maks 3 slot, data lama rapat identik, semua kosong → `[]`, pemain & staf).
+- Verifikasi UI (screenshot Admin → Players → Edit): sebelum simpan Slot1/2 kosong & Slot3 bergambar;
+  setelah **Simpan + buka ulang** tetap Slot3 (`Galeri Foto — 1/3`), DB `['', '', '<url>']`.
+- `yarn build` sukses. Data uji dihapus kembali. Galeri Google Drive **belum dikerjakan** (menunggu instruksi user).
+
 ## Original problem statement
 Membangun platform digital resmi ALSABBAT Football Club (FARM stack: FastAPI + React + MongoDB)
 secara bertahap per fase, dengan identitas brand ketat:

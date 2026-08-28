@@ -22,7 +22,13 @@ export const MediaGalleryField = ({ value, onChange, max = 3, spec, testId, labe
   const slots = Array.from({ length: max }, (_, i) => stored[i] || '');
   const used = slots.filter(Boolean).length;
 
-  const commit = (list) => onChange(list.filter(Boolean).slice(0, max));
+  // Kirim apa adanya dengan POSISI slot dipertahankan (slot kosong = "").
+  // Hanya kosong di ekor yang dipangkas, supaya data lama tetap identik.
+  const commit = (list) => {
+    const next = list.slice(0, max).map((s) => s || '');
+    while (next.length && !next[next.length - 1]) next.pop();
+    onChange(next);
+  };
 
   const setSlot = (index, next) => {
     if (next && slots.some((s, i) => i !== index && s === next)) {

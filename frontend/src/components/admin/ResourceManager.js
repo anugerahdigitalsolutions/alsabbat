@@ -72,7 +72,13 @@ const buildInitialValues = (fields, defaults = {}, row = null) => {
       else value = '';
     }
     if (field.type === 'multiselect' && Array.isArray(value)) value = value.join(', ');
-    if (field.type === 'gallery') value = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
+    // Galeri slot tetap: posisi slot HARUS dipertahankan, slot kosong = ''.
+    // `.filter(Boolean)` di sini dulu membuat foto slot 3 bergeser ke slot 1.
+    if (field.type === 'gallery') {
+      const list = Array.isArray(value) ? value : value ? [value] : [];
+      const max = field.max || 3;
+      value = Array.from({ length: max }, (_, i) => (typeof list[i] === 'string' ? list[i] : ''));
+    }
     values = setPath(values, field.name, value);
   });
   return values;
@@ -87,7 +93,12 @@ const preparePayload = (fields, values) => {
       if (Number.isNaN(value)) value = null;
     }
     if (field.type === 'gallery') {
-      const list = (Array.isArray(value) ? value : value ? [value] : []).filter(Boolean).slice(0, field.max || 3);
+      // Pertahankan posisi slot (slot kosong = ''); hanya kosong di ekor dipangkas
+      // supaya data lama yang rapat tetap identik.
+      const list = (Array.isArray(value) ? value : value ? [value] : [])
+        .slice(0, field.max || 3)
+        .map((item) => (typeof item === 'string' ? item.trim() : ''));
+      while (list.length && !list[list.length - 1]) list.pop();
       payload = setPath(payload, field.name, list);
       return;
     }

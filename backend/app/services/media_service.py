@@ -106,7 +106,14 @@ IMAGE_SIGNATURES = {
     b"GIF87a": "image/gif",
     b"GIF89a": "image/gif",
 }
-BLOCKED_SNIPPETS = (b"<script", b"<!doctype html", b"<html", b"<?php", b"MZ", b"\x7fELF")
+# Cuplikan berbahaya yang harus dicari di SELURUH awal berkas (polyglot / HTML
+# injection): ini benar-benar bisa muncul di offset mana pun.
+BLOCKED_SNIPPETS = (b"<script", b"<!doctype html", b"<html", b"<?php")
+# Magic byte executable HANYA berarti di offset 0 dan bersifat case-sensitive.
+# Sebelumnya keduanya ikut dicek sebagai substring + di-lowercase, sehingga PNG/JPG
+# yang sah ditolak begitu data terkompresinya memuat byte "mz"/"MZ"/"mZ" secara
+# kebetulan (peluangnya besar dalam 2 KB pertama) — itu false positive-nya.
+BLOCKED_MAGICS = (b"MZ", b"\x7fELF")
 
 
 def sniff_image_mime(content: bytes) -> Optional[str]:
@@ -125,6 +132,8 @@ def sanitize_upload(file_name: str, content: bytes, mime_type: str) -> Tuple[str
     """Server-side hardening: signature check + safe re-encode for raster images."""
     head = content[:2048].lower()
     if any(snippet.lower() in head for snippet in BLOCKED_SNIPPETS):
+        raise ValidationFailedError("Berkas ditolak: konten tidak aman untuk media.")
+    if content.startswith(BLOCKED_MAGICS):
         raise ValidationFailedError("Berkas ditolak: konten tidak aman untuk media.")
     mime = (mime_type or "").lower()
     if mime.startswith("image/") or sniff_image_mime(content):
