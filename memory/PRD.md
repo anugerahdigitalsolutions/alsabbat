@@ -1,5 +1,36 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## SPONSOR PROFILE + BADGE STORE HITAM (29 Agu 2026) · SELESAI
+### File yang berubah
+- `backend/app/models/domain.py` — `SponsorBase` +`contact: ContactInformation` +`social_media: SocialLinks`,
+  `description` max 1000 → 4000. **Additive & backward-compatible** (dokumen sponsor lama tanpa field ini
+  tetap terbaca, `contact: None` ditangani di frontend). Tidak ada koleksi/endpoint/RBAC baru.
+- `frontend/src/pages/admin/AdminSponsorsPage.js` — field baru: Alamat, Telepon, Email, Instagram,
+  Facebook, TikTok, YouTube (+ label "Deskripsi / Detail Sponsor"). Logo tetap MediaPicker existing.
+- **BARU** `frontend/src/pages/public/SponsorDetailPage.js` (`/sponsors/:sponsorId`, id sponsor = stabil).
+- `frontend/src/App.js` — rute profil sponsor.
+- `frontend/src/components/public/SponsorsStrip.js` — logo → `<Link>` profil internal (bukan website
+  eksternal), `object-contain`, posisi/layout di beranda TIDAK diubah (tetap di bawah 4 pilar).
+- `frontend/src/pages/public/SponsorsPage.js` — kartu sponsor → profil internal ("Lihat Profil →").
+- `frontend/src/components/public/PublicFooter.js` — badge Google Play & App Store gaya **HITAM**
+  (bg #000, teks putih, 152×48, radius 8px, glyph Google Play 4 warna resmi + Apple putih);
+  fungsi klik & popup "Segera hadir, aplikasi masih dalam pengembangan" tidak berubah, tanpa URL eksternal.
+### Verifikasi (tanpa Testing Agent)
+- Admin: 7 field baru render, isi → Simpan → buka ulang → semua nilai tersimpan, logo tetap.
+- API: create sponsor lengkap (contact + 4 sosial) tersimpan; sponsor lama tanpa field baru tetap terbaca
+  (data user SPONSOR WIDE / SPONSOR TALL utuh).
+- Publik: beranda 5 logo (di bawah pilar), klik → `/sponsors/{id}`; kartu daftar sponsor `href=/sponsors/{id}`
+  (0 tautan eksternal); profil menampilkan logo/nama/tier/deskripsi/website/alamat/telepon/email/4 sosial;
+  sponsor minimal → panel Informasi & baris kosong tidak dirender.
+- Footer: kedua badge `rgb(0,0,0)` 152×48, popup identik pada keduanya.
+- Responsive: overflow **0 px** di 390/768/1440; rasio logo = rasio asli (4.29 = 4.29, `object-fit: contain`).
+- **0 console error**; `yarn build` sukses (hanya warning lama `PlayerStatsBoard.js`).
+- Semua data uji sponsor dihapus → sponsors = 2 (milik user).
+### Catatan / keterbatasan
+- Sponsor pada **Kartu Pertandingan** digambar di **canvas** (gambar hasil unduh) → logo tampil tetapi
+  **tidak bisa diklik**; klik ke profil hanya mungkin di HTML (beranda & halaman sponsor). Layout kartu
+  pertandingan tidak diubah sama sekali.
+
 ## P1 — GALERI GOOGLE DRIVE (navigasi folder + lazy loading) · 29 Agu 2026 · SELESAI (butuh API key untuk e2e nyata)
 ### Yang dibuat/diubah
 - `backend/app/services/drive.py` (+`browse_folder`, `_ancestor_path`, `_get_meta`, `_image_item`;

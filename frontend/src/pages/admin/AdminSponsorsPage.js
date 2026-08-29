@@ -55,8 +55,15 @@ export default function AdminSponsorsPage() {
           spec: MEDIA_SPECS.sponsorLogo,
           help: 'Gunakan logo PNG berlatar transparan agar rapi di baris sponsor.',
         },
-        { name: 'website', label: 'Website', type: 'text', full: true },
-        { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
+        { name: 'website', label: 'Website', type: 'text', full: true, placeholder: 'https://…' },
+        { name: 'description', label: 'Deskripsi / Detail Sponsor', type: 'textarea', full: true, rows: 5 },
+        { name: 'contact.address', label: 'Alamat', type: 'textarea', full: true, rows: 2 },
+        { name: 'contact.phone', label: 'Nomor Telepon', type: 'text' },
+        { name: 'contact.email', label: 'Email', type: 'text' },
+        { name: 'social_media.instagram', label: 'Instagram', type: 'text' },
+        { name: 'social_media.facebook', label: 'Facebook', type: 'text' },
+        { name: 'social_media.tiktok', label: 'TikTok', type: 'text' },
+        { name: 'social_media.youtube', label: 'YouTube', type: 'text' },
       ]}
     />
   );

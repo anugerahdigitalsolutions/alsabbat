@@ -537,11 +537,15 @@ class GalleryAlbum(GalleryAlbumBase, DBModel):
 class SponsorBase(AppBaseModel):
     name: str = Field(min_length=1, max_length=160)
     logo: Optional[str] = None
-    description: Optional[str] = Field(default=None, max_length=1000)
+    description: Optional[str] = Field(default=None, max_length=4000)
     website: Optional[str] = None
     tier: Optional[str] = Field(default=None, max_length=60)
     display_order: int = Field(default=0, ge=0, le=9999)
     status: EntityStatus = EntityStatus.ACTIVE
+    # Additive & backward-compatible: dokumen sponsor lama tanpa field ini tetap valid
+    # (default kosong) dan tidak ada data lama yang hilang.
+    contact: ContactInformation = Field(default_factory=ContactInformation)
+    social_media: SocialLinks = Field(default_factory=SocialLinks)
 
 
 SponsorUpdate = make_update_model("SponsorUpdate", SponsorBase)

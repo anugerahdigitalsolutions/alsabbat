@@ -21,6 +21,7 @@ import PlayerDetailPage from './pages/public/PlayerDetailPage';
 import NewsDetailPage from './pages/public/NewsDetailPage';
 import AchievementsPage from './pages/public/AchievementsPage';
 import SponsorsPage from './pages/public/SponsorsPage';
+import SponsorDetailPage from './pages/public/SponsorDetailPage';
 import ContactPage from './pages/public/ContactPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import BarayaLoginPage from './pages/public/BarayaLoginPage';
@@ -91,6 +92,7 @@ function App() {
               <Route path="/staff/:staffId" element={<StaffDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
               <Route path="/sponsors" element={<SponsorsPage />} />
+              <Route path="/sponsors/:sponsorId" element={<SponsorDetailPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/matches" element={<MatchesPage />} />
               <Route path="/matches/:matchId" element={<MatchDetailPage />} />
