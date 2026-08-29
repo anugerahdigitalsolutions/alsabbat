@@ -3,50 +3,65 @@ import { useLocation } from 'react-router-dom';
 
 /**
  * Latar abstrak landscape untuk banner header halaman dalam.
- * Satu identitas visual (navy #012891 + aksen gold lembut), pola wave berbeda
- * per halaman. Hanya lapisan latar — tidak menyentuh teks/layout/ukuran banner.
+ * Gaya: jalinan garis tipis (line-mesh) yang memilin seperti referensi —
+ * navy #012891, kilau biru/cyan pada puntiran, aksen gold ALSABBAT yang lembut.
+ * Hanya lapisan background: tidak menyentuh teks, layout, ukuran, atau elemen lain.
  */
-const NAVY_DEEP = '#010F38';
+const NAVY_DEEP = '#01102F';
 const NAVY = '#012891';
-const NAVY_MID = '#02329E';
+const NAVY_MID = '#02308F';
+const LINE_COOL = '#4E9BFF';
+const LINE_GLOW = '#63E6FF';
 const GOLD = '#FCCF2B';
 
-const WAVE_SETS = [
-  // 0 — arus panjang mengalir naik (Klub / halaman umum)
-  [
-    { d: 'M-40 300 C 220 250 420 340 700 268 C 920 210 1080 250 1240 214', w: 2.2, o: 0.2, c: '#FFFFFF' },
-    { d: 'M-40 330 C 240 282 430 372 720 296 C 950 236 1090 276 1240 240', w: 1.8, o: 0.14, c: '#FFFFFF' },
-    { d: 'M-40 364 C 250 318 460 402 760 322 C 980 262 1100 300 1240 268', w: 3, o: 0.3, c: GOLD },
-    { d: 'M-40 232 C 260 196 470 268 780 206 C 1000 162 1110 196 1240 168', w: 1.4, o: 0.1, c: '#FFFFFF' },
-  ],
-  // 1 — gelombang ganda menurun (Pemain)
-  [
-    { d: 'M-40 210 C 200 268 420 168 660 232 C 900 296 1080 208 1240 250', w: 2.4, o: 0.22, c: '#FFFFFF' },
-    { d: 'M-40 250 C 210 310 430 206 680 272 C 920 336 1090 246 1240 288', w: 1.8, o: 0.14, c: '#FFFFFF' },
-    { d: 'M-40 300 C 230 362 450 252 700 320 C 940 386 1100 292 1240 336', w: 3.2, o: 0.3, c: GOLD },
-    { d: 'M-40 356 C 250 414 470 306 730 372 C 960 430 1120 344 1240 384', w: 1.4, o: 0.1, c: '#FFFFFF' },
-  ],
-  // 2 — arus diagonal rapat (Pertandingan)
-  [
-    { d: 'M-40 380 C 260 330 380 250 640 214 C 900 178 1060 214 1240 178', w: 2.2, o: 0.2, c: '#FFFFFF' },
-    { d: 'M-40 412 C 280 358 400 276 670 238 C 930 200 1080 240 1240 206', w: 1.8, o: 0.14, c: '#FFFFFF' },
-    { d: 'M-40 344 C 240 300 360 226 610 190 C 880 152 1040 190 1240 150', w: 3, o: 0.3, c: GOLD },
-    { d: 'M-40 268 C 230 236 340 176 600 140 C 860 104 1030 138 1240 104', w: 1.4, o: 0.12, c: '#FFFFFF' },
-  ],
-  // 3 — riak lembut sejajar (Merchandise / Toko)
-  [
-    { d: 'M-40 262 C 200 232 400 292 640 262 C 880 232 1060 288 1240 258', w: 2.2, o: 0.2, c: '#FFFFFF' },
-    { d: 'M-40 300 C 200 270 400 330 640 300 C 880 270 1060 326 1240 296', w: 1.8, o: 0.14, c: '#FFFFFF' },
-    { d: 'M-40 338 C 200 308 400 368 640 338 C 880 308 1060 364 1240 334', w: 3, o: 0.28, c: GOLD },
-    { d: 'M-40 376 C 200 346 400 406 640 376 C 880 346 1060 402 1240 372', w: 1.4, o: 0.1, c: '#FFFFFF' },
-  ],
-  // 4 — busur melebar (Berita / Prestasi)
-  [
-    { d: 'M-40 396 C 300 250 560 236 840 268 C 1030 290 1140 260 1240 232', w: 2.4, o: 0.22, c: '#FFFFFF' },
-    { d: 'M-40 430 C 320 286 580 268 860 300 C 1050 322 1150 292 1240 266', w: 1.8, o: 0.14, c: '#FFFFFF' },
-    { d: 'M-40 352 C 300 214 560 200 830 232 C 1020 254 1140 222 1240 194', w: 3, o: 0.3, c: GOLD },
-    { d: 'M-40 300 C 300 176 540 164 800 194 C 1000 216 1130 186 1240 158', w: 1.4, o: 0.1, c: '#FFFFFF' },
-  ],
+const lerp = (a, b, t) => a + (b - a) * t;
+
+const curve = (p) => `M${p[0]} ${p[1]} C ${p[2]} ${p[3]}, ${p[4]} ${p[5]}, ${p[6]} ${p[7]}`;
+
+/** Keluarga garis paralel yang memilin dari kurva `from` ke kurva `to`. */
+const family = (from, to, count) =>
+  Array.from({ length: count }, (_, i) => {
+    const t = count === 1 ? 0 : i / (count - 1);
+    return { d: curve(from.map((value, index) => lerp(value, to[index], t))), t };
+  });
+
+// Setiap variasi = dua keluarga garis yang saling menyilang (efek jalinan).
+const VARIANTS = [
+  {
+    // 0 — pilinan tegak di sisi kanan (Klub / Kontak)
+    a: [[640, -40, 900, 90, 700, 250, 980, 460], [1180, -40, 1010, 110, 1240, 250, 1130, 460]],
+    b: [[520, 460, 860, 330, 700, 190, 1010, -40], [1120, 460, 1040, 320, 1210, 170, 1240, -40]],
+    count: 34,
+    glow: { cx: '72%', cy: '52%' },
+  },
+  {
+    // 1 — arus melebar rendah (Pemain)
+    a: [[380, 470, 700, 300, 820, 380, 1240, 250], [640, 470, 880, 380, 1010, 430, 1240, 380]],
+    b: [[460, 120, 760, 210, 900, 130, 1240, 60], [700, 250, 940, 300, 1060, 250, 1240, 190]],
+    count: 36,
+    glow: { cx: '80%', cy: '38%' },
+  },
+  {
+    // 2 — jalinan diagonal cepat (Pertandingan)
+    a: [[300, 470, 620, 380, 760, 210, 1120, 60], [520, 470, 800, 400, 940, 250, 1240, 130]],
+    b: [[420, 90, 700, 190, 880, 300, 1240, 300], [640, -20, 900, 120, 1040, 230, 1240, 220]],
+    count: 32,
+    glow: { cx: '66%', cy: '30%' },
+  },
+  {
+    // 3 — riak lembut memanjang (Merchandise / Pesanan)
+    a: [[280, 300, 560, 200, 820, 400, 1240, 280], [280, 380, 580, 280, 840, 470, 1240, 360]],
+    b: [[340, 130, 620, 60, 880, 250, 1240, 130], [400, 210, 660, 140, 900, 330, 1240, 210]],
+    count: 38,
+    glow: { cx: '84%', cy: '58%' },
+  },
+  {
+    // 4 — busur tinggi menyilang (Berita / Prestasi / Sponsor)
+    a: [[400, -30, 700, 170, 880, 100, 1240, 240], [560, 470, 820, 330, 1000, 400, 1240, 330]],
+    b: [[300, 200, 620, 340, 860, 250, 1240, 400], [700, 60, 940, 200, 1080, 140, 1240, 100]],
+    count: 35,
+    glow: { cx: '74%', cy: '46%' },
+  },
 ];
 
 const ROUTE_VARIANT = [
@@ -59,16 +74,19 @@ const ROUTE_VARIANT = [
 
 export const PageHeaderBackdrop = ({ testId = 'page-header-backdrop' }) => {
   const { pathname } = useLocation();
-  const variant = useMemo(() => {
+  const index = useMemo(() => {
     const found = ROUTE_VARIANT.find((rule) => rule.match.test(pathname));
     if (found) return found.variant;
-    // Halaman lain tetap konsisten: pilih pola stabil dari nama route.
     const seed = pathname.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return seed % WAVE_SETS.length;
+    return seed % VARIANTS.length;
   }, [pathname]);
 
-  const waves = WAVE_SETS[variant];
-  const uid = `phb${variant}`;
+  const preset = VARIANTS[index];
+  const families = useMemo(
+    () => [family(preset.a[0], preset.a[1], preset.count), family(preset.b[0], preset.b[1], preset.count)],
+    [preset]
+  );
+  const uid = `phb${index}`;
 
   return (
     <svg
@@ -78,60 +96,79 @@ export const PageHeaderBackdrop = ({ testId = 'page-header-backdrop' }) => {
       aria-hidden="true"
       focusable="false"
       data-testid={testId}
-      data-variant={variant}
+      data-variant={index}
     >
       <defs>
         <linearGradient id={`${uid}-base`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor={NAVY} />
-          <stop offset="52%" stopColor={NAVY_MID} />
+          <stop offset="46%" stopColor={NAVY_MID} />
           <stop offset="100%" stopColor={NAVY_DEEP} />
         </linearGradient>
-        <radialGradient id={`${uid}-glow`} cx="78%" cy="18%" r="62%">
-          <stop offset="0%" stopColor="#2B5BD7" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#2B5BD7" stopOpacity="0" />
+        <radialGradient id={`${uid}-glow`} cx={preset.glow.cx} cy={preset.glow.cy} r="48%">
+          <stop offset="0%" stopColor="#1F74F0" stopOpacity="0.72" />
+          <stop offset="100%" stopColor="#1F74F0" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id={`${uid}-gold`} cx="88%" cy="86%" r="46%">
-          <stop offset="0%" stopColor={GOLD} stopOpacity="0.22" />
+        <radialGradient id={`${uid}-pinch`} cx={preset.glow.cx} cy={preset.glow.cy} r="22%">
+          <stop offset="0%" stopColor={LINE_GLOW} stopOpacity="0.42" />
+          <stop offset="100%" stopColor={LINE_GLOW} stopOpacity="0" />
+        </radialGradient>
+        <filter id={`${uid}-soft`} x="-10%" y="-30%" width="120%" height="160%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+        <radialGradient id={`${uid}-gold`} cx="92%" cy="90%" r="42%">
+          <stop offset="0%" stopColor={GOLD} stopOpacity="0.14" />
           <stop offset="100%" stopColor={GOLD} stopOpacity="0" />
         </radialGradient>
-        <linearGradient id={`${uid}-band`} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
-          <stop offset="55%" stopColor="#FFFFFF" stopOpacity="0.09" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+        <linearGradient id={`${uid}-veil`} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor={NAVY} stopOpacity="0.92" />
+          <stop offset="38%" stopColor={NAVY} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={NAVY} stopOpacity="0" />
         </linearGradient>
       </defs>
 
       <rect width="1200" height="420" fill={`url(#${uid}-base)`} />
       <rect width="1200" height="420" fill={`url(#${uid}-glow)`} />
+
+      {families.map((lines, familyIndex) =>
+        lines.map((line, lineIndex) => {
+          // Garis di tengah pilinan lebih terang (kilau cyan), tepi memudar.
+          const centre = 1 - Math.abs(line.t - 0.5) * 2;
+          return (
+            <path
+              key={`${familyIndex}-${lineIndex}`}
+              d={line.d}
+              fill="none"
+              stroke={centre > 0.58 ? LINE_GLOW : LINE_COOL}
+              strokeOpacity={0.2 + centre * (familyIndex === 0 ? 0.6 : 0.48)}
+              strokeWidth={0.6 + centre * 0.7}
+            />
+          );
+        })
+      )}
+
+      {/* kilau pada puntiran (seperti referensi) */}
+      <path
+        d={families[0][Math.floor(preset.count / 2)].d}
+        fill="none"
+        stroke={LINE_GLOW}
+        strokeOpacity="0.35"
+        strokeWidth="5"
+        filter={`url(#${uid}-soft)`}
+      />
+      <rect width="1200" height="420" fill={`url(#${uid}-pinch)`} />
+
+      {/* aksen gold ALSABBAT — satu garis lembut, tidak menyilaukan */}
+      <path
+        d={families[0][Math.floor(preset.count / 2)].d}
+        fill="none"
+        stroke={GOLD}
+        strokeOpacity="0.2"
+        strokeWidth="1.5"
+      />
       <rect width="1200" height="420" fill={`url(#${uid}-gold)`} />
 
-      {/* pita lembut sebagai kedalaman, bukan garis tajam */}
-      <path
-        d={waves[0].d}
-        fill="none"
-        stroke={`url(#${uid}-band)`}
-        strokeWidth="90"
-        strokeLinecap="round"
-      />
-      <path
-        d={waves[2].d}
-        fill="none"
-        stroke={`url(#${uid}-band)`}
-        strokeWidth="54"
-        strokeLinecap="round"
-      />
-
-      {waves.map((wave, index) => (
-        <path
-          key={index}
-          d={wave.d}
-          fill="none"
-          stroke={wave.c}
-          strokeOpacity={wave.o}
-          strokeWidth={wave.w}
-          strokeLinecap="round"
-        />
-      ))}
+      {/* ruang bersih di area teks (kiri) */}
+      <rect width="1200" height="420" fill={`url(#${uid}-veil)`} />
     </svg>
   );
 };

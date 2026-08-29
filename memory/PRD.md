@@ -1,6 +1,12 @@
 # ALSABBAT Football Club — PRD (living document)
 
-## BACKGROUND BANNER HALAMAN DALAM (abstrak landscape) · 29 Agu 2026 · SELESAI
+## BACKGROUND BANNER HALAMAN DALAM (abstrak landscape) · 29 Agu 2026 · SELESAI (revisi 2: line-mesh)
+Revisi 2 (setelah user melampirkan referensi asli): pola diganti dari wave sederhana menjadi
+**jalinan garis tipis (line-mesh) yang memilin** seperti referensi — 32–38 garis paralel per keluarga,
+dua keluarga saling menyilang, kilau cyan `#63E6FF` pada puntiran (blur halus + radial pinch),
+dasar `#012891 → #02308F → #01102F`, aksen gold `#FCCF2B` sangat lembut (1 garis 20% + radial 14%),
+serta veil navy kiri→kanan agar area teks tetap bersih dan teks putih tetap terbaca.
+Pola tetap 5 variasi per rute dengan satu identitas visual.
 Permintaan: ganti HANYA background kotak biru pada banner halaman dalam (Tentang Klub, Pemain,
 Pertandingan, Merchandise, dll) menjadi abstrak landscape elegan; teks/layout/ukuran/rounded/navbar/
 typography/spacing tidak diubah.
