@@ -1,5 +1,17 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## BLOCKER DEPLOY aaPanel DIBERESKAN (29 Agu 2026) · SELESAI
+- `backend/requirements.txt` (satu-satunya file yang diubah):
+  **dihapus** `emergentintegrations==0.2.0` (tidak diimpor kode apa pun & tidak tersedia di PyPI →
+  `pip install -r` gagal total di aaPanel), **ditambahkan** `Pillow>=10.3.0` (dipakai
+  `services/media_service.sanitize_upload()` dan `api/routes/media.py`).
+- Verifikasi: venv Python bersih → `pip install -r backend/requirements.txt` **sukses** (Pillow 12.3.0,
+  jq 1.12.0 pakai wheel, tanpa compile error); import aplikasi di venv bersih sukses (204 route);
+  `scripts/media_sanitizer_verify.py` 13/13 PASS di venv bersih;
+  `/api/health` = ok/connected; `scripts/p2_sponsor_slug_media_verify.py` 23/23 PASS.
+- Sisa item aaPanel murni konfigurasi server (JWT_SECRET, GOOGLE_DRIVE_API_KEY,
+  REACT_APP_PUBLIC_BASE_URL, backfill slug sponsor, jangan `alias` Nginx untuk /api/media/files).
+
 ## VENUE 2 BARIS DI PANEL "PERTANDINGAN BERIKUTNYA" (29 Agu 2026) · SELESAI
 - `frontend/src/components/public/home/HeroNextMatchPanel.js` (satu file): helper `splitVenue()`
   memecah nama venue menjadi 2 baris SEIMBANG pada batas kata (tidak memotong kata, data DB tidak
