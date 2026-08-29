@@ -1,5 +1,54 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## FASE 4B — SATU AKUN, DUA PROFIL (PEMAIN + STAFF) · 29 Agu 2026 · SELESAI
+Additive & backward-compatible; tidak menyentuh Fase 1/2/4 dan tidak mengulang Fase 5.
+
+### Perubahan model/database (additive)
+- `customers` +field **`roles: [str]`** (daftar profil: MEMBER / PEMAIN / STAFF). `role` tetap ada sebagai
+  status tertinggi untuk tampilan. Akun lama tanpa `roles` otomatis dibaca sebagai `[role]`.
+  `player_id` & `staff_id` tetap dipakai sebagai relasi akun ↔ record Pemain ↔ record Staf.
+- `member_applications` +field **`staff_data`** (field mengikuti `StaffBase`: name, role `StaffRole`,
+  role_label, bio, **photo terpisah**, instagram). `player_data` tetap seperti Fase 4A.
+
+### Backend
+- `models/membership.py`: +`StaffApplicationData`; `ApplicationCreate` mewajibkan `staff_data` untuk STAFF
+  dan `player_data` untuk PEMAIN; `ApplicationDataUpdate` + `staff_data`.
+- `api/routes/membership.py`: `_roles_of()`; aturan akses pengajuan → **Pemain: hanya MEMBER murni**,
+  **Staf: hanya akun ber-role PEMAIN dan belum STAFF** (Guest 401, MEMBER 403, STAFF 403);
+  `/baraya/access` kini mengembalikan `roles`, `can_apply_player`, `can_apply_staff`;
+  `_apply_staff_data()` menulis data ke **record `staff` existing** yang dipilih Admin;
+  approve menambah role ke `roles` **tanpa menghapus PEMAIN** (role utama = STAFF bila keduanya ada).
+- `api/deps.py`: `require_gallery_access` memakai `roles` (profil ganda tetap punya akses).
+- `api/routes/customers.py`: +`POST /api/baraya/me/upload` — upload foto pengajuan **tanpa** mengubah
+  `photo_url` akun, sehingga foto Pemain dan foto Staf benar-benar terpisah.
+- `services/membership.py`: payload kartu member +`roles`.
+
+### Frontend
+- `lib/memberAccess.js`: `rolesOf`, `hasRole`, `canApplyPlayer`, `canApplyStaff`; label "Pemain & Staf".
+- `pages/public/BarayaApplicationPage.js`: pilihan tipe mengikuti kelayakan (MEMBER → Pemain, PEMAIN →
+  Staf, keduanya → panel tertutup); **form Staf terpisah** (Nama, Role Staf `StaffRole`, Label Role,
+  Foto Staf, Bio, Instagram) dan tidak lagi memakai field Pemain; judul jadi "Daftar Staff".
+- `pages/public/BarayaAccountPage.js`: tombol **"Daftar Staff"** untuk Pemain, "Daftar Pemain" untuk Member.
+- `components/admin/MemberApplications.js`: panel edit **Data Staf** (4 field + bio + pratinjau foto staf)
+  dan tetap wajib menautkan record existing saat approve.
+- `components/member/MemberCard.js`: badge peran memakai `roleLabel` (menampilkan "Pemain & Staf").
+- `services/barayaAuth.js`: +`barayaUploadApplicationPhoto`.
+
+### Pemeriksaan minimal
+- `scripts/phase4b_verify.py` **25/25 PASS** (sandbox, di-drop): MEMBER tidak bisa ajukan Staf (403),
+  Guest 401, tanpa `staff_data` 422, MEMBER→PEMAIN, PEMAIN→Staf, admin edit data staf, approve tanpa
+  record 422, akun jadi **PEMAIN + STAFF** (player_id & staff_id tersimpan), **0 duplikat** pemain/staf,
+  data & **foto Pemain vs Staf terpisah**, kartu member membawa dua profil, STAFF tidak bisa ajukan lagi,
+  galeri tetap terbuka, `/players` & `/staff` menampilkan entitas + foto masing-masing, akun lama tanpa
+  `roles` tetap valid, 6 regresi endpoint.
+- `phase4a_verify.py` **27/27 PASS** (regresi Fase 4A), `yarn build` sukses, `/api/health` ok.
+- UI live (akun uji, lalu dihapus): akun Pemain menampilkan "Daftar Staff", halaman pengajuan hanya
+  menawarkan tipe STAFF dengan field staf saja.
+- CATATAN DATA: record pemain di staging berisi nilai uji (`Uji 4B`, #19, FORWARD) dari verifikasi
+  Fase 4A/4B; foto uji yang tidak ada sudah dibersihkan (photo=null). Silakan sunting nama/nomor/foto
+  pemain sebenarnya di Admin → Pemain. Akun/pengajuan/OTP uji sudah dihapus (customers 0).
+
+
 ## FASE 5 — FINAL TESTING STAGING · 29 Agu 2026 · STATUS: READY (dengan konfigurasi eksternal pending)
 Tanpa Testing Agent, hemat credit, tanpa data dummy permanen (semua uji di database sandbox yang di-DROP;
 sandbox tersisa: 0). Data existing utuh: clubs 1, teams 1, players 1 (tanpa duplikat), matches 1,

@@ -126,15 +126,18 @@ def require_gallery_access(feature: str):
         auth: Optional[CustomerAuthContext] = Depends(optional_customer),
     ) -> dict:
         role = "GUEST"
+        roles = []
         if auth:
             doc = await get_db()[Collections.CUSTOMERS].find_one({"id": auth.customer_id})
             role = (doc or {}).get("role") or "MEMBER"
-        if role not in {"PEMAIN", "STAFF"}:
+            # Satu akun bisa memiliki beberapa profil (PEMAIN + STAFF).
+            roles = (doc or {}).get("roles") or [role]
+        if not set(roles) & {"PEMAIN", "STAFF"}:
             raise ForbiddenError(
                 f"{feature} hanya dapat diakses oleh Pemain dan Staf AL SABBAT. "
                 "Ajukan diri sebagai Pemain untuk mendapatkan akses."
             )
-        return {"role": role}
+        return {"role": role, "roles": roles}
 
     return _dependency
 

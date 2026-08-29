@@ -345,6 +345,25 @@ async def upload_my_photo(
     return {"success": True, "photo_url": stored.url}
 
 
+@router.post("/me/upload", summary="Upload foto untuk pengajuan (tanpa mengubah foto profil)")
+async def upload_application_photo(
+    request: Request,
+    file: UploadFile = File(...),
+    customer: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    """Foto Pemain & Staf disimpan terpisah, jadi upload ini TIDAK menyentuh photo_url akun."""
+    write_rate_limit(request)
+    content = await file.read()
+    stored, media_type = await media_service.store(
+        file.filename or "foto", content, file.content_type or "application/octet-stream"
+    )
+    if media_type != MediaType.IMAGE:
+        await media_service.remove(stored.storage_key)
+        raise ValidationFailedError("Hanya berkas gambar yang diizinkan.")
+    logger.info("baraya.application_photo.upload customer=%s", customer.customer_id)
+    return {"success": True, "photo_url": stored.url}
+
+
 @router.delete("/me/photo", summary="Hapus foto profil Baraya (milik sendiri)")
 async def delete_my_photo(
     customer: CustomerAuthContext = Depends(get_current_customer),

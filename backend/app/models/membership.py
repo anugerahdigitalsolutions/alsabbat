@@ -13,7 +13,7 @@ from pydantic import EmailStr, Field, field_validator, model_validator
 
 from app.models.base import AppBaseModel, DBModel
 from app.models.customer import _validate_password
-from app.models.enums import PlayerPosition
+from app.models.enums import PlayerPosition, StaffRole
 
 GALLERY_ROLES = {"PEMAIN", "STAFF"}
 
@@ -101,6 +101,17 @@ class PlayerApplicationData(AppBaseModel):
     instagram: Optional[str] = Field(default=None, max_length=200)
 
 
+class StaffApplicationData(AppBaseModel):
+    """Field mengikuti form Staf di Admin Panel (StaffBase) — terpisah dari data Pemain."""
+
+    name: str = Field(min_length=2, max_length=160)
+    role: StaffRole = StaffRole.TEAM_MANAGER
+    role_label: Optional[str] = Field(default=None, max_length=120)
+    bio: Optional[str] = Field(default=None, max_length=4000)
+    photo: Optional[str] = Field(default=None, max_length=800)
+    instagram: Optional[str] = Field(default=None, max_length=200)
+
+
 class ApplicationCreate(AppBaseModel):
     type: ApplicationType
     full_name: str = Field(min_length=3, max_length=120)
@@ -112,6 +123,8 @@ class ApplicationCreate(AppBaseModel):
     motivation: str = Field(min_length=10, max_length=2000)
     # Wajib untuk pengajuan PEMAIN (form mengikuti form Pemain di Admin Panel).
     player_data: Optional[PlayerApplicationData] = None
+    # Wajib untuk pengajuan STAFF (form mengikuti form Staf di Admin Panel).
+    staff_data: Optional[StaffApplicationData] = None
 
     @field_validator("phone")
     @classmethod
@@ -122,9 +135,11 @@ class ApplicationCreate(AppBaseModel):
         return cleaned
 
     @model_validator(mode="after")
-    def _require_player_data(self):
+    def _require_profile_data(self):
         if self.type == ApplicationType.PEMAIN and self.player_data is None:
             raise ValueError("Data pemain wajib diisi untuk pengajuan Pemain.")
+        if self.type == ApplicationType.STAFF and self.staff_data is None:
+            raise ValueError("Data staf wajib diisi untuk pengajuan Staf.")
         return self
 
 
@@ -138,6 +153,7 @@ class ApplicationDataUpdate(AppBaseModel):
     experience: Optional[str] = Field(default=None, max_length=2000)
     motivation: Optional[str] = Field(default=None, max_length=2000)
     player_data: Optional[PlayerApplicationData] = None
+    staff_data: Optional[StaffApplicationData] = None
 
 
 class ApplicationDecision(AppBaseModel):
@@ -161,6 +177,7 @@ class RoleUpdate(AppBaseModel):
 
 
 class MemberApplication(DBModel):
+    staff_data: Optional[StaffApplicationData] = None
     customer_id: str
     type: ApplicationType
     status: ApplicationStatus = ApplicationStatus.PENDING

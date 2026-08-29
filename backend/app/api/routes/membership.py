@@ -193,16 +193,32 @@ def _role_of(customer: Optional[Dict[str, Any]]) -> str:
     return customer.get("role") or "MEMBER"
 
 
+def _roles_of(customer: Optional[Dict[str, Any]]) -> list:
+    """Satu akun bisa punya beberapa profil (PEMAIN + STAFF). Akun lama tanpa
+    field `roles` memakai `role` tunggal → backward-compatible."""
+    if not customer:
+        return []
+    roles = customer.get("roles")
+    if isinstance(roles, list) and roles:
+        return roles
+    return [customer.get("role") or "MEMBER"]
+
+
 @router.get("/access", summary="Hak akses konten untuk akun yang sedang login")
 async def my_access(
     auth: Optional[CustomerAuthContext] = Depends(optional_customer),
 ) -> Dict[str, Any]:
     doc = await customers.get(auth.customer_id) if auth else None
     role = _role_of(doc)
+    roles = _roles_of(doc)
+    allowed = bool(set(roles) & GALLERY_ROLES)
     return {
         "role": role,
-        "can_view_gallery": role in GALLERY_ROLES,
-        "can_view_spotlight": role in GALLERY_ROLES,
+        "roles": roles,
+        "can_view_gallery": allowed,
+        "can_view_spotlight": allowed,
+        "can_apply_player": roles == ["MEMBER"],
+        "can_apply_staff": "PEMAIN" in roles and "STAFF" not in roles,
     }
 
 
@@ -222,11 +238,21 @@ async def create_application(
     customer = await customers.get(auth.customer_id)
     if not customer:
         raise UnauthorizedError("Akun tidak ditemukan.")
-    # Fase 4A — hanya MEMBER yang boleh mengajukan (Guest sudah tertolak oleh auth).
-    if _role_of(customer) != "MEMBER":
-        raise ForbiddenError(
-            f"Akun Anda sudah berstatus {_role_of(customer)}. Pengajuan hanya untuk Member."
-        )
+    roles = _roles_of(customer)
+    if payload.type.value == "PEMAIN":
+        # Fase 4A — pengajuan Pemain hanya untuk MEMBER (Guest sudah tertolak auth).
+        if roles != ["MEMBER"]:
+            raise ForbiddenError(
+                "Pengajuan Pemain hanya untuk akun Member. Akun Anda sudah memiliki profil klub."
+            )
+    else:
+        # Pengajuan Staf hanya untuk akun yang sudah menjadi PEMAIN.
+        if "PEMAIN" not in roles:
+            raise ForbiddenError(
+                "Pengajuan Staf hanya untuk akun Pemain. Ajukan diri sebagai Pemain terlebih dahulu."
+            )
+        if "STAFF" in roles:
+            raise ForbiddenError("Akun Anda sudah memiliki profil Staf.")
     pending = await applications.get_by(
         {"customer_id": auth.customer_id, "type": payload.type.value, "status": "PENDING"}
     )
@@ -235,6 +261,12 @@ async def create_application(
 
     data = payload.model_dump()
     player_data = data.pop("player_data", None)
+    staff_data = data.pop("staff_data", None)
+    if staff_data:
+        # Foto Staf TERPISAH dari foto Pemain (tidak saling menimpa).
+        staff_data["role"] = (
+            staff_data["role"].value if hasattr(staff_data["role"], "value") else staff_data["role"]
+        )
     if player_data:
         # Foto memakai sistem media existing: foto profil Baraya milik sendiri.
         player_data["photo"] = player_data.get("photo") or customer.get("photo_url") or None
@@ -252,6 +284,7 @@ async def create_application(
             "email": customer["email"],
             "status": "PENDING",
             "player_data": player_data,
+            "staff_data": staff_data,
             "note": None,
             "decided_by": None,
             "decided_at": None,
@@ -260,7 +293,7 @@ async def create_application(
         }
     )
     notification = notify_admin_review(
-        title="Pengajuan Pemain baru",
+        title=f"Pengajuan {payload.type.value.title()} baru",
         body=f"{payload.full_name} mengajukan diri sebagai {payload.type.value}. Perlu direview.",
         data={"kind": "member_application", "application_id": created["id"], "type": payload.type.value},
     )
@@ -354,6 +387,11 @@ async def admin_update_application_data(
         position = merged.get("position")
         merged["position"] = position.value if hasattr(position, "value") else position
         changes["player_data"] = merged
+    if "staff_data" in changes:
+        merged_staff = {**(existing.get("staff_data") or {}), **changes["staff_data"]}
+        staff_role = merged_staff.get("role")
+        merged_staff["role"] = staff_role.value if hasattr(staff_role, "value") else staff_role
+        changes["staff_data"] = merged_staff
     updated = await applications.update(application_id, changes)
     logger.info("baraya.application.edited admin=%s application=%s", user.email, application_id)
     return _public_application(updated or existing)
@@ -388,6 +426,26 @@ async def _apply_player_data(player_id: str, player_data: Optional[Dict[str, Any
         await players.update(player_id, changes)
 
 
+async def _apply_staff_data(staff_id: str, staff_data: Optional[Dict[str, Any]]) -> None:
+    """Tulis data pengajuan Staf yang disetujui ke record Staf existing (tanpa duplikat)."""
+    if not staff_data:
+        return
+    changes: Dict[str, Any] = {}
+    for key in ("name", "role", "role_label", "bio", "photo"):
+        value = staff_data.get(key)
+        if value not in (None, ""):
+            changes[key] = value.value if hasattr(value, "value") else value
+    instagram = staff_data.get("instagram")
+    if instagram:
+        record = await staff.get(staff_id)
+        changes["social_media"] = {
+            **((record or {}).get("social_media") or {}),
+            "instagram": instagram,
+        }
+    if changes:
+        await staff.update(staff_id, changes)
+
+
 @router.patch("/admin/applications/{application_id}", summary="Admin: setujui/tolak pengajuan")
 async def admin_decide_application(
     application_id: str, payload: ApplicationDecision, user: AuthContext = member_write
@@ -408,13 +466,23 @@ async def admin_decide_application(
     if payload.decision == ApplicationStatus.APPROVED:
         link = await _validate_link(existing["type"], payload.player_id, payload.staff_id)
         changes.update(link)
+        customer_doc = await customers.get(existing["customer_id"])
+        roles = [r for r in _roles_of(customer_doc) if r != "MEMBER"]
+        if existing["type"] not in roles:
+            roles.append(existing["type"])
+        # Satu akun dapat memiliki profil PEMAIN dan STAFF sekaligus:
+        # `role` menyimpan status tertinggi, `roles` menyimpan semua profil.
+        primary = "STAFF" if "STAFF" in roles else "PEMAIN" if "PEMAIN" in roles else "MEMBER"
         if link.get("player_id"):
             # Data yang disetujui menjadi data pemain yang dipakai website.
             await _apply_player_data(link["player_id"], existing.get("player_data"))
+        if link.get("staff_id"):
+            await _apply_staff_data(link["staff_id"], existing.get("staff_data"))
         await customers.update(
             existing["customer_id"],
             {
-                "role": existing["type"],
+                "role": primary,
+                "roles": roles,
                 **{k: v for k, v in link.items() if v is not None},
             },
         )
@@ -440,7 +508,7 @@ async def admin_set_role(
     existing = await customers.get(customer_id)
     if not existing:
         raise NotFoundError("Akun Baraya tidak ditemukan.")
-    changes: Dict[str, Any] = {"role": payload.role.value}
+    changes: Dict[str, Any] = {"role": payload.role.value, "roles": [payload.role.value]}
     if payload.role.value == "PEMAIN":
         link = await _validate_link("PEMAIN", payload.player_id, None)
         changes["player_id"] = link["player_id"]
@@ -454,7 +522,11 @@ async def admin_set_role(
         await customers.coll.update_one(
             {"id": customer_id},
             {
-                "$set": {"role": "MEMBER", "updated_at": jsonable_encoder(utcnow())},
+                "$set": {
+                    "role": "MEMBER",
+                    "roles": ["MEMBER"],
+                    "updated_at": jsonable_encoder(utcnow()),
+                },
                 "$unset": {"player_id": "", "staff_id": ""},
             },
         )

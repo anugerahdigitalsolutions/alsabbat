@@ -14,11 +14,11 @@ import { useBaraya } from '../../context/BarayaAuthContext';
 import {
   barayaCreateApplication,
   barayaMyApplications,
-  barayaUploadPhoto,
+  barayaUploadApplicationPhoto,
 } from '../../services/barayaAuth';
 import { MediaPicker } from '../../components/shared/MediaPicker';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
-import { roleLabel, roleOf } from '../../lib/memberAccess';
+import { canApplyPlayer, canApplyStaff, roleLabel } from '../../lib/memberAccess';
 
 const STATUS_LABEL = {
   PENDING: 'Menunggu Persetujuan',
@@ -27,6 +27,19 @@ const STATUS_LABEL = {
 };
 
 const TYPE_LABEL = { PEMAIN: 'Pemain', STAFF: 'Staf' };
+
+// Sama dengan pilihan Role Staf di Admin Panel (StaffRole).
+const STAFF_ROLES = [
+  { value: 'HEAD_COACH', label: 'Kepala Pelatih' },
+  { value: 'ASSISTANT_COACH', label: 'Asisten Pelatih' },
+  { value: 'GOALKEEPER_COACH', label: 'Pelatih Kiper' },
+  { value: 'FITNESS_COACH', label: 'Pelatih Fisik' },
+  { value: 'TEAM_MANAGER', label: 'Manajer Tim' },
+  { value: 'MEDICAL_STAFF', label: 'Staf Medis' },
+  { value: 'ANALYST', label: 'Analis' },
+  { value: 'KIT_MANAGER', label: 'Manajer Perlengkapan' },
+  { value: 'OTHER', label: 'Lainnya' },
+];
 
 // Sama dengan pilihan di Admin Panel (PlayerPosition).
 const POSITIONS = [
@@ -56,18 +69,26 @@ export default function BarayaApplicationPage() {
     robots: 'noindex,follow',
   });
   const { customer, reload } = useBaraya();
-  const role = roleOf(customer);
-  const canApply = role === 'MEMBER';
+  const playerAllowed = canApplyPlayer(customer);
+  const staffAllowed = canApplyStaff(customer);
+  const canApply = playerAllowed || staffAllowed;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
-    type: 'PEMAIN',
+    type: canApplyStaff(customer) ? 'STAFF' : 'PEMAIN',
     phone: customer?.phone || '',
     address: '',
     experience: '',
     motivation: '',
-    staff_position: '',
+    staff: {
+      name: customer?.full_name || '',
+      role: 'TEAM_MANAGER',
+      role_label: '',
+      bio: '',
+      photo: '',
+      instagram: '',
+    },
     player: {
       full_name: customer?.full_name || '',
       display_name: '',
@@ -84,6 +105,7 @@ export default function BarayaApplicationPage() {
   });
 
   const setPlayer = (patch) => setForm((f) => ({ ...f, player: { ...f.player, ...patch } }));
+  const setStaff = (patch) => setForm((f) => ({ ...f, staff: { ...f.staff, ...patch } }));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,9 +130,9 @@ export default function BarayaApplicationPage() {
       const isPlayer = form.type === 'PEMAIN';
       const payload = {
         type: form.type,
-        full_name: isPlayer ? form.player.full_name : customer?.full_name || '',
+        full_name: isPlayer ? form.player.full_name : form.staff.name,
         phone: form.phone,
-        position: isPlayer ? form.player.position : form.staff_position || null,
+        position: isPlayer ? form.player.position : form.staff.role,
         birth_date: isPlayer ? form.player.date_of_birth || null : null,
         address: form.address || null,
         experience: form.experience || null,
@@ -132,6 +154,16 @@ export default function BarayaApplicationPage() {
           instagram: p.instagram || null,
         };
       }
+      if (!isPlayer) {
+        payload.staff_data = {
+          name: form.staff.name,
+          role: form.staff.role,
+          role_label: form.staff.role_label || null,
+          bio: form.staff.bio || null,
+          photo: form.staff.photo || null,
+          instagram: form.staff.instagram || null,
+        };
+      }
       await barayaCreateApplication(payload);
       toast.success('Pengajuan terkirim. Pengurus klub akan meninjau data Anda.');
       setForm((f) => ({ ...f, motivation: '', experience: '' }));
@@ -151,8 +183,8 @@ export default function BarayaApplicationPage() {
     <div data-testid="page-baraya-application">
       <PublicPageHeader
         label="Baraya AL SABBAT"
-        title="Daftar Pemain & Staf"
-        description="Isi data sesuai formulir pemain resmi klub. Pengurus akan meninjau, melengkapi, lalu menyetujui pengajuan Anda."
+        title={staffAllowed && !playerAllowed ? 'Daftar Staff' : 'Daftar Pemain & Staf'}
+        description="Isi data sesuai formulir resmi klub. Pengurus akan meninjau, melengkapi, lalu menyetujui pengajuan Anda."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Akun Saya', to: '/akun' }, { label: 'Pengajuan' }]}
       />
       <div className="als-container py-10 sm:py-14">
@@ -174,8 +206,8 @@ export default function BarayaApplicationPage() {
                     style={{ borderColor: 'var(--border-soft)' }}
                     data-testid="baraya-application-type"
                   >
-                    <option value="PEMAIN">Pemain</option>
-                    <option value="STAFF">Staf</option>
+                    {playerAllowed ? <option value="PEMAIN">Pemain</option> : null}
+                    {staffAllowed ? <option value="STAFF">Staf</option> : null}
                   </select>
                 </div>
                 <div>
@@ -281,7 +313,7 @@ export default function BarayaApplicationPage() {
                       <MediaPicker
                         value={form.player.photo}
                         onChange={(url) => setPlayer({ photo: url })}
-                        uploader={barayaUploadPhoto}
+                        uploader={barayaUploadApplicationPhoto}
                         libraryEnabled={false}
                         testId="baraya-application-photo"
                         spec={MEDIA_SPECS.playerPhoto}
@@ -309,14 +341,74 @@ export default function BarayaApplicationPage() {
                   </div>
                 </div>
               ) : (
-                <div>
-                  <Label className="mb-1.5 block">Peran Staf yang Diajukan</Label>
-                  <Input
-                    value={form.staff_position}
-                    onChange={(e) => setForm((f) => ({ ...f, staff_position: e.target.value }))}
-                    placeholder="Pelatih, Manajer, Media…"
-                    data-testid="baraya-application-staff-position"
-                  />
+                <div className="space-y-4" data-testid="baraya-application-staff-fields">
+                  <p className="als-section-label">Data Staf</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label className="mb-1.5 block">Nama</Label>
+                      <Input
+                        required
+                        value={form.staff.name}
+                        onChange={(e) => setStaff({ name: e.target.value })}
+                        data-testid="baraya-application-staff-name"
+                      />
+                    </div>
+                    <div>
+                      <Label className="mb-1.5 block">Role Staf</Label>
+                      <select
+                        value={form.staff.role}
+                        onChange={(e) => setStaff({ role: e.target.value })}
+                        className={selectClass}
+                        style={{ borderColor: 'var(--border-soft)' }}
+                        data-testid="baraya-application-staff-role"
+                      >
+                        {STAFF_ROLES.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label className="mb-1.5 block">Label Role (opsional)</Label>
+                      <Input
+                        value={form.staff.role_label}
+                        onChange={(e) => setStaff({ role_label: e.target.value })}
+                        placeholder="Untuk role kustom di luar daftar"
+                        data-testid="baraya-application-staff-role-label"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label className="mb-1.5 block">Foto Staf</Label>
+                      <MediaPicker
+                        value={form.staff.photo}
+                        onChange={(url) => setStaff({ photo: url })}
+                        uploader={barayaUploadApplicationPhoto}
+                        libraryEnabled={false}
+                        testId="baraya-application-staff-photo"
+                        spec={MEDIA_SPECS.staffPhoto || MEDIA_SPECS.playerPhoto}
+                        hint="Foto Staf disimpan terpisah dari foto Pemain."
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label className="mb-1.5 block">Bio Singkat</Label>
+                      <Textarea
+                        rows={3}
+                        value={form.staff.bio}
+                        onChange={(e) => setStaff({ bio: e.target.value })}
+                        data-testid="baraya-application-staff-bio"
+                      />
+                    </div>
+                    <div>
+                      <Label className="mb-1.5 block">Instagram (opsional)</Label>
+                      <Input
+                        value={form.staff.instagram}
+                        onChange={(e) => setStaff({ instagram: e.target.value })}
+                        placeholder="@namaakun"
+                        data-testid="baraya-application-staff-instagram"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -368,7 +460,7 @@ export default function BarayaApplicationPage() {
                 Anda sudah berstatus {roleLabel(customer)}
               </p>
               <p className="text-sm" style={{ color: 'var(--muted-fg)' }}>
-                Formulir pengajuan hanya untuk akun Member. Data pemain Anda kini dikelola pengurus klub
+                Akun Anda sudah memiliki profil Pemain dan Staf. Kedua profil dikelola pengurus klub
                 melalui Admin Panel — hubungi pengurus bila ada data yang perlu diperbarui.
               </p>
               <Link

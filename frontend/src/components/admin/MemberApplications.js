@@ -22,6 +22,16 @@ const TYPE_LABEL = { PEMAIN: 'Pemain', STAFF: 'Staf' };
 // Sama dengan pilihan Admin → Pemain (PlayerPosition).
 const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
+const STAFF_ROLES = ['HEAD_COACH', 'ASSISTANT_COACH', 'GOALKEEPER_COACH', 'FITNESS_COACH',
+  'TEAM_MANAGER', 'MEDICAL_STAFF', 'ANALYST', 'KIT_MANAGER', 'OTHER'];
+
+const STAFF_FIELDS = [
+  { key: 'name', label: 'Nama' },
+  { key: 'role', label: 'Role Staf', type: 'select' },
+  { key: 'role_label', label: 'Label Role' },
+  { key: 'instagram', label: 'Instagram' },
+];
+
 const PLAYER_FIELDS = [
   { key: 'full_name', label: 'Nama Lengkap' },
   { key: 'display_name', label: 'Display Name' },
@@ -52,6 +62,7 @@ export const MemberApplications = ({ onDecided }) => {
   const [linkId, setLinkId] = useState('');
   const [note, setNote] = useState('');
   const [playerData, setPlayerData] = useState({});
+  const [staffData, setStaffData] = useState({});
   const [pendingCount, setPendingCount] = useState(0);
   const [options, setOptions] = useState({ players: [], staff: [] });
   const [busy, setBusy] = useState(false);
@@ -92,18 +103,21 @@ export const MemberApplications = ({ onDecided }) => {
     setLinkId(application.player_id || application.staff_id || '');
     setNote(application.note || '');
     setPlayerData({ ...(application.player_data || {}) });
+    setStaffData({ ...(application.staff_data || {}) });
   };
 
   const saveData = async () => {
     if (!dialog) return;
     setBusy(true);
     try {
-      const payload = { player_data: { ...playerData } };
+      const isStaff = dialog.type === 'STAFF';
+      const payload = isStaff ? { staff_data: { ...staffData } } : { player_data: { ...playerData } };
       if (payload.player_data.jersey_number === '') payload.player_data.jersey_number = null;
       if (payload.player_data.height_cm === '') payload.player_data.height_cm = null;
       if (payload.player_data.weight_kg === '') payload.player_data.weight_kg = null;
       const { data } = await api.patch(`/baraya/admin/applications/${dialog.id}/data`, payload);
       setDialog((d) => ({ ...d, ...data }));
+      if (data.staff_data) setStaffData({ ...data.staff_data });
       toast.success('Data pengajuan diperbarui.');
       await load();
     } catch (e) {
@@ -227,8 +241,9 @@ export const MemberApplications = ({ onDecided }) => {
           <DialogHeader>
             <DialogTitle className="font-display">Tinjau Pengajuan {TYPE_LABEL[dialog?.type] || ''}</DialogTitle>
             <DialogDescription>
-              Data yang disetujui akan ditulis ke record Pemain yang Anda pilih (tidak membuat data pemain baru),
-              peran akun berubah menjadi Pemain, dan akses Galeri &amp; Sorotan Pemain terbuka.
+              Data yang disetujui ditulis ke record existing yang Anda pilih (tanpa membuat data baru).
+              Satu akun Baraya dapat memiliki profil Pemain dan Staf sekaligus — menyetujui pengajuan Staf
+              tidak menghapus status Pemain.
             </DialogDescription>
           </DialogHeader>
 
@@ -243,6 +258,72 @@ export const MemberApplications = ({ onDecided }) => {
                 {dialog.experience ? <p className="mt-2">Pengalaman: {dialog.experience}</p> : null}
                 <p className="mt-2">Motivasi: {dialog.motivation}</p>
               </div>
+
+              {dialog.type === 'STAFF' ? (
+                <div className="space-y-3" data-testid="admin-application-staff-data">
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+                    Data staf (dapat dilengkapi sebelum approval)
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {STAFF_FIELDS.map((field) => (
+                      <div key={field.key}>
+                        <Label className="mb-1 block text-xs">{field.label}</Label>
+                        {field.type === 'select' ? (
+                          <select
+                            value={staffData[field.key] || 'TEAM_MANAGER'}
+                            onChange={(e) => setStaffData((d) => ({ ...d, [field.key]: e.target.value }))}
+                            className="h-10 w-full rounded-[var(--radius-sm)] border px-2 text-sm"
+                            style={{ borderColor: 'var(--border-soft)' }}
+                            data-testid={`admin-application-staff-field-${field.key}`}
+                          >
+                            {STAFF_ROLES.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Input
+                            value={staffData[field.key] ?? ''}
+                            onChange={(e) => setStaffData((d) => ({ ...d, [field.key]: e.target.value }))}
+                            data-testid={`admin-application-staff-field-${field.key}`}
+                          />
+                        )}
+                      </div>
+                    ))}
+                    <div className="sm:col-span-2">
+                      <Label className="mb-1 block text-xs">Bio</Label>
+                      <Textarea
+                        rows={2}
+                        value={staffData.bio ?? ''}
+                        onChange={(e) => setStaffData((d) => ({ ...d, bio: e.target.value }))}
+                        data-testid="admin-application-staff-field-bio"
+                      />
+                    </div>
+                    {staffData.photo ? (
+                      <div className="sm:col-span-2">
+                        <Label className="mb-1 block text-xs">Foto Staf dari pemohon</Label>
+                        <img
+                          src={staffData.photo}
+                          alt="Foto pengajuan staf"
+                          className="h-28 w-28 rounded-[var(--radius-sm)] object-cover"
+                          data-testid="admin-application-staff-photo"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={saveData}
+                    disabled={busy}
+                    data-testid="admin-application-save-staff-data"
+                  >
+                    Simpan Perubahan Data
+                  </Button>
+                </div>
+              ) : null}
 
               {dialog.type === 'PEMAIN' ? (
                 <div className="space-y-3" data-testid="admin-application-player-data">

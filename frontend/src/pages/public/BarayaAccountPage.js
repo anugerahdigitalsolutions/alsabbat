@@ -19,7 +19,7 @@ import {
 import { MemberCard } from '../../components/member/MemberCard';
 import { MediaPicker } from '../../components/shared/MediaPicker';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
-import { canAccessGallery, roleLabel, roleOf } from '../../lib/memberAccess';
+import { canAccessGallery, canApplyPlayer, canApplyStaff, hasRole, roleLabel } from '../../lib/memberAccess';
 import { UserPlus } from 'lucide-react';
 
 const formatDate = (value) => {
@@ -39,8 +39,9 @@ export default function BarayaAccountPage() {
     robots: 'noindex,follow',
   });
   const { customer, reload, logout } = useBaraya();
-  const role = roleOf(customer);
   const hasClubAccess = canAccessGallery(customer);
+  const showPlayerCta = canApplyPlayer(customer);
+  const showStaffCta = canApplyStaff(customer);
   const [profile, setProfile] = useState({
     full_name: customer?.full_name || '',
     phone: customer?.phone || '',
@@ -225,15 +226,15 @@ export default function BarayaAccountPage() {
               </div>
             </div>
 
-            {role === 'MEMBER' ? (
+            {showPlayerCta || showStaffCta ? (
               <Link
                 to="/akun/pengajuan"
                 className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] text-sm font-bold"
                 style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-                data-testid="baraya-account-application-link"
+                data-testid={showStaffCta ? 'baraya-account-staff-link' : 'baraya-account-application-link'}
               >
                 <UserPlus className="h-4 w-4" aria-hidden="true" />
-                Daftar Pemain
+                {showStaffCta ? 'Daftar Staff' : 'Daftar Pemain'}
               </Link>
             ) : (
               <Link
@@ -265,7 +266,7 @@ export default function BarayaAccountPage() {
                   data-testid="baraya-account-spotlight-link"
                 >
                   <Star className="h-4 w-4" aria-hidden="true" />
-                  {role === 'PEMAIN' ? 'Data Pemain & Sorotan' : 'Sorotan Pemain'}
+                  {hasRole(customer, 'PEMAIN') ? 'Data Pemain & Sorotan' : 'Sorotan Pemain'}
                 </Link>
               </>
             ) : (

@@ -60,6 +60,7 @@ def member_card_payload(customer: Dict[str, Any]) -> Dict[str, Any]:
         "photo_url": customer.get("photo_url"),
         "status": customer.get("status"),
         "role": customer.get("role") or "MEMBER",
+        "roles": customer.get("roles") or [customer.get("role") or "MEMBER"],
         "joined_at": customer.get("joined_at") or customer.get("created_at"),
     }
 

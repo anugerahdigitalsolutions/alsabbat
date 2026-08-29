@@ -1,4 +1,4 @@
-/** Fase 3 — peran Baraya: Guest → Member → Pemain → Staf. */
+/** Fase 3/4A/4B — peran Baraya: Guest → Member → Pemain → Pemain + Staf. */
 export const GALLERY_ROLES = ['PEMAIN', 'STAFF'];
 
 export const ROLE_LABELS = {
@@ -10,7 +10,31 @@ export const ROLE_LABELS = {
 
 export const roleOf = (customer) => (customer ? customer.role || 'MEMBER' : 'GUEST');
 
-export const roleLabel = (customer) => ROLE_LABELS[roleOf(customer)] || 'Member';
+/** Satu akun bisa punya beberapa profil sekaligus (Pemain + Staf). */
+export const rolesOf = (customer) => {
+  if (!customer) return [];
+  const roles = Array.isArray(customer.roles) ? customer.roles : null;
+  return roles && roles.length ? roles : [roleOf(customer)];
+};
+
+export const hasRole = (customer, role) => rolesOf(customer).includes(role);
+
+export const roleLabel = (customer) => {
+  const roles = rolesOf(customer);
+  if (roles.includes('PEMAIN') && roles.includes('STAFF')) return 'Pemain & Staf';
+  return ROLE_LABELS[roles[0]] || 'Member';
+};
 
 /** Galeri & Sorotan Pemain hanya untuk Pemain dan Staf (juga dipaksa di backend). */
-export const canAccessGallery = (customer) => GALLERY_ROLES.includes(roleOf(customer));
+export const canAccessGallery = (customer) =>
+  rolesOf(customer).some((role) => GALLERY_ROLES.includes(role));
+
+/** Hanya Member murni yang boleh mengajukan Pemain. */
+export const canApplyPlayer = (customer) => {
+  const roles = rolesOf(customer);
+  return roles.length === 1 && roles[0] === 'MEMBER';
+};
+
+/** Hanya Pemain (yang belum jadi Staf) boleh mengajukan Staf. */
+export const canApplyStaff = (customer) =>
+  hasRole(customer, 'PEMAIN') && !hasRole(customer, 'STAFF');
