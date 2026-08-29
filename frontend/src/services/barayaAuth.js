@@ -11,7 +11,7 @@ export const barayaLogin = async ({ email, password }) => {
 
 export const barayaRegister = async (payload) => {
   const { data } = await barayaApi.post('/baraya/register', payload);
-  return data.customer;
+  return data;
 };
 
 export const barayaLogout = async () => {
@@ -60,6 +60,48 @@ export const barayaChangePassword = (payload) => barayaApi.post('/baraya/change-
 export const barayaForgotPassword = (email) => barayaApi.post('/baraya/forgot-password', { email });
 
 export const barayaResetPassword = (payload) => barayaApi.post('/baraya/reset-password', payload);
+
+/* ------------------------------------------------- Fase 3: OTP, Google, peran */
+
+export const barayaAuthConfig = async () => {
+  const { data } = await barayaApi.get('/baraya/auth/config');
+  return data;
+};
+
+export const barayaRequestOtp = async (email, purpose = 'REGISTER') => {
+  const { data } = await barayaApi.post('/baraya/otp/request', { email, purpose });
+  return data;
+};
+
+export const barayaVerifyOtp = async ({ email, code }) => {
+  const { data } = await barayaApi.post('/baraya/otp/verify', { email, code });
+  barayaTokenStore.set(data.access_token);
+  return data.customer;
+};
+
+export const barayaResetPasswordOtp = async (payload) => {
+  const { data } = await barayaApi.post('/baraya/reset-password-otp', payload);
+  return data;
+};
+
+export const barayaGoogleLogin = async ({ code, redirectUri }) => {
+  const { data } = await barayaApi.post('/baraya/google/login', {
+    code,
+    redirect_uri: redirectUri,
+  });
+  barayaTokenStore.set(data.access_token);
+  return data.customer;
+};
+
+export const barayaCreateApplication = async (payload) => {
+  const { data } = await barayaApi.post('/baraya/applications', payload);
+  return data;
+};
+
+export const barayaMyApplications = async () => {
+  const { data } = await barayaApi.get('/baraya/applications/mine');
+  return data;
+};
 
 export const barayaOrders = async () => {
   const { data } = await barayaApi.get('/baraya/orders');

@@ -153,6 +153,22 @@ class Settings:
         os.environ.get("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "30")
     )
 
+    # ------------------------------ SMTP2GO API (Fase 3 — OTP & reset email)
+    # Kosong => provider melaporkan NOT_CONFIGURED (tidak pernah mengklaim
+    # email terkirim). Kredensial HANYA dari environment.
+    SMTP2GO_API_KEY: str = os.environ.get("SMTP2GO_API_KEY", "")
+    SMTP2GO_SENDER_EMAIL: str = os.environ.get("SMTP2GO_SENDER_EMAIL", "")
+    SMTP2GO_SENDER_NAME: str = os.environ.get("SMTP2GO_SENDER_NAME", "AL SABBAT Football Club")
+
+    # --------------------------------- Google OAuth (Fase 3 — Login Google)
+    GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+
+    # ------------------------------------------------- OTP (Fase 3)
+    OTP_EXPIRE_MINUTES: int = int(os.environ.get("OTP_EXPIRE_MINUTES", "10"))
+    OTP_MAX_ATTEMPTS: int = int(os.environ.get("OTP_MAX_ATTEMPTS", "5"))
+
+
     # ---------------------------------------------------- hardening flags
     # Interactive API docs are disabled in production unless explicitly enabled.
     ENABLE_API_DOCS: bool = _bool(os.environ.get("ENABLE_API_DOCS"), False)

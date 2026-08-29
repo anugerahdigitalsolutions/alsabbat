@@ -19,8 +19,17 @@
 
 ## Baraya (customer) — /login
 - Tidak ada akun Baraya di database produksi (sengaja bersih, tanpa data uji).
+- **FASE 3 (29 Agu 2026)**: pendaftaran sekarang butuh **OTP email**. Karena `SMTP2GO_API_KEY` belum
+  diisi, email tidak terkirim; kode OTP hanya bisa dibaca dari log server:
+  `grep "otp.debug_code" /var/log/supervisor/backend.out.log | tail -1`
+  (log ini hanya aktif di environment non-produksi).
+- Alur uji manual: POST `/api/baraya/register` → ambil kode dari log → POST `/api/baraya/otp/verify`
+  → dapat `access_token` (peran awal MEMBER). Galeri/Sorotan Pemain akan 403 sampai peran naik
+  menjadi PEMAIN/STAFF lewat Admin → Baraya AL SABBAT → Pengajuan.
+- Akun uji Fase 3 (`fase3.e2e@sandbox-alsabbat.dev`) SUDAH DIHAPUS beserta sesi, pengajuan, OTP,
+  dan counter nomor member direset.
 - Untuk pengujian, buat akun sandbox lewat /daftar atau pakai skrip sandbox
-  (`/app/scripts/phase17_verify.py`, `/app/scripts/phase18_verify.py`) yang memakai database
+  (`/app/scripts/phase3_verify.py`, `phase17_verify.py`, `phase18_verify.py`) yang memakai database
   sekali-pakai lalu di-DROP.
 - Pola akun sandbox: <nama>@sandbox-alsabbat.dev / Sandbox123
   (domain .test/.example ditolak validator email).

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CalendarDays, Film, Image as ImageIcon, Swords } from 'lucide-react';
-import api, { apiErrorMessage } from '../../lib/api';
+import { apiErrorMessage, barayaApi } from '../../lib/api';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
@@ -11,9 +11,12 @@ import { DriveFolderBrowser } from '../../components/public/gallery/DriveFolderB
 import { VideoCard } from '../../components/public/gallery/VideoCard';
 import { formatAlbumDate, resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { useBaraya } from '../../context/BarayaAuthContext';
+import { RestrictedAccessPanel } from '../../components/public/RestrictedAccessPanel';
 
 export default function GalleryDetailPage() {
   const { albumId } = useParams();
+  const { canViewGallery, loading: authLoading } = useBaraya();
   const [album, setAlbum] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,25 +30,37 @@ export default function GalleryDetailPage() {
   });
 
   const load = useCallback(async () => {
+    if (authLoading || !canViewGallery) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       // Foto Google Drive TIDAK dimuat di sini: album Drive ditelusuri
       // per folder + per batch oleh DriveFolderBrowser (pageToken resmi).
-      const { data } = await api.get(`/gallery/public/albums/${albumId}`);
+      const { data } = await barayaApi.get(`/gallery/public/albums/${albumId}`);
       setAlbum(data);
     } catch (e) {
       setError(apiErrorMessage(e, 'Album tidak ditemukan atau belum dipublikasikan.'));
     } finally {
       setLoading(false);
     }
-  }, [albumId]);
+  }, [albumId, canViewGallery, authLoading]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  if (loading) {
+  if (!authLoading && !canViewGallery) {
+    return (
+      <div className="als-container py-12" data-testid="page-gallery-detail">
+        <RestrictedAccessPanel feature="Album galeri" testId="gallery-detail-restricted" />
+      </div>
+    );
+  }
+
+  if (loading || authLoading) {
     return (
       <div className="als-container py-12" data-testid="page-gallery-detail">
         <LoadingState rows={5} testId="gallery-detail-loading" />

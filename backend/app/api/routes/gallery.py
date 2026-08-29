@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from pydantic import Field
 
 from app.api.crud_factory import Repository, build_crud_router
-from app.api.deps import require_permission
+from app.api.deps import require_gallery_access, require_permission
 from app.core.database import Collections
 from app.core.errors import NotFoundError, ValidationFailedError
 from app.core.rate_limit import write_rate_limit
@@ -32,6 +32,8 @@ public_router = APIRouter(tags=["gallery-public"])
 
 MEDIA_SORT = (("display_order", 1), ("created_at", 1))
 gallery_write = Depends(require_permission("gallery:write"))
+# Fase 3 — Galeri hanya untuk Pemain & Staf (Member/Guest ditolak 403).
+gallery_access = Depends(require_gallery_access("Galeri AL SABBAT"))
 
 
 class AlbumMediaSelection(AppBaseModel):
@@ -101,6 +103,7 @@ async def public_albums(
     limit: int = Query(24, ge=1, le=100),
     skip: int = Query(0, ge=0),
     include_media: bool = Query(False, description="Sertakan media album (untuk carousel galeri)"),
+    _access: Dict[str, Any] = gallery_access,
 ):
     query = _published_query({"match_id": match_id} if match_id else None)
     items, total = await albums.list(
@@ -111,7 +114,7 @@ async def public_albums(
 
 
 @public_router.get("/albums/{album_id}/drive-photos", summary="Foto album dari folder Google Drive (publik)")
-async def public_album_drive_photos(album_id: str):
+async def public_album_drive_photos(album_id: str, _access: Dict[str, Any] = gallery_access):
     album = await albums.get_by(_published_query({"id": album_id}))
     if not album:
         raise NotFoundError("Gallery album not found")
@@ -124,6 +127,7 @@ async def public_album_drive_browse(
     folder_id: Optional[str] = Query(None, description="Folder yang dibuka (harus turunan folder album)"),
     page_token: Optional[str] = Query(None, description="pageToken Google Drive untuk batch berikutnya"),
     page_size: int = Query(drive.BROWSE_PAGE_SIZE, ge=1, le=drive.MAX_BROWSE_PAGE_SIZE),
+    _access: Dict[str, Any] = gallery_access,
 ):
     album = await albums.get_by(_published_query({"id": album_id}))
     if not album:
@@ -138,7 +142,7 @@ async def public_album_drive_browse(
 
 
 @public_router.get("/albums/{album_id}", summary="Published album detail with ordered media (public)")
-async def public_album_detail(album_id: str):
+async def public_album_detail(album_id: str, _access: Dict[str, Any] = gallery_access):
     album = await albums.get_by(_published_query({"id": album_id}))
     if not album:
         raise NotFoundError("Gallery album not found")

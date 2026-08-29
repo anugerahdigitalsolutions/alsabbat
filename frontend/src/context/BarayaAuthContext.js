@@ -1,11 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { apiErrorMessage, barayaTokenStore } from '../lib/api';
 import {
+  barayaGoogleLogin,
   barayaLogin,
   barayaLogout,
   barayaMe,
   barayaRegister,
+  barayaVerifyOtp,
 } from '../services/barayaAuth';
+import { canAccessGallery, roleOf } from '../lib/memberAccess';
 
 const BarayaAuthContext = createContext(null);
 
@@ -42,16 +45,41 @@ export const BarayaAuthProvider = ({ children }) => {
       setCustomer(data);
       return { ok: true, customer: data };
     } catch (error) {
-      return { ok: false, message: apiErrorMessage(error, 'Email atau kata sandi tidak sesuai.') };
+      return {
+        ok: false,
+        // 403 = email belum diverifikasi (Fase 3) → lanjut ke langkah OTP.
+        needsVerification: error?.response?.status === 403,
+        message: apiErrorMessage(error, 'Email atau kata sandi tidak sesuai.'),
+      };
     }
   }, []);
 
   const register = useCallback(async (payload) => {
     try {
       const data = await barayaRegister(payload);
-      return { ok: true, customer: data };
+      return { ok: true, ...data };
     } catch (error) {
       return { ok: false, message: apiErrorMessage(error, 'Pendaftaran gagal. Coba lagi.') };
+    }
+  }, []);
+
+  const verifyOtp = useCallback(async ({ email, code }) => {
+    try {
+      const data = await barayaVerifyOtp({ email, code });
+      setCustomer(data);
+      return { ok: true, customer: data };
+    } catch (error) {
+      return { ok: false, message: apiErrorMessage(error, 'Kode verifikasi salah atau kedaluwarsa.') };
+    }
+  }, []);
+
+  const googleLogin = useCallback(async ({ code, redirectUri }) => {
+    try {
+      const data = await barayaGoogleLogin({ code, redirectUri });
+      setCustomer(data);
+      return { ok: true, customer: data };
+    } catch (error) {
+      return { ok: false, message: apiErrorMessage(error, 'Login Google gagal. Coba lagi.') };
     }
   }, []);
 
@@ -61,8 +89,20 @@ export const BarayaAuthProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(
-    () => ({ customer, loading, login, register, logout, reload, isBaraya: !!customer }),
-    [customer, loading, login, register, logout, reload]
+    () => ({
+      customer,
+      loading,
+      login,
+      register,
+      verifyOtp,
+      googleLogin,
+      logout,
+      reload,
+      isBaraya: !!customer,
+      role: roleOf(customer),
+      canViewGallery: canAccessGallery(customer),
+    }),
+    [customer, loading, login, register, verifyOtp, googleLogin, logout, reload]
   );
 
   return <BarayaAuthContext.Provider value={value}>{children}</BarayaAuthContext.Provider>;

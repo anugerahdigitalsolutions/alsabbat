@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, Download, Folder, Images, Info, Loader2, Share2 } from 'lucide-react';
-import api from '../../../lib/api';
+import { barayaApi } from '../../../lib/api';
 import { MediaLightbox } from './MediaLightbox';
 import { downloadPhoto, sharePhoto } from './photoActions';
 
@@ -64,7 +64,7 @@ export const DriveFolderBrowser = ({ albumId, albumTitle, testId = 'drive-browse
     async (token) => {
       const key = `${albumId}|${folderParam}|${token || ''}|${pageSize}`;
       return dedupe(key, async () => {
-        const { data } = await api.get(`/gallery/public/albums/${albumId}/drive-browse`, {
+        const { data } = await barayaApi.get(`/gallery/public/albums/${albumId}/drive-browse`, {
           params: {
             folder_id: folderParam || undefined,
             page_token: token || undefined,

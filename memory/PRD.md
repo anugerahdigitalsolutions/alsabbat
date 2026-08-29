@@ -1,5 +1,70 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## FASE 3 (permintaan user) — SISTEM USER, OTP, GOOGLE LOGIN, MEMBER/PEMAIN/STAFF · 29 Agu 2026 · SELESAI
+Keputusan user: SMTP2GO API Key (A), Google OAuth milik klub sendiri (B), OTP untuk pendaftaran + reset
+kata sandi (C, bukan 2FA), Galeri **dan** Sorotan Pemain terkunci total untuk MEMBER (C),
+approve pengajuan WAJIB menautkan ke record `players`/`staff` existing (A). Kredensial belum diberikan →
+dibangun dengan mode **NOT_CONFIGURED yang jujur** (tanpa dummy/hard-code).
+
+### Backend (additive, tanpa sistem auth kedua — tetap koleksi `customers` + sesi Baraya Fase 13)
+- `app/core/config.py`: +`SMTP2GO_API_KEY`, `SMTP2GO_SENDER_EMAIL`, `SMTP2GO_SENDER_NAME`,
+  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OTP_EXPIRE_MINUTES` (10), `OTP_MAX_ATTEMPTS` (5).
+- `app/services/mailer.py`: +`Smtp2GoMailer` (REST v3, header `X-Smtp2go-Api-Key`, cek `failed`/`failures`
+  meski HTTP 200), `mail_status()`, `send_customer_otp_email()`; pemilihan provider: MEMORY → SMTP2GO → SMTP → LOG.
+- BARU `app/services/otp.py`: kode 6 digit `secrets.randbelow`, disimpan **hash SHA-256** saja, sekali pakai,
+  maks 5 percobaan, kadaluarsa 10 menit, kode lama dihapus saat kode baru dibuat. Bila email belum
+  dikonfigurasi & bukan produksi, kode ditulis di log server (satu-satunya cara uji tanpa SMTP2GO).
+- BARU `app/services/google_auth.py`: authorization-code flow (token exchange + verifikasi `id_token` via
+  tokeninfo, cek `aud` = client_id & `email_verified`). Client secret tidak pernah keluar dari server.
+- BARU `app/models/membership.py`: `MemberRole` (MEMBER/PEMAIN/STAFF), pengajuan + keputusan + role update.
+- BARU `app/api/routes/membership.py` (prefix `/api/baraya`): `auth/config`, `otp/request`, `otp/verify`,
+  `reset-password-otp`, `google/login`, `access`, `applications`, `applications/mine`,
+  `admin/auth-settings`, `admin/applications`, `admin/applications/{id}` (PATCH), `admin/{id}/role` (PATCH).
+- `app/api/routes/customers.py`: register kini `email_verified=false` + role MEMBER + kirim OTP (daftar ulang
+  akun belum terverifikasi TIDAK membuat akun ganda); login menolak akun belum terverifikasi (403 + kirim
+  ulang OTP). Akun lama tanpa field `email_verified` tetap dianggap terverifikasi (backward compatible).
+- `app/api/deps.py`: +`require_gallery_access(feature)` → Galeri dipaksa di server (Guest/Member 403).
+- `app/api/routes/gallery.py`: 4 endpoint publik (`albums`, `albums/{id}`, `drive-photos`, `drive-browse`)
+  kini butuh peran PEMAIN/STAFF. Endpoint admin gallery tidak berubah.
+- `app/core/database.py`: +koleksi `customer_otps`, `member_applications` + index; `customers` +index `role`.
+- `app/services/membership.py`: payload kartu & verifikasi QR kini memuat `role`.
+
+### Frontend
+- BARU: `lib/memberAccess.js`, `components/public/GoogleLoginButton.js` (tombol hanya muncul bila Google
+  dikonfigurasi), `components/public/OtpVerifyForm.js`, `components/public/RestrictedAccessPanel.js`,
+  `pages/public/GoogleAuthCallbackPage.js` (`/auth/google`), `pages/public/BarayaApplicationPage.js`
+  (`/akun/pengajuan`), `components/admin/MemberApplications.js`, `components/admin/AuthSettingsPanel.js`.
+- DIUBAH: `context/BarayaAuthContext.js` (+verifyOtp, googleLogin, role, canViewGallery),
+  `services/barayaAuth.js` (+7 fungsi Fase 3), `hooks/useResourceList.js` (+opsi `client`),
+  `BarayaRegisterPage` (langkah OTP), `BarayaLoginPage` (Google + langkah OTP bila belum terverifikasi),
+  `BarayaForgotPasswordPage` (alur OTP; halaman token `/reset-password` lama tetap ada),
+  `GalleryPage`/`GalleryDetailPage`/`DriveFolderBrowser` (pakai `barayaApi` + panel terkunci),
+  `HomePage` (strip Galeri & Sorotan Pemain terkunci), `MemberCard` (badge peran),
+  `BarayaAccountPage` (peran + tautan pengajuan), `AdminBarayaPage` (kolom Peran, filter peran,
+  panel Pengaturan Login & OTP, tabel Pengajuan), `App.js` (2 rute baru).
+
+### Verifikasi (tanpa Testing Agent, sesuai permintaan user)
+- `scripts/phase3_verify.py`: **56/56 PASS** di sandbox `alsabbat_phase3_sandbox` (**DI-DROP**), mailer MEMORY
+  (0 email nyata): OTP hash-only & sekali pakai, login diblokir sebelum verifikasi, 403 Galeri untuk
+  Guest & MEMBER, approve wajib tautan record (422/404), peran naik + `player_id` tertaut, galeri terbuka,
+  penurunan peran melepas tautan & mengunci galeri lagi, reset kata sandi via OTP mencabut semua sesi,
+  respons generik anti-enumerasi, Google tanpa konfigurasi → 422 jujur, isolasi token admin↔Baraya,
+  admin auth-settings tanpa secret, 10 regresi endpoint publik, QR verify tanpa email/telepon.
+- E2E nyata di staging: daftar → OTP (dibaca dari log server karena SMTP2GO belum diisi) → MEMBER
+  (galeri 403) → pengajuan Pemain → Admin `/admin/baraya` (panel status BELUM DIKONFIGURASI, tabel
+  pengajuan, dialog tinjau, tautkan ke record pemain existing, Setujui) → peran **Pemain** → galeri 200 →
+  `/akun` badge Pemain + kartu member badge PEMAIN → `/akun/pengajuan` riwayat "Disetujui".
+  **Semua data uji dihapus** (customers 0, sessions 0, applications 0, otps 0, counter member direset);
+  record pemain milik user tidak diubah.
+- `yarn build` sukses (310.93 kB gz), backend import 216 route, `/api/health` 200.
+
+### BLOCKER (menunggu user)
+- `SMTP2GO_API_KEY` + `SMTP2GO_SENDER_EMAIL` → tanpa ini email OTP TIDAK terkirim (sistem melaporkan jujur).
+- `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` → tombol "Masuk dengan Google" disembunyikan sampai diisi.
+  Redirect URI wajib: `https://<domain>/auth/google` (preview: `https://staging-build-191.preview.emergentagent.com/auth/google`).
+- Kunci hanya ditulis ke `backend/.env` (sudah ada placeholder kosong) + `backend/.env.example` terdokumentasi.
+
+
 ## FASE 2 — MATCH CARD (29 Agu 2026) · SELESAI
 File: `backend/app/models/domain.py` (MatchBase +8 field additive: card_feed/story_background,
 focus_x, focus_y, zoom), `frontend/src/components/public/matchcenter/MatchScoreCardGenerator.js`,

@@ -46,6 +46,8 @@ class Collections:
     CUSTOMERS = "customers"
     CUSTOMER_SESSIONS = "customer_sessions"
     CUSTOMER_PASSWORD_RESETS = "customer_password_resets"
+    CUSTOMER_OTPS = "customer_otps"
+    MEMBER_APPLICATIONS = "member_applications"
     RATE_LIMITS = "rate_limits"
     SETTINGS = "site_settings"
     COUNTERS = "counters"
@@ -150,6 +152,19 @@ async def ensure_indexes() -> None:
         await db[Collections.CUSTOMER_PASSWORD_RESETS].create_index([("token_hash", ASCENDING)], unique=True)
         await db[Collections.CUSTOMER_PASSWORD_RESETS].create_index([("customer_id", ASCENDING)])
         await db[Collections.CUSTOMER_PASSWORD_RESETS].create_index([("expires_at", ASCENDING)])
+        # Fase 3 — OTP & pengajuan pemain/staf
+        await db[Collections.CUSTOMER_OTPS].create_index(
+            [("email", ASCENDING), ("purpose", ASCENDING)]
+        )
+        await db[Collections.CUSTOMER_OTPS].create_index([("expires_at", ASCENDING)])
+        await db[Collections.CUSTOMERS].create_index([("role", ASCENDING)])
+        await db[Collections.MEMBER_APPLICATIONS].create_index([("id", ASCENDING)], unique=True)
+        await db[Collections.MEMBER_APPLICATIONS].create_index(
+            [("customer_id", ASCENDING), ("status", ASCENDING)]
+        )
+        await db[Collections.MEMBER_APPLICATIONS].create_index(
+            [("status", ASCENDING), ("created_at", DESCENDING)]
+        )
         await db[Collections.ORDERS].create_index(
             [("order_status", ASCENDING), ("payment_status", ASCENDING), ("created_at", DESCENDING)]
         )

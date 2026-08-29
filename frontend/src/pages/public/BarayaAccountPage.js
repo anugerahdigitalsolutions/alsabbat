@@ -19,6 +19,8 @@ import {
 import { MemberCard } from '../../components/member/MemberCard';
 import { MediaPicker } from '../../components/shared/MediaPicker';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
+import { canAccessGallery, roleLabel } from '../../lib/memberAccess';
+import { UserPlus } from 'lucide-react';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -176,6 +178,7 @@ export default function BarayaAccountPage() {
                 full_name: customer?.full_name,
                 photo_url: customer?.photo_url,
                 status: customer?.status,
+                role: customer?.role,
                 joined_at: customer?.joined_at || customer?.created_at,
               }} testId="account-member-card" />
               <div className="flex items-center justify-between gap-3 text-sm">
@@ -205,6 +208,12 @@ export default function BarayaAccountPage() {
                 </Badge>
               </div>
               <div className="flex items-center justify-between gap-3">
+                <span style={{ color: 'var(--muted-fg)' }}>Peran</span>
+                <Badge variant="outline" style={{ backgroundColor: 'rgba(1,40,145,0.10)' }} data-testid="baraya-account-role">
+                  {roleLabel(customer)}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between gap-3">
                 <span style={{ color: 'var(--muted-fg)' }}>Bergabung</span>
                 <span className="font-semibold">{formatDate(customer?.created_at)}</span>
               </div>
@@ -213,6 +222,16 @@ export default function BarayaAccountPage() {
                 <span className="font-semibold">{formatDate(customer?.last_login_at)}</span>
               </div>
             </div>
+
+            <Link
+              to="/akun/pengajuan"
+              className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border text-sm font-bold"
+              style={{ borderColor: 'var(--border-soft)' }}
+              data-testid="baraya-account-application-link"
+            >
+              <UserPlus className="h-4 w-4" aria-hidden="true" />
+              {canAccessGallery(customer) ? 'Pengajuan Saya' : 'Daftar Pemain / Staf'}
+            </Link>
 
             <Link
               to="/akun/pesanan"

@@ -22,6 +22,7 @@ from app.core.database import Collections, get_db
 from app.core.config import settings
 from app.core.errors import (
     ConflictError,
+    ForbiddenError,
     NotFoundError,
     UnauthorizedError,
     ValidationFailedError,
@@ -47,6 +48,7 @@ from app.models.customer import (
 from app.models.base import new_id, utcnow
 from app.models.enums import MediaType
 from app.services.mailer import send_customer_password_reset_email
+from app.services.otp import PURPOSE_REGISTER, issue_otp
 from app.services.media_service import media_service
 from app.services.membership import (
     ensure_member_identity,
@@ -110,12 +112,26 @@ async def _issue_session(customer: Dict[str, Any], request: Request) -> Dict[str
 
 
 # ----------------------------------------------------------------- register
-@router.post("/register", status_code=201, summary="Daftar akun Baraya ALSABBAT")
+@router.post("/register", status_code=201, summary="Daftar akun Baraya AL SABBAT")
 async def register(payload: CustomerRegisterRequest, request: Request) -> Dict[str, Any]:
     await enforce(request, "baraya-register", 8, 3600)
     email = payload.email.lower().strip()
-    if await customers.get_by({"email": email}):
-        raise ConflictError("Email ini sudah terdaftar sebagai Baraya ALSABBAT.")
+    existing = await customers.get_by({"email": email})
+    if existing:
+        # Fase 3: pendaftaran yang belum diverifikasi boleh dilanjutkan dengan
+        # mengirim ulang OTP (tidak membuat akun ganda).
+        if existing.get("email_verified", True):
+            raise ConflictError("Email ini sudah terdaftar sebagai Baraya AL SABBAT.")
+        otp = await issue_otp(
+            email=email, full_name=existing.get("full_name", ""), purpose=PURPOSE_REGISTER
+        )
+        return {
+            "success": True,
+            "verification_required": True,
+            "email": email,
+            "otp_delivered": otp["delivered"],
+            "customer": _public_customer(existing),
+        }
     created = await customers.create(
         {
             "email": email,
@@ -123,16 +139,26 @@ async def register(payload: CustomerRegisterRequest, request: Request) -> Dict[s
             "phone": payload.phone,
             "password_hash": hash_password(payload.password),
             "status": "ACTIVE",
+            "role": "MEMBER",
+            "email_verified": False,
+            "auth_provider": "PASSWORD",
             "last_login_at": None,
         }
     )
     created = await ensure_member_identity(created)
+    otp = await issue_otp(email=email, full_name=payload.full_name, purpose=PURPOSE_REGISTER)
     logger.info("baraya.register email=%s member=%s", email, created.get("member_number"))
-    return {"success": True, "customer": _public_customer(created)}
+    return {
+        "success": True,
+        "verification_required": True,
+        "email": email,
+        "otp_delivered": otp["delivered"],
+        "customer": _public_customer(created),
+    }
 
 
 # -------------------------------------------------------------------- login
-@router.post("/login", summary="Login Baraya ALSABBAT")
+@router.post("/login", summary="Login Baraya AL SABBAT")
 async def login(payload: CustomerLoginRequest, request: Request) -> Dict[str, Any]:
     await login_guard(request)
     email = payload.email.lower().strip()
@@ -142,6 +168,17 @@ async def login(payload: CustomerLoginRequest, request: Request) -> Dict[str, An
         raise UnauthorizedError(INVALID_CREDENTIALS)
     if customer.get("status") != "ACTIVE":
         raise UnauthorizedError("Akun Baraya ini tidak aktif. Hubungi klub untuk bantuan.")
+    # Akun lama (sebelum Fase 3) tidak punya field ini → dianggap terverifikasi.
+    if not customer.get("email_verified", True):
+        otp = await issue_otp(
+            email=email, full_name=customer.get("full_name", ""), purpose=PURPOSE_REGISTER
+        )
+        raise ForbiddenError(
+            "Email Anda belum diverifikasi. Kami mengirim kode verifikasi baru ke email Anda."
+            if otp["delivered"]
+            else "Email Anda belum diverifikasi. Kode verifikasi baru sudah dibuat, "
+            "namun pengiriman email belum dikonfigurasi di server."
+        )
     return await _issue_session(customer, request)
 
 

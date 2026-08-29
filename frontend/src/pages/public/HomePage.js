@@ -20,6 +20,9 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useClub } from '../../context/ClubContext';
+import { useBaraya } from '../../context/BarayaAuthContext';
+import { RestrictedAccessPanel } from '../../components/public/RestrictedAccessPanel';
+import { barayaApi } from '../../lib/api';
 import { useSiteText } from '../../lib/siteContent';
 import { bannerToSlide } from '../../lib/banners';
 import { kickoffAt } from '../../components/public/MatchdayCountdown';
@@ -65,6 +68,8 @@ const Band = ({ children, className = '', testId }) => (
 
 export default function HomePage() {
   const { club, clubName, shortName } = useClub();
+  // Fase 3 — Galeri & Sorotan Pemain hanya untuk Pemain & Staf.
+  const { canViewGallery, loading: authLoading } = useBaraya();
   usePageSeo({
     title: 'Beranda',
     description: club?.description || `Website resmi ${clubName}: jadwal, hasil, skuad, berita, galeri, dan merchandise.`,
@@ -73,7 +78,11 @@ export default function HomePage() {
 
   const news = useResourceList('/content/posts', { status: 'PUBLISHED', limit: 4 });
   const matches = useResourceList('/matches', { limit: 40 });
-  const albums = useResourceList('/gallery/public/albums', { limit: 5 });
+  const albums = useResourceList(
+    '/gallery/public/albums',
+    { limit: 5 },
+    { enabled: canViewGallery && !authLoading, client: barayaApi }
+  );
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 8 });
   const sponsors = useResourceList('/sponsors', { status: 'ACTIVE', limit: 10 });
   const products = useResourceList('/merchandise/products', { limit: 4 });
@@ -265,8 +274,15 @@ export default function HomePage() {
       <Band className="pt-0" testId="home-section-spotlight">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]">
           <div>
-            <RowHeader label={t('home.label.spotlight')} to="/teams" actionLabel={t('home.label.spotlight_action')} testId="home-label-spotlight" />
-            {players.loading ? (
+            <RowHeader
+              label={t('home.label.spotlight')}
+              to={canViewGallery ? '/teams' : undefined}
+              actionLabel={t('home.label.spotlight_action')}
+              testId="home-label-spotlight"
+            />
+            {!canViewGallery && !authLoading ? (
+              <RestrictedAccessPanel feature="Sorotan Pemain" compact testId="home-spotlight-restricted" />
+            ) : players.loading || authLoading ? (
               <LoadingState rows={1} testId="home-spotlight-loading" />
             ) : spotlightPlayer ? (
               <PlayerSpotlight player={spotlightPlayer} />
@@ -314,7 +330,13 @@ export default function HomePage() {
       {/* Gallery */}
       <Band className="pt-0" testId="home-section-gallery">
         <RowHeader label={t('home.label.gallery')} to="/gallery" actionLabel={t('home.label.gallery_action')} testId="home-label-gallery" />
-        {albums.loading ? <LoadingState rows={2} testId="home-gallery-loading" /> : <GalleryStrip albums={albums.items} />}
+        {!canViewGallery && !authLoading ? (
+          <RestrictedAccessPanel feature="Galeri AL SABBAT" compact testId="home-gallery-restricted" />
+        ) : albums.loading || authLoading ? (
+          <LoadingState rows={2} testId="home-gallery-loading" />
+        ) : (
+          <GalleryStrip albums={albums.items} />
+        )}
       </Band>
 
       {/* YouTube */}

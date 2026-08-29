@@ -28,6 +28,8 @@ import BarayaLoginPage from './pages/public/BarayaLoginPage';
 import BarayaRegisterPage from './pages/public/BarayaRegisterPage';
 import BarayaForgotPasswordPage from './pages/public/BarayaForgotPasswordPage';
 import BarayaResetPasswordPage from './pages/public/BarayaResetPasswordPage';
+import GoogleAuthCallbackPage from './pages/public/GoogleAuthCallbackPage';
+import BarayaApplicationPage from './pages/public/BarayaApplicationPage';
 import BarayaAccountPage from './pages/public/BarayaAccountPage';
 import BarayaOrdersPage from './pages/public/BarayaOrdersPage';
 import BarayaMemberCardPage from './pages/public/BarayaMemberCardPage';
@@ -108,6 +110,15 @@ function App() {
               <Route path="/daftar" element={<BarayaRegisterPage />} />
               <Route path="/lupa-password" element={<BarayaForgotPasswordPage />} />
               <Route path="/reset-password" element={<BarayaResetPasswordPage />} />
+              <Route path="/auth/google" element={<GoogleAuthCallbackPage />} />
+              <Route
+                path="/akun/pengajuan"
+                element={
+                  <BarayaRoute>
+                    <BarayaApplicationPage />
+                  </BarayaRoute>
+                }
+              />
               <Route
                 path="/akun"
                 element={

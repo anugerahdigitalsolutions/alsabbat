@@ -11,6 +11,9 @@ import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { MemberCard } from '../../components/member/MemberCard';
 import { MemberCardDesign } from '../../components/admin/MemberCardDesign';
+import { MemberApplications } from '../../components/admin/MemberApplications';
+import { AuthSettingsPanel } from '../../components/admin/AuthSettingsPanel';
+import { ROLE_LABELS } from '../../lib/memberAccess';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 const formatDate = (value) => {
@@ -27,6 +30,7 @@ export default function AdminBarayaPage() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [previewCard, setPreviewCard] = useState(null);
@@ -39,14 +43,15 @@ export default function AdminBarayaPage() {
       const { data } = await api.get('/baraya/admin/list', {
         params: { limit: 100, ...(query ? { q: query } : {}) },
       });
-      setItems(data.items || []);
+      const all = data.items || [];
+      setItems(roleFilter ? all.filter((c) => (c.role || 'MEMBER') === roleFilter) : all);
       setTotal(data.total || 0);
     } catch (e) {
       setError(apiErrorMessage(e, 'Gagal memuat daftar Baraya.'));
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [query, roleFilter]);
 
   useEffect(() => {
     const timer = setTimeout(load, 300);
@@ -89,6 +94,19 @@ export default function AdminBarayaPage() {
             {total} akun pelanggan terdaftar. Password tidak pernah dapat dilihat.
           </p>
         </div>
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="h-11 rounded-[var(--radius-sm)] border px-3 text-sm"
+          style={{ borderColor: 'var(--border-soft)' }}
+          data-testid="admin-baraya-role-filter"
+        >
+          <option value="">Semua Peran</option>
+          <option value="MEMBER">Member</option>
+          <option value="PEMAIN">Pemain</option>
+          <option value="STAFF">Staf</option>
+        </select>
         <div className="relative w-full sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--muted-fg)' }} />
           <Input
@@ -99,7 +117,11 @@ export default function AdminBarayaPage() {
             data-testid="admin-baraya-search"
           />
         </div>
+        </div>
       </div>
+
+      <AuthSettingsPanel />
+      <MemberApplications onDecided={load} />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="admin-baraya-stats">
         {[
@@ -130,7 +152,7 @@ export default function AdminBarayaPage() {
           <table className="als-admin-table w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: 'var(--surface-2)' }}>
-                {['No. Member', 'Nama', 'Email', 'WhatsApp', 'Status', 'Daftar', 'Login Terakhir', 'Aksi'].map((head) => (
+                {['No. Member', 'Nama', 'Email', 'Peran', 'WhatsApp', 'Status', 'Daftar', 'Login Terakhir', 'Aksi'].map((head) => (
                   <th key={head} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
                     {head}
                   </th>
@@ -152,6 +174,15 @@ export default function AdminBarayaPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">{customer.email}</td>
+                  <td className="px-4 py-3">
+                    <Badge
+                      variant="outline"
+                      style={{ backgroundColor: (customer.role || 'MEMBER') === 'MEMBER' ? 'rgba(0,0,0,0.06)' : 'rgba(252,207,43,0.20)' }}
+                      data-testid={`admin-baraya-role-${customer.id}`}
+                    >
+                      {ROLE_LABELS[customer.role || 'MEMBER']}
+                    </Badge>
+                  </td>
                   <td className="px-4 py-3">{customer.phone}</td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" style={{ backgroundColor: customer.status === 'ACTIVE' ? 'rgba(22,163,74,0.12)' : 'rgba(0,0,0,0.06)' }}>

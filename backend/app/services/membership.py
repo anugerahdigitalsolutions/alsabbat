@@ -59,6 +59,7 @@ def member_card_payload(customer: Dict[str, Any]) -> Dict[str, Any]:
         "full_name": customer.get("full_name"),
         "photo_url": customer.get("photo_url"),
         "status": customer.get("status"),
+        "role": customer.get("role") or "MEMBER",
         "joined_at": customer.get("joined_at") or customer.get("created_at"),
     }
 
@@ -72,6 +73,7 @@ def member_verification_payload(customer: Dict[str, Any] | None) -> Dict[str, An
         "found": True,
         "valid": active,
         "status": customer.get("status"),
+        "role": customer.get("role") or "MEMBER",
         "member_number": customer.get("member_number"),
         "full_name": customer.get("full_name"),
         "joined_at": customer.get("joined_at") or customer.get("created_at"),
