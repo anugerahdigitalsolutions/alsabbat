@@ -1149,3 +1149,27 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - Layout baru 3 baris rapat: (1) label + countdown inline (4 unit kecil), (2) crest 26 px + nama tim + VS satu baris, (3) tanggal·jam·stadion (truncate) + CTA "Pusat Pertandingan" compact (min-h 30 px).
 - Gaya: glass `rgba(1,12,40,0.56)` + `blur(10px)` + border gold `rgba(252,207,43,0.22)` + soft shadow (bukan kotak hitam solid) → foto banner tetap focal point.
 - Verifikasi: 1440 → 320×128, 390 → 300×128 (tepi kanan 340 px, di dalam frame), overflow 0 px pada keduanya, countdown tetap berjalan (detik menurun, logic existing), CTA menuju `/matches/:id`, console 0 error, build sukses tanpa warning, DB & data tidak disentuh.
+
+## FASE 5 — FINAL TESTING SETELAH FASE 4B (29 Agu 2026)
+Ruang lingkup: hanya pengujian & perbaikan regresi (tanpa fitur baru, tanpa redesign, tanpa reset DB, tanpa Testing Agent).
+
+**Hasil**
+- `yarn build`: SUKSES (1 warning eslint lama di `PlayerStatsBoard.js`, bukan error).
+- `/api/health`: OK (`database: connected`, env `staging`).
+- Backend: tidak ada 5xx runtime (traceback di log hanya sisa reload dev lama).
+- Skrip regresi (sandbox DB, di-drop): `phase3_verify` 56/56, `phase4a_verify` 27/27, `phase4b_verify` 25/25, **`phase5_final_verify` 25/25 (baru)**.
+- `phase5_db_audit.py` (READ-ONLY pada `alsabbat_platform_staging`): customers 0, players 1, staff 0, matches 1, member_applications 0 — tidak ada duplikat email/`player_id`/`staff_id`, tidak ada sisa akun testing.
+- Public website: 13 halaman → semua HTTP 200, console 0 error, overflow 0 px (1920 & 390), banner/backdrop benar.
+- Match Card: MATCH DAY 2× (`statusScale` 0.048 vs 0.024), background Feed & Story terpisah (`card_feed_*` / `card_story_*`), logo sponsor memakai logo asli (sponsor tanpa logo di-skip, tanpa fallback teks), tidak ada sponsor di luar kartu.
+- Match: pertandingan lewat tidak pernah jadi "Pertandingan Berikutnya" (filter kickoff WIB + tanpa skor), countdown berjalan realtime, admin dapat input hasil (3-1 FINISHED).
+- Google: akun Google baru → MEMBER, email Google existing tidak membuat duplikat (google_id ditautkan), login password tetap jalan (disimulasikan dengan client id/secret sandbox).
+- Social/App Store: `/social/platforms` & `/social/connections` bebas secret/token; URL Play Store/App Store tervalidasi (https, `javascript:` ditolak 422), string kosong = NOT_CONFIGURED.
+
+**Bug ditemukan & diperbaiki**
+1. `components/public/GoogleLoginButton.js` — tombol "Masuk dengan Google" hilang total saat Google `NOT_CONFIGURED`, menyisakan pemisah "ATAU" menggantung di /login dan /daftar. Kini tombol tetap tampil dalam keadaan **disabled** + keterangan jujur "Login Google belum dikonfigurasi. Gunakan email dan kata sandi." (`data-testid=*-not-configured`).
+
+**Masih NOT_CONFIGURED (menunggu kredensial user)**
+SMTP2GO (OTP email), Google OAuth, Firebase (push), Google Drive API key, Instagram/TikTok/YouTube/YouTube Shorts.
+
+**Cleanup**: seluruh sandbox DB (`alsabbat_phase3/4a/4b/5_sandbox`) sudah di-drop; DB staging tidak diubah.
+**Status**: READY untuk deploy ke GitHub → aaPanel STAGING.
