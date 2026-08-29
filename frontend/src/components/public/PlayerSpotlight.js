@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { resolveMediaUrl } from './gallery/mediaUtils';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Shirt } from 'lucide-react';
@@ -11,19 +11,37 @@ const POSITION_LABEL = {
 };
 
 /**
- * Deterministic spotlight pick: a player with a photo & jersey number first,
- * otherwise the lowest jersey number. No randomness, no fabricated data.
+ * Deterministic spotlight order (urutan yang sama dengan `pickSpotlightPlayer`).
  */
-export const pickSpotlightPlayer = (players = []) => {
+const spotlightOrder = (players = []) => {
   const active = players.filter((p) => !p.status || p.status === 'ACTIVE');
-  if (!active.length) return null;
   const score = (p) => (p.photo ? 0 : 1) * 2 + (p.jersey_number === null || p.jersey_number === undefined ? 1 : 0);
   return [...active].sort(
     (a, b) =>
       score(a) - score(b) ||
       (a.jersey_number ?? 99) - (b.jersey_number ?? 99) ||
       String(a.id).localeCompare(String(b.id))
-  )[0];
+  );
+};
+
+export const pickSpotlightPlayer = (players = []) => spotlightOrder(players)[0] || null;
+
+/**
+ * Rotasi otomatis sorotan pemain: satu pemain per 10 detik, berulang.
+ * Hanya satu pemain → tanpa timer. Timer dibersihkan saat unmount.
+ */
+export const useRotatingSpotlight = (players = [], intervalMs = 10000) => {
+  const ordered = useMemo(() => spotlightOrder(players), [players]);
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    setIndex(0);
+    if (ordered.length < 2) return undefined;
+    const timer = setInterval(() => setIndex((i) => (i + 1) % ordered.length), intervalMs);
+    return () => clearInterval(timer);
+  }, [ordered, intervalMs]);
+
+  return ordered[index % (ordered.length || 1)] || null;
 };
 
 export const PlayerSpotlight = ({ player }) => {

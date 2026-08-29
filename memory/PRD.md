@@ -1184,3 +1184,9 @@ Frontend only (tanpa backend/API/DB/auth/Admin).
 - Verifikasi: Guest & Member melihat spotlight di beranda; /akun menampilkan spotlight + CTA; tanpa tombol Staf di card profil; overflow 0 px (1920/1440/390); console 0 error; `yarn build` sukses (hanya warning eslint lama `PlayerStatsBoard.js`).
 - Akun uji `uji.ui@sandbox-alsabbat.dev` beserta sesi & OTP sudah dihapus; counter nomor member direset ke 0; customers kembali 0.
 - Catatan: DB staging masih memuat data uji lama dari fork sebelumnya (`players`: "Uji 4B", match "AL SABBAT AWAY") — belum dihapus karena di luar scope.
+
+## UI — Rotasi Sorotan Pemain 10 detik (29 Agu 2026)
+- `components/public/PlayerSpotlight.js`: helper `spotlightOrder()` (urutan deterministik yang sama seperti sebelumnya) + hook baru **`useRotatingSpotlight(players, 10000)`**. Satu pemain per waktu, pindah tiap 10 detik, kembali ke pemain pertama setelah yang terakhir (`% length`). **< 2 pemain → tidak ada timer** (tanpa rotasi). `clearInterval` pada unmount / perubahan data. `pickSpotlightPlayer` tetap diekspor (dipakai `TeamsPage`) — desain kartu tidak diubah.
+- `pages/public/HomePage.js` & `pages/public/BarayaAccountPage.js`: memakai `useRotatingSpotlight(players.items)` → rotasi aktif di beranda publik (Guest) dan beranda akun (Member/Pemain/Staf).
+- Verifikasi: beranda publik 0s → "Uji 4B" · 10s → "ROTASI UJI 1" · 20s → "ROTASI UJI 2" · 30s → kembali "Uji 4B"; /akun berganti setelah 10s; pindah halaman lalu tunggu 11s → 0 console error (timer bersih). `yarn build` sukses (hanya warning eslint lama).
+- Cleanup: 2 pemain uji dihapus (players kembali 1), akun uji `uji.rot@sandbox-alsabbat.dev` + sesi/OTP dihapus, counter nomor member direset ke 0.

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CreditCard, Images, KeyRound, LogOut, Receipt, Save, Star, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,7 +17,7 @@ import {
   barayaUploadPhoto,
 } from '../../services/barayaAuth';
 import { MemberCard } from '../../components/member/MemberCard';
-import { PlayerSpotlight, pickSpotlightPlayer } from '../../components/public/PlayerSpotlight';
+import { PlayerSpotlight, useRotatingSpotlight } from '../../components/public/PlayerSpotlight';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
@@ -54,7 +54,7 @@ export default function BarayaAccountPage() {
   const [passwords, setPasswords] = useState({ current_password: '', new_password: '' });
   const [saving, setSaving] = useState(false);
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 8 });
-  const spotlightPlayer = useMemo(() => pickSpotlightPlayer(players.items), [players.items]);
+  const spotlightPlayer = useRotatingSpotlight(players.items);
 
   const saveProfile = async (event) => {
     event.preventDefault();
