@@ -31,19 +31,35 @@ const Divider = () => (
   />
 );
 
+/** Pecah nama venue jadi 2 baris seimbang tanpa mengubah/memotong teks. */
+const splitVenue = (venue) => {
+  const words = String(venue || '').trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return [words.join(' '), ''];
+  let cut = 1;
+  let bestDiff = Infinity;
+  for (let i = 1; i < words.length; i += 1) {
+    const diff = Math.abs(words.slice(0, i).join(' ').length - words.slice(i).join(' ').length);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      cut = i;
+    }
+  }
+  return [words.slice(0, cut).join(' '), words.slice(cut).join(' ')];
+};
+
 /**
  * Bar Next Match horizontal di BAWAH foto banner (tidak menutupi foto).
- * Isi diperbesar agar seimbang dengan tinggi panel, tetap satu baris di desktop.
- * Logic countdown tidak diubah.
+ * Isi diperbesar agar seimbang dengan tinggi panel. Logic countdown tidak diubah.
  */
 export const HeroNextMatchPanel = ({ match, clubName = 'AL SABBAT' }) => {
   const kickoff = kickoffAt(match);
   const { days, hours, minutes, seconds, running } = useCountdown(kickoff);
   if (!match) return null;
 
-  const meta = [match.date, match.time ? `${match.time.slice(0, 5)} WIB` : null, match.venue]
+  const schedule = [match.date, match.time ? `${match.time.slice(0, 5)} WIB` : null]
     .filter(Boolean)
     .join(' · ');
+  const [venueLine1, venueLine2] = splitVenue(match.venue);
 
   return (
     <div
@@ -100,12 +116,27 @@ export const HeroNextMatchPanel = ({ match, clubName = 'AL SABBAT' }) => {
 
       <Divider />
 
-      <p
-        className="line-clamp-2 min-w-0 flex-1 basis-[54%] text-xs leading-snug sm:basis-auto sm:text-[13px]"
+      <div
+        className="min-w-0 flex-1 basis-[54%] text-xs leading-tight sm:basis-auto sm:text-[13px]"
         style={{ color: 'rgba(254,254,254,0.78)' }}
+        data-testid="hero-next-match-meta"
       >
-        {meta}
-      </p>
+        {schedule ? (
+          <span className="block" data-testid="hero-next-match-schedule">
+            {schedule}
+          </span>
+        ) : null}
+        {venueLine1 ? (
+          <span className="mt-0.5 block font-semibold" data-testid="hero-next-match-venue-line-1">
+            {venueLine1}
+          </span>
+        ) : null}
+        {venueLine2 ? (
+          <span className="block font-semibold" data-testid="hero-next-match-venue-line-2">
+            {venueLine2}
+          </span>
+        ) : null}
+      </div>
 
       <Link
         to={`/matches/${match.id}`}

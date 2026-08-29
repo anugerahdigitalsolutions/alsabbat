@@ -1,5 +1,15 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## VENUE 2 BARIS DI PANEL "PERTANDINGAN BERIKUTNYA" (29 Agu 2026) · SELESAI
+- `frontend/src/components/public/home/HeroNextMatchPanel.js` (satu file): helper `splitVenue()`
+  memecah nama venue menjadi 2 baris SEIMBANG pada batas kata (tidak memotong kata, data DB tidak
+  diubah). Blok meta kini: baris 1 = `tanggal · jam WIB` (tidak berubah), baris 2-3 = venue
+  (`LAPANGAN BOLA` / `PASIRMUNCANG`, `font-semibold`, `leading-tight`). Ukuran font tetap 12/13px.
+- Verifikasi 1920/1440/1280/1024/768/390/360: venue selalu 2 baris tanpa terpotong, jadwal utuh,
+  tidak bertabrakan dengan countdown/logo/nama tim/tombol (uji overlap bounding box = false),
+  tidak keluar panel, overflow horizontal 0 px, tinggi panel 124-128 px (desktop/tablet) &
+  255 px (mobile, stacked), 0 console error, `yarn build` sukses.
+
 ## PANEL "PERTANDINGAN BERIKUTNYA" — ISI DIPERBESAR (29 Agu 2026) · SELESAI
 - `frontend/src/components/public/home/HeroNextMatchPanel.js`: label 9px → 11/12/13px, crest 24px → 34px
   (mobile/tablet) & 44px (desktop, tetap `object-contain`), nama tim 11px → 14/16px, VS 10px → 14/18px,
