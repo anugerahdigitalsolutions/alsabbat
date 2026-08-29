@@ -130,15 +130,13 @@ def sniff_image_mime(content: bytes) -> Optional[str]:
 
 def sanitize_upload(file_name: str, content: bytes, mime_type: str) -> Tuple[str, bytes, str]:
     """Server-side hardening: signature check + safe re-encode for raster images."""
-    head = content[:2048].lower()
-    if any(snippet.lower() in head for snippet in BLOCKED_SNIPPETS):
-        raise ValidationFailedError("Berkas ditolak: konten tidak aman untuk media.")
     if content.startswith(BLOCKED_MAGICS):
         raise ValidationFailedError("Berkas ditolak: konten tidak aman untuk media.")
     mime = (mime_type or "").lower()
-    if mime.startswith("image/") or sniff_image_mime(content):
-        sniffed = sniff_image_mime(content)
+    sniffed = sniff_image_mime(content)
+    if mime.startswith("image/") or sniffed:
         if not sniffed:
+            # HTML/SVG/skrip yang menyamar sebagai gambar berhenti di sini.
             raise ValidationFailedError("Berkas gambar tidak valid (signature tidak dikenali).")
         try:
             from io import BytesIO
@@ -164,6 +162,13 @@ def sanitize_upload(file_name: str, content: bytes, mime_type: str) -> Tuple[str
         base = os.path.basename(file_name or "gambar")
         stem = base.rsplit(".", 1)[0][:80] or "gambar"
         file_name = f"{stem}.{'png' if mime == 'image/png' else 'jpg'}"
+        return file_name, content, mime
+
+    # Non-gambar (PDF/dokumen/video): payload tidak di-re-encode, jadi cuplikan
+    # HTML/skrip di awal berkas tetap harus ditolak.
+    head = content[:2048].lower()
+    if any(snippet.lower() in head for snippet in BLOCKED_SNIPPETS):
+        raise ValidationFailedError("Berkas ditolak: konten tidak aman untuk media.")
     return file_name, content, mime
 
 

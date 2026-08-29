@@ -536,6 +536,7 @@ class GalleryAlbum(GalleryAlbumBase, DBModel):
 # -------------------------------------------------------------- Sponsor
 class SponsorBase(AppBaseModel):
     name: str = Field(min_length=1, max_length=160)
+    slug: Optional[str] = Field(default=None, max_length=180)
     logo: Optional[str] = None
     description: Optional[str] = Field(default=None, max_length=4000)
     website: Optional[str] = None
@@ -546,9 +547,32 @@ class SponsorBase(AppBaseModel):
     # (default kosong) dan tidak ada data lama yang hilang.
     contact: ContactInformation = Field(default_factory=ContactInformation)
     social_media: SocialLinks = Field(default_factory=SocialLinks)
+    # Sponsor utama ditandai EKSPLISIT oleh admin — tidak ada promosi otomatis.
+    is_featured: bool = False
+
+    @field_validator("slug", mode="before")
+    @classmethod
+    def _sponsor_slug(cls, v):
+        return slugify(v) if v else v
+
+    @model_validator(mode="after")
+    def _ensure_sponsor_slug(self):
+        # Slug dibuat sekali dari nama bila kosong; slug yang SUDAH ada tidak
+        # pernah diubah otomatis walau nama sponsor berubah (link lama aman).
+        if not getattr(self, "slug", None):
+            object.__setattr__(self, "slug", slugify(getattr(self, "name", "") or ""))
+        return self
 
 
-SponsorUpdate = make_update_model("SponsorUpdate", SponsorBase)
+SponsorUpdate = make_update_model(
+    "SponsorUpdate",
+    SponsorBase,
+    {
+        "_sponsor_slug": field_validator("slug", mode="before")(
+            classmethod(lambda cls, v: slugify(v) if v else v)
+        )
+    },
+)
 
 
 class Sponsor(SponsorBase, DBModel):

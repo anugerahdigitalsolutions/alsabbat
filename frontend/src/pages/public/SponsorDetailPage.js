@@ -73,7 +73,8 @@ export default function SponsorDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get(`/sponsors/${sponsorId}`);
+      // `sponsorId` boleh slug baru ATAU id sponsor lama (backward compatible).
+      const { data } = await api.get(`/sponsors/by-slug/${encodeURIComponent(sponsorId)}`);
       setSponsor(data);
     } catch (e) {
       setError(apiErrorMessage(e, 'Sponsor tidak ditemukan.'));

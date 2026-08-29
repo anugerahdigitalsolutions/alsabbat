@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/badge';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
+import { sponsorPath } from '../../components/public/SponsorsStrip';
 
 export default function SponsorsPage() {
   usePageSeo({ title: 'Sponsor', description: 'Sponsor dan partner resmi AL SABBAT Football Club.', path: '/sponsors' });
@@ -34,7 +35,7 @@ export default function SponsorsPage() {
             {items.map((sponsor) => (
               <Link
                 key={sponsor.id}
-                to={`/sponsors/${sponsor.id}`}
+                to={sponsorPath(sponsor)}
                 className="als-card als-focus block p-6 transition-shadow hover:shadow-[var(--shadow-md)]"
                 data-testid={`sponsor-card-${sponsor.id}`}
               >

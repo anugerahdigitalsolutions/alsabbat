@@ -26,6 +26,13 @@ export default function AdminSponsorsPage() {
       columns={[
         { key: 'display_order', label: 'Urutan', className: 'w-[80px]' },
         { key: 'name', label: 'Nama' },
+        { key: 'slug', label: 'Slug', render: (r) => r.slug || '—' },
+        {
+          key: 'is_featured',
+          label: 'Utama',
+          className: 'w-[90px]',
+          render: (r) => (r.is_featured ? <Badge variant="outline">UTAMA</Badge> : '—'),
+        },
         { key: 'tier', label: 'Tier' },
         {
           key: 'website',
@@ -43,7 +50,15 @@ export default function AdminSponsorsPage() {
       ]}
       fields={[
         { name: 'name', label: 'Nama Sponsor', type: 'text', required: true },
+        {
+          name: 'slug',
+          label: 'Slug URL',
+          type: 'text',
+          placeholder: 'otomatis dari nama sponsor',
+          help: 'Dipakai untuk URL profil: /sponsors/<slug>. Kosongkan agar dibuat otomatis dari nama. Slug yang sudah tersimpan sebaiknya tidak diubah agar tautan lama tetap hidup. Slug harus unik — duplikat ditolak saat menyimpan.',
+        },
         { name: 'tier', label: 'Tier', type: 'text', placeholder: 'Main Sponsor / Official Partner' },
+        { name: 'is_featured', label: 'Sponsor Utama (tampil lebih besar di beranda)', type: 'switch' },
         { name: 'display_order', label: 'Urutan Tampilan', type: 'number' },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
         {

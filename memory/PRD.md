@@ -1,5 +1,39 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## SANITIZER + SLUG SPONSOR + SPONSOR UTAMA (29 Agu 2026) · SELESAI
+### File yang berubah
+- `backend/app/services/media_service.py` — urutan sanitizer diperbaiki: cek magic executable (MZ/ELF di
+  offset 0) → sniff signature → **Pillow verify + re-encode** untuk gambar; pemindaian cuplikan
+  `<script>/<html>/<?php` kini HANYA untuk berkas NON-gambar (PDF/dokumen/video) yang tidak di-re-encode.
+- `backend/app/models/domain.py` — `SponsorBase` +`slug` (auto dari nama, slugify, unik) +`is_featured`;
+  `SponsorUpdate` mendapat validator slugify (slug yang sudah ada TIDAK pernah diubah otomatis).
+- `backend/app/api/routes/sponsors.py` — `unique_fields=("slug",)`, filter `is_featured`, endpoint
+  `GET /api/sponsors/by-slug/{value}` (menerima slug BARU **atau** id LAMA).
+- `frontend/src/components/public/SponsorsStrip.js` — helper `sponsorPath()` (slug → fallback id) +
+  baris **Sponsor Utama** (tile & logo lebih besar) di atas sponsor biasa; posisi section tidak berubah.
+- `frontend/src/pages/public/SponsorsPage.js`, `SponsorDetailPage.js` — URL slug + lookup by-slug/id.
+- `frontend/src/pages/admin/AdminSponsorsPage.js` — field **Slug URL** (opsional, otomatis) + switch
+  **Sponsor Utama** + kolom Slug & Utama di tabel.
+- Skrip baru: `scripts/media_sanitizer_verify.py`, `scripts/p2_sponsor_slug_media_verify.py`,
+  `scripts/sponsor_slug_backfill.py` (dry-run + `--apply`, hanya MENAMBAH slug).
+### Root cause sanitizer
+Pemindaian cuplikan `<script>/<html>/<?php` dijalankan sebagai **substring pada 2 KB pertama berkas
+mentah** — data terkompresi PNG/JPEG (atau blok metadata) bisa memuat urutan byte itu secara kebetulan,
+sehingga gambar sah ditolak "konten tidak aman untuk media". Untuk gambar, mitigasi sebenarnya adalah
+**re-encode Pillow** (payload apa pun ikut hilang), jadi pemindaian mentah tidak diperlukan dan hanya
+menghasilkan false positive. Validasi keamanan lain tetap utuh: MIME allowlist, batas ukuran,
+signature/content sniffing, penolakan executable, Pillow verify, SVG tetap dilarang.
+### Verifikasi (tanpa Testing Agent)
+- `scripts/media_sanitizer_verify.py` → **13/13 PASS**; `scripts/p2_sponsor_slug_media_verify.py` → **23/23 PASS**
+  (upload nyata PNG transparan/JPEG/PNG ber-metadata HTML diterima & payload hilang di server;
+  HTML-berkedok-jpg, SVG, executable, berkas kosong ditolak; slug otomatis, GET via slug & id,
+  duplikat 409, slug stabil saat nama berubah, slug manual dinormalisasi, filter `is_featured`).
+- UI 1440/768/390: tile utama 160/160/128 px vs biasa 96 px, logo utama 112/112/72 px vs 56 px,
+  `object-fit: contain` dengan rasio = rasio asli (4.29 & 0.38), section tetap di bawah 4 pilar,
+  overflow **0 px**, `href` memakai slug, `/sponsors/{id}` lama tetap membuka profil, **0 console error**.
+- `yarn build` sukses. Sponsor uji dihapus (sponsors = 2 milik user); backfill slug menambahkan
+  `sponsor-wide` & `sponsor-tall` tanpa mengubah data lain.
+
 ## SPONSOR PROFILE + BADGE STORE HITAM (29 Agu 2026) · SELESAI
 ### File yang berubah
 - `backend/app/models/domain.py` — `SponsorBase` +`contact: ContactInformation` +`social_media: SocialLinks`,
