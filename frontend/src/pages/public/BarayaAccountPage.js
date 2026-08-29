@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard, KeyRound, LogOut, Receipt, Save } from 'lucide-react';
+import { CreditCard, Images, KeyRound, LogOut, Receipt, Save, Star, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { Button } from '../../components/ui/button';
@@ -19,7 +19,7 @@ import {
 import { MemberCard } from '../../components/member/MemberCard';
 import { MediaPicker } from '../../components/shared/MediaPicker';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
-import { canAccessGallery, roleLabel } from '../../lib/memberAccess';
+import { canAccessGallery, roleLabel, roleOf } from '../../lib/memberAccess';
 import { UserPlus } from 'lucide-react';
 
 const formatDate = (value) => {
@@ -39,6 +39,8 @@ export default function BarayaAccountPage() {
     robots: 'noindex,follow',
   });
   const { customer, reload, logout } = useBaraya();
+  const role = roleOf(customer);
+  const hasClubAccess = canAccessGallery(customer);
   const [profile, setProfile] = useState({
     full_name: customer?.full_name || '',
     phone: customer?.phone || '',
@@ -223,15 +225,54 @@ export default function BarayaAccountPage() {
               </div>
             </div>
 
-            <Link
-              to="/akun/pengajuan"
-              className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border text-sm font-bold"
-              style={{ borderColor: 'var(--border-soft)' }}
-              data-testid="baraya-account-application-link"
-            >
-              <UserPlus className="h-4 w-4" aria-hidden="true" />
-              {canAccessGallery(customer) ? 'Pengajuan Saya' : 'Daftar Pemain / Staf'}
-            </Link>
+            {role === 'MEMBER' ? (
+              <Link
+                to="/akun/pengajuan"
+                className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] text-sm font-bold"
+                style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+                data-testid="baraya-account-application-link"
+              >
+                <UserPlus className="h-4 w-4" aria-hidden="true" />
+                Daftar Pemain
+              </Link>
+            ) : (
+              <Link
+                to="/akun/pengajuan"
+                className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border text-sm font-bold"
+                style={{ borderColor: 'var(--border-soft)' }}
+                data-testid="baraya-account-application-link"
+              >
+                <UserCog className="h-4 w-4" aria-hidden="true" />
+                Pengajuan Saya
+              </Link>
+            )}
+
+            {hasClubAccess ? (
+              <>
+                <Link
+                  to="/gallery"
+                  className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border text-sm font-bold"
+                  style={{ borderColor: 'var(--border-soft)' }}
+                  data-testid="baraya-account-gallery-link"
+                >
+                  <Images className="h-4 w-4" aria-hidden="true" />
+                  Galeri Klub
+                </Link>
+                <Link
+                  to="/teams"
+                  className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border text-sm font-bold"
+                  style={{ borderColor: 'var(--border-soft)' }}
+                  data-testid="baraya-account-spotlight-link"
+                >
+                  <Star className="h-4 w-4" aria-hidden="true" />
+                  {role === 'PEMAIN' ? 'Data Pemain & Sorotan' : 'Sorotan Pemain'}
+                </Link>
+              </>
+            ) : (
+              <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="baraya-account-locked-note">
+                Galeri &amp; Sorotan Pemain terbuka setelah pengajuan Pemain Anda disetujui pengurus.
+              </p>
+            )}
 
             <Link
               to="/akun/pesanan"

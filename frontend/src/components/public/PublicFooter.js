@@ -4,6 +4,7 @@ import { Facebook, Globe, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide
 import { ClubCrestMark } from '../shared/ClubCrestMark';
 import { useClub } from '../../context/ClubContext';
 import { PUBLIC_NAV } from './PublicHeader';
+import { useBaraya } from '../../context/BarayaAuthContext';
 const SOCIALS = [
   { key: 'instagram', label: 'Instagram', Icon: Instagram },
   { key: 'facebook', label: 'Facebook', Icon: Facebook },
@@ -61,6 +62,9 @@ export const PublicFooter = () => {
   const { club, clubName } = useClub();
   const social = club?.social_media || {};
   const contact = club?.contact || {};
+  // Fase 4A — tautan Galeri hanya untuk Pemain & Staf.
+  const { canViewGallery } = useBaraya();
+  const footerNav = PUBLIC_NAV.filter((item) => item.id !== 'gallery' || canViewGallery);
   // Fase 4 — ikon toko aplikasi hanya tampil bila diaktifkan Admin DAN URL https terisi.
   const safeStoreUrl = (value) =>
     typeof value === 'string' && /^https:\/\/[^\s]+$/i.test(value.trim()) ? value.trim() : '';
@@ -92,7 +96,7 @@ export const PublicFooter = () => {
           </h4>
           <div className="grid grid-cols-2 gap-x-4">
             <ul className="space-y-2">
-              {PUBLIC_NAV.slice(0, 5).map((item) => (
+              {footerNav.slice(0, 5).map((item) => (
                 <li key={item.id}>
                   <Link
                     to={item.to}
@@ -106,7 +110,7 @@ export const PublicFooter = () => {
               ))}
             </ul>
             <ul className="space-y-2">
-              {PUBLIC_NAV.slice(5).map((item) => (
+              {footerNav.slice(5).map((item) => (
                 <li key={item.id}>
                   <Link
                     to={item.to}

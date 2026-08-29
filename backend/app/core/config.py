@@ -164,6 +164,12 @@ class Settings:
     GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 
+    # --------------------------- Firebase Cloud Messaging (Fase 4A — notifikasi admin)
+    # Kosong => status NOT_CONFIGURED yang jujur; TIDAK ada notifikasi dummy.
+    FIREBASE_PROJECT_ID: str = os.environ.get("FIREBASE_PROJECT_ID", "")
+    FIREBASE_SERVICE_ACCOUNT_JSON: str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON", "")
+    FIREBASE_ADMIN_TOPIC: str = os.environ.get("FIREBASE_ADMIN_TOPIC", "admin-review")
+
     # ------------------------------------------------- OTP (Fase 3)
     OTP_EXPIRE_MINUTES: int = int(os.environ.get("OTP_EXPIRE_MINUTES", "10"))
     OTP_MAX_ATTEMPTS: int = int(os.environ.get("OTP_MAX_ATTEMPTS", "5"))

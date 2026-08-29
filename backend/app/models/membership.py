@@ -9,10 +9,11 @@ import re
 from enum import Enum
 from typing import Optional
 
-from pydantic import EmailStr, Field, field_validator
+from pydantic import EmailStr, Field, field_validator, model_validator
 
 from app.models.base import AppBaseModel, DBModel
 from app.models.customer import _validate_password
+from app.models.enums import PlayerPosition
 
 GALLERY_ROLES = {"PEMAIN", "STAFF"}
 
@@ -80,6 +81,26 @@ class GoogleLoginPayload(AppBaseModel):
         return value
 
 
+class PlayerApplicationData(AppBaseModel):
+    """Fase 4A — data pemain memakai field model Pemain existing (PlayerBase).
+
+    Tidak membuat struktur pemain kedua: saat disetujui, nilai di sini
+    ditulis ke record `players` yang dipilih Admin.
+    """
+
+    full_name: str = Field(min_length=2, max_length=160)
+    display_name: Optional[str] = Field(default=None, max_length=80)
+    jersey_number: Optional[int] = Field(default=None, ge=0, le=99)
+    position: PlayerPosition = PlayerPosition.MIDFIELDER
+    date_of_birth: Optional[str] = Field(default=None, max_length=20)
+    nationality: Optional[str] = Field(default=None, max_length=80)
+    height_cm: Optional[int] = Field(default=None, ge=100, le=250)
+    weight_kg: Optional[int] = Field(default=None, ge=30, le=180)
+    bio: Optional[str] = Field(default=None, max_length=4000)
+    photo: Optional[str] = Field(default=None, max_length=800)
+    instagram: Optional[str] = Field(default=None, max_length=200)
+
+
 class ApplicationCreate(AppBaseModel):
     type: ApplicationType
     full_name: str = Field(min_length=3, max_length=120)
@@ -89,6 +110,8 @@ class ApplicationCreate(AppBaseModel):
     address: Optional[str] = Field(default=None, max_length=300)
     experience: Optional[str] = Field(default=None, max_length=2000)
     motivation: str = Field(min_length=10, max_length=2000)
+    # Wajib untuk pengajuan PEMAIN (form mengikuti form Pemain di Admin Panel).
+    player_data: Optional[PlayerApplicationData] = None
 
     @field_validator("phone")
     @classmethod
@@ -97,6 +120,24 @@ class ApplicationCreate(AppBaseModel):
         if len(re.sub(r"\D", "", cleaned)) < 8:
             raise ValueError("Nomor WhatsApp tidak valid.")
         return cleaned
+
+    @model_validator(mode="after")
+    def _require_player_data(self):
+        if self.type == ApplicationType.PEMAIN and self.player_data is None:
+            raise ValueError("Data pemain wajib diisi untuk pengajuan Pemain.")
+        return self
+
+
+class ApplicationDataUpdate(AppBaseModel):
+    """Fase 4A — Admin melengkapi/mengoreksi pengajuan sebelum approval."""
+
+    phone: Optional[str] = Field(default=None, max_length=25)
+    position: Optional[str] = Field(default=None, max_length=120)
+    birth_date: Optional[str] = Field(default=None, max_length=20)
+    address: Optional[str] = Field(default=None, max_length=300)
+    experience: Optional[str] = Field(default=None, max_length=2000)
+    motivation: Optional[str] = Field(default=None, max_length=2000)
+    player_data: Optional[PlayerApplicationData] = None
 
 
 class ApplicationDecision(AppBaseModel):
@@ -135,3 +176,4 @@ class MemberApplication(DBModel):
     decided_at: Optional[str] = None
     player_id: Optional[str] = None
     staff_id: Optional[str] = None
+    player_data: Optional[PlayerApplicationData] = None

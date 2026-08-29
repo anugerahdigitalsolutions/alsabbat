@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Textarea } from '../ui/textarea';
 import { EmptyState } from '../shared/EmptyState';
 import { LoadingState } from '../shared/LoadingState';
 
@@ -17,6 +18,21 @@ const STATUS_STYLE = {
 };
 
 const TYPE_LABEL = { PEMAIN: 'Pemain', STAFF: 'Staf' };
+
+// Sama dengan pilihan Admin → Pemain (PlayerPosition).
+const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+
+const PLAYER_FIELDS = [
+  { key: 'full_name', label: 'Nama Lengkap' },
+  { key: 'display_name', label: 'Display Name' },
+  { key: 'jersey_number', label: 'Nomor Punggung', type: 'number' },
+  { key: 'position', label: 'Posisi', type: 'select' },
+  { key: 'date_of_birth', label: 'Tanggal Lahir', type: 'date' },
+  { key: 'nationality', label: 'Kebangsaan' },
+  { key: 'height_cm', label: 'Tinggi (cm)', type: 'number' },
+  { key: 'weight_kg', label: 'Berat (kg)', type: 'number' },
+  { key: 'instagram', label: 'Instagram' },
+];
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -35,6 +51,8 @@ export const MemberApplications = ({ onDecided }) => {
   const [dialog, setDialog] = useState(null);
   const [linkId, setLinkId] = useState('');
   const [note, setNote] = useState('');
+  const [playerData, setPlayerData] = useState({});
+  const [pendingCount, setPendingCount] = useState(0);
   const [options, setOptions] = useState({ players: [], staff: [] });
   const [busy, setBusy] = useState(false);
 
@@ -45,6 +63,10 @@ export const MemberApplications = ({ onDecided }) => {
         params: { limit: 100, ...(status ? { status } : {}) },
       });
       setItems(data.items || []);
+      const { data: pendingData } = await api.get('/baraya/admin/applications', {
+        params: { limit: 1, status: 'PENDING' },
+      });
+      setPendingCount(pendingData.total || 0);
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Gagal memuat pengajuan.'));
     } finally {
@@ -67,8 +89,28 @@ export const MemberApplications = ({ onDecided }) => {
 
   const openDialog = (application) => {
     setDialog(application);
-    setLinkId('');
-    setNote('');
+    setLinkId(application.player_id || application.staff_id || '');
+    setNote(application.note || '');
+    setPlayerData({ ...(application.player_data || {}) });
+  };
+
+  const saveData = async () => {
+    if (!dialog) return;
+    setBusy(true);
+    try {
+      const payload = { player_data: { ...playerData } };
+      if (payload.player_data.jersey_number === '') payload.player_data.jersey_number = null;
+      if (payload.player_data.height_cm === '') payload.player_data.height_cm = null;
+      if (payload.player_data.weight_kg === '') payload.player_data.weight_kg = null;
+      const { data } = await api.patch(`/baraya/admin/applications/${dialog.id}/data`, payload);
+      setDialog((d) => ({ ...d, ...data }));
+      toast.success('Data pengajuan diperbarui.');
+      await load();
+    } catch (e) {
+      toast.error(apiErrorMessage(e, 'Gagal memperbarui data pengajuan.'));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const decide = async (decision) => {
@@ -98,7 +140,18 @@ export const MemberApplications = ({ onDecided }) => {
     <div className="als-card space-y-4 p-5" data-testid="admin-applications">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="font-display text-base font-bold md:text-lg">Pengajuan Pemain &amp; Staf</p>
+          <p className="font-display flex items-center gap-2 text-base font-bold md:text-lg">
+            Pengajuan Pemain &amp; Staf
+            {pendingCount ? (
+              <Badge
+                variant="outline"
+                style={{ backgroundColor: 'rgba(252,207,43,0.24)' }}
+                data-testid="admin-applications-pending-count"
+              >
+                {pendingCount} perlu direview
+              </Badge>
+            ) : null}
+          </p>
           <p className="text-sm" style={{ color: 'var(--muted-fg)' }}>
             Setujui pengajuan dengan menautkan akun ke record Pemain/Staf yang sudah ada (tidak membuat data ganda).
           </p>
@@ -170,11 +223,12 @@ export const MemberApplications = ({ onDecided }) => {
       )}
 
       <Dialog open={!!dialog} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent className="max-w-lg bg-white" data-testid="admin-application-dialog">
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto bg-white" data-testid="admin-application-dialog">
           <DialogHeader>
             <DialogTitle className="font-display">Tinjau Pengajuan {TYPE_LABEL[dialog?.type] || ''}</DialogTitle>
             <DialogDescription>
-              Menyetujui pengajuan akan mengubah peran akun Baraya dan membuka akses Galeri &amp; Sorotan Pemain.
+              Data yang disetujui akan ditulis ke record Pemain yang Anda pilih (tidak membuat data pemain baru),
+              peran akun berubah menjadi Pemain, dan akses Galeri &amp; Sorotan Pemain terbuka.
             </DialogDescription>
           </DialogHeader>
 
@@ -189,6 +243,73 @@ export const MemberApplications = ({ onDecided }) => {
                 {dialog.experience ? <p className="mt-2">Pengalaman: {dialog.experience}</p> : null}
                 <p className="mt-2">Motivasi: {dialog.motivation}</p>
               </div>
+
+              {dialog.type === 'PEMAIN' ? (
+                <div className="space-y-3" data-testid="admin-application-player-data">
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+                    Data pemain (dapat dilengkapi sebelum approval)
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {PLAYER_FIELDS.map((field) => (
+                      <div key={field.key}>
+                        <Label className="mb-1 block text-xs">{field.label}</Label>
+                        {field.type === 'select' ? (
+                          <select
+                            value={playerData[field.key] || 'MIDFIELDER'}
+                            onChange={(e) => setPlayerData((d) => ({ ...d, [field.key]: e.target.value }))}
+                            className="h-10 w-full rounded-[var(--radius-sm)] border px-2 text-sm"
+                            style={{ borderColor: 'var(--border-soft)' }}
+                            data-testid={`admin-application-field-${field.key}`}
+                          >
+                            {POSITIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Input
+                            type={field.type || 'text'}
+                            value={playerData[field.key] ?? ''}
+                            onChange={(e) => setPlayerData((d) => ({ ...d, [field.key]: e.target.value }))}
+                            data-testid={`admin-application-field-${field.key}`}
+                          />
+                        )}
+                      </div>
+                    ))}
+                    <div className="sm:col-span-2">
+                      <Label className="mb-1 block text-xs">Bio</Label>
+                      <Textarea
+                        rows={2}
+                        value={playerData.bio ?? ''}
+                        onChange={(e) => setPlayerData((d) => ({ ...d, bio: e.target.value }))}
+                        data-testid="admin-application-field-bio"
+                      />
+                    </div>
+                    {playerData.photo ? (
+                      <div className="sm:col-span-2">
+                        <Label className="mb-1 block text-xs">Foto dari pemohon</Label>
+                        <img
+                          src={playerData.photo}
+                          alt="Foto pengajuan pemain"
+                          className="h-28 w-28 rounded-[var(--radius-sm)] object-cover"
+                          data-testid="admin-application-photo"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={saveData}
+                    disabled={busy}
+                    data-testid="admin-application-save-data"
+                  >
+                    Simpan Perubahan Data
+                  </Button>
+                </div>
+              ) : null}
 
               <div>
                 <Label className="mb-1.5 block">

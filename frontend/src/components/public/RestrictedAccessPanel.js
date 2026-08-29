@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, UserPlus } from 'lucide-react';
+import { LogIn, Lock, UserPlus } from 'lucide-react';
 import { useBaraya } from '../../context/BarayaAuthContext';
 
 /**
@@ -35,30 +35,42 @@ export const RestrictedAccessPanel = ({
           Galeri dan Sorotan Pemain AL SABBAT hanya dapat diakses oleh Pemain dan Staf klub.
           {isBaraya
             ? ' Ajukan diri sebagai Pemain, lalu pengurus klub akan meninjau pengajuan Anda.'
-            : ' Silakan login sebagai Baraya AL SABBAT lalu ajukan diri sebagai Pemain.'}
+            : ' Silakan login sebagai Baraya AL SABBAT terlebih dahulu.'}
         </p>
       </div>
       <div className="flex flex-wrap gap-3">
-        <Link
-          to={isBaraya ? '/akun/pengajuan' : '/login'}
-          state={isBaraya ? undefined : { from: '/akun/pengajuan' }}
-          className="als-focus font-display inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] px-5 text-sm font-bold"
-          style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-          data-testid={`${testId}-cta`}
-        >
-          <UserPlus className="h-4 w-4" aria-hidden="true" />
-          Daftar Pemain
-        </Link>
-        {!isBaraya ? (
+        {isBaraya ? (
           <Link
-            to="/daftar"
-            className="als-focus font-display inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] border px-5 text-sm font-bold"
-            style={{ borderColor: 'var(--border-soft)' }}
-            data-testid={`${testId}-register`}
+            to="/akun/pengajuan"
+            className="als-focus font-display inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] px-5 text-sm font-bold"
+            style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+            data-testid={`${testId}-cta`}
           >
-            Buat Akun Baraya
+            <UserPlus className="h-4 w-4" aria-hidden="true" />
+            Daftar Pemain
           </Link>
-        ) : null}
+        ) : (
+          <>
+            <Link
+              to="/login"
+              state={{ from: '/akun' }}
+              className="als-focus font-display inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] px-5 text-sm font-bold"
+              style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+              data-testid={`${testId}-login`}
+            >
+              <LogIn className="h-4 w-4" aria-hidden="true" />
+              Login
+            </Link>
+            <Link
+              to="/daftar"
+              className="als-focus font-display inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] border px-5 text-sm font-bold"
+              style={{ borderColor: 'var(--border-soft)' }}
+              data-testid={`${testId}-register`}
+            >
+              Buat Akun Baraya
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );

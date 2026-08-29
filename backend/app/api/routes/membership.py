@@ -31,6 +31,7 @@ from app.models.customer import CustomerAuthContext
 from app.models.membership import (
     GALLERY_ROLES,
     ApplicationCreate,
+    ApplicationDataUpdate,
     ApplicationDecision,
     ApplicationStatus,
     ApplicationType,
@@ -42,6 +43,7 @@ from app.models.membership import (
 )
 from app.services import google_auth
 from app.services.mailer import mail_status
+from app.services.notifications import firebase_status, notify_admin_review
 from app.services.membership import ensure_member_identity
 from app.services.otp import PURPOSE_REGISTER, PURPOSE_RESET, issue_otp, verify_otp
 
@@ -220,21 +222,36 @@ async def create_application(
     customer = await customers.get(auth.customer_id)
     if not customer:
         raise UnauthorizedError("Akun tidak ditemukan.")
-    if _role_of(customer) == payload.type.value:
-        raise ConflictError(f"Akun Anda sudah berstatus {payload.type.value}.")
+    # Fase 4A — hanya MEMBER yang boleh mengajukan (Guest sudah tertolak oleh auth).
+    if _role_of(customer) != "MEMBER":
+        raise ForbiddenError(
+            f"Akun Anda sudah berstatus {_role_of(customer)}. Pengajuan hanya untuk Member."
+        )
     pending = await applications.get_by(
         {"customer_id": auth.customer_id, "type": payload.type.value, "status": "PENDING"}
     )
     if pending:
         raise ConflictError("Pengajuan Anda masih diproses pengurus klub.")
 
+    data = payload.model_dump()
+    player_data = data.pop("player_data", None)
+    if player_data:
+        # Foto memakai sistem media existing: foto profil Baraya milik sendiri.
+        player_data["photo"] = player_data.get("photo") or customer.get("photo_url") or None
+        player_data["position"] = (
+            player_data["position"].value
+            if hasattr(player_data["position"], "value")
+            else player_data["position"]
+        )
+
     created = await applications.create(
         {
-            **payload.model_dump(),
+            **data,
             "type": payload.type.value,
             "customer_id": auth.customer_id,
             "email": customer["email"],
             "status": "PENDING",
+            "player_data": player_data,
             "note": None,
             "decided_by": None,
             "decided_at": None,
@@ -242,8 +259,18 @@ async def create_application(
             "staff_id": None,
         }
     )
-    logger.info("baraya.application.created customer=%s type=%s", auth.customer_id, payload.type.value)
-    return _public_application(created)
+    notification = notify_admin_review(
+        title="Pengajuan Pemain baru",
+        body=f"{payload.full_name} mengajukan diri sebagai {payload.type.value}. Perlu direview.",
+        data={"kind": "member_application", "application_id": created["id"], "type": payload.type.value},
+    )
+    logger.info(
+        "baraya.application.created customer=%s type=%s notified=%s",
+        auth.customer_id,
+        payload.type.value,
+        notification["provider"],
+    )
+    return {**_public_application(created), "notification": notification}
 
 
 @router.get("/applications/mine", summary="Pengajuan milik akun yang login")
@@ -259,7 +286,11 @@ async def my_applications(
 # --------------------------------------------------------- konsol admin Fase 3
 @router.get("/admin/auth-settings", summary="Admin: status konfigurasi OTP & Google (tanpa secret)")
 async def admin_auth_settings(user: AuthContext = member_read) -> Dict[str, Any]:
-    return {"email": mail_status(), "google": google_auth.google_status()}
+    return {
+        "email": mail_status(),
+        "google": google_auth.google_status(),
+        "firebase": firebase_status(),
+    }
 
 
 @router.get("/admin/applications", summary="Admin: daftar pengajuan Pemain/Staf")
@@ -307,6 +338,56 @@ async def _validate_link(app_type: str, player_id: Optional[str], staff_id: Opti
     return {"player_id": None, "staff_id": staff_id}
 
 
+@router.patch("/admin/applications/{application_id}/data", summary="Admin: lengkapi/koreksi data pengajuan")
+async def admin_update_application_data(
+    application_id: str, payload: ApplicationDataUpdate, user: AuthContext = member_write
+) -> Dict[str, Any]:
+    existing = await applications.get(application_id)
+    if not existing:
+        raise NotFoundError("Pengajuan tidak ditemukan.")
+    if existing.get("status") != "PENDING":
+        raise ConflictError("Hanya pengajuan berstatus PENDING yang dapat diedit.")
+
+    changes = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    if "player_data" in changes:
+        merged = {**(existing.get("player_data") or {}), **changes["player_data"]}
+        position = merged.get("position")
+        merged["position"] = position.value if hasattr(position, "value") else position
+        changes["player_data"] = merged
+    updated = await applications.update(application_id, changes)
+    logger.info("baraya.application.edited admin=%s application=%s", user.email, application_id)
+    return _public_application(updated or existing)
+
+
+async def _apply_player_data(player_id: str, player_data: Optional[Dict[str, Any]]) -> None:
+    """Tulis data pengajuan yang disetujui ke record Pemain existing (tanpa duplikat)."""
+    if not player_data:
+        return
+    changes: Dict[str, Any] = {}
+    for key in (
+        "full_name",
+        "display_name",
+        "jersey_number",
+        "position",
+        "date_of_birth",
+        "nationality",
+        "height_cm",
+        "weight_kg",
+        "bio",
+        "photo",
+    ):
+        value = player_data.get(key)
+        if value not in (None, ""):
+            changes[key] = value.value if hasattr(value, "value") else value
+    instagram = player_data.get("instagram")
+    if instagram:
+        player = await players.get(player_id)
+        social = {**((player or {}).get("social_media") or {}), "instagram": instagram}
+        changes["social_media"] = social
+    if changes:
+        await players.update(player_id, changes)
+
+
 @router.patch("/admin/applications/{application_id}", summary="Admin: setujui/tolak pengajuan")
 async def admin_decide_application(
     application_id: str, payload: ApplicationDecision, user: AuthContext = member_write
@@ -327,6 +408,9 @@ async def admin_decide_application(
     if payload.decision == ApplicationStatus.APPROVED:
         link = await _validate_link(existing["type"], payload.player_id, payload.staff_id)
         changes.update(link)
+        if link.get("player_id"):
+            # Data yang disetujui menjadi data pemain yang dipakai website.
+            await _apply_player_data(link["player_id"], existing.get("player_data"))
         await customers.update(
             existing["customer_id"],
             {

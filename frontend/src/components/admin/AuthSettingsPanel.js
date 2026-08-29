@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, KeyRound, Mail, ShieldAlert } from 'lucide-react';
+import { BellRing, CheckCircle2, KeyRound, Mail, ShieldAlert } from 'lucide-react';
 import api from '../../lib/api';
 
 const Row = ({ icon: Icon, title, configured, detail, note, testId }) => (
@@ -52,7 +52,7 @@ export const AuthSettingsPanel = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Row
           icon={Mail}
           title="Email OTP (SMTP2GO)"
@@ -63,6 +63,17 @@ export const AuthSettingsPanel = () => {
             'Set SMTP2GO_API_KEY dan SMTP2GO_SENDER_EMAIL di environment server (.env backend), lalu restart layanan.'
           }
           testId="admin-auth-email"
+        />
+        <Row
+          icon={BellRing}
+          title="Notifikasi Firebase (review admin)"
+          configured={!!data?.firebase?.configured}
+          detail={data?.firebase?.project_id ? `Project: ${data.firebase.project_id}` : null}
+          note={
+            data?.firebase?.note ||
+            'Set FIREBASE_PROJECT_ID dan FIREBASE_SERVICE_ACCOUNT_JSON di environment server; pengajuan baru tetap terlihat sebagai PENDING di daftar bawah.'
+          }
+          testId="admin-auth-firebase"
         />
         <Row
           icon={KeyRound}

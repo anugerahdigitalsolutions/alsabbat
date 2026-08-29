@@ -40,7 +40,7 @@ const Unit = ({ value, label, testId }) => (
  * Real-time countdown to the next AL SABBAT match. Uses only real match data;
  * never renders a negative countdown (falls back to MATCHDAY / match status).
  */
-export const MatchdayCountdown = ({ match, clubName = 'AL SABBAT', compact = false }) => {
+export const MatchdayCountdown = ({ match, clubName = 'AL SABBAT', compact = false, showCta = true }) => {
   const kickoff = useMemo(() => kickoffAt(match), [match]);
   const [now, setNow] = useState(() => Date.now());
   const statusLabel = STATUS_LABEL[match?.status];
@@ -136,24 +136,26 @@ export const MatchdayCountdown = ({ match, clubName = 'AL SABBAT', compact = fal
             </div>
           ) : (
             <span
-              className="font-display inline-block rounded-[var(--radius-sm)] px-4 py-2 text-sm font-bold uppercase tracking-[0.18em]"
+              className="font-display inline-block rounded-[var(--radius-sm)] px-4 py-2 text-[1.75rem] font-bold uppercase leading-none tracking-[0.18em]"
               style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
               data-testid="matchday-countdown-matchday"
             >
-              Hari Pertandingan
+              Match Day
             </span>
           )}
         </div>
 
-        <Link
-          to={`/matches/${match.id}`}
-          className="als-focus font-display mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] px-4 py-2.5 text-sm font-bold"
-          style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-          data-testid="matchday-countdown-cta"
-        >
-          Pusat Pertandingan
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        {showCta ? (
+          <Link
+            to={`/matches/${match.id}`}
+            className="als-focus font-display mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] px-4 py-2.5 text-sm font-bold"
+            style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+            data-testid="matchday-countdown-cta"
+          >
+            Pusat Pertandingan
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        ) : null}
       </div>
     </div>
   );

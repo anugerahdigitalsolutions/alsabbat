@@ -57,7 +57,7 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'home.cta.text', group: 'CTA Penutup', label: 'CTA — Teks', value: 'Ikuti setiap matchday, cerita pemain, dan momen di lapangan bersama kami.', multiline: true },
   { key: 'home.cta.btn_matches', group: 'CTA Penutup', label: 'CTA — Tombol 1', value: 'Jadwal Pertandingan' },
   { key: 'home.cta.btn_squad', group: 'CTA Penutup', label: 'CTA — Tombol 2', value: 'Lihat Pemain' },
-  { key: 'home.cta.btn_gallery', group: 'CTA Penutup', label: 'CTA — Tombol 3', value: 'Galeri' },
+  { key: 'home.cta.btn_login', group: 'CTA Penutup', label: 'CTA — Tombol 3', value: 'Login' },
 
   // Club page
   { key: 'club.header.label', group: 'Halaman Klub', label: 'Header — Label', value: 'Tentang Klub' },

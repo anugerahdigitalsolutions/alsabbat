@@ -1,5 +1,69 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## FASE 4A (permintaan user) — USER FLOW, MATCH CARD & PENDAFTARAN PEMAIN · 29 Agu 2026 · SELESAI
+Scope terbatas Fase 4A. Fase 1–4 lain tidak diubah. Firebase belum dikonfigurasi → mode NOT_CONFIGURED jujur.
+
+### Frontend
+- `components/public/MatchdayCountdown.js` — "Hari Pertandingan" → **"Match Day"**, ukuran 14px → **28px**
+  (2×, `text-[1.75rem]`); +prop `showCta` agar tombol "Pusat Pertandingan" bisa disembunyikan.
+- `components/public/matchcenter/MatchScoreboard.js` — eyebrow → **"Match Day"** 11px → **22px** (2×).
+- `pages/public/MatchDetailPage.js` — section **"Bagikan Pertandingan" dihapus** (komponen `ShareMatchday`
+  tetap ada di sistem, tidak dipakai di halaman ini) dan tombol **"Pusat Pertandingan" dihapus**
+  (`showCta={false}`); route `/matches/:id` tetap utuh.
+- `components/public/home/JourneyCta.js` + `lib/siteContent.js` — tombol ke-3 "Galeri" → **"Login"**
+  (`/login`), key CMS `home.cta.btn_gallery` → `home.cta.btn_login` (nilai lama di DB tidak dihapus).
+- `pages/public/HomePage.js` — **Guest: section Sorotan Pemain & Galeri tidak dirender** (bukan hanya
+  terkunci); grid otomatis 3 kolom → 2 kolom agar tidak ada ruang kosong. Member: kedua section dirender
+  dengan panel terkunci + CTA.
+- `components/public/RestrictedAccessPanel.js` — CTA **"Daftar Pemain" hanya untuk akun login (Member)**;
+  Guest hanya melihat tombol Login / Buat Akun.
+- `components/public/PublicHeader.js` + `PublicFooter.js` — menu & tautan **GALERI hanya untuk Pemain/Staf**.
+- `pages/public/BarayaApplicationPage.js` (ditulis ulang) — formulir mengikuti **form Pemain Admin Panel**:
+  nama lengkap, display name, nomor punggung (0–99), posisi (enum `PlayerPosition`), tanggal lahir,
+  kebangsaan, tinggi, berat, foto (MediaPicker + endpoint foto Baraya existing), bio, Instagram +
+  alamat/pengalaman/motivasi. Non-Member melihat panel "sudah berstatus X" (tanpa form).
+- `pages/public/BarayaAccountPage.js` — UI per peran: Member → tombol **Daftar Pemain** (primer) + catatan
+  terkunci; Pemain/Staf → **Pengajuan Saya**, **Galeri Klub**, **Data Pemain & Sorotan**; kartu member
+  tetap menampilkan peran.
+- `components/admin/MemberApplications.js` — dialog review diperluas: **edit/lengkapi data pemain**
+  (9 field + bio + pratinjau foto) → `PATCH …/applications/{id}/data`, badge **"N perlu direview"**,
+  wajib memilih record Pemain existing saat approve.
+- `components/admin/AuthSettingsPanel.js` — +baris status **Notifikasi Firebase**.
+
+### Backend (additive)
+- `models/membership.py` — +`PlayerApplicationData` (memakai field `PlayerBase` existing, enum
+  `PlayerPosition`), `ApplicationCreate.player_data` (wajib untuk PEMAIN), `ApplicationDataUpdate`,
+  `MemberApplication.player_data`.
+- `api/routes/membership.py` — pengajuan **hanya untuk role MEMBER** (403 untuk PEMAIN/STAFF, 401 Guest);
+  foto memakai foto profil Baraya bila kosong; endpoint baru `PATCH /api/baraya/admin/applications/{id}/data`
+  (hanya PENDING); saat approve → `_apply_player_data()` menulis data ke **record `players` yang dipilih**
+  (tidak membuat record baru), peran akun jadi PEMAIN; REJECT menyimpan status+catatan dan pemohon boleh
+  mengajukan ulang.
+- BARU `services/notifications.py` — Firebase Cloud Messaging (topik `admin-review`) dengan
+  `firebase_status()`; tanpa kredensial → `{"delivered": false, "provider": "NOT_CONFIGURED"}`,
+  tidak ada notifikasi dummy, dan tidak ada koleksi/sistem notifikasi kedua (indikator PENDING dipakai).
+- `core/config.py` + `.env.example` — `FIREBASE_PROJECT_ID`, `FIREBASE_SERVICE_ACCOUNT_JSON`,
+  `FIREBASE_ADMIN_TOPIC`.
+
+### Pemeriksaan minimal
+- `scripts/phase4a_verify.py`: **27/27 PASS** (sandbox `alsabbat_phase4a_sandbox`, di-DROP): pengajuan
+  tanpa data pemain 422, posisi di luar enum 422, Guest 401, admin edit data 200 & Member 401,
+  approve → peran PEMAIN + **jumlah record pemain tetap 1 (tanpa duplikat)** + data masuk ke record pemain,
+  kartu member PEMAIN, galeri 200 untuk Pemain / 403 untuk Member & Guest, PEMAIN dilarang mengajukan (403),
+  pengajuan yang sudah diputuskan tidak bisa diedit (409), REJECT + pengajuan ulang, 5 regresi endpoint.
+- `yarn build` sukses (313.74 kB gz). UI live: Guest (section Galeri/Sorotan hilang, menu GALERI hilang,
+  CTA "Login", overflow 0), Member (2 panel terkunci + CTA Daftar Pemain, form pemain lengkap, akun
+  menampilkan Daftar Pemain), halaman detail pertandingan ("MATCH DAY" 22px, tanpa Bagikan Pertandingan &
+  tanpa tombol Pusat Pertandingan), Admin (badge "1 perlu direview", status Firebase BELUM DIKONFIGURASI,
+  dialog review terisi data pemohon).
+- Data uji dibersihkan: akun/pengajuan/OTP uji dihapus, counter member direset (customers 0,
+  member_applications 0); record pemain & tim milik user tidak diubah.
+
+### Masih perlu konfigurasi manual
+- Firebase: `FIREBASE_PROJECT_ID` + `FIREBASE_SERVICE_ACCOUNT_JSON` (service account JSON) dan paket
+  `firebase-admin` di server; sebelum itu status NOT_CONFIGURED dan admin mengandalkan badge PENDING.
+
+
 ## FASE 4 (permintaan user) — MEDIA SOSIAL + PLAY STORE / APP STORE · 29 Agu 2026 · SELESAI
 Scope terbatas Fase 4; Fase 1–3 tidak diubah. Kredensial sosial belum tersedia → mode
 **NOT_CONFIGURED jujur** (tanpa dummy/koneksi palsu).

@@ -16,7 +16,6 @@ import { MatchMediaPanel } from '../../components/public/matchcenter/MatchMediaP
 import { MatchGallerySection } from '../../components/public/matchcenter/MatchGallerySection';
 import { HeadToHeadPanel } from '../../components/public/matchcenter/HeadToHeadPanel';
 import { MatchScoreCardGenerator } from '../../components/public/matchcenter/MatchScoreCardGenerator';
-import { ShareMatchday } from '../../components/public/ShareMatchday';
 import { Reveal } from '../../components/public/Reveal';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { useClub } from '../../context/ClubContext';
@@ -223,18 +222,12 @@ export default function MatchDetailPage() {
               competitionName={data.competition?.name}
               seasonName={data.season?.name}
             />
-
-            <ShareMatchday
-              match={match}
-              clubName={shortName || clubName}
-              competitionName={data.competition?.name}
-            />
           </Reveal>
           </div>
 
           <Reveal className="space-y-6" delay={120}>
             {['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'].includes(match.status) ? (
-              <MatchdayCountdown match={match} clubName={shortName || clubName} compact />
+              <MatchdayCountdown match={match} clubName={shortName || clubName} compact showCta={false} />
             ) : null}
 
             <MatchInfoPanel

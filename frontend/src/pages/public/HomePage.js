@@ -69,7 +69,11 @@ const Band = ({ children, className = '', testId }) => (
 export default function HomePage() {
   const { club, clubName, shortName } = useClub();
   // Fase 3 — Galeri & Sorotan Pemain hanya untuk Pemain & Staf.
-  const { canViewGallery, loading: authLoading } = useBaraya();
+  const { canViewGallery, isBaraya, loading: authLoading } = useBaraya();
+  // Fase 4A — Guest: section Sorotan Pemain & Galeri TIDAK dirender sama sekali.
+  // Member (sudah login): dirender dengan panel terkunci + CTA Daftar Pemain.
+  const showSpotlight = canViewGallery || isBaraya;
+  const showGallery = canViewGallery || isBaraya;
   usePageSeo({
     title: 'Beranda',
     description: club?.description || `Website resmi ${clubName}: jadwal, hasil, skuad, berita, galeri, dan merchandise.`,
@@ -272,7 +276,14 @@ export default function HomePage() {
 
       {/* Spotlight + stats + store */}
       <Band className="pt-0" testId="home-section-spotlight">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]">
+        <div
+          className={`grid gap-8 ${
+            showSpotlight
+              ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]'
+              : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'
+          }`}
+        >
+          {showSpotlight ? (
           <div>
             <RowHeader
               label={t('home.label.spotlight')}
@@ -280,7 +291,7 @@ export default function HomePage() {
               actionLabel={t('home.label.spotlight_action')}
               testId="home-label-spotlight"
             />
-            {!canViewGallery && !authLoading ? (
+            {!canViewGallery ? (
               <RestrictedAccessPanel feature="Sorotan Pemain" compact testId="home-spotlight-restricted" />
             ) : players.loading || authLoading ? (
               <LoadingState rows={1} testId="home-spotlight-loading" />
@@ -295,6 +306,7 @@ export default function HomePage() {
               />
             )}
           </div>
+          ) : null}
 
           <div>
             <RowHeader label={t('home.label.stats')} testId="home-label-stats" />
@@ -327,17 +339,24 @@ export default function HomePage() {
         <TopScorersShowcase />
       </Band>
 
-      {/* Gallery */}
-      <Band className="pt-0" testId="home-section-gallery">
-        <RowHeader label={t('home.label.gallery')} to="/gallery" actionLabel={t('home.label.gallery_action')} testId="home-label-gallery" />
-        {!canViewGallery && !authLoading ? (
-          <RestrictedAccessPanel feature="Galeri AL SABBAT" compact testId="home-gallery-restricted" />
-        ) : albums.loading || authLoading ? (
-          <LoadingState rows={2} testId="home-gallery-loading" />
-        ) : (
-          <GalleryStrip albums={albums.items} />
-        )}
-      </Band>
+      {/* Gallery — disembunyikan penuh untuk Guest (Fase 4A) */}
+      {showGallery ? (
+        <Band className="pt-0" testId="home-section-gallery">
+          <RowHeader
+            label={t('home.label.gallery')}
+            to={canViewGallery ? '/gallery' : undefined}
+            actionLabel={t('home.label.gallery_action')}
+            testId="home-label-gallery"
+          />
+          {!canViewGallery ? (
+            <RestrictedAccessPanel feature="Galeri AL SABBAT" compact testId="home-gallery-restricted" />
+          ) : albums.loading || authLoading ? (
+            <LoadingState rows={2} testId="home-gallery-loading" />
+          ) : (
+            <GalleryStrip albums={albums.items} />
+          )}
+        </Band>
+      ) : null}
 
       {/* YouTube */}
       {youtubeVideos.length || youtubeChannel ? (
