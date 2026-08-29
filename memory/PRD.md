@@ -1,5 +1,42 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## P1 — GALERI GOOGLE DRIVE (navigasi folder + lazy loading) · 29 Agu 2026 · SELESAI (butuh API key untuk e2e nyata)
+### Yang dibuat/diubah
+- `backend/app/services/drive.py` (+`browse_folder`, `_ancestor_path`, `_get_meta`, `_image_item`;
+  `list_folder_images` LAMA tidak diubah → album lama tetap kompatibel).
+- `backend/app/api/routes/gallery.py`: endpoint publik baru
+  `GET /api/gallery/public/albums/{id}/drive-browse?folder_id=&page_token=&page_size=`.
+- BARU `frontend/src/components/public/gallery/DriveFolderBrowser.js` (breadcrumb, folder, grid,
+  infinite scroll, lightbox preview/share/download).
+- `frontend/src/pages/public/GalleryDetailPage.js`: album ber-`drive_folder_url` memakai browser baru
+  (fetch "semua foto sekaligus" dihapus).
+- `frontend/src/pages/public/GalleryPage.js`: menu GALERI = daftar album (AlbumCard), tidak lagi
+  memuat foto Drive semua album sekaligus. `AlbumCard.js`: label "Foto dari Google Drive".
+### Perilaku
+- Satu query Drive per folder (`orderBy=folder,name_natural`) → subfolder + foto dalam satu pageToken.
+- `page_size` = kolom grid × 10 baris (mobile 20 / tablet 30 / laptop 40 / desktop 50), maks 100.
+- Batch berikutnya hanya via IntersectionObserver (sentinel) + tombol manual sebagai fallback.
+- Grid `aspect 4/3` + `object-contain` → ukuran seragam, tidak gepeng, tidak terpotong.
+- Thumbnail `sz=w800` di grid, `sz=w1920` hanya saat preview dibuka.
+- Keamanan: `folder_id` wajib turunan folder album (validasi lewat `parents`) → API key server tidak
+  bisa dipakai menelusuri folder Drive lain (`FORBIDDEN_SCOPE`). Cache 5 menit per (folder, token).
+- Link album yang menunjuk satu FILE gambar → foto langsung ditampilkan (`is_file`).
+### Verifikasi (tanpa Testing Agent)
+- `scripts/p1_drive_browse_verify.py`: **29/29 PASS** (Drive API di-stub): folder/subfolder rekursif,
+  breadcrumb, 120 foto lewat 3 batch tanpa duplikat, page_size, folder kosong, folder luar album ditolak,
+  link foto langsung, cache, link invalid, tanpa API key → NOT_CONFIGURED.
+- Endpoint nyata: 200 (NOT_CONFIGURED, karena key belum diisi), album tidak ada → 404, page_size 500 → 422.
+- UI (album uji + Drive dimock di browser): Sorotan beranda → folder → subfolder → foto (breadcrumb
+  3 level), GALERI → album → folder/foto, album langsung foto, infinite scroll 50→100 (token benar),
+  1 request per folder, kolom 2/3/4/5 dengan page_size 20/30/40/50, rasio tile 1.33, overflow 0 px di
+  390/768/1100/1920, preview full-res (naturalWidth 1200), Download & Share ada, Escape menutup,
+  tombol back browser mengikuti breadcrumb, **0 console error**. `yarn build` sukses.
+- Album/data uji sudah dihapus (albums = 0).
+### KETERBATASAN (blocker e2e)
+- `GOOGLE_DRIVE_API_KEY` **belum ada** di environment pod ini (`backend/.env` tidak memuatnya) →
+  belum bisa diuji dengan folder Drive nyata. Endpoint melaporkan `NOT_CONFIGURED` secara jujur.
+- Google Drive API tidak menyediakan jumlah total item folder → UI menampilkan "N dimuat", bukan total.
+
 ## P0 FIX — Slot Foto Pemain & Staf tidak bergeser (28 Agu 2026) · SELESAI
 - Akar masalah terakhir: `frontend/src/components/admin/ResourceManager.js` memakai `.filter(Boolean)`
   pada field `type: 'gallery'` di `buildInitialValues` (load form) dan `preparePayload` (submit),

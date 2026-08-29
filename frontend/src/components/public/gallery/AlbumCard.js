@@ -70,7 +70,9 @@ export const AlbumCard = ({ album, index = 0, testId }) => {
               {date}
             </p>
           ) : null}
-          <p data-testid={`${testId}-media-total`}>{album.media_total || 0} media</p>
+          <p data-testid={`${testId}-media-total`}>
+            {album.drive_folder_url ? 'Foto dari Google Drive' : `${album.media_total || 0} media`}
+          </p>
         </div>
       </div>
     </Link>

@@ -7,6 +7,7 @@ import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Badge } from '../../components/ui/badge';
 import { MediaLightbox } from '../../components/public/gallery/MediaLightbox';
+import { DriveFolderBrowser } from '../../components/public/gallery/DriveFolderBrowser';
 import { VideoCard } from '../../components/public/gallery/VideoCard';
 import { formatAlbumDate, resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { usePageSeo } from '../../hooks/usePageSeo';
@@ -29,30 +30,10 @@ export default function GalleryDetailPage() {
     setLoading(true);
     setError(null);
     try {
+      // Foto Google Drive TIDAK dimuat di sini: album Drive ditelusuri
+      // per folder + per batch oleh DriveFolderBrowser (pageToken resmi).
       const { data } = await api.get(`/gallery/public/albums/${albumId}`);
-
-      let albumData = data;
-
-      // Jika album belum memiliki media lokal, ambil foto langsung dari Google Drive.
-      if (!albumData.media || albumData.media.length === 0) {
-        try {
-          const { data: driveData } = await api.get(
-            `/gallery/public/albums/${albumId}/drive-photos`
-          );
-
-          if (driveData?.items?.length) {
-            albumData = {
-              ...albumData,
-              media: driveData.items,
-            };
-          }
-        } catch (driveError) {
-          // Album tetap ditampilkan meskipun Drive gagal dibaca.
-          console.warn('Google Drive album fallback failed:', driveError);
-        }
-      }
-
-      setAlbum(albumData);
+      setAlbum(data);
     } catch (e) {
       setError(apiErrorMessage(e, 'Album tidak ditemukan atau belum dipublikasikan.'));
     } finally {
@@ -90,6 +71,7 @@ export default function GalleryDetailPage() {
   }
 
   const media = album.media || [];
+  const hasDrive = !!album.drive_folder_url;
   const photos = media.filter((m) => m.file_type === 'IMAGE');
   const videos = media.filter((m) => m.file_type === 'VIDEO');
   const cover = resolveMediaUrl(album.cover_url_resolved || album.cover_url);
@@ -135,14 +117,23 @@ export default function GalleryDetailPage() {
                 {date}
               </span>
             ) : null}
-            <span className="inline-flex items-center gap-1.5" data-testid="gallery-detail-photo-count">
-              <ImageIcon className="h-4 w-4" />
-              {photos.length} foto
-            </span>
-            <span className="inline-flex items-center gap-1.5" data-testid="gallery-detail-video-count">
-              <Film className="h-4 w-4" />
-              {videos.length} video
-            </span>
+            {hasDrive ? (
+              <span className="inline-flex items-center gap-1.5" data-testid="gallery-detail-drive-source">
+                <ImageIcon className="h-4 w-4" />
+                Foto dari Google Drive
+              </span>
+            ) : (
+              <>
+                <span className="inline-flex items-center gap-1.5" data-testid="gallery-detail-photo-count">
+                  <ImageIcon className="h-4 w-4" />
+                  {photos.length} foto
+                </span>
+                <span className="inline-flex items-center gap-1.5" data-testid="gallery-detail-video-count">
+                  <Film className="h-4 w-4" />
+                  {videos.length} video
+                </span>
+              </>
+            )}
             {album.match?.id ? (
               <Link
                 to={`/matches/${album.match.id}`}
@@ -169,7 +160,9 @@ export default function GalleryDetailPage() {
           Semua album
         </Link>
 
-        {media.length === 0 ? (
+        {hasDrive ? (
+          <DriveFolderBrowser albumId={albumId} albumTitle={album.title} testId="gallery-drive-browser" />
+        ) : media.length === 0 ? (
           <EmptyState
             icon={ImageIcon}
             title="Album ini belum memiliki media"

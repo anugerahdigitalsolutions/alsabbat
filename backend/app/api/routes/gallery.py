@@ -118,6 +118,25 @@ async def public_album_drive_photos(album_id: str):
     return await drive.list_folder_images(album.get("drive_folder_url"))
 
 
+@public_router.get("/albums/{album_id}/drive-browse", summary="Telusuri folder Google Drive album (publik, paginated)")
+async def public_album_drive_browse(
+    album_id: str,
+    folder_id: Optional[str] = Query(None, description="Folder yang dibuka (harus turunan folder album)"),
+    page_token: Optional[str] = Query(None, description="pageToken Google Drive untuk batch berikutnya"),
+    page_size: int = Query(drive.BROWSE_PAGE_SIZE, ge=1, le=drive.MAX_BROWSE_PAGE_SIZE),
+):
+    album = await albums.get_by(_published_query({"id": album_id}))
+    if not album:
+        raise NotFoundError("Gallery album not found")
+    payload = await drive.browse_folder(
+        album.get("drive_folder_url"),
+        folder_id=folder_id,
+        page_token=page_token,
+        page_size=page_size,
+    )
+    return {**payload, "album_title": album.get("title")}
+
+
 @public_router.get("/albums/{album_id}", summary="Published album detail with ordered media (public)")
 async def public_album_detail(album_id: str):
     album = await albums.get_by(_published_query({"id": album_id}))
