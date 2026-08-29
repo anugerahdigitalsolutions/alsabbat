@@ -1,5 +1,47 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## FASE 5 — FINAL TESTING STAGING · 29 Agu 2026 · STATUS: READY (dengan konfigurasi eksternal pending)
+Tanpa Testing Agent, hemat credit, tanpa data dummy permanen (semua uji di database sandbox yang di-DROP;
+sandbox tersisa: 0). Data existing utuh: clubs 1, teams 1, players 1 (tanpa duplikat), matches 1,
+sponsors 2, users 1, site_content 6, customers 0, member_applications 0, customer_otps 0.
+
+### Regresi sandbox (0 penulisan ke DB staging)
+- `phase3_verify.py` **56/56 PASS** (setelah payload uji disesuaikan Fase 4A: `player_data` wajib)
+- `phase4a_verify.py` **27/27 PASS**
+- `phase17_verify.py` **39/39 PASS** (patched: akun sandbox ditandai `email_verified` karena Fase 3)
+- `phase18_verify.py` **30/30 PASS** (patched: galeri kini 403 untuk Guest — aturan Fase 3)
+
+### Pemeriksaan live (read-only)
+- `/api/health` → ok, environment=staging, database=connected; `ENVIRONMENT=staging`,
+  `DB_NAME=alsabbat_platform_staging`, Mongo localhost, frontend `REACT_APP_BACKEND_URL` = domain staging.
+- 13 endpoint publik 200; galeri Guest 403; POST pengajuan Guest 401; 4 endpoint admin tanpa token 401;
+  media & match tidak ada → 404 (bukan 5xx).
+- 13 halaman publik: 0 console error, 0 respons 5xx, overflow 0 px; banner abstrak tampil di semua halaman.
+- Guest: section Galeri & Sorotan Pemain tidak dirender, tanpa CTA Daftar Pemain, tombol CTA → `/login`,
+  badge Play/App Store tersembunyi (belum dikonfigurasi).
+- Admin: login OK (SUPER_ADMIN), 7 halaman admin terbuka tanpa error/console error
+  (dashboard, baraya + pengajuan, matches, social + app store, gallery, players, users).
+- Social: 3 platform NOT_CONFIGURED + `enabled` true; respons TIDAK memuat token/secret
+  (hanya NAMA env yang belum diisi); auth-settings: email NOT_CONFIGURED, google false, firebase NOT_CONFIGURED.
+- Match Card (canvas export feed & story): background feed vs story TIDAK tertukar
+  ("BG FEED 4:5" vs "BG STORY 9:16"), overlay + logo Home/Away tampil, logo sponsor berupa gambar asli
+  (tanpa fallback teks nama), template utuh, `MATCH DAY` 2×.
+- Logika "Pertandingan Berikutnya" (review kode + live): kick-off lewat / sudah ada skor / FINISHED
+  tidak pernah dipakai; countdown tidak berjalan untuk pertandingan lewat.
+
+### BUG DITEMUKAN & DIPERBAIKI (Fase 5)
+1. **Kartu pertandingan (canvas) masih menulis "HARI PERTANDINGAN"** — permintaan Fase 4A belum
+   diterapkan di `MatchScoreCardGenerator.js` (hanya di countdown & scoreboard).
+   Fix: label → `MATCH DAY`, ukuran font 0.024W → **0.048W (2×)**, baseline 0.03W → 0.038W; status lain
+   (LIVE/SELESAI/DITUNDA/DIBATALKAN) tetap ukuran semula. Diverifikasi lewat ekspor canvas feed & story.
+2. **Chip kartu beranda masih "Hari Pertandingan"** → diganti "Match Day" (`HomePage.js`, ukuran tidak diubah).
+3. Skrip regresi lama (phase17/18) gagal karena perubahan sah Fase 3 → skrip uji dipatch (bukan produk).
+
+### Konfigurasi eksternal yang masih NOT_CONFIGURED (bukan bug)
+SMTP2GO, Google OAuth, Firebase FCM, Instagram/TikTok/YouTube OAuth, Google Drive API key.
+Semua melaporkan status jujur, tanpa dummy, dan tidak membuat website crash.
+
+
 ## BACKGROUND BANNER HALAMAN DALAM (abstrak landscape) · 29 Agu 2026 · SELESAI (revisi 2: line-mesh)
 Revisi 2 (setelah user melampirkan referensi asli): pola diganti dari wave sederhana menjadi
 **jalinan garis tipis (line-mesh) yang memilin** seperti referensi — 32–38 garis paralel per keluarga,

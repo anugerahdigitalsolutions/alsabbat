@@ -61,6 +61,8 @@ async def main():
               await db[Collections.CUSTOMERS].count_documents({"member_number": num_a}) == 1
               and len({ra.json()["customer"]["member_code"], rb.json()["customer"]["member_code"]}) == 2)
 
+        # Fase 3: akun baru harus terverifikasi email sebelum bisa login.
+        await get_db()["customers"].update_many({}, {"$set": {"email_verified": True}})
         async def login(email):
             r = await c.post("/baraya/login", json={"email": email, "password": "Sandbox123"})
             return r.json()["access_token"]

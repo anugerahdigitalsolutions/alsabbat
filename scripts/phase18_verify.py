@@ -54,6 +54,8 @@ async def main():
 
         ra = await register("a18@sandbox-alsabbat.dev", "Baraya Sandbox A")
         rb = await register("b18@sandbox-alsabbat.dev", "Baraya Sandbox B")
+        # Fase 3: akun baru harus terverifikasi email sebelum bisa login.
+        await get_db()["customers"].update_many({}, {"$set": {"email_verified": True}})
         ha = {"Authorization": f"Bearer {(await c.post('/baraya/login', json={'email': 'a18@sandbox-alsabbat.dev', 'password': 'Sandbox123'})).json()['access_token']}"}
         hb = {"Authorization": f"Bearer {(await c.post('/baraya/login', json={'email': 'b18@sandbox-alsabbat.dev', 'password': 'Sandbox123'})).json()['access_token']}"}
         card_a = (await c.get("/baraya/member-card", headers=ha)).json()
@@ -129,10 +131,13 @@ async def main():
         check("S3 statistik butuh RBAC", (await c.get("/baraya/admin/stats")).status_code in (401, 403))
 
         # ---- regresi
-        for path in ("/health", "/club", "/players", "/staff", "/matches", "/content/posts", "/gallery/public/albums",
+        for path in ("/health", "/club", "/players", "/staff", "/matches", "/content/posts",
                      "/merchandise/products", "/sponsors", "/banners/public", "/site-content/public"):
             r = await c.get(path)
             check(f"R {path} still 200", r.status_code == 200, str(r.status_code))
+        # Sejak Fase 3 galeri hanya untuk Pemain & Staf → 403 untuk Guest/Member.
+        check("R galeri terkunci untuk Guest (403, aturan Fase 3)",
+              (await c.get("/gallery/public/albums")).status_code == 403)
         check("R member verify masih jalan", (await c.get(f"/member/verify/{code_a}")).json()["member_number"] == num_a)
         check("R admin auth & baraya auth tetap terpisah",
               (await c.get("/baraya/me", headers=hadm)).status_code in (401, 403)

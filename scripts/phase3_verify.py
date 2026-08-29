@@ -159,12 +159,18 @@ async def main():
         )
 
         # ------------------------------------------------------- pengajuan
+        # Fase 4A: pengajuan PEMAIN wajib menyertakan data pemain (field model Pemain existing).
         payload = {
             "type": "PEMAIN",
             "full_name": "Baraya Fase Tiga",
             "phone": "+628123456789",
-            "position": "Tengah",
+            "position": "MIDFIELDER",
             "motivation": "Ingin bermain untuk AL SABBAT dan berkembang bersama tim.",
+            "player_data": {
+                "full_name": "Baraya Fase Tiga",
+                "position": "MIDFIELDER",
+                "jersey_number": 14,
+            },
         }
         app_res = await c.post("/baraya/applications", json=payload, headers=headers)
         check("F3-21 pengajuan Pemain dibuat (201, status PENDING)",

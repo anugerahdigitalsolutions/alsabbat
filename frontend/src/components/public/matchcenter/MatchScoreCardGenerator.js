@@ -26,9 +26,11 @@ const RATIOS = [
   { id: 'story', label: '9:16 Story', width: 1080, height: 1920 },
 ];
 
+const MATCH_DAY_LABEL = 'MATCH DAY';
+
 const STATUS_LABEL = {
-  SCHEDULED: 'HARI PERTANDINGAN',
-  UPCOMING: 'HARI PERTANDINGAN',
+  SCHEDULED: MATCH_DAY_LABEL,
+  UPCOMING: MATCH_DAY_LABEL,
   LIVE: 'LIVE',
   FINISHED: 'SELESAI',
   POSTPONED: 'DITUNDA',
@@ -363,9 +365,11 @@ export const MatchScoreCardGenerator = ({
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = BRAND.gold;
-    ctx.font = `700 ${W * 0.024}px Poppins, sans-serif`;
-    const statusText = STATUS_LABEL[match.status] || 'HARI PERTANDINGAN';
-    ctx.fillText(statusText.split('').join(' '), pad, pad + W * 0.03);
+    const statusText = STATUS_LABEL[match.status] || MATCH_DAY_LABEL;
+    // "Match Day" tampil 2x lebih besar; status lain memakai ukuran semula.
+    const statusScale = statusText === MATCH_DAY_LABEL ? 0.048 : 0.024;
+    ctx.font = `700 ${W * statusScale}px Poppins, sans-serif`;
+    ctx.fillText(statusText.split('').join(' '), pad, pad + W * 0.038);
 
     ctx.fillStyle = 'rgba(254,254,254,0.72)';
     ctx.font = `500 ${W * 0.022}px Poppins, sans-serif`;

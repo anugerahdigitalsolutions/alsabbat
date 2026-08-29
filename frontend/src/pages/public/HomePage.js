@@ -254,7 +254,7 @@ export default function HomePage() {
               <UpcomingMatchCard
                 match={featuredMatch}
                 clubName={badge}
-                competitionName={featuredMatch.competition_name || (nextMatch ? 'Hari Pertandingan' : 'Selesai')}
+                competitionName={featuredMatch.competition_name || (nextMatch ? 'Match Day' : 'Selesai')}
                 testId="home-featured-match"
               />
             ) : (
