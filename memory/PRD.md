@@ -1,5 +1,20 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## FASE 2 — MATCH CARD (29 Agu 2026) · SELESAI
+File: `backend/app/models/domain.py` (MatchBase +8 field additive: card_feed/story_background,
+focus_x, focus_y, zoom), `frontend/src/components/public/matchcenter/MatchScoreCardGenerator.js`,
+`frontend/src/pages/admin/AdminMatchesPage.js`.
+Perbaikan: background & crop (focus X/Y + zoom 100-250%) PER MATCH dengan fallback global;
+overlay kini digambar di KEDUA mode (dulu hanya saat ada background custom → penyebab
+"kadang muncul kadang tidak") + render ditunda sampai pengaturan selesai dimuat;
+`loadImage` fallback fetch→blob (logo tim/sponsor tidak lagi hilang saat header CORS/cache gagal);
+zoom crest efektif (basis 0.68, cap 0.96) + imageSmoothing high; sel sponsor hanya LOGO ASLI
+(fallback teks nama dihapus, sponsor tanpa logo dilewati), pill putih template dipertahankan.
+Verifikasi: piksel canvas — match QA (bg per-match) vs match asli (bg global) berbeda → isolasi terbukti;
+Feed focusY=0 vs Story focusY=100/zoom150 menghasilkan crop berbeda; overlay ON vs OFF berubah di
+feed & story (preview admin, tanpa disimpan); sponsor band ada piksel pill putih + tinta logo;
+0 console error; `yarn build` sukses. Data uji dihapus (matches=1), setting global tidak berubah.
+
 ## FASE 1 — PERBAIKAN UI & BUG (29 Agu 2026) · SELESAI
 File yang diubah (5):
 1. `frontend/src/pages/public/HomePage.js` — `nextMatch` kini: status upcoming + **belum ada skor** +

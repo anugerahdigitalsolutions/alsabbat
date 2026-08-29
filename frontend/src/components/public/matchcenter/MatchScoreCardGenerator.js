@@ -51,11 +51,38 @@ const loadImage = (src) =>
       resolve(null);
       return;
     }
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = resolveMediaUrl(src);
+    const url = resolveMediaUrl(src);
+    const attempt = (href, useCors) =>
+      new Promise((done) => {
+        const img = new Image();
+        if (useCors) img.crossOrigin = 'anonymous';
+        img.onload = () => done(img);
+        img.onerror = () => done(null);
+        img.src = href;
+      });
+
+    // 1) normal (CORS) → 2) fallback fetch→blob (mengatasi header CORS/cache yang
+    // hilang, penyebab logo tim/sponsor "kadang tidak tampil").
+    attempt(url, true).then((img) => {
+      if (img) {
+        resolve(img);
+        return;
+      }
+      fetch(url, { mode: 'cors', cache: 'reload' })
+        .then((res) => (res.ok ? res.blob() : null))
+        .then((blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const objectUrl = URL.createObjectURL(blob);
+          attempt(objectUrl, false).then((img2) => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(img2);
+          });
+        })
+        .catch(() => resolve(null));
+    });
   });
 
 const roundRect = (ctx, x, y, w, h, r) => {
@@ -90,16 +117,23 @@ const drawCrest = (ctx, img, cx, cy, size, label, zoomPercent = 100) => {
 
   if (img) {
     // LOGO = contain (tidak pernah dipotong), dengan safe padding di dalam container.
-    // Zoom admin hanya mengubah besar logo DI DALAM container; hasil akhir tetap
-    // dibatasi (clamp) ke area aman sehingga ujung logo tidak pernah terpotong
+    // Zoom admin benar-benar mengubah besar logo: basis padding dibuat lebih kecil
+    // sehingga zoom maksimum tetap di bawah batas aman (logo tidak pernah terpotong)
     // dan aspect ratio asli selalu dipertahankan.
     const zoom = Math.min(130, Math.max(60, Number(zoomPercent) || 100)) / 100;
-    const inner = size * 0.78 * zoom;
-    const safe = size * 0.94; // batas mutlak: logo wajib tetap di dalam container
-    const scale = Math.min(inner / img.width, inner / img.height, safe / img.width, safe / img.height);
+    const base = size * 0.68;
+    const safe = size * 0.96; // batas mutlak: logo wajib tetap di dalam container
+    const scale = Math.min(
+      (base / img.width) * zoom,
+      (base / img.height) * zoom,
+      safe / img.width,
+      safe / img.height,
+    );
     const w = img.width * scale;
     const h = img.height * scale;
     ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
     ctx.restore();
   } else {
@@ -138,8 +172,9 @@ const sponsorColumns = (count, isStory) => {
 };
 
 /**
- * Satu sel sponsor: pill terang (bukan hitam) + logo `contain` sehingga logo
- * tidak pernah terpotong dan transparansi logo tetap terjaga.
+ * Satu sel sponsor: pill terang (bagian dari template) + LOGO ASLI sponsor
+ * digambar `contain` sehingga transparansi & desain logo tetap utuh.
+ * Tidak ada box/background tambahan dan tidak pernah diganti teks nama.
  */
 const drawSponsorCell = (ctx, item, x, y, w, h) => {
   ctx.save();
@@ -151,22 +186,16 @@ const drawSponsorCell = (ctx, item, x, y, w, h) => {
   ctx.stroke();
   ctx.restore();
 
-  if (item.img) {
-    const maxW = w * 0.84;
-    const maxH = h * 0.7;
-    const scale = Math.min(maxW / item.img.width, maxH / item.img.height);
-    const dw = item.img.width * scale;
-    const dh = item.img.height * scale;
-    ctx.drawImage(item.img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
-    return;
-  }
-
+  if (!item.img) return;
+  const maxW = w * 0.86;
+  const maxH = h * 0.74;
+  const scale = Math.min(maxW / item.img.width, maxH / item.img.height);
+  const dw = item.img.width * scale;
+  const dh = item.img.height * scale;
   ctx.save();
-  ctx.fillStyle = BRAND.blue;
-  ctx.font = `700 ${h * 0.3}px Poppins, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(truncate(ctx, (item.name || '').toUpperCase(), w * 0.86), x + w / 2, y + h / 2);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(item.img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   ctx.restore();
 };
 
@@ -208,7 +237,13 @@ export const MatchScoreCardGenerator = ({
     designOverride && designOverride[key] !== undefined && designOverride[key] !== null
       ? designOverride[key]
       : design[key];
-  const customBackground = ratio.id === 'story' ? pick('storyBackground') : pick('feedBackground');
+  const isStoryRatio = ratio.id === 'story';
+  // Background & crop PER MATCH (prioritas) → fallback ke pengaturan global.
+  const matchBackground = isStoryRatio ? match?.card_story_background : match?.card_feed_background;
+  const customBackground = matchBackground || (isStoryRatio ? pick('storyBackground') : pick('feedBackground'));
+  const bgFocusX = clampPercent(isStoryRatio ? match?.card_story_focus_x : match?.card_feed_focus_x, 50);
+  const bgFocusY = clampPercent(isStoryRatio ? match?.card_story_focus_y : match?.card_feed_focus_y, 50);
+  const bgZoom = clampPercent(isStoryRatio ? match?.card_story_zoom : match?.card_feed_zoom, 100, 100, 250);
   const overlayEnabled = pick('overlayEnabled') !== false;
   const overlayColor = pick('overlayColor') || MATCH_CARD_DEFAULTS.overlayColor;
   const overlayOpacity = clampPercent(pick('overlayOpacity'), MATCH_CARD_DEFAULTS.overlayOpacity);
@@ -239,8 +274,8 @@ export const MatchScoreCardGenerator = ({
       loadImage(customBackground ? resolveMediaUrl(customBackground) : null),
     ]);
 
-    // Sponsor aktif: semua tampil, logo dimuat contain (tidak pernah dipotong)
-    const sponsorSource = (activeSponsors || []).filter((s) => s && (s.logo || s.name));
+    // Sponsor aktif: hanya yang punya LOGO (tidak pernah diganti teks nama)
+    const sponsorSource = (activeSponsors || []).filter((s) => s && s.logo);
     const sponsorItems = await Promise.all(
       sponsorSource.map(async (s) => ({ name: s.name, img: await loadImage(resolveMediaUrl(s.logo)) })),
     );
@@ -249,17 +284,14 @@ export const MatchScoreCardGenerator = ({
     ctx.fillRect(0, 0, W, H);
 
     if (customBgImg) {
-      // ---- MODE BACKGROUND CUSTOM (diatur Admin per rasio) ----
-      // Urutan layer: background image -> overlay -> scrim -> logo/teks/data.
-      const scale = Math.max(W / customBgImg.width, H / customBgImg.height);
+      // ---- MODE BACKGROUND CUSTOM (per match, fallback global) ----
+      // Urutan layer: background image (crop) -> overlay -> scrim -> logo/teks/data.
+      const zoom = bgZoom / 100;
+      const scale = Math.max(W / customBgImg.width, H / customBgImg.height) * zoom;
       const dw = customBgImg.width * scale;
       const dh = customBgImg.height * scale;
-      ctx.drawImage(customBgImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
-
-      if (overlayEnabled) {
-        ctx.fillStyle = hexToRgba(overlayColor, overlayOpacity);
-        ctx.fillRect(0, 0, W, H);
-      }
+      // Crop mengikuti titik fokus admin (50/50 = tengah, seperti perilaku lama).
+      ctx.drawImage(customBgImg, (W - dw) * (bgFocusX / 100), (H - dh) * (bgFocusY / 100), dw, dh);
 
       // Scrim atas & bawah tetap dipakai agar teks selalu terbaca di atas foto apa pun.
       const topScrimC = ctx.createLinearGradient(0, 0, 0, H * 0.3);
@@ -315,6 +347,13 @@ export const MatchScoreCardGenerator = ({
       bottomScrim.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = bottomScrim;
       ctx.fillRect(0, H * 0.4, W, H * 0.6);
+    }
+
+    // OVERLAY: berlaku untuk KEDUA mode (custom background maupun default) supaya
+    // hasil Feed & Story selalu konsisten dengan pengaturan admin.
+    if (overlayEnabled) {
+      ctx.fillStyle = hexToRgba(overlayColor, overlayOpacity);
+      ctx.fillRect(0, 0, W, H);
     }
 
     const pad = W * 0.08;
@@ -481,6 +520,9 @@ export const MatchScoreCardGenerator = ({
     transparency,
     sponsorSignature,
     customBackground,
+    bgFocusX,
+    bgFocusY,
+    bgZoom,
     overlayEnabled,
     overlayColor,
     overlayOpacity,
@@ -494,8 +536,12 @@ export const MatchScoreCardGenerator = ({
   }, [fixedRatio]);
 
   useEffect(() => {
+    // Tunggu pengaturan desain selesai dimuat agar overlay/background tidak
+    // pernah dirender dengan nilai default sementara (penyebab overlay "kadang tidak muncul").
+    if (design.loading && !designOverride) return;
     render();
-  }, [render]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [render, design.loading]);
 
   const fileName = () => {
     const opponent = (match?.opponent?.name || 'lawan').toLowerCase().replace(/[^a-z0-9]+/g, '-');

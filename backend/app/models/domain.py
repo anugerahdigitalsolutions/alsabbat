@@ -263,6 +263,17 @@ class MatchBase(AppBaseModel):
     home_score: Optional[int] = Field(default=None, ge=0, le=99)
     away_score: Optional[int] = Field(default=None, ge=0, le=99)
     match_cover: Optional[str] = None
+    # Kartu Pertandingan per-match (additive, backward-compatible):
+    # background & crop khusus untuk kartu Feed (4:5) dan Story (9:16).
+    # Kosong = pakai pengaturan global site_content seperti sebelumnya.
+    card_feed_background: Optional[str] = None
+    card_feed_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
+    card_feed_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
+    card_feed_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    card_story_background: Optional[str] = None
+    card_story_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
+    card_story_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
+    card_story_zoom: Optional[int] = Field(default=None, ge=100, le=250)
     description: Optional[str] = Field(default=None, max_length=4000)
     # Prepared relationship placeholders for the Match Center phase
     lineup_ready: bool = False
