@@ -17,7 +17,7 @@ export const AlbumCard = ({ album, index = 0, testId }) => {
     >
       <div className="relative h-44 w-full overflow-hidden" style={{ backgroundColor: 'var(--surface-3)' }}>
         {cover ? (
-          <img src={cover} alt={album.title} className="h-full w-full object-cover" loading="lazy" />
+          <img src={cover} alt={album.title} className="absolute inset-0 block h-full w-full object-cover object-center" loading="lazy" />
         ) : (
           <div className="flex h-full items-center justify-center">
             <ImageIcon className="h-7 w-7" style={{ color: 'rgba(0,0,0,0.22)' }} />

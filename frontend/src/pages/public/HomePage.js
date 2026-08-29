@@ -22,6 +22,7 @@ import { usePageSeo } from '../../hooks/usePageSeo';
 import { useClub } from '../../context/ClubContext';
 import { useSiteText } from '../../lib/siteContent';
 import { bannerToSlide } from '../../lib/banners';
+import { kickoffAt } from '../../components/public/MatchdayCountdown';
 
 const UPCOMING = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 const SOCIAL_ICONS = { instagram: Instagram, youtube: Youtube, facebook: Facebook, twitter: Twitter, tiktok: Music2 };
@@ -57,7 +58,7 @@ const RowHeader = ({ label, to, actionLabel, testId }) => {
 };
 
 const Band = ({ children, className = '', testId }) => (
-  <section className={`als-frame-inner py-10 sm:py-12 ${className}`} data-testid={testId}>
+  <section className={`als-frame-inner py-6 sm:py-8 ${className}`} data-testid={testId}>
     {children}
   </section>
 );
@@ -82,7 +83,21 @@ export default function HomePage() {
   const t = useSiteText({ club: badge });
   const upcoming = matches.items.filter((m) => UPCOMING.includes(m.status));
   const finished = matches.items.filter((m) => m.status === 'FINISHED');
-  const nextMatch = upcoming[upcoming.length - 1] || null;
+  // "Pertandingan Berikutnya" = kick-off (WIB) yang belum lewat & hasil belum diisi,
+  // diambil yang PALING DEKAT. Pertandingan yang sudah lewat tidak pernah dipakai.
+  const nextMatch = useMemo(() => {
+    const nowMs = Date.now();
+    const hasResult = (m) =>
+      m.home_score !== null && m.home_score !== undefined && m.away_score !== null && m.away_score !== undefined;
+    return (
+      upcoming
+        .filter((m) => !hasResult(m))
+        .map((m) => ({ match: m, at: kickoffAt(m) }))
+        .filter((item) => item.at && item.at.getTime() > nowMs)
+        .sort((a, b) => a.at - b.at)[0]?.match || null
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matches.items]);
   const lastMatch = finished[0] || null;
   const featuredMatch = nextMatch || lastMatch;
   const spotlightPlayer = useMemo(() => pickSpotlightPlayer(players.items), [players.items]);

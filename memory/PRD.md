@@ -1,5 +1,33 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## FASE 1 — PERBAIKAN UI & BUG (29 Agu 2026) · SELESAI
+File yang diubah (5):
+1. `frontend/src/pages/public/HomePage.js` — `nextMatch` kini: status upcoming + **belum ada skor** +
+   `kickoffAt()` (WIB, `+07:00`) **> sekarang**, lalu diurutkan dan diambil yang **paling dekat**.
+   Pertandingan yang kick-off-nya sudah lewat tidak pernah dipilih lagi (countdown tak pernah 00 00 00 00).
+   `Band` py-10/12 → **py-6/8** (spacing antar section lebih rapat; struktur/desain tidak diubah).
+2. `frontend/src/components/public/home/YoutubeShowcase.js` — urutan dibalik: video **terakhir
+   ditambahkan tampil paling atas** (`parseYoutubeList` sort turun; fallback key lama `[3,2,1]`).
+3. `frontend/src/components/public/matchcenter/MatchScoreCardGenerator.js` — blok HTML "Didukung oleh"
+   (grid logo sponsor di bawah kartu) **dihapus**. Band sponsor DI DALAM gambar kartu tidak diubah.
+4. Thumbnail presisi center + crop rapi: `home/GalleryStrip.js`, `gallery/AlbumCard.js`
+   (absolute inset-0 + `object-cover object-center`), `gallery/DriveFolderBrowser.js`
+   (grid `object-contain` → `object-cover object-center`).
+5. `frontend/src/pages/admin/AdminMatchesPage.js` — form hasil pertandingan: field `time` duplikat
+   dihapus, label jadi "Skor Tim Kandang (Home)" / "Skor Tim Tandang (Away)" + placeholder + help,
+   status diberi help ("pilih FINISHED lalu isi kedua skor…"), kolom Slug/Utama tidak tersentuh.
+
+Verifikasi minimal (tanpa Testing Agent, semua data uji dibuat lalu dihapus):
+- 3 pertandingan uji (LEWAT 29-08, DEKAT 01-09, JAUH 01-12) → panel memilih **DEKAT** (bukan yang lewat,
+  bukan yang jauh), countdown berjalan.
+- DEKAT di-set FINISHED 3-1 → panel otomatis pindah ke 03-09 (real), jadi hasil yang sudah diinput
+  tidak lagi dianggap "Pertandingan Berikutnya".
+- Halaman detail pertandingan: `score-card-sponsors` = **0**, canvas kartu tetap ada.
+- Thumbnail: album card & strip beranda `object-fit: cover`, `object-position: 50% 50%`, ukuran gambar
+  == ukuran frame (tanpa geser/ruang kosong).
+- Spacing section: padding 32px (sebelumnya 40/48px). Overflow horizontal 0 px. 0 console error.
+- `yarn build` sukses (hanya warning lama `PlayerStatsBoard.js`). Data pertandingan asli tidak diubah.
+
 ## BLOCKER DEPLOY aaPanel DIBERESKAN (29 Agu 2026) · SELESAI
 - `backend/requirements.txt` (satu-satunya file yang diubah):
   **dihapus** `emergentintegrations==0.2.0` (tidak diimpor kode apa pun & tidak tersedia di PyPI →

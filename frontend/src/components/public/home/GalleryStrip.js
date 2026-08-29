@@ -32,7 +32,7 @@ export const GalleryStrip = ({ albums = [] }) => {
             data-testid={`home-gallery-tile-${album.id}`}
           >
             {cover ? (
-              <img src={cover} alt={album.title} className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" />
+          <img src={cover} alt={album.title} className="absolute inset-0 h-full w-full object-cover object-center" loading="lazy" decoding="async" />
             ) : (
               <span className="als-stadium-glow absolute inset-0" aria-hidden="true" />
             )}

@@ -320,7 +320,7 @@ export const DriveFolderBrowser = ({ albumId, albumTitle, testId = 'drive-browse
                         loading="lazy"
                         decoding="async"
                         referrerPolicy="no-referrer"
-                        className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                        className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
                       />
                     </button>
                     <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100 sm:opacity-100">
