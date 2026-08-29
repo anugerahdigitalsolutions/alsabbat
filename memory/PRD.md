@@ -1173,3 +1173,14 @@ SMTP2GO (OTP email), Google OAuth, Firebase (push), Google Drive API key, Instag
 
 **Cleanup**: seluruh sandbox DB (`alsabbat_phase3/4a/4b/5_sandbox`) sudah di-drop; DB staging tidak diubah.
 **Status**: READY untuk deploy ke GitHub → aaPanel STAGING.
+
+## UI — Sorotan Pemain publik + CTA Daftar Pemain di Akun Baraya (29 Agu 2026)
+Frontend only (tanpa backend/API/DB/auth/Admin).
+- `pages/public/HomePage.js`: section **Sorotan Pemain** kini tampil untuk SEMUA pengunjung (Guest, Member, Pemain, Staf) memakai komponen existing `PlayerSpotlight` + data publik `/players`. `RestrictedAccessPanel` untuk spotlight dihapus (gating Galeri TIDAK diubah), grid 3 kolom konsisten, link "Lihat Pemain" → `/teams`.
+- `pages/public/BarayaAccountPage.js`:
+  - Tombol **"Daftar Pemain"** (`data-testid="baraya-profile-player-cta"`) di **pojok kanan atas card "Data Baraya"**, hanya saat `canApplyPlayer` (MEMBER). Tanpa tombol Staf di area profil; alur tetap ke `/akun/pengajuan` yang sudah ada.
+  - CTA duplikat "Daftar Pemain" di sidebar Ringkasan Akun dihilangkan (dipindah ke atas); "Daftar Staff" untuk PEMAIN dan fallback "Pengajuan Saya" tetap seperti semula.
+  - Section **Sorotan Pemain** (`baraya-account-spotlight`) memakai `PlayerSpotlight` yang sama → tampil untuk Member, Pemain, dan Staf.
+- Verifikasi: Guest & Member melihat spotlight di beranda; /akun menampilkan spotlight + CTA; tanpa tombol Staf di card profil; overflow 0 px (1920/1440/390); console 0 error; `yarn build` sukses (hanya warning eslint lama `PlayerStatsBoard.js`).
+- Akun uji `uji.ui@sandbox-alsabbat.dev` beserta sesi & OTP sudah dihapus; counter nomor member direset ke 0; customers kembali 0.
+- Catatan: DB staging masih memuat data uji lama dari fork sebelumnya (`players`: "Uji 4B", match "AL SABBAT AWAY") — belum dihapus karena di luar scope.

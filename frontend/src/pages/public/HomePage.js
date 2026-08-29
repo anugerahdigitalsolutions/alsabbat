@@ -70,9 +70,9 @@ export default function HomePage() {
   const { club, clubName, shortName } = useClub();
   // Fase 3 — Galeri & Sorotan Pemain hanya untuk Pemain & Staf.
   const { canViewGallery, isBaraya, loading: authLoading } = useBaraya();
-  // Fase 4A — Guest: section Sorotan Pemain & Galeri TIDAK dirender sama sekali.
+  // Fase 4A — Guest: section Galeri TIDAK dirender sama sekali.
   // Member (sudah login): dirender dengan panel terkunci + CTA Daftar Pemain.
-  const showSpotlight = canViewGallery || isBaraya;
+  // Sorotan Pemain: tampil untuk semua (Guest, Member, Pemain, Staf) — data pemain memang publik.
   const showGallery = canViewGallery || isBaraya;
   usePageSeo({
     title: 'Beranda',
@@ -276,24 +276,15 @@ export default function HomePage() {
 
       {/* Spotlight + stats + store */}
       <Band className="pt-0" testId="home-section-spotlight">
-        <div
-          className={`grid gap-8 ${
-            showSpotlight
-              ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]'
-              : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'
-          }`}
-        >
-          {showSpotlight ? (
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]">
           <div>
             <RowHeader
               label={t('home.label.spotlight')}
-              to={canViewGallery ? '/teams' : undefined}
+              to="/teams"
               actionLabel={t('home.label.spotlight_action')}
               testId="home-label-spotlight"
             />
-            {!canViewGallery ? (
-              <RestrictedAccessPanel feature="Sorotan Pemain" compact testId="home-spotlight-restricted" />
-            ) : players.loading || authLoading ? (
+            {players.loading ? (
               <LoadingState rows={1} testId="home-spotlight-loading" />
             ) : spotlightPlayer ? (
               <PlayerSpotlight player={spotlightPlayer} />
@@ -306,7 +297,6 @@ export default function HomePage() {
               />
             )}
           </div>
-          ) : null}
 
           <div>
             <RowHeader label={t('home.label.stats')} testId="home-label-stats" />
