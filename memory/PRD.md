@@ -1,5 +1,27 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## BACKGROUND BANNER HALAMAN DALAM (abstrak landscape) · 29 Agu 2026 · SELESAI
+Permintaan: ganti HANYA background kotak biru pada banner halaman dalam (Tentang Klub, Pemain,
+Pertandingan, Merchandise, dll) menjadi abstrak landscape elegan; teks/layout/ukuran/rounded/navbar/
+typography/spacing tidak diubah.
+- BARU `components/public/PageHeaderBackdrop.js` — SVG inline (`viewBox 0 0 1200 420`,
+  `preserveAspectRatio="none"` → landscape mengikuti banner). Gradasi `#012891 → #02329E → #010F38`,
+  glow biru halus kanan-atas, radial gold `#FCCF2B` sangat lembut kanan-bawah, 4 wave mengalir
+  (putih 10–22% + satu garis gold 28–30%) plus 2 pita lebar transparan untuk kedalaman.
+  **5 variasi pola** dipetakan per rute: `/club|/contact`=0, `/teams|/players`=1, `/matches`=2,
+  `/merchandise|/order|/checkout`=3, `/news|/achievements|/sponsors`=4; rute lain memakai hash nama
+  rute (stabil, tetap satu identitas visual).
+- `components/public/PublicPageHeader.js` — backdrop dirender hanya bila TIDAK ada `backgroundImage`
+  (halaman dengan foto hero tetap seperti semula); `als-pitch-lines` diturunkan ke opacity 25% dan
+  scrim kiri→kanan dilembutkan (0.78 → 0.1) agar area teks tetap tenang & teks putih tetap terbaca,
+  sisi kanan memperlihatkan wave.
+- Tidak ada perubahan lain: ukuran banner tetap 1328×330/357 px, rounded 26px, teks, urutan elemen,
+  navbar, tipografi, dan spacing identik.
+- Pemeriksaan: `yarn build` sukses; screenshot `/club` (variasi 0), `/teams` (1), `/matches` (2),
+  `/merchandise` (3), `/news` (4) — semua wave tampil, teks tetap kontras, overflow horizontal 0 px.
+  CATATAN: frontend perlu `sudo supervisorctl restart frontend` bila komponen baru tidak ter-hot-reload.
+
+
 ## FASE 4A (permintaan user) — USER FLOW, MATCH CARD & PENDAFTARAN PEMAIN · 29 Agu 2026 · SELESAI
 Scope terbatas Fase 4A. Fase 1–4 lain tidak diubah. Firebase belum dikonfigurasi → mode NOT_CONFIGURED jujur.
 
