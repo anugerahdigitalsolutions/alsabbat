@@ -10,6 +10,7 @@ import { Checkbox } from '../../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { SocialConnections } from '../../components/admin/SocialConnections';
+import { AppStoreLinksPanel } from '../../components/admin/AppStoreLinksPanel';
 import { toast } from 'sonner';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
@@ -247,6 +248,8 @@ export default function AdminSocialPage() {
       </div>
 
       <SocialConnections />
+
+      <AppStoreLinksPanel />
 
       {/* Platform dashboard */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="social-platform-cards">

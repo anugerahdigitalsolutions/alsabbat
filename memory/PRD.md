@@ -1,5 +1,57 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## FASE 4 (permintaan user) — MEDIA SOSIAL + PLAY STORE / APP STORE · 29 Agu 2026 · SELESAI
+Scope terbatas Fase 4; Fase 1–3 tidak diubah. Kredensial sosial belum tersedia → mode
+**NOT_CONFIGURED jujur** (tanpa dummy/koneksi palsu).
+
+### Backend (additive)
+- `app/services/social/oauth.py` — `connection_state()`: status `NOT_CONNECTED` → **`DISCONNECTED`**
+  (dan CONNECTED hanya bila token benar-benar tersimpan), +field `enabled` (default true).
+  Kredensial tetap hanya dari environment; token tetap terenkripsi & tidak pernah keluar ke UI.
+- `app/models/social.py` — +`SocialPlatformSettings {enabled: bool}`.
+- `app/api/routes/social.py` — endpoint baru **`PATCH /api/social/connections/{platform}/settings`**
+  (aktif/nonaktif, permission `social:publish`); `authorize` menolak platform yang dinonaktifkan;
+  `_run_publish` menolak publikasi ke platform yang dinonaktifkan (termasuk `YOUTUBE_SHORTS` → basis `YOUTUBE`).
+  Endpoint existing (`/platforms`, `/connections`, OAuth authorize/callback, DELETE disconnect) TIDAK dirombak.
+- `app/models/domain.py` — `ClubBase` +4 field additive: `app_playstore_url`, `app_playstore_enabled`,
+  `app_appstore_url`, `app_appstore_enabled` + validator URL (**wajib https://**, menolak
+  `javascript:`/`data:`/`vbscript:`/`file:`/`<script`, menolak spasi). `ClubUpdate` kini MEMBAWA validator
+  yang sama sehingga PATCH juga tervalidasi. String kosong `""` dipakai untuk MENGHAPUS tautan
+  (layer update Repository mengabaikan `None`).
+
+### Frontend
+- `components/admin/SocialConnections.js` — label status `DISCONNECTED` = "BELUM TERHUBUNG", **switch
+  Aktif/Nonaktif** per platform, tombol Hubungkan mati bila belum dikonfigurasi ATAU dinonaktifkan,
+  dan baris info syarat + env yang belum tersedia saat NOT_CONFIGURED.
+- BARU `components/admin/AppStoreLinksPanel.js` — panel "Aplikasi (Play Store & App Store)":
+  URL + switch tampil/sembunyi + Simpan + Hapus URL per platform, memakai `GET /api/club/active`
+  dan `PATCH /api/club/{id}` (tanpa sistem konfigurasi kedua).
+- `pages/admin/AdminSocialPage.js` — panel aplikasi dipasang di bawah panel Media Sosial.
+- `components/public/PublicFooter.js` — badge Google Play/App Store kini **anchor** ke URL konfigurasi
+  (`target=_blank`, `rel="noopener noreferrer"`), tampil HANYA bila enabled + URL https valid; blok
+  "APLIKASI" hilang bila keduanya nonaktif; popup "Segera hadir" dihapus (tidak lagi relevan).
+  Ukuran/warna/posisi badge TIDAK diubah (tetap 152×48, hitam).
+
+### Pemeriksaan minimal (tanpa Testing Agent)
+- `yarn build` sukses (311.87 kB gz, hanya warning lama `PlayerStatsBoard.js`).
+- API (admin token, preview): `/social/connections` → 3 platform `NOT_CONFIGURED` + `enabled:true`,
+  0 secret/token di respons; toggle nonaktif→aktif OK; `authorize` melaporkan env yang kurang (bukan sukses palsu);
+  `PATCH /club/{id}` → `javascript:alert(1)` **422**, `http://` **422**, `https://…` tersimpan, `""` menghapus.
+- UI: `/admin/social` menampilkan status BELUM DIKONFIGURASI + switch + syarat env; footer menampilkan badge
+  Google Play (152×48, href benar) saat aktif, dan menyembunyikan App Store yang belum diisi; setelah
+  dinonaktifkan blok badge hilang; overflow horizontal 0 px; website tidak crash pada mode NOT_CONFIGURED.
+- Data uji dibersihkan: URL toko dikosongkan kembali, dokumen `social_connections` uji dihapus
+  (social_connections 0, social_publications 0).
+
+### Masih perlu konfigurasi manual (BLOCKER eksternal)
+- Instagram: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_REDIRECT_URI`
+- TikTok: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`
+- YouTube: `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REDIRECT_URI`
+  (semua sudah terdokumentasi di `backend/.env.example`; redirect URI harus sama persis dengan
+  `/api/social/oauth/{platform}/callback` pada domain API). Setelah env diisi + restart backend,
+  status otomatis berubah ke DISCONNECTED dan tombol Hubungkan aktif — tanpa perubahan kode.
+
+
 ## FASE 3 (permintaan user) — SISTEM USER, OTP, GOOGLE LOGIN, MEMBER/PEMAIN/STAFF · 29 Agu 2026 · SELESAI
 Keputusan user: SMTP2GO API Key (A), Google OAuth milik klub sendiri (B), OTP untuk pendaftaran + reset
 kata sandi (C, bukan 2FA), Galeri **dan** Sorotan Pemain terkunci total untuk MEMBER (C),

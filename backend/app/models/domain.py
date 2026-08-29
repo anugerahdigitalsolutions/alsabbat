@@ -70,10 +70,42 @@ class ClubBase(AppBaseModel):
     official_website: Optional[str] = None
     social_media: SocialLinks = Field(default_factory=SocialLinks)
     seo: SeoMeta = Field(default_factory=SeoMeta)
+    # Fase 4 — tautan aplikasi mobile (additive; kosong => ikon tidak ditampilkan)
+    app_playstore_url: Optional[str] = Field(default=None, max_length=500)
+    app_playstore_enabled: bool = False
+    app_appstore_url: Optional[str] = Field(default=None, max_length=500)
+    app_appstore_enabled: bool = False
     status: EntityStatus = EntityStatus.ACTIVE
 
+    @field_validator("app_playstore_url", "app_appstore_url", mode="before")
+    @classmethod
+    def _store_url(cls, value):
+        # "" dipakai untuk MENGHAPUS tautan (None diabaikan oleh layer update PATCH).
+        if value in (None, ""):
+            return ""
+        url = str(value).strip()
+        lowered = url.lower()
+        if not lowered.startswith("https://"):
+            raise ValueError("Tautan toko aplikasi harus memakai https://")
+        if any(
+            scheme in lowered
+            for scheme in ("javascript:", "data:", "vbscript:", "file:", "<script")
+        ):
+            raise ValueError("Tautan toko aplikasi tidak valid.")
+        if " " in url or "\n" in url or "\t" in url:
+            raise ValueError("Tautan toko aplikasi tidak boleh memuat spasi.")
+        return url
 
-ClubUpdate = make_update_model("ClubUpdate", ClubBase)
+
+ClubUpdate = make_update_model(
+    "ClubUpdate",
+    ClubBase,
+    validators={
+        "_store_url": field_validator("app_playstore_url", "app_appstore_url", mode="before")(
+            ClubBase._store_url.__func__
+        )
+    },
+)
 
 
 class Club(ClubBase, DBModel):

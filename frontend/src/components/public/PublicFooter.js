@@ -1,18 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Globe, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide-react';
 import { ClubCrestMark } from '../shared/ClubCrestMark';
 import { useClub } from '../../context/ClubContext';
 import { PUBLIC_NAV } from './PublicHeader';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../ui/dialog';
-
 const SOCIALS = [
   { key: 'instagram', label: 'Instagram', Icon: Instagram },
   { key: 'facebook', label: 'Facebook', Icon: Facebook },
@@ -37,10 +28,11 @@ const AppleGlyph = () => (
 );
 
 /** Badge store resmi bergaya HITAM (teks putih), proporsi tetap, tidak terdistorsi. */
-const StoreBadge = ({ onClick, glyph, caption, name, testId }) => (
-  <button
-    type="button"
-    onClick={onClick}
+const StoreBadge = ({ href, glyph, caption, name, testId }) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
     className="als-focus inline-flex h-[48px] w-[152px] shrink-0 items-center gap-2.5 px-3 transition-transform duration-200 hover:-translate-y-px"
     style={{
       backgroundColor: '#000000',
@@ -62,14 +54,18 @@ const StoreBadge = ({ onClick, glyph, caption, name, testId }) => (
         {name}
       </span>
     </span>
-  </button>
+  </a>
 );
 
 export const PublicFooter = () => {
   const { club, clubName } = useClub();
   const social = club?.social_media || {};
   const contact = club?.contact || {};
-  const [appSoonOpen, setAppSoonOpen] = useState(false);
+  // Fase 4 — ikon toko aplikasi hanya tampil bila diaktifkan Admin DAN URL https terisi.
+  const safeStoreUrl = (value) =>
+    typeof value === 'string' && /^https:\/\/[^\s]+$/i.test(value.trim()) ? value.trim() : '';
+  const playstoreUrl = club?.app_playstore_enabled ? safeStoreUrl(club?.app_playstore_url) : '';
+  const appstoreUrl = club?.app_appstore_enabled ? safeStoreUrl(club?.app_appstore_url) : '';
 
   return (
     <footer
@@ -172,31 +168,37 @@ export const PublicFooter = () => {
             ) : null}
           </div>
 
-          {/* Badge aplikasi — belum rilis, jadi hanya membuka modal (tanpa tautan eksternal). */}
-          <div className="mt-5">
-            <p
-              className="font-display mb-2.5 text-[10px] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: 'rgba(0,0,0,0.45)' }}
-            >
-              Aplikasi
-            </p>
-            <div className="flex flex-wrap gap-2" data-testid="footer-app-badges">
-              <StoreBadge
-                onClick={() => setAppSoonOpen(true)}
-                glyph={<GooglePlayGlyph />}
-                caption="Segera di"
-                name="Google Play"
-                testId="footer-app-badge-google-play"
-              />
-              <StoreBadge
-                onClick={() => setAppSoonOpen(true)}
-                glyph={<AppleGlyph />}
-                caption="Segera di"
-                name="App Store"
-                testId="footer-app-badge-app-store"
-              />
+          {/* Badge aplikasi — tampil hanya bila dikonfigurasi di Admin → Media Sosial. */}
+          {playstoreUrl || appstoreUrl ? (
+            <div className="mt-5">
+              <p
+                className="font-display mb-2.5 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                style={{ color: 'rgba(0,0,0,0.45)' }}
+              >
+                Aplikasi
+              </p>
+              <div className="flex flex-wrap gap-2" data-testid="footer-app-badges">
+                {playstoreUrl ? (
+                  <StoreBadge
+                    href={playstoreUrl}
+                    glyph={<GooglePlayGlyph />}
+                    caption="Unduh di"
+                    name="Google Play"
+                    testId="footer-app-badge-google-play"
+                  />
+                ) : null}
+                {appstoreUrl ? (
+                  <StoreBadge
+                    href={appstoreUrl}
+                    glyph={<AppleGlyph />}
+                    caption="Unduh di"
+                    name="App Store"
+                    testId="footer-app-badge-app-store"
+                  />
+                ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
 
@@ -216,40 +218,6 @@ export const PublicFooter = () => {
         </div>
       </div>
 
-      <Dialog open={appSoonOpen} onOpenChange={setAppSoonOpen}>
-        <DialogContent className="bg-white sm:max-w-md" data-testid="footer-app-soon-dialog">
-          <DialogHeader>
-            <DialogTitle
-              className="font-display text-base font-extrabold uppercase tracking-[0.06em]"
-              style={{ color: 'var(--club-secondary)' }}
-            >
-              Aplikasi Segera Hadir
-            </DialogTitle>
-            <DialogDescription
-              className="pt-1 text-[14px] leading-relaxed"
-              style={{ color: 'var(--muted-fg)' }}
-              data-testid="footer-app-soon-message"
-            >
-              Segera hadir, aplikasi masih dalam pengembangan
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={() => setAppSoonOpen(false)}
-              className="als-focus font-display inline-flex min-h-[42px] w-full items-center justify-center px-5 text-[12px] font-bold uppercase tracking-[0.08em] transition-transform duration-200 hover:-translate-y-px sm:w-auto"
-              style={{
-                backgroundColor: 'var(--club-primary)',
-                color: 'var(--club-secondary)',
-                borderRadius: 'var(--radius-sm)',
-              }}
-              data-testid="footer-app-soon-close"
-            >
-              Tutup
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </footer>
   );
 };
