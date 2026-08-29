@@ -342,7 +342,7 @@ export const CinematicHero = ({ slides = [], stats = [], clubName = 'AL SABBAT',
       {/* Next Match bar — DI BAWAH foto banner, tidak menutupi foto */}
       {panel ? (
         <div
-          className="als-hero-step flex min-h-[116px] items-center px-4 py-7 sm:min-h-[120px] sm:px-6 sm:py-8 lg:min-h-[124px] lg:px-8 lg:py-9"
+          className="als-hero-step flex min-h-[116px] items-center px-4 py-4 sm:min-h-[120px] sm:px-6 sm:py-3 lg:min-h-[124px] lg:px-8 lg:py-2"
           style={{
             animationDelay: '700ms',
             borderTop: '1px solid rgba(252,207,43,0.22)',

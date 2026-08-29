@@ -1,5 +1,19 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## PANEL "PERTANDINGAN BERIKUTNYA" — ISI DIPERBESAR (29 Agu 2026) · SELESAI
+- `frontend/src/components/public/home/HeroNextMatchPanel.js`: label 9px → 11/12/13px, crest 24px → 34px
+  (mobile/tablet) & 44px (desktop, tetap `object-contain`), nama tim 11px → 14/16px, VS 10px → 14/18px,
+  angka countdown 13px → 18/20/24px + label 7px → 8/9/10px (layout 4 kolom tetap), meta tanggal/jam/venue
+  10px → 12/13px (`line-clamp-2`, teks lengkap tidak terpotong), tombol CTA 38px/10px → 42-48px/12-13px
+  dengan ikon panah 12px → 16/18px, divider 32px → 36/48px.
+- `frontend/src/components/public/CinematicHero.js`: HANYA padding vertikal wrapper panel
+  (py-7/8/9 → py-4/3/2) supaya tinggi total panel tetap (min-h 116/120/124 tidak diubah).
+- Verifikasi: tinggi panel desktop **128 px** (sebelumnya 124 px), 1024 = 128, overflow horizontal
+  **0 px** di 1920/1440/1280/1024/768/390/360, tidak ada elemen keluar panel, logo rasio 1.00 = rasio
+  render `object-contain` (natural 1.54 tidak dipaksa), teks meta lengkap "2026-09-03 · 15:30 WIB ·
+  LAPANGAN BOLA PASIRMUNCANG" di semua ukuran, **0 console error**, `yarn build` sukses.
+- Tidak mengubah data/countdown logic/API/warna/posisi section/sponsor/hero/navbar.
+
 ## SANITIZER + SLUG SPONSOR + SPONSOR UTAMA (29 Agu 2026) · SELESAI
 ### File yang berubah
 - `backend/app/services/media_service.py` — urutan sanitizer diperbaiki: cek magic executable (MZ/ELF di
