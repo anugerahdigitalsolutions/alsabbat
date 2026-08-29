@@ -1190,3 +1190,9 @@ Frontend only (tanpa backend/API/DB/auth/Admin).
 - `pages/public/HomePage.js` & `pages/public/BarayaAccountPage.js`: memakai `useRotatingSpotlight(players.items)` → rotasi aktif di beranda publik (Guest) dan beranda akun (Member/Pemain/Staf).
 - Verifikasi: beranda publik 0s → "Uji 4B" · 10s → "ROTASI UJI 1" · 20s → "ROTASI UJI 2" · 30s → kembali "Uji 4B"; /akun berganti setelah 10s; pindah halaman lalu tunggu 11s → 0 console error (timer bersih). `yarn build` sukses (hanya warning eslint lama).
 - Cleanup: 2 pemain uji dihapus (players kembali 1), akun uji `uji.rot@sandbox-alsabbat.dev` + sesi/OTP dihapus, counter nomor member direset ke 0.
+
+## UI — Titik indikator (dots) Sorotan Pemain (30 Agu 2026)
+- `components/public/PlayerSpotlight.js`: `useRotatingSpotlight` kini mengembalikan `{ player, total, index, select }` dan memakai `setTimeout` per-index sehingga **timer 10 detik dimulai ulang dari pemain yang dipilih**. Komponen baru **`SpotlightDots`** (pill gold 22×8 untuk aktif, dot 8×8 `rgba(1,40,145,0.25)` untuk non-aktif, transisi 200ms, `aria-label`/`aria-current`, `data-testid` per titik). `total < 2` → indikator tidak dirender.
+- `pages/public/HomePage.js` (`home-spotlight-dots`) & `pages/public/BarayaAccountPage.js` (`baraya-account-spotlight-dots`): dots ditempatkan **di bawah kartu**, desain kartu `PlayerSpotlight` tidak diubah. Tanpa perubahan API/DB/backend.
+- Verifikasi: 3 pemain → 3 titik; klik titik ke-3 langsung pindah ke pemain ke-3; pada t+8s masih pemain yang dipilih, t+11s berputar ke pemain pertama (timer restart benar); 1 pemain → dots tidak tampil; overflow 0 px (1440 & 390); console 0 error; `yarn build` sukses (hanya warning eslint lama).
+- Cleanup: 2 pemain uji (`DOT UJI 1/2`) dihapus, players kembali 1.

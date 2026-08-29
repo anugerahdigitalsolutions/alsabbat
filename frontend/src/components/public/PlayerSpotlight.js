@@ -28,7 +28,8 @@ export const pickSpotlightPlayer = (players = []) => spotlightOrder(players)[0] 
 
 /**
  * Rotasi otomatis sorotan pemain: satu pemain per 10 detik, berulang.
- * Hanya satu pemain → tanpa timer. Timer dibersihkan saat unmount.
+ * Hanya satu pemain → tanpa timer. Timer di-reset saat pengunjung memilih titik
+ * indikator, dan dibersihkan saat unmount.
  */
 export const useRotatingSpotlight = (players = [], intervalMs = 10000) => {
   const ordered = useMemo(() => spotlightOrder(players), [players]);
@@ -36,12 +37,49 @@ export const useRotatingSpotlight = (players = [], intervalMs = 10000) => {
 
   useEffect(() => {
     setIndex(0);
-    if (ordered.length < 2) return undefined;
-    const timer = setInterval(() => setIndex((i) => (i + 1) % ordered.length), intervalMs);
-    return () => clearInterval(timer);
-  }, [ordered, intervalMs]);
+  }, [ordered]);
 
-  return ordered[index % (ordered.length || 1)] || null;
+  useEffect(() => {
+    if (ordered.length < 2) return undefined;
+    const timer = setTimeout(() => setIndex((i) => (i + 1) % ordered.length), intervalMs);
+    return () => clearTimeout(timer);
+  }, [ordered, index, intervalMs]);
+
+  const safeIndex = ordered.length ? index % ordered.length : 0;
+  return {
+    player: ordered[safeIndex] || null,
+    total: ordered.length,
+    index: safeIndex,
+    select: setIndex,
+  };
+};
+
+/** Titik indikator sorotan — kecil, gold aktif, klik untuk pindah pemain. */
+export const SpotlightDots = ({ total, index, onSelect, testId = 'spotlight-dots' }) => {
+  if (!total || total < 2) return null;
+  return (
+    <div className="mt-3 flex items-center justify-center gap-2" data-testid={testId}>
+      {Array.from({ length: total }).map((_, i) => {
+        const active = i === index;
+        return (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onSelect(i)}
+            aria-label={`Tampilkan sorotan pemain ${i + 1}`}
+            aria-current={active}
+            className="als-focus rounded-full transition-all duration-200"
+            style={{
+              width: active ? 22 : 8,
+              height: 8,
+              backgroundColor: active ? 'var(--club-primary)' : 'rgba(1,40,145,0.25)',
+            }}
+            data-testid={`${testId}-${i}`}
+          />
+        );
+      })}
+    </div>
+  );
 };
 
 export const PlayerSpotlight = ({ player }) => {

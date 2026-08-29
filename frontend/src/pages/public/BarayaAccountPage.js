@@ -17,7 +17,7 @@ import {
   barayaUploadPhoto,
 } from '../../services/barayaAuth';
 import { MemberCard } from '../../components/member/MemberCard';
-import { PlayerSpotlight, useRotatingSpotlight } from '../../components/public/PlayerSpotlight';
+import { PlayerSpotlight, SpotlightDots, useRotatingSpotlight } from '../../components/public/PlayerSpotlight';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
@@ -54,7 +54,8 @@ export default function BarayaAccountPage() {
   const [passwords, setPasswords] = useState({ current_password: '', new_password: '' });
   const [saving, setSaving] = useState(false);
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 8 });
-  const spotlightPlayer = useRotatingSpotlight(players.items);
+  const spotlight = useRotatingSpotlight(players.items);
+  const spotlightPlayer = spotlight.player;
 
   const saveProfile = async (event) => {
     event.preventDefault();
@@ -205,7 +206,15 @@ export default function BarayaAccountPage() {
               {players.loading ? (
                 <LoadingState rows={1} testId="baraya-account-spotlight-loading" />
               ) : spotlightPlayer ? (
-                <PlayerSpotlight player={spotlightPlayer} />
+                <>
+                  <PlayerSpotlight player={spotlightPlayer} />
+                  <SpotlightDots
+                    total={spotlight.total}
+                    index={spotlight.index}
+                    onSelect={spotlight.select}
+                    testId="baraya-account-spotlight-dots"
+                  />
+                </>
               ) : (
                 <EmptyState
                   icon={Star}

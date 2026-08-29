@@ -14,7 +14,7 @@ import { TopScorersShowcase } from '../../components/public/home/TopScorersShowc
 import { JourneyCta } from '../../components/public/home/JourneyCta';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { SponsorsStrip } from '../../components/public/SponsorsStrip';
-import { PlayerSpotlight, useRotatingSpotlight } from '../../components/public/PlayerSpotlight';
+import { PlayerSpotlight, SpotlightDots, useRotatingSpotlight } from '../../components/public/PlayerSpotlight';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
@@ -113,7 +113,8 @@ export default function HomePage() {
   }, [matches.items]);
   const lastMatch = finished[0] || null;
   const featuredMatch = nextMatch || lastMatch;
-  const spotlightPlayer = useRotatingSpotlight(players.items);
+  const spotlight = useRotatingSpotlight(players.items);
+  const spotlightPlayer = spotlight.player;
 
   const teamStats = useMemo(() => {
     const scored = finished.filter((m) => m.home_score !== null && m.home_score !== undefined);
@@ -287,7 +288,15 @@ export default function HomePage() {
             {players.loading ? (
               <LoadingState rows={1} testId="home-spotlight-loading" />
             ) : spotlightPlayer ? (
-              <PlayerSpotlight player={spotlightPlayer} />
+              <>
+                <PlayerSpotlight player={spotlightPlayer} />
+                <SpotlightDots
+                  total={spotlight.total}
+                  index={spotlight.index}
+                  onSelect={spotlight.select}
+                  testId="home-spotlight-dots"
+                />
+              </>
             ) : (
               <EmptyState
                 icon={Users}
