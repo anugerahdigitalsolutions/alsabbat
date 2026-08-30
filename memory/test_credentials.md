@@ -57,3 +57,12 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
   `python scripts/staging_config_verify.py [base_url]`
 - Skrip verifikasi mengunggah satu berkas uji lalu menghapusnya sendiri (hard delete),
   jadi aman dijalankan terhadap `https://api-staging.alsabbat.com`.
+
+## Update — role admin baru (30 Jun 2026)
+- Akun `admin@alsabbat.com` / `Alsabbat2026!` tetap `SUPER_ADMIN` (full access, diverifikasi ulang).
+- Role yang bisa dipilih saat membuat akun admin: SUPER_ADMIN, CLUB_ADMIN, PLAYER_STAFF_ADMIN, MATCH_ADMIN,
+  MEDIA_CONTENT_ADMIN, STORE_MANAGER, FINANCE_ADMIN, IT_ADMIN. Role lama (CONTENT_ADMIN, GALLERY_ADMIN,
+  SOCIAL_MEDIA_ADMIN, STORE_ADMIN, ORDER_ADMIN) masih valid di backend tapi disembunyikan dari dropdown.
+- Akun uji role baru dibuat sementara oleh `scripts/rbac_roles_verify.py` (pola
+  `uji.<role>@sandbox-alsabbat.dev` / `RbacUji2026!`) dan SELALU dihapus di akhir skrip.
+  Database saat ini hanya berisi 1 akun admin (super admin di atas).

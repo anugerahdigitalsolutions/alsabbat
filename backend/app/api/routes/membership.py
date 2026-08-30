@@ -57,8 +57,8 @@ players = Repository(Collections.PLAYERS)
 staff = Repository(Collections.STAFF)
 teams = Repository(Collections.TEAMS)
 
-member_read = Depends(require_permission("user:read"))
-member_write = Depends(require_permission("user:write"))
+member_read = Depends(require_permission("member:read"))
+member_write = Depends(require_permission("member:write"))
 
 GENERIC_OTP_RESPONSE = "Jika email terdaftar, kode verifikasi telah dikirim."
 INVALID_OTP = "Kode verifikasi salah atau sudah kedaluwarsa."

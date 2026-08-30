@@ -63,8 +63,8 @@ member_router = APIRouter(tags=["member"])
 customers = Repository(Collections.CUSTOMERS)
 orders = Repository(Collections.ORDERS)
 
-customer_read = Depends(require_permission("user:read"))
-customer_write = Depends(require_permission("user:write"))
+customer_read = Depends(require_permission("member:read"))
+customer_write = Depends(require_permission("member:write"))
 
 INVALID_CREDENTIALS = "Email atau kata sandi tidak sesuai."
 

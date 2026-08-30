@@ -10,7 +10,7 @@ from app.api.crud_factory import Repository
 from app.api.deps import require_permission
 from app.core.config import settings
 from app.core.database import Collections, ping
-from app.core.rbac import ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_PERMISSIONS
+from app.core.rbac import ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_PERMISSIONS, SELECTABLE_ROLES
 from app.models.auth import AuthContext
 from app.models.enums import (
     AnalyticsEventType,
@@ -82,6 +82,7 @@ async def meta():
                 "label": ROLE_LABELS.get(role, role),
                 "description": ROLE_DESCRIPTIONS.get(role, ""),
                 "permissions": perms,
+                "selectable": role in SELECTABLE_ROLES,
             }
             for role, perms in ROLE_PERMISSIONS.items()
         ],
