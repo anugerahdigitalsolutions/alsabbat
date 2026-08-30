@@ -14,7 +14,7 @@ const ORDER = [
   'Musim',
   'Kompetisi',
   'Pertandingan',
-  'Formasi & Starting XI',
+  'Kejadian Pertandingan',
   'Berita',
   'Galeri',
   'Sponsor & Prestasi',

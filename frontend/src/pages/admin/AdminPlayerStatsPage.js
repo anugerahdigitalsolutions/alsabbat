@@ -51,7 +51,7 @@ export default function AdminPlayerStatsPage() {
         <div>
           <h1 className="font-display text-2xl font-bold">Statistik Pemain</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--muted-fg)' }}>
-            Dihitung otomatis dari Match Events &amp; Match Lineups, dipisah per musim. Tidak ada input manual.
+            Dihitung otomatis dari Match Events, dipisah per musim. Tidak ada input manual.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -98,7 +98,7 @@ export default function AdminPlayerStatsPage() {
           title="Belum ada statistik pada musim ini"
           description={
             data?.season
-              ? 'Catat Match Events (gol, assist, kartu) dan Match Lineups pada pertandingan musim ini agar statistik muncul.'
+              ? 'Catat Match Events (gol, assist, kartu) pada pertandingan musim ini agar statistik muncul.'
               : 'Belum ada musim yang tersedia. Buat Season terlebih dahulu di menu Seasons.'
           }
           testId="admin-player-stats-empty"

@@ -14,7 +14,7 @@ const ROWS = [
   ['red_cards', 'Kartu Merah'],
 ];
 
-/** Season statistics derived from MatchLineup + MatchEvent (never invented). */
+/** Season statistics derived from Match Events (never invented). */
 export const PlayerSeasonStats = ({ playerId }) => {
   const [seasons, setSeasons] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -64,7 +64,7 @@ export const PlayerSeasonStats = ({ playerId }) => {
         <EmptyState
           icon={BarChart3}
           title="Statistik belum tersedia"
-          description="Statistik dihitung otomatis dari susunan pemain dan kejadian pertandingan. Tambahkan lineup & event pertandingan untuk melihat angkanya."
+          description="Statistik dihitung otomatis dari kejadian pertandingan. Tambahkan event pertandingan untuk melihat angkanya."
           testId="player-season-stats-empty"
         />
       </div>

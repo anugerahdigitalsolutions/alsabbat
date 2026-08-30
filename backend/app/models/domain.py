@@ -32,7 +32,6 @@ from app.models.enums import (
     CompetitionType,
     EntityStatus,
     GalleryStatus,
-    LineupRole,
     MatchEventSide,
     MatchEventType,
     MatchStatus,
@@ -330,8 +329,7 @@ class MatchBase(AppBaseModel):
     card_story_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
     card_story_zoom: Optional[int] = Field(default=None, ge=100, le=250)
     description: Optional[str] = Field(default=None, max_length=4000)
-    # Prepared relationship placeholders for the Match Center phase
-    lineup_ready: bool = False
+    # Prepared relationship placeholder for the Match Center phase
     result_summary: Optional[str] = Field(default=None, max_length=1000)
     # Match Center V1 — optional tactical formation (e.g. "4-3-3").
     # Kept as plain text: the pitch/formation visualisation is a later phase.
@@ -349,37 +347,9 @@ class Match(MatchBase, DBModel):
 
 
 # --------------------------------------------------- Match Center (V1)
-class MatchLineupBase(AppBaseModel):
-    """One document per player per match (no Player data duplication).
-
-    Relationship keys: match_id + team_id + player_id.
-    The frontend groups documents into Starting XI / Substitutes via `role`.
-    `pitch_slot` is reserved so a formation visual can be added later
-    without a data migration.
-    """
-
-    match_id: str
-    team_id: str
-    player_id: str
-    role: LineupRole = LineupRole.STARTING
-    position: Optional[PlayerPosition] = None
-    position_label: Optional[str] = Field(default=None, max_length=20)
-    pitch_slot: Optional[str] = Field(default=None, max_length=20)
-    shirt_number: Optional[int] = Field(default=None, ge=0, le=99)
-    is_captain: bool = False
-    minutes_played: Optional[int] = Field(default=None, ge=0, le=200)
-    display_order: int = Field(default=0, ge=0, le=999)
-    note: Optional[str] = Field(default=None, max_length=500)
-    status: EntityStatus = EntityStatus.ACTIVE
-
-
-MatchLineupUpdate = make_update_model("MatchLineupUpdate", MatchLineupBase)
-
-
-class MatchLineup(MatchLineupBase, DBModel):
-    pass
-
-
+# Fitur Match Lineups dihapus (model MatchLineup/LineupRole tidak lagi ada).
+# Koleksi `match_lineups` beserta data historisnya TETAP disimpan dan masih
+# dibaca (read-only) untuk statistik penampilan pemain di routes/players.py.
 class MatchEventBase(AppBaseModel):
     """A single timeline event of a match (goal, card, substitution, ...)."""
 

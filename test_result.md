@@ -372,3 +372,27 @@ agent_communication:
       app/models/staff_structure.py yang diekspos lewat /api/meta. Tidak ada migrasi,
       tidak ada perubahan .env/Nginx/deployment/auth/media storage.
       Semua fixture uji dihapus (staff/players/teams/customers/media kembali 0).
+
+    -agent: "main"
+    -message: |
+      PENGHAPUSAN FITUR MATCH LINEUPS — SELESAI (scope terbatas, non-destruktif).
+      Dihapus: menu sidebar + halaman/route /admin/match-lineups, tab publik
+      "Formasi" (FormationPitch), MatchLineupSection (dead code), blok
+      "Pemain Inti/Pemain Cadangan" di tab Statistik, router+file
+      /api/match-lineups, model MatchLineupBase/Update/MatchLineup, enum
+      LineupRole, meta.lineup_roles, permission lineup:write, field
+      Match.lineup_ready, kategori readiness "Formasi & Starting XI"
+      (diganti "Kejadian Pertandingan" -> /admin/match-events), payload
+      "lineups" pada /api/matches/{id}/relations.
+      TETAP DIPERTAHANKAN: koleksi `match_lineups` + index + seluruh data
+      historis, agregasi appearances di routes/players.py (read-only),
+      field formation & opponent_formation, Match/Match Events/Match Card
+      Generator/statistik events.
+      Verifikasi (Testing Agent tetap tidak dipakai): browser screenshot —
+      sidebar tanpa Match Lineups, /admin/match-lineups redirect ke /admin,
+      tab publik = Statistik(default)/Timeline/Media, statistik events utuh,
+      baris Formasi 4-3-3 di Informasi Pertandingan, Match Card Generator +
+      canvas OK, statistik pemain menampilkan PENAMPILAN 1 dari dokumen
+      match_lineups historis. Smoke API: /meta /matches /match-events
+      /players /staff /teams /readiness/content = 200, /match-lineups = 404.
+      yarn build sukses (main.725ed004.js, -2.35 kB). Fixture uji dihapus.

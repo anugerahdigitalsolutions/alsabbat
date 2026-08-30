@@ -27,7 +27,6 @@ P = {
     "competition_write": "competition:write",
     "match_write": "match:write",
     # Match Center (Phase 3)
-    "lineup_write": "lineup:write",
     "event_write": "event:write",
     "content_read": "content:read",
     "content_write": "content:write",

@@ -76,14 +76,6 @@ class MatchVenueType(str, Enum):
     NEUTRAL = "NEUTRAL"
 
 
-class LineupRole(str, Enum):
-    """Role of a player inside a single match lineup (one doc per player)."""
-
-    STARTING = "STARTING"
-    SUBSTITUTE = "SUBSTITUTE"
-    UNUSED_SUBSTITUTE = "UNUSED_SUBSTITUTE"
-
-
 class MatchEventType(str, Enum):
     """Match timeline event types (Match Center V1)."""
 

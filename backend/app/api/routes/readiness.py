@@ -65,7 +65,6 @@ async def content_readiness(_user=Depends(require_permission("club:read"))) -> D
     matches_total = await count(Collections.MATCHES)
     matches_scheduled = await count(Collections.MATCHES, {"status": "SCHEDULED"})
     matches_no_venue = await count(Collections.MATCHES, {"$or": [{"venue": None}, {"venue": ""}]})
-    lineups_total = await count(Collections.MATCH_LINEUPS)
     events_total = await count(Collections.MATCH_EVENTS)
 
     posts_total = await count(Collections.POSTS)
@@ -177,12 +176,11 @@ async def content_readiness(_user=Depends(require_permission("club:read"))) -> D
             {"total": matches_total, "terjadwal": matches_scheduled},
         ),
         _category(
-            "lineups", "Formasi & Starting XI", "TAHAP 4 — PERTANDINGAN", "/admin/match-lineups",
+            "match_events", "Kejadian Pertandingan", "TAHAP 4 — PERTANDINGAN", "/admin/match-events",
             [
-                _check("Ada susunan pemain", lineups_total > 0),
                 _check("Ada event pertandingan", events_total > 0),
             ],
-            {"lineup": lineups_total, "event": events_total},
+            {"event": events_total},
         ),
         _category(
             "news", "Berita", "TAHAP 5 — KONTEN", "/admin/content",
