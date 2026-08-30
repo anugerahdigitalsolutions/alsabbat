@@ -372,12 +372,14 @@ async def admin_applications(
 
 
 async def _validate_link(app_type: str, player_id: Optional[str], staff_id: Optional[str]) -> Dict[str, Any]:
-    """Pengajuan disetujui HARUS ditautkan ke record existing (keputusan user)."""
+    """Tautan ke record existing bersifat OPSIONAL (Pemain & Staf).
+
+    Bila kosong, record baru dibuat otomatis dari data pengajuan saat disetujui.
+    """
     if app_type == ApplicationType.PEMAIN.value:
         if not player_id:
-            raise ValidationFailedError(
-                "Pilih record Pemain yang sudah ada untuk ditautkan sebelum menyetujui."
-            )
+            # Pengajuan baru: Pemain baru dibuat dari data pengajuan saat approve.
+            return {"player_id": None, "staff_id": None}
         if not await players.get(player_id):
             raise NotFoundError("Record pemain tidak ditemukan.")
         return {"player_id": player_id, "staff_id": None}
@@ -426,6 +428,42 @@ async def _create_staff_entry(
             "gallery_images": [],
             "player_id": (customer_doc or {}).get("player_id"),
             "customer_id": (customer_doc or {}).get("id"),
+        }
+    )
+    return created["id"]
+
+
+async def _create_player_entry(
+    customer_doc: Optional[Dict[str, Any]], application: Dict[str, Any]
+) -> str:
+    """Buat record Pemain BARU dari data pengajuan (tanpa perlu pemain existing)."""
+    data = application.get("player_data") or {}
+    social = {"instagram": data.get("instagram")} if data.get("instagram") else {}
+    created = await players.create(
+        {
+            "team_id": await _resolve_team_id(customer_doc),
+            "full_name": data.get("full_name") or application.get("full_name"),
+            "display_name": data.get("display_name") or None,
+            # Foto pengajuan langsung menjadi foto Pemain (field `photo`, sama
+            # dengan form "Tambah Pemain" di Admin Panel).
+            "photo": data.get("photo") or None,
+            "jersey_number": data.get("jersey_number"),
+            "position": data.get("position") or "MIDFIELDER",
+            "date_of_birth": data.get("date_of_birth") or None,
+            "nationality": data.get("nationality") or None,
+            "height_cm": data.get("height_cm"),
+            "weight_kg": data.get("weight_kg"),
+            "bio": data.get("bio") or None,
+            "status": "ACTIVE",
+            "goals": 0,
+            "assists": 0,
+            "appearances": 0,
+            "yellow_cards": 0,
+            "red_cards": 0,
+            "historical_goals": 0,
+            "historical_assists": 0,
+            "social_media": social,
+            "gallery_images": [],
         }
     )
     return created["id"]
@@ -529,6 +567,10 @@ async def admin_decide_application(
         if existing["type"] == ApplicationType.STAFF.value and not link.get("staff_id"):
             # Staff Entry baru per pengajuan: bagian, jabatan, foto & status sendiri.
             link["staff_id"] = await _create_staff_entry(customer_doc, existing)
+        if existing["type"] == ApplicationType.PEMAIN.value and not link.get("player_id"):
+            # Pengajuan Pemain baru: record Pemain dibuat dari data pengajuan
+            # (termasuk foto), tanpa perlu menautkan pemain existing.
+            link["player_id"] = await _create_player_entry(customer_doc, existing)
         changes.update(link)
         roles = [r for r in _roles_of(customer_doc) if r != "MEMBER"]
         if existing["type"] not in roles:
@@ -573,6 +615,11 @@ async def admin_set_role(
         raise NotFoundError("Akun Baraya tidak ditemukan.")
     changes: Dict[str, Any] = {"role": payload.role.value, "roles": [payload.role.value]}
     if payload.role.value == "PEMAIN":
+        # Ubah peran manual (bukan alur pengajuan) tetap wajib menautkan record Pemain.
+        if not payload.player_id:
+            raise ValidationFailedError(
+                "Pilih record Pemain yang sudah ada untuk ditautkan pada akun ini."
+            )
         link = await _validate_link("PEMAIN", payload.player_id, None)
         changes["player_id"] = link["player_id"]
         updated = await customers.update(customer_id, changes)

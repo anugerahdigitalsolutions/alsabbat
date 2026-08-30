@@ -12,6 +12,7 @@ import { EmptyState } from '../shared/EmptyState';
 import { LoadingState } from '../shared/LoadingState';
 import { useClub } from '../../context/ClubContext';
 import { departmentOptions, positionOptions } from '../../lib/staffStructure';
+import { resolveMediaUrl } from '../public/gallery/mediaUtils';
 
 const STATUS_STYLE = {
   PENDING: { label: 'Menunggu', bg: 'rgba(252,207,43,0.22)' },
@@ -48,6 +49,37 @@ const formatDate = (value) => {
   } catch (e) {
     return value;
   }
+};
+
+/** Preview foto pengajuan — memakai resolver media yang sama dengan seluruh app.
+ *  Foto lokal disimpan sebagai path relatif (`/api/media/files/...`) sehingga harus
+ *  diresolusi ke BACKEND_URL. Bila gagal dimuat, error DITAMPILKAN (tidak disembunyikan). */
+const ApplicantPhoto = ({ url, label, testId }) => {
+  const [broken, setBroken] = useState(false);
+  const src = resolveMediaUrl(url);
+
+  return (
+    <div className="sm:col-span-2">
+      <Label className="mb-1 block text-xs">{label}</Label>
+      {!url ? (
+        <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid={`${testId}-empty`}>
+          Pemohon tidak mengunggah foto.
+        </p>
+      ) : broken ? (
+        <p className="text-xs" style={{ color: '#991B1B' }} data-testid={`${testId}-error`}>
+          Foto gagal dimuat dari: {src}
+        </p>
+      ) : (
+        <img
+          src={src}
+          alt={label}
+          onError={() => setBroken(true)}
+          className="h-28 w-28 rounded-[var(--radius-sm)] object-cover"
+          data-testid={testId}
+        />
+      )}
+    </div>
+  );
 };
 
 /** Fase 3 — Admin: tinjau pengajuan Pemain/Staf dan tautkan ke record existing. */
@@ -132,7 +164,8 @@ export const MemberApplications = ({ onDecided }) => {
     try {
       const payload = { decision, note: note || null };
       if (decision === 'APPROVED') {
-        if (dialog.type === 'PEMAIN') payload.player_id = linkId;
+        // Linking opsional: kosong → backend membuat record baru dari data pengajuan.
+        if (dialog.type === 'PEMAIN') payload.player_id = linkId || null;
         else payload.staff_id = linkId || null;
       }
       await api.patch(`/baraya/admin/applications/${dialog.id}`, payload);
@@ -166,7 +199,8 @@ export const MemberApplications = ({ onDecided }) => {
             ) : null}
           </p>
           <p className="text-sm" style={{ color: 'var(--muted-fg)' }}>
-            Pengajuan Pemain ditautkan ke record Pemain yang sudah ada. Pengajuan Staf otomatis membuat
+            Pengajuan Pemain yang disetujui otomatis menjadi Pemain baru (foto ikut terbawa) —
+            tanpa perlu menautkan pemain yang sudah ada. Pengajuan Staf otomatis membuat
             Staff Entry baru sesuai Bagian &amp; Jabatan (akun dan profil Pemain tidak diubah).
           </p>
         </div>
@@ -241,8 +275,9 @@ export const MemberApplications = ({ onDecided }) => {
           <DialogHeader>
             <DialogTitle className="font-display">Tinjau Pengajuan {TYPE_LABEL[dialog?.type] || ''}</DialogTitle>
             <DialogDescription>
-              Pengajuan Pemain ditulis ke record Pemain yang Anda pilih. Pengajuan Staf membuat Staff
-              Entry baru sesuai Bagian &amp; Jabatan (atau ditulis ke Staff Entry yang Anda pilih).
+              Pengajuan Pemain otomatis membuat record Pemain baru dari data pengajuan (opsional:
+              tautkan ke Pemain yang sudah ada). Pengajuan Staf membuat Staff Entry baru sesuai
+              Bagian &amp; Jabatan (atau ditulis ke Staff Entry yang Anda pilih).
               Satu akun Baraya dapat memiliki profil Pemain dan beberapa Staff Entry sekaligus —
               menyetujui pengajuan Staf tidak menghapus status Pemain.
             </DialogDescription>
@@ -325,15 +360,11 @@ export const MemberApplications = ({ onDecided }) => {
                       />
                     </div>
                     {staffData.photo ? (
-                      <div className="sm:col-span-2">
-                        <Label className="mb-1 block text-xs">Foto Staf dari pemohon</Label>
-                        <img
-                          src={staffData.photo}
-                          alt="Foto pengajuan staf"
-                          className="h-28 w-28 rounded-[var(--radius-sm)] object-cover"
-                          data-testid="admin-application-staff-photo"
-                        />
-                      </div>
+                      <ApplicantPhoto
+                        url={staffData.photo}
+                        label="Foto Staf dari pemohon"
+                        testId="admin-application-staff-photo"
+                      />
                     ) : null}
                   </div>
                   <Button
@@ -391,17 +422,11 @@ export const MemberApplications = ({ onDecided }) => {
                         data-testid="admin-application-field-bio"
                       />
                     </div>
-                    {playerData.photo ? (
-                      <div className="sm:col-span-2">
-                        <Label className="mb-1 block text-xs">Foto dari pemohon</Label>
-                        <img
-                          src={playerData.photo}
-                          alt="Foto pengajuan pemain"
-                          className="h-28 w-28 rounded-[var(--radius-sm)] object-cover"
-                          data-testid="admin-application-photo"
-                        />
-                      </div>
-                    ) : null}
+                    <ApplicantPhoto
+                      url={playerData.photo}
+                      label="Foto dari pemohon"
+                      testId="admin-application-photo"
+                    />
                   </div>
                   <Button
                     type="button"
@@ -420,7 +445,7 @@ export const MemberApplications = ({ onDecided }) => {
                 <Label className="mb-1.5 block">
                   {dialog.type === 'STAFF'
                     ? 'Tautkan ke Staff Entry yang sudah ada (opsional)'
-                    : `Tautkan ke record ${TYPE_LABEL[dialog.type]} yang sudah ada`}
+                    : `Tautkan ke record ${TYPE_LABEL[dialog.type]} yang sudah ada (opsional)`}
                 </Label>
                 <select
                   value={linkId}
@@ -430,7 +455,7 @@ export const MemberApplications = ({ onDecided }) => {
                   data-testid="admin-application-link"
                 >
                   <option value="">
-                    {dialog.type === 'STAFF' ? '— buat Staff Entry baru —' : '— pilih record —'}
+                    {dialog.type === 'STAFF' ? '— buat Staff Entry baru —' : '— buat Pemain baru —'}
                   </option>
                   {linkOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -447,13 +472,12 @@ export const MemberApplications = ({ onDecided }) => {
                     Dibiarkan kosong → sistem otomatis membuat Staff Entry baru dari data pengajuan
                     (Bagian, Jabatan, Foto, pemain & tim). Akun dan profil Pemain tidak diubah.
                   </p>
-                ) : null}
-                {!linkOptions.length && dialog.type !== 'STAFF' ? (
-                  <p className="mt-2 text-xs" style={{ color: '#991B1B' }} data-testid="admin-application-no-records">
-                    Belum ada record {TYPE_LABEL[dialog.type]} di Admin Panel. Buat datanya terlebih dahulu di menu{' '}
-                    Pemain.
+                ) : (
+                  <p className="mt-2 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="admin-application-player-hint">
+                    Dibiarkan kosong → sistem otomatis membuat Pemain baru dari data pengajuan
+                    (nama, posisi, nomor punggung, foto). Tidak perlu memilih pemain yang sudah ada.
                   </p>
-                ) : null}
+                )}
               </div>
 
               <div>
@@ -464,13 +488,17 @@ export const MemberApplications = ({ onDecided }) => {
               <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={() => decide('APPROVED')}
-                  disabled={busy || (dialog.type === 'PEMAIN' && !linkId)}
+                  disabled={busy}
                   className="min-h-[44px] font-semibold"
                   style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                   data-testid="admin-application-approve"
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                  {dialog.type === 'STAFF' && !linkId ? 'Setujui & Buat Staff Entry' : 'Setujui & Tautkan'}
+                  {linkId
+                    ? 'Setujui & Tautkan'
+                    : dialog.type === 'STAFF'
+                    ? 'Setujui & Buat Staff Entry'
+                    : 'Setujui & Buat Pemain Baru'}
                 </Button>
                 <Button
                   variant="outline"

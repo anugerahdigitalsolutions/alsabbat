@@ -66,3 +66,9 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
 - Akun uji role baru dibuat sementara oleh `scripts/rbac_roles_verify.py` (pola
   `uji.<role>@sandbox-alsabbat.dev` / `RbacUji2026!`) dan SELALU dihapus di akhir skrip.
   Database saat ini hanya berisi 1 akun admin (super admin di atas).
+
+## Update — validasi pengajuan Pemain (30 Agu 2026)
+- Akun uji `uji.pemain@sandbox-alsabbat.dev` / `Sandbox123` SUDAH DIHAPUS beserta pengajuan, sesi, pemain uji,
+  tim/klub uji, dan berkas media uji. Database preview kembali bersih (players/teams/media/customers = 0).
+- Admin tetap `admin@alsabbat.com` / `Alsabbat2026!` (SUPER_ADMIN). Catatan: saat pembersihan data uji, koleksi
+  `sessions`/`customer_sessions` dikosongkan → sesi login lama perlu login ulang (tidak ada data konten yang hilang).

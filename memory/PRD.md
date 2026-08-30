@@ -1290,3 +1290,34 @@ Keputusan user: Desain Kartu Global TIDAK lagi menjadi sumber desain kartu; Kart
   dibuat"), API mengembalikan urutan display_order→year, Beranda menampilkan urutan identik dengan API
   (E order=2 tahun 2026 tetap terakhir → display_order primary terbukti), INACTIVE tidak tampil, 0 console error baru,
   `yarn build` sukses 315.48 kB. Semua data uji (UJI A–E) dihapus; achievements = 0.
+
+## Pengajuan Pemain — approve tanpa linking + foto konsisten (30 Agu 2026)
+Root cause (3, terpisah):
+1. `_validate_link()` di `backend/app/api/routes/membership.py` MEWAJIBKAN `player_id` untuk approve PEMAIN
+   (`ValidationFailedError`), dan UI menonaktifkan tombol Setujui (`disabled={busy || (type==='PEMAIN' && !linkId)}`).
+2. Preview foto di `MemberApplications.js` memakai `src={playerData.photo}` / `staffData.photo` MENTAH tanpa
+   `resolveMediaUrl()`. Foto lokal disimpan sebagai path relatif `/api/media/files/...` (LocalStorageBackend),
+   sehingga di produksi (frontend domain ≠ API domain) gambar broken. Komponen lain seluruh app memakai resolver ini.
+3. Approve PEMAIN hanya menulis data ke player existing (`_apply_player_data`) — tanpa player existing tidak ada
+   record Pemain, jadi foto tidak pernah sampai ke Player.
+
+Perubahan:
+- `membership.py`: `_validate_link` → linking PEMAIN OPSIONAL (validasi hanya bila diisi); fungsi baru
+  `_create_player_entry()` membuat Pemain baru dari `player_data` (team dari `_resolve_team_id`); di
+  `admin_decide_application` bila APPROVED & PEMAIN tanpa `player_id` → buat Pemain baru lalu tautkan ke akun.
+  `admin_set_role` (ubah peran manual) tetap WAJIB `player_id` (guard eksplisit) agar tidak regresi.
+- `MemberApplications.js`: komponen `ApplicantPhoto` (pakai `resolveMediaUrl`, fallback "Pemohon tidak mengunggah
+  foto", error ditampilkan bila gambar gagal dimuat), tombol Setujui tidak lagi disabled, label dinamis
+  "Setujui & Buat Pemain Baru", select linking jadi opsional + hint, copy dialog/header diperbarui.
+- Foto pendaftaran user SUDAH memakai mekanisme yang sama dengan Admin: komponen `MediaPicker` + `ImageCropper`
+  (uploader `/api/baraya/me/upload`, Media Library dimatikan karena butuh permission admin). Field foto sama: `photo`.
+Alur foto: MediaPicker (user) → `/baraya/me/upload` → `application.player_data.photo` (`/api/media/files/...`)
+  → preview Admin via `resolveMediaUrl` → approve → `players.photo` → tampil di halaman publik pemain.
+Validasi manual (tanpa Testing Agent, sesuai larangan user): submit pengajuan dari UI Baraya (preview foto tampil,
+  naturalWidth 900), foto tersimpan di application, Admin review menampilkan foto (naturalWidth 900), select linking
+  kosong & tombol Setujui aktif, approve → Pemain baru #77 dengan foto identik + halaman `/players/{id}` menampilkan
+  foto, Admin "Tambah Pemain" tetap normal, 0 error console baru, `yarn build` sukses 315.58 kB (+99 B).
+  Semua data uji dihapus (players/teams/media/member_applications/customers = 0, file media_storage = 0).
+Catatan di luar scope (TIDAK diperbaiki): (a) `POST /api/players` menolak 422 bila field opsional angka/tanggal
+  dikirim string kosong dari form Admin (ResourceManager tidak menormalkan "" → null); (b) warning hydration
+  React lama di header MemberApplications (`Badge` <div> di dalam <p>).
