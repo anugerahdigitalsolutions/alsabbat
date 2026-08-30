@@ -48,6 +48,8 @@ export const SITE_CONTENT_ENTRIES = [
   { key: 'home.label.store_action', group: 'Judul Section', label: 'Aksi — Toko Resmi', value: 'Toko' },
   { key: 'home.label.gallery', group: 'Judul Section', label: 'Label — Galeri', value: 'Galeri' },
   { key: 'home.label.gallery_action', group: 'Judul Section', label: 'Aksi — Galeri', value: 'Semua Galeri' },
+  { key: 'home.label.achievements', group: 'Judul Section', label: 'Label — Prestasi', value: 'Prestasi Klub' },
+  { key: 'home.label.achievements_action', group: 'Judul Section', label: 'Aksi — Prestasi', value: 'Semua Prestasi' },
   { key: 'home.label.sponsors', group: 'Judul Section', label: 'Label — Sponsor', value: 'Sponsor Kami' },
   { key: 'home.label.sponsors_action', group: 'Judul Section', label: 'Aksi — Sponsor', value: 'Semua sponsor' },
 

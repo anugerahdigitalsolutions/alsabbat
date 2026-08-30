@@ -11,6 +11,7 @@ import { GalleryStrip } from '../../components/public/home/GalleryStrip';
 import { YoutubeShowcase, collectYoutubeVideos } from '../../components/public/home/YoutubeShowcase';
 import { NewsShowcase } from '../../components/public/home/NewsShowcase';
 import { TopScorersShowcase } from '../../components/public/home/TopScorersShowcase';
+import { AchievementsTimeline } from '../../components/public/home/AchievementsTimeline';
 import { JourneyCta } from '../../components/public/home/JourneyCta';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { SponsorsStrip } from '../../components/public/SponsorsStrip';
@@ -91,6 +92,7 @@ export default function HomePage() {
   const sponsors = useResourceList('/sponsors', { status: 'ACTIVE', limit: 10 });
   const products = useResourceList('/merchandise/products', { limit: 4 });
   const banners = useResourceList('/banners/public', { limit: 20 });
+  const achievements = useResourceList('/achievements', { status: 'ACTIVE', limit: 4 });
 
   const badge = shortName || 'AL SABBAT';
   const t = useSiteText({ club: badge });
@@ -350,6 +352,19 @@ export default function HomePage() {
       <Band className="pt-0" testId="home-section-top-scorers">
         <TopScorersShowcase />
       </Band>
+
+      {/* Prestasi Klub — dari Admin Panel (status ACTIVE), section hanya tampil bila ada data */}
+      {achievements.items.length ? (
+        <Band className="pt-0" testId="home-section-achievements">
+          <RowHeader
+            label={t('home.label.achievements')}
+            to="/achievements"
+            actionLabel={t('home.label.achievements_action')}
+            testId="home-label-achievements"
+          />
+          <AchievementsTimeline items={achievements.items} />
+        </Band>
+      ) : null}
 
       {/* Gallery — disembunyikan penuh untuk Guest (Fase 4A) */}
       {showGallery ? (
