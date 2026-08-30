@@ -4,5 +4,4 @@ Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /cart
-Sitemap: https://api-staging.alsabbat.com/api/seo/sitemap.xml
-Host: staging.alsabbat.com
+Sitemap: https://media-display-debug.preview.emergentagent.com/api/seo/sitemap.xml

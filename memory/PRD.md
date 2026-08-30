@@ -296,7 +296,7 @@ dibangun dengan mode **NOT_CONFIGURED yang jujur** (tanpa dummy/hard-code).
 ### BLOCKER (menunggu user)
 - `SMTP2GO_API_KEY` + `SMTP2GO_SENDER_EMAIL` → tanpa ini email OTP TIDAK terkirim (sistem melaporkan jujur).
 - `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` → tombol "Masuk dengan Google" disembunyikan sampai diisi.
-  Redirect URI wajib: `https://<domain>/auth/google` (preview: `https://staging-build-191.preview.emergentagent.com/auth/google`).
+  Redirect URI wajib: `https://media-display-debug.preview.emergentagent.com/auth/google`).
 - Kunci hanya ditulis ke `backend/.env` (sudah ada placeholder kosong) + `backend/.env.example` terdokumentasi.
 
 

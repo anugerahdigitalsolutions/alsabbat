@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { resolveMediaUrl } from './gallery/mediaUtils';
+import { personPhotos } from '../../lib/personPhotos';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Shirt } from 'lucide-react';
 
@@ -15,7 +16,8 @@ const POSITION_LABEL = {
  */
 const spotlightOrder = (players = []) => {
   const active = players.filter((p) => !p.status || p.status === 'ACTIVE');
-  const score = (p) => (p.photo ? 0 : 1) * 2 + (p.jersey_number === null || p.jersey_number === undefined ? 1 : 0);
+  const score = (p) =>
+    (personPhotos(p).length ? 0 : 1) * 2 + (p.jersey_number === null || p.jersey_number === undefined ? 1 : 0);
   return [...active].sort(
     (a, b) =>
       score(a) - score(b) ||
@@ -85,6 +87,8 @@ export const SpotlightDots = ({ total, index, onSelect, testId = 'spotlight-dots
 export const PlayerSpotlight = ({ player }) => {
   if (!player) return null;
   const name = player.display_name || player.full_name;
+  // Sumber foto sama dengan halaman detail pemain: galeri lebih dulu, lalu `photo`.
+  const photo = resolveMediaUrl(personPhotos(player)[0]);
 
   return (
     <article
@@ -93,9 +97,9 @@ export const PlayerSpotlight = ({ player }) => {
       data-testid="player-spotlight"
     >
       <div className="als-zoom relative h-72 lg:h-full lg:min-h-[320px]">
-        {player.photo ? (
+        {photo ? (
           <img
-            src={resolveMediaUrl(player.photo)}
+            src={photo}
             alt={name}
             className="h-full w-full object-cover object-top"
             loading="lazy"
