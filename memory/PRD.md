@@ -1276,3 +1276,17 @@ Keputusan user: Desain Kartu Global TIDAK lagi menjadi sumber desain kartu; Kart
   Media Library → cropper tampil (blob, 1080px) & bg terpasang, simpan → refresh → semua nilai tetap
   (125%/37%/64%/18% + background), 0 console error, `yarn build` sukses 315.06 kB (-2.12 kB). Data uji dihapus
   (matches/teams/media = 0).
+
+## Achievement di Beranda — sorting deterministik (30 Agu 2026)
+- Root cause bug "Achievement tidak muncul di Beranda": section `home-section-achievements` baru ditulis pada commit
+  terakhir sesi sebelumnya (`fdb8543`) dan belum pernah diverifikasi/di-build; di workspace baru service frontend
+  juga mati (`craco: not found`) dan MongoDB preview kosong. Tidak ada bug logika/field/endpoint.
+- Perubahan kode (1 baris efektif): `backend/app/api/routes/achievements.py`
+  `default_sort=(("year", -1),)` → `default_sort=(("display_order", 1), ("year", -1))`.
+  Admin kini menentukan urutan lewat field "Urutan Tampilan" (`display_order` ASC), `year` DESC sebagai secondary.
+- Homepage tetap `GET /api/achievements?status=ACTIVE&limit=4` (limit TIDAK dinaikkan), layout/desain tidak diubah,
+  model & collection tidak diubah.
+- Validasi manual (tanpa Testing Agent): admin UI /admin/achievements membuat Achievement (toast "Data berhasil
+  dibuat"), API mengembalikan urutan display_order→year, Beranda menampilkan urutan identik dengan API
+  (E order=2 tahun 2026 tetap terakhir → display_order primary terbukti), INACTIVE tidak tampil, 0 console error baru,
+  `yarn build` sukses 315.48 kB. Semua data uji (UJI A–E) dihapus; achievements = 0.

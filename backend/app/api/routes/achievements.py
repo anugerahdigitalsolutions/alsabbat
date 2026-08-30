@@ -16,6 +16,7 @@ router = build_crud_router(
     public_read=True,
     search_fields=("title", "competition_name", "description"),
     filter_fields=("status", "team_id", "season_id", "level"),
-    default_sort=(("year", -1),),
+    # Urutan deterministik: urutan tampilan dari Admin dulu, baru tahun terbaru.
+    default_sort=(("display_order", 1), ("year", -1)),
     tags=["achievements"],
 )
