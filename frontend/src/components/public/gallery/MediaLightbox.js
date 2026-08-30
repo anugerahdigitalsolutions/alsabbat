@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Download, Share2, X } from 'lucide-react';
 import { downloadPhoto, sharePhoto } from './photoActions';
 
@@ -36,7 +37,11 @@ export const MediaLightbox = ({
 
   const imageUrl = item.thumbnail_url || item.url;
 
-  return (
+  // Dirender lewat portal ke <body>: halaman publik memakai animasi (.als-page-enter /
+  // .als-reveal, fill-mode both) yang menyisakan `transform` pada elemen induk sehingga
+  // elemen `position: fixed` di dalamnya ikut terjebak pada containing block induk
+  // (viewer bergeser & tertinggal di atas dokumen saat scroll).
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -240,7 +245,8 @@ export const MediaLightbox = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

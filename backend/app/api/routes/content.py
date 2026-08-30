@@ -48,6 +48,7 @@ build_crud_router(
         "competition_id",
     ),
     unique_fields=("slug",),
+    default_sort=(("published_at", -1), ("created_at", -1)),
     tags=["content"],
     router=posts_router,
 )

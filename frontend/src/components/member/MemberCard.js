@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useClub } from '../../context/ClubContext';
 import { resolveMediaUrl } from '../public/gallery/mediaUtils';
 import { useSiteText } from '../../lib/siteContent';
+import { roleLabel } from '../../lib/memberAccess';
 
 const formatJoined = (value) => {
   if (!value) return '—';
@@ -110,6 +111,14 @@ export const MemberCard = React.forwardRef(({ card, design, testId = 'member-car
             {active ? 'Aktif' : 'Nonaktif'}
           </span>
         </div>
+
+        <span
+          className="font-display mt-3 inline-block rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider"
+          style={{ backgroundColor: 'rgba(254,254,254,0.14)', color: 'var(--club-primary)' }}
+          data-testid={`${testId}-role`}
+        >
+          {roleLabel(card)}
+        </span>
 
         <div className="mt-7 flex flex-wrap items-end justify-between gap-x-5 gap-y-6">
           <div className="flex min-w-0 flex-1 basis-[200px] items-center gap-4">

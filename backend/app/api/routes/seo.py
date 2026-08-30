@@ -1,6 +1,8 @@
 """SEO foundation — defaults, sitemap architecture and robots policy."""
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Request
 from fastapi.responses import PlainTextResponse, Response
 
@@ -14,15 +16,53 @@ posts = Repository(Collections.POSTS)
 matches = Repository(Collections.MATCHES)
 albums = Repository(Collections.GALLERY_ALBUMS)
 
+logger = logging.getLogger(__name__)
+_warned_missing_site_url = False
+
+
+def _public_host(api_host: str) -> str:
+    """Derive the PUBLIC website host from the API host.
+
+    Staging and production serve the API on a dedicated sub-domain
+    (`api-staging.alsabbat.com`, `api.alsabbat.com`) while the pages the sitemap
+    must point at live on the site domain (`staging.alsabbat.com`,
+    `alsabbat.com`). Without this the sitemap advertised URLs on the API domain,
+    where those routes do not exist, so every indexed link was broken.
+
+        api.alsabbat.com          -> alsabbat.com
+        api-staging.alsabbat.com  -> staging.alsabbat.com
+
+    Any other host (single-domain or local development) is returned unchanged.
+    """
+    label, _, remainder = api_host.partition(".")
+    if not remainder:
+        return api_host
+    if label == "api":
+        return remainder
+    if label.startswith("api-") and len(label) > 4:
+        return f"{label[4:]}.{remainder}"
+    return api_host
+
 
 def _site_url(request: Request) -> str:
     """Public origin. Environment first (PUBLIC_SITE_URL), proxy headers second."""
     if settings.PUBLIC_SITE_URL:
         return settings.PUBLIC_SITE_URL.rstrip("/")
+
+    global _warned_missing_site_url
+    if not _warned_missing_site_url:
+        _warned_missing_site_url = True
+        logger.warning(
+            "PUBLIC_SITE_URL is not set — SEO URLs are being derived from the request "
+            "host. Set PUBLIC_SITE_URL (e.g. https://staging.alsabbat.com) so the "
+            "sitemap and robots.txt always point at the public website."
+        )
+
     forwarded_host = request.headers.get("x-forwarded-host") or request.headers.get("host")
     if forwarded_host:
         scheme = request.headers.get("x-forwarded-proto", "https").split(",")[0].strip()
-        return f"{scheme}://{forwarded_host.split(',')[0].strip()}"
+        host = forwarded_host.split(",")[0].strip()
+        return f"{scheme}://{_public_host(host)}"
     return str(request.base_url).rstrip("/")
 
 
@@ -55,8 +95,14 @@ async def sitemap(request: Request):
     urls = [f"{site_url}/", f"{site_url}/news", f"{site_url}/matches", f"{site_url}/gallery"]
     published, _ = await posts.list({"status": "PUBLISHED"}, limit=200)
     urls += [f"{site_url}/news/{p.get('slug')}" for p in published if p.get("slug")]
-    album_items, _ = await albums.list({"status": "ACTIVE"}, limit=200)
-    urls += [f"{site_url}/gallery/{a.get('slug')}" for a in album_items if a.get("slug")]
+    # Only PUBLISHED albums may be advertised. Filtering on `status` leaked
+    # unpublished (DRAFT) albums to crawlers, because `status` is the generic
+    # ACTIVE/INACTIVE lifecycle flag while `publish_status` drives publication —
+    # this now mirrors the public /gallery/public/albums endpoint exactly.
+    album_items, _ = await albums.list({"publish_status": "PUBLISHED"}, limit=200)
+    # Album pages resolve by id (route /gallery/:albumId); album slugs are not
+    # routable, so emitting them produced 404s for every gallery URL.
+    urls += [f"{site_url}/gallery/{a.get('id')}" for a in album_items if a.get("id")]
     match_items, _ = await matches.list({}, limit=200)
     urls += [f"{site_url}/matches/{m.get('id')}" for m in match_items if m.get("id")]
 

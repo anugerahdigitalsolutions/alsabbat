@@ -1,6 +1,46 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Handshake } from 'lucide-react';
+import { resolveMediaUrl } from './gallery/mediaUtils';
 
+/** URL profil: slug bila ada, fallback id (tautan lama tetap hidup). */
+export const sponsorPath = (sponsor) => `/sponsors/${sponsor?.slug || sponsor?.id}`;
+
+const SponsorTile = ({ sponsor, featured }) => (
+  <Link
+    to={sponsorPath(sponsor)}
+    className={`als-card als-focus flex items-center justify-center transition-shadow hover:shadow-[var(--shadow-md)] ${
+      featured ? 'h-32 px-6 sm:h-40 sm:px-8' : 'h-24 px-4'
+    }`}
+    style={featured ? { borderColor: 'rgba(252,207,43,0.55)' } : undefined}
+    aria-label={`Profil sponsor ${sponsor.name}`}
+    data-testid={`sponsor-item-${sponsor.id}`}
+    data-featured={featured ? 'true' : 'false'}
+  >
+    {sponsor.logo ? (
+      <img
+        src={resolveMediaUrl(sponsor.logo)}
+        alt={sponsor.name}
+        className={`w-auto max-w-full object-contain ${featured ? 'max-h-24 sm:max-h-28' : 'max-h-14'}`}
+        loading="lazy"
+      />
+    ) : (
+      <span
+        className={`font-display text-center font-semibold ${featured ? 'text-lg' : 'text-sm'}`}
+        style={{ color: 'var(--fg)' }}
+      >
+        {sponsor.name}
+      </span>
+    )}
+  </Link>
+);
+
+/**
+ * Baris logo sponsor (beranda & halaman lain).
+ * Sponsor bertanda `is_featured` (Sponsor Utama) tampil lebih besar di baris atas;
+ * sponsor lain tetap ukuran normal. Logo selalu `object-contain` (aspect ratio asli,
+ * tidak terpotong) dan klik mengarah ke PROFIL SPONSOR INTERNAL.
+ */
 export const SponsorsStrip = ({ sponsors = [] }) => {
   if (!sponsors.length) {
     return (
@@ -15,26 +55,31 @@ export const SponsorsStrip = ({ sponsors = [] }) => {
     );
   }
 
+  const featured = sponsors.filter((s) => s.is_featured);
+  const regular = sponsors.filter((s) => !s.is_featured);
+
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" data-testid="sponsors-strip">
-      {sponsors.map((sponsor) => (
-        <a
-          key={sponsor.id}
-          href={sponsor.website || '#'}
-          target={sponsor.website ? '_blank' : undefined}
-          rel="noreferrer"
-          className="als-card flex h-24 items-center justify-center px-4 transition-shadow hover:shadow-[var(--shadow-md)]"
-          data-testid={`sponsor-item-${sponsor.id}`}
+    <div className="space-y-4" data-testid="sponsors-strip">
+      {featured.length ? (
+        <div
+          className={`grid gap-4 ${
+            featured.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+          }`}
+          data-testid="sponsors-featured"
         >
-          {sponsor.logo ? (
-            <img src={sponsor.logo} alt={sponsor.name} className="max-h-12 max-w-full object-contain" loading="lazy" />
-          ) : (
-            <span className="font-display text-center text-sm font-semibold" style={{ color: 'var(--fg)' }}>
-              {sponsor.name}
-            </span>
-          )}
-        </a>
-      ))}
+          {featured.map((sponsor) => (
+            <SponsorTile key={sponsor.id} sponsor={sponsor} featured />
+          ))}
+        </div>
+      ) : null}
+
+      {regular.length ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" data-testid="sponsors-regular">
+          {regular.map((sponsor) => (
+            <SponsorTile key={sponsor.id} sponsor={sponsor} featured={false} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };

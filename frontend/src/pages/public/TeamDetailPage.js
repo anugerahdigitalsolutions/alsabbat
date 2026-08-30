@@ -9,6 +9,8 @@ import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
+import { staffPositionLabel } from '../../lib/staffStructure';
 
 const POSITION_ORDER = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
@@ -28,7 +30,7 @@ export const PlayerCard = ({ player, testId }) => (
     <div className="relative h-56 sm:h-64" style={{ backgroundColor: 'var(--club-tertiary)' }}>
       {player.photo ? (
         <img
-          src={player.photo}
+          src={resolveMediaUrl(player.photo)}
           alt={player.display_name || player.full_name}
           className="h-full w-full object-cover object-top"
           loading="lazy"
@@ -182,7 +184,7 @@ export default function TeamDetailPage() {
                         data-testid={`team-staff-card-${member.id}`}
                       >
                         {member.photo ? (
-                          <img src={member.photo} alt={member.name} className="h-16 w-16 shrink-0 rounded-[10px] object-cover" loading="lazy" />
+                          <img src={resolveMediaUrl(member.photo)} alt={member.name} className="h-16 w-16 shrink-0 rounded-[10px] object-cover" loading="lazy" />
                         ) : (
                           <span
                             className="font-display flex h-16 w-16 shrink-0 items-center justify-center rounded-[10px] text-lg font-bold"
@@ -195,8 +197,13 @@ export default function TeamDetailPage() {
                         <div className="min-w-0">
                           <p className="font-display truncate text-base font-bold">{member.name}</p>
                           <p className="text-xs font-medium" style={{ color: 'var(--club-secondary)' }}>
-                            {member.role_label || member.role}
+                            {staffPositionLabel(member)}
                           </p>
+                          {member.department ? (
+                            <p className="text-[11px]" style={{ color: 'var(--muted-fg)' }}>
+                              {member.department}
+                            </p>
+                          ) : null}
                           {member.bio ? (
                             <p className="mt-2 line-clamp-3 text-xs" style={{ color: 'var(--muted-fg)' }}>
                               {member.bio}

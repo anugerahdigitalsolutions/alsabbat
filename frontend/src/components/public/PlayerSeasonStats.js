@@ -14,9 +14,10 @@ const ROWS = [
   ['red_cards', 'Kartu Merah'],
 ];
 
-/** Season statistics derived from MatchLineup + MatchEvent (never invented). */
+/** Season statistics derived from Match Events (never invented). */
 export const PlayerSeasonStats = ({ playerId }) => {
   const [seasons, setSeasons] = useState([]);
+  const [historical, setHistorical] = useState(null);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +29,7 @@ export const PlayerSeasonStats = ({ playerId }) => {
         const { data } = await api.get(`/players/${playerId}/statistics`);
         if (!active) return;
         setSeasons(data?.seasons || []);
+        setHistorical(data?.historical || null);
         setSelected((data?.seasons || [])[0]?.season_id ?? null);
       } catch (e) {
         if (active) setSeasons([]);
@@ -40,6 +42,14 @@ export const PlayerSeasonStats = ({ playerId }) => {
       active = false;
     };
   }, [playerId]);
+
+  const hasHistorical = Boolean(historical && (historical.goals || historical.assists));
+  const historicalNote = hasHistorical ? (
+    <p className="mt-5 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="player-stats-historical">
+      Statistik historis (nilai awal sebelum sistem ini): {historical.goals} gol · {historical.assists} assist.
+      Angka ini sudah termasuk pada total gol/assist di papan statistik dan Top Scorer.
+    </p>
+  ) : null;
 
   const current = useMemo(
     () => seasons.find((s) => (s.season_id ?? null) === selected) || seasons[0] || null,
@@ -64,9 +74,10 @@ export const PlayerSeasonStats = ({ playerId }) => {
         <EmptyState
           icon={BarChart3}
           title="Statistik belum tersedia"
-          description="Statistik dihitung otomatis dari susunan pemain dan kejadian pertandingan. Tambahkan lineup & event pertandingan untuk melihat angkanya."
+          description="Statistik dihitung otomatis dari kejadian pertandingan. Tambahkan event pertandingan untuk melihat angkanya."
           testId="player-season-stats-empty"
         />
+        {historicalNote}
       </div>
     );
   }
@@ -127,6 +138,7 @@ export const PlayerSeasonStats = ({ playerId }) => {
           belum dicatat. Angka penampilan dihitung dari susunan pemain.
         </p>
       ) : null}
+      {historicalNote}
     </div>
   );
 };

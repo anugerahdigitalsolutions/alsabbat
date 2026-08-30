@@ -106,7 +106,14 @@ IMAGE_SIGNATURES = {
     b"GIF87a": "image/gif",
     b"GIF89a": "image/gif",
 }
-BLOCKED_SNIPPETS = (b"<script", b"<!doctype html", b"<html", b"<?php", b"MZ", b"\x7fELF")
+# Cuplikan berbahaya yang harus dicari di SELURUH awal berkas (polyglot / HTML
+# injection): ini benar-benar bisa muncul di offset mana pun.
+BLOCKED_SNIPPETS = (b"<script", b"<!doctype html", b"<html", b"<?php")
+# Magic byte executable HANYA berarti di offset 0 dan bersifat case-sensitive.
+# Sebelumnya keduanya ikut dicek sebagai substring + di-lowercase, sehingga PNG/JPG
+# yang sah ditolak begitu data terkompresinya memuat byte "mz"/"MZ"/"mZ" secara
+# kebetulan (peluangnya besar dalam 2 KB pertama) — itu false positive-nya.
+BLOCKED_MAGICS = (b"MZ", b"\x7fELF")
 
 
 def sniff_image_mime(content: bytes) -> Optional[str]:
@@ -123,13 +130,13 @@ def sniff_image_mime(content: bytes) -> Optional[str]:
 
 def sanitize_upload(file_name: str, content: bytes, mime_type: str) -> Tuple[str, bytes, str]:
     """Server-side hardening: signature check + safe re-encode for raster images."""
-    head = content[:2048].lower()
-    if any(snippet.lower() in head for snippet in BLOCKED_SNIPPETS):
+    if content.startswith(BLOCKED_MAGICS):
         raise ValidationFailedError("Berkas ditolak: konten tidak aman untuk media.")
     mime = (mime_type or "").lower()
-    if mime.startswith("image/") or sniff_image_mime(content):
-        sniffed = sniff_image_mime(content)
+    sniffed = sniff_image_mime(content)
+    if mime.startswith("image/") or sniffed:
         if not sniffed:
+            # HTML/SVG/skrip yang menyamar sebagai gambar berhenti di sini.
             raise ValidationFailedError("Berkas gambar tidak valid (signature tidak dikenali).")
         try:
             from io import BytesIO
@@ -155,6 +162,13 @@ def sanitize_upload(file_name: str, content: bytes, mime_type: str) -> Tuple[str
         base = os.path.basename(file_name or "gambar")
         stem = base.rsplit(".", 1)[0][:80] or "gambar"
         file_name = f"{stem}.{'png' if mime == 'image/png' else 'jpg'}"
+        return file_name, content, mime
+
+    # Non-gambar (PDF/dokumen/video): payload tidak di-re-encode, jadi cuplikan
+    # HTML/skrip di awal berkas tetap harus ditolak.
+    head = content[:2048].lower()
+    if any(snippet.lower() in head for snippet in BLOCKED_SNIPPETS):
+        raise ValidationFailedError("Berkas ditolak: konten tidak aman untuk media.")
     return file_name, content, mime
 
 
@@ -375,17 +389,31 @@ class MediaService:
             return False
 
     def status(self) -> dict:
+        is_local = self.backend.provider == StorageProvider.LOCAL
+        # LOCAL on a self-hosted server (aaPanel + Nginx) is genuinely persistent
+        # when MEDIA_LOCAL_DIR points at a directory outside the release folder.
+        local_persistent = is_local and settings.MEDIA_LOCAL_PERSISTENT
+        if not is_local:
+            note = "Penyimpanan objek persisten aktif."
+        elif local_persistent:
+            note = (
+                "Penyimpanan LOCAL pada disk server (self-hosted/aaPanel) aktif dan persisten. "
+                f"Direktori: {settings.MEDIA_LOCAL_DIR}. Pastikan direktori ini berada di luar "
+                "folder rilis dan ikut dicadangkan secara berkala."
+            )
+        else:
+            note = (
+                "Penyimpanan LOCAL bersifat sementara di lingkungan ini — berkas bisa hilang saat "
+                "deployment. Untuk server sendiri (aaPanel) set MEDIA_LOCAL_PERSISTENT=true dengan "
+                "MEDIA_LOCAL_DIR di luar folder rilis, atau gunakan MEDIA_STORAGE_PROVIDER=S3/EMERGENT."
+            )
         return {
             "provider": self.backend.provider.value,
             "configured": self.backend.is_configured(),
             "cdn_enabled": bool(settings.MEDIA_CDN_BASE_URL),
-            "persistent": self.backend.provider != StorageProvider.LOCAL,
-            "note": (
-                "Penyimpanan LOCAL hanya untuk pengembangan — berkas bisa hilang saat deployment. "
-                "Set MEDIA_STORAGE_PROVIDER=EMERGENT (atau S3) untuk penyimpanan permanen."
-                if self.backend.provider == StorageProvider.LOCAL
-                else "Penyimpanan objek persisten aktif."
-            ),
+            "persistent": (not is_local) or local_persistent,
+            "local_dir": settings.MEDIA_LOCAL_DIR if is_local else None,
+            "note": note,
             "limits_mb": {k.value: v for k, v in MAX_SIZE_MB.items()},
             "allowed_mime_types": {k.value: sorted(v) for k, v in ALLOWED_MIME_TYPES.items()},
         }

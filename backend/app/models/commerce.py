@@ -4,7 +4,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from app.models.base import AppBaseModel, make_update_model, slugify
 
@@ -42,7 +42,17 @@ class ProductCategoryBase(AppBaseModel):
     @field_validator("slug", mode="before")
     @classmethod
     def _slug(cls, value, info):
-        return value or slugify(info.data.get("name", ""))
+        return slugify(value) if value else value
+
+    # A `field_validator` never runs when the caller omits `slug`, because
+    # Pydantic v2 does not validate default values. Without this the slug stayed
+    # None and the public URL became /merchandise/null. Mirrors the same guard
+    # used by every slugged model in app/models/domain.py.
+    @model_validator(mode="after")
+    def _ensure_slug(self):
+        if not getattr(self, "slug", None):
+            object.__setattr__(self, "slug", slugify(getattr(self, "name", "") or ""))
+        return self
 
 
 class ProductBase(AppBaseModel):
@@ -64,7 +74,16 @@ class ProductBase(AppBaseModel):
     @field_validator("slug", mode="before")
     @classmethod
     def _slug(cls, value, info):
-        return value or slugify(info.data.get("name", ""))
+        return slugify(value) if value else value
+
+    # See ProductCategoryBase._ensure_slug — without this a product created
+    # without an explicit slug kept slug=None, so the storefront linked to
+    # /merchandise/null and the detail page returned "Product not found".
+    @model_validator(mode="after")
+    def _ensure_slug(self):
+        if not getattr(self, "slug", None):
+            object.__setattr__(self, "slug", slugify(getattr(self, "name", "") or ""))
+        return self
 
 
 class ProductVariantBase(AppBaseModel):

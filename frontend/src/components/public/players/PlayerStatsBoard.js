@@ -123,7 +123,7 @@ export const PlayerStatsBoard = ({ players: playersProp = null }) => {
       <EmptyState
         icon={Award}
         title="Statistik pemain belum tersedia"
-        description="Gol, assist, penampilan, dan kartu dihitung otomatis dari Match Events dan Match Lineups. Statistik akan tampil setelah event pertandingan dicatat di Admin Panel."
+        description="Gol, assist, dan kartu dihitung otomatis dari Match Events. Statistik akan tampil setelah event pertandingan dicatat di Admin Panel."
         testId="player-stats-empty"
       />
     );

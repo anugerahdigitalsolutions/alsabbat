@@ -52,7 +52,7 @@ height_cm, weight_kg, bio, status(ACTIVE|INJURED|SUSPENDED|ON_LOAN|INACTIVE|RETI
 ### matches
 `team_id, season_id, competition_id, opponent{name,short_name,logo}, date, time, venue,
 venue_type(HOME|AWAY|NEUTRAL), status(SCHEDULED|UPCOMING|LIVE|FINISHED|POSTPONED|CANCELLED),
-home_score, away_score, match_cover, description, lineup_ready, result_summary`
+home_score, away_score, match_cover, description, result_summary`
 
 ### posts / categories / tags / authors
 `posts: title, slug(unique), thumbnail, excerpt, content, category_id, tag_ids[], author_id,

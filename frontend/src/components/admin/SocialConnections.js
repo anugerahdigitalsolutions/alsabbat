@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Instagram, Link2, Loader2, Music2, Unlink, Youtube } from 'lucide-react';
+import { Info, Instagram, Link2, Loader2, Music2, Unlink, Youtube } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { Switch } from '../ui/switch';
 
 const ICONS = { INSTAGRAM: Instagram, TIKTOK: Music2, YOUTUBE: Youtube };
 
 const STATUS_LABEL = {
   CONNECTED: 'TERHUBUNG',
-  NOT_CONNECTED: 'TIDAK TERHUBUNG',
+  DISCONNECTED: 'BELUM TERHUBUNG',
+  NOT_CONNECTED: 'BELUM TERHUBUNG',
   NOT_CONFIGURED: 'BELUM DIKONFIGURASI',
   EXPIRED: 'PERLU HUBUNGKAN ULANG',
   ERROR: 'ERROR',
@@ -17,6 +19,7 @@ const STATUS_LABEL = {
 
 const STATUS_TONE = {
   CONNECTED: { bg: 'rgba(22,163,74,0.12)', fg: '#166534' },
+  DISCONNECTED: { bg: 'rgba(0,0,0,0.06)', fg: '#3F3F46' },
   NOT_CONNECTED: { bg: 'rgba(0,0,0,0.06)', fg: '#3F3F46' },
   NOT_CONFIGURED: { bg: 'rgba(0,0,0,0.06)', fg: '#3F3F46' },
   EXPIRED: { bg: 'rgba(220,38,38,0.10)', fg: '#991B1B' },
@@ -83,6 +86,19 @@ export const SocialConnections = () => {
     }
   };
 
+  const toggleEnabled = async (platform, enabled) => {
+    setBusy(platform);
+    try {
+      await api.patch(`/social/connections/${platform.toLowerCase()}/settings`, { enabled });
+      toast.success(`${platform} ${enabled ? 'diaktifkan' : 'dinonaktifkan'}.`);
+      await load();
+    } catch (e) {
+      toast.error(apiErrorMessage(e, 'Gagal memperbarui status aktif platform'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const disconnect = async (platform) => {
     setBusy(platform);
     try {
@@ -112,8 +128,9 @@ export const SocialConnections = () => {
         <div className="mt-4 space-y-3">
           {items.map((item) => {
             const Icon = ICONS[item.platform] || Link2;
-            const tone = STATUS_TONE[item.status] || STATUS_TONE.NOT_CONNECTED;
+            const tone = STATUS_TONE[item.status] || STATUS_TONE.DISCONNECTED;
             const isBusy = busy === item.platform;
+            const enabled = item.enabled !== false;
             const canDisconnect = ['CONNECTED', 'EXPIRED', 'ERROR'].includes(item.status);
             return (
               <div
@@ -150,6 +167,19 @@ export const SocialConnections = () => {
                   {STATUS_LABEL[item.status] || item.status}
                 </Badge>
 
+                <label
+                  className="flex shrink-0 items-center gap-2 text-xs font-semibold"
+                  style={{ color: 'var(--muted-fg)' }}
+                >
+                  <Switch
+                    checked={enabled}
+                    onCheckedChange={(value) => toggleEnabled(item.platform, value)}
+                    disabled={isBusy}
+                    data-testid={`social-enabled-${item.platform.toLowerCase()}`}
+                  />
+                  {enabled ? 'Aktif' : 'Nonaktif'}
+                </label>
+
                 <div className="ml-auto shrink-0">
                   {canDisconnect ? (
                     <Button
@@ -169,7 +199,7 @@ export const SocialConnections = () => {
                       type="button"
                       size="sm"
                       onClick={() => connect(item.platform)}
-                      disabled={isBusy || !item.configured}
+                      disabled={isBusy || !item.configured || !enabled}
                       className="font-semibold"
                       style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                       data-testid={`social-connect-${item.platform.toLowerCase()}`}
@@ -179,6 +209,17 @@ export const SocialConnections = () => {
                     </Button>
                   )}
                 </div>
+                {item.status === 'NOT_CONFIGURED' && (item.requirements || []).length ? (
+                  <p
+                    className="basis-full text-xs leading-relaxed"
+                    style={{ color: 'var(--muted-fg)' }}
+                    data-testid={`social-requirements-${item.platform.toLowerCase()}`}
+                  >
+                    <Info className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
+                    {item.official_api} — syarat: {(item.requirements || []).join('; ')}. Isi env{' '}
+                    {(item.missing_env || []).join(', ')} di server, lalu muat ulang halaman ini.
+                  </p>
+                ) : null}
               </div>
             );
           })}

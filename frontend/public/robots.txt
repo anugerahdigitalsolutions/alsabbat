@@ -4,3 +4,4 @@ Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /cart
+Sitemap: https://achievement-bug-fix.preview.emergentagent.com/api/seo/sitemap.xml

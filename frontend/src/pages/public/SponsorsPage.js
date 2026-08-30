@@ -1,5 +1,6 @@
 import React from 'react';
-import { ExternalLink, Handshake } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Handshake } from 'lucide-react';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
@@ -7,6 +8,8 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Badge } from '../../components/ui/badge';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
+import { sponsorPath } from '../../components/public/SponsorsStrip';
 
 export default function SponsorsPage() {
   usePageSeo({ title: 'Sponsor', description: 'Sponsor dan partner resmi AL SABBAT Football Club.', path: '/sponsors' });
@@ -30,10 +33,15 @@ export default function SponsorsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((sponsor) => (
-              <article key={sponsor.id} className="als-card p-6" data-testid={`sponsor-card-${sponsor.id}`}>
+              <Link
+                key={sponsor.id}
+                to={sponsorPath(sponsor)}
+                className="als-card als-focus block p-6 transition-shadow hover:shadow-[var(--shadow-md)]"
+                data-testid={`sponsor-card-${sponsor.id}`}
+              >
                 <div className="mb-4 flex h-20 items-center justify-center rounded-[var(--radius-md)]" style={{ backgroundColor: 'var(--surface-2)' }}>
                   {sponsor.logo ? (
-                    <img src={sponsor.logo} alt={sponsor.name} className="max-h-16 max-w-full object-contain" loading="lazy" />
+                    <img src={resolveMediaUrl(sponsor.logo)} alt={sponsor.name} className="max-h-16 w-auto max-w-full object-contain" loading="lazy" />
                   ) : (
                     <span className="font-display text-base font-bold">{sponsor.name}</span>
                   )}
@@ -47,26 +55,20 @@ export default function SponsorsPage() {
                       </Badge>
                     ) : null}
                   </div>
-                  {sponsor.website ? (
-                    <a
-                      href={sponsor.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Website ${sponsor.name}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)]"
-                      style={{ backgroundColor: 'rgba(1,40,145,0.07)', color: 'var(--club-secondary)' }}
-                      data-testid={`sponsor-link-${sponsor.id}`}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  ) : null}
+                  <span
+                    className="font-display shrink-0 text-xs font-semibold"
+                    style={{ color: 'var(--club-secondary)' }}
+                    data-testid={`sponsor-link-${sponsor.id}`}
+                  >
+                    Lihat Profil →
+                  </span>
                 </div>
                 {sponsor.description ? (
-                  <p className="mt-3 text-sm" style={{ color: 'var(--muted-fg)' }}>
+                  <p className="mt-3 line-clamp-3 text-sm" style={{ color: 'var(--muted-fg)' }}>
                     {sponsor.description}
                   </p>
                 ) : null}
-              </article>
+              </Link>
             ))}
           </div>
         )}

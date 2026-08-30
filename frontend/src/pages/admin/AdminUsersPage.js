@@ -6,7 +6,9 @@ import { useClub } from '../../context/ClubContext';
 
 export default function AdminUsersPage() {
   const { meta } = useClub();
-  const roleOptions = (meta?.roles || []).map((r) => ({ value: r.value, label: r.label }));
+  const roleOptions = (meta?.roles || [])
+    .filter((r) => r.selectable !== false)
+    .map((r) => ({ value: r.value, label: r.label }));
 
   return (
     <ResourceManager
@@ -19,7 +21,7 @@ export default function AdminUsersPage() {
       emptyIcon={UserCog}
       emptyTitle="Belum ada admin lain"
       emptyDescription="Tambahkan admin dengan role sesuai kebutuhan."
-      defaults={{ role: 'CONTENT_ADMIN', is_active: true }}
+      defaults={{ role: 'MEDIA_CONTENT_ADMIN', is_active: true }}
       columns={[
         { key: 'name', label: 'Nama' },
         { key: 'email', label: 'Email' },

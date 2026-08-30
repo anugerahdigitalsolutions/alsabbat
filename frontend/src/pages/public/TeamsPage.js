@@ -14,6 +14,7 @@ import { usePageSeo } from '../../hooks/usePageSeo';
 import { useClub } from '../../context/ClubContext';
 import { useSiteText } from '../../lib/siteContent';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
+import { staffPositionLabel } from '../../lib/staffStructure';
 
 const GROUPS = [
   ['GOALKEEPER', 'Penjaga Gawang'],
@@ -118,8 +119,13 @@ export default function TeamsPage() {
                   ) : null}
                   <p className="font-display text-sm font-bold">{member.full_name || member.name}</p>
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--club-secondary)' }}>
-                    {member.role_label || member.role || member.position || 'Staf'}
+                    {staffPositionLabel(member)}
                   </p>
+                  {member.department ? (
+                    <p className="mt-1 text-[11px]" style={{ color: 'var(--muted-fg)' }}>
+                      {member.department}
+                    </p>
+                  ) : null}
                 </Link>
               ))}
             </div>

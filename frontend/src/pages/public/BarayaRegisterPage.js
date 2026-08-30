@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, UserPlus } from 'lucide-react';
+import { AlertCircle, UserPlus } from 'lucide-react';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useBaraya } from '../../context/BarayaAuthContext';
+import { OtpVerifyForm } from '../../components/public/OtpVerifyForm';
+import { GoogleLoginButton } from '../../components/public/GoogleLoginButton';
 
 const FIELDS = [
   ['full_name', 'Nama Lengkap', 'text'],
@@ -23,7 +25,7 @@ export default function BarayaRegisterPage() {
     path: '/daftar',
     robots: 'noindex,follow',
   });
-  const { register } = useBaraya();
+  const { register, verifyOtp } = useBaraya();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     full_name: '',
@@ -33,7 +35,7 @@ export default function BarayaRegisterPage() {
     password_confirmation: '',
   });
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [verification, setVerification] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async (event) => {
@@ -47,12 +49,57 @@ export default function BarayaRegisterPage() {
     const result = await register(form);
     setSubmitting(false);
     if (result.ok) {
-      setSuccess(true);
-      setTimeout(() => navigate('/login', { replace: true }), 1800);
+      setVerification({ email: result.email || form.email, delivered: !!result.otp_delivered });
       return;
     }
     setError(result.message);
   };
+
+  const confirmOtp = async (code) => {
+    const result = await verifyOtp({ email: verification.email, code });
+    if (result.ok) {
+      navigate('/akun', { replace: true });
+      return { ok: true };
+    }
+    return result;
+  };
+
+  if (verification) {
+    return (
+      <div data-testid="page-baraya-register">
+        <PublicPageHeader
+          label="Baraya AL SABBAT"
+          title="Verifikasi Email Anda"
+          description="Masukkan kode 6 digit yang kami kirim ke email Anda untuk mengaktifkan akun."
+          breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Daftar', to: '/daftar' }, { label: 'Verifikasi' }]}
+        />
+        <div className="als-container py-10 sm:py-14">
+          <div className="als-card mx-auto max-w-lg p-6 sm:p-8" data-testid="baraya-register-otp-step">
+            <OtpVerifyForm
+              email={verification.email}
+              purpose="REGISTER"
+              delivered={verification.delivered}
+              onSubmit={confirmOtp}
+              submitLabel="Verifikasi & Masuk"
+              testId="baraya-register-otp"
+            />
+            <p className="mt-4 text-xs" style={{ color: 'var(--muted-fg)' }}>
+              Salah alamat email?{' '}
+              <button
+                type="button"
+                className="font-semibold underline"
+                style={{ color: 'var(--club-secondary)' }}
+                onClick={() => setVerification(null)}
+                data-testid="baraya-register-otp-back"
+              >
+                Ubah data pendaftaran
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div data-testid="page-baraya-register">
@@ -84,7 +131,7 @@ export default function BarayaRegisterPage() {
 
           <Button
             type="submit"
-            disabled={submitting || success}
+            disabled={submitting}
             className="w-full min-h-[44px] font-semibold"
             style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
             data-testid="baraya-register-submit"
@@ -93,16 +140,12 @@ export default function BarayaRegisterPage() {
             {submitting ? 'Memproses…' : 'Buat Akun Baraya'}
           </Button>
 
-          {success ? (
-            <p
-              className="flex items-start gap-2 rounded-[var(--radius-sm)] p-3 text-xs"
-              style={{ backgroundColor: 'rgba(22,163,74,0.12)', color: '#166534' }}
-              data-testid="baraya-register-success"
-            >
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              Akun Baraya berhasil dibuat. Mengarahkan ke halaman login…
-            </p>
-          ) : null}
+          <div className="flex items-center gap-3 text-[11px] uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+            <span className="h-px flex-1" style={{ backgroundColor: 'var(--border-soft)' }} />
+            atau
+            <span className="h-px flex-1" style={{ backgroundColor: 'var(--border-soft)' }} />
+          </div>
+          <GoogleLoginButton label="Daftar dengan Google" testId="baraya-register-google" />
 
           {error ? (
             <p

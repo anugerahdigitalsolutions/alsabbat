@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
+import { PageHeaderBackdrop } from './PageHeaderBackdrop';
 
 /**
  * Shared inner-page header (220–330px) — dark brand surface, gold accent,
@@ -30,6 +31,8 @@ export const PublicPageHeader = ({
       style={{ backgroundColor: 'var(--club-secondary)' }}
       data-testid={testId}
     >
+      {/* Latar abstrak landscape (variasi per halaman) — hanya lapisan background. */}
+      {backgroundImage ? null : <PageHeaderBackdrop />}
       {backgroundImage ? (
         <img
           src={backgroundImage}
@@ -39,12 +42,17 @@ export const PublicPageHeader = ({
           loading="eager"
         />
       ) : null}
-      <div className="als-pitch-lines absolute inset-0 opacity-70" aria-hidden="true" />
+      <div
+        className={`als-pitch-lines absolute inset-0 ${backgroundImage ? 'opacity-70' : 'opacity-25'}`}
+        aria-hidden="true"
+      />
       <div
         className="absolute inset-0"
         style={{
-          background:
-            'linear-gradient(96deg, rgba(1,40,145,0.96) 0%, rgba(1,40,145,0.84) 32%, rgba(1,40,145,0.5) 62%, rgba(0,0,0,0.3) 100%)',
+          background: backgroundImage
+            ? 'linear-gradient(96deg, rgba(1,40,145,0.96) 0%, rgba(1,40,145,0.84) 32%, rgba(1,40,145,0.5) 62%, rgba(0,0,0,0.3) 100%)'
+            : // area teks tetap tenang, sisi kanan dibiarkan menampilkan wave
+              'linear-gradient(96deg, rgba(1,40,145,0.78) 0%, rgba(1,40,145,0.5) 36%, rgba(1,40,145,0.1) 68%, rgba(1,15,56,0.2) 100%)',
         }}
         aria-hidden="true"
       />

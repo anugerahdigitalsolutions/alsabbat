@@ -12,11 +12,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { AdminSidebar, ADMIN_NAV } from './AdminSidebar';
+import { AdminSidebar, ADMIN_NAV, ADMIN_ROUTE_PERMISSIONS } from './AdminSidebar';
+import { NotificationBell } from '../shared/NotificationBell';
+import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Admin',
+  CLUB_ADMIN: 'Admin Klub',
+  PLAYER_STAFF_ADMIN: 'Admin Pemain & Staff',
+  MATCH_ADMIN: 'Admin Pertandingan',
+  MEDIA_CONTENT_ADMIN: 'Admin Media & Konten',
+  STORE_MANAGER: 'Admin Store',
+  FINANCE_ADMIN: 'Admin Keuangan',
+  IT_ADMIN: 'Admin IT / Developer',
   CONTENT_ADMIN: 'Content Admin',
   GALLERY_ADMIN: 'Gallery Admin',
   SOCIAL_MEDIA_ADMIN: 'Social Media Admin',
@@ -24,13 +33,29 @@ const ROLE_LABELS = {
   ORDER_ADMIN: 'Order Admin',
 };
 
+const AccessDenied = ({ permission }) => (
+  <div className="als-card p-8" data-testid="admin-access-denied">
+    <p className="als-section-label mb-2">Akses Ditolak</p>
+    <h1 className="font-display text-2xl font-semibold tracking-tight">Halaman ini di luar akses role Anda</h1>
+    <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
+      Role Anda tidak memiliki permission <span className="font-mono">{permission}</span>. Gunakan menu di samping
+      untuk mengelola modul sesuai akses Anda, atau hubungi Super Admin bila akses ini memang dibutuhkan.
+    </p>
+  </div>
+);
+
 export const AdminShell = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasPermission } = useAuth();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
 
   const current = ADMIN_NAV.flatMap((s) => s.items).find((i) =>
     i.end ? pathname === i.to : pathname.startsWith(i.to)
+  );
+
+  // Guard route: backend tetap penjaga utama, ini mencegah halaman kosong/403 saat URL dibuka langsung.
+  const blocked = ADMIN_ROUTE_PERMISSIONS.find(
+    (route) => pathname.startsWith(route.to) && !hasPermission(route.permission)
   );
 
   return (
@@ -80,6 +105,13 @@ export const AdminShell = () => {
               </Button>
             </Link>
 
+            <NotificationBell
+              client={api}
+              basePath="/notifications"
+              testId="admin-notification-bell"
+              iconStyle={{ color: 'var(--club-secondary)' }}
+            />
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2" data-testid="admin-user-menu-button">
@@ -124,7 +156,7 @@ export const AdminShell = () => {
         </header>
 
         <main className="als-admin-container py-6 sm:py-8">
-          <Outlet />
+          {blocked ? <AccessDenied permission={blocked.permission} /> : <Outlet />}
         </main>
       </div>
     </div>

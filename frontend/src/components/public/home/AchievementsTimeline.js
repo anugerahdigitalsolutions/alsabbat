@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trophy } from 'lucide-react';
 import { EmptyState } from '../../shared/EmptyState';
+import { resolveMediaUrl } from '../gallery/mediaUtils';
 
 /** Horizontal honours timeline — hanya menampilkan prestasi yang benar-benar tercatat. */
 export const AchievementsTimeline = ({ items = [] }) => {
@@ -33,6 +34,15 @@ export const AchievementsTimeline = ({ items = [] }) => {
               <Trophy className="h-5 w-5" style={{ color: 'var(--club-primary)' }} aria-hidden="true" />
             </span>
             <div className="als-card als-lift p-5">
+              {item.trophy_image ? (
+                <img
+                  src={resolveMediaUrl(item.trophy_image)}
+                  alt={item.title}
+                  className="mb-3 h-20 w-full rounded-[var(--radius-sm)] object-cover"
+                  loading="lazy"
+                  data-testid={`home-achievement-image-${item.id}`}
+                />
+              ) : null}
               {item.year ? (
                 <p className="font-display text-2xl font-extrabold tabular-nums" style={{ color: 'var(--club-primary)' }}>
                   {item.year}

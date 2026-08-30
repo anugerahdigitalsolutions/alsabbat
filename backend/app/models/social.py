@@ -78,3 +78,9 @@ class SocialPublicationCreate(AppBaseModel):
     description: Optional[str] = Field(default=None, max_length=5000)
     tags: List[str] = Field(default_factory=list, max_length=30)
     visibility: YouTubeVisibility = YouTubeVisibility.PRIVATE
+
+
+class SocialPlatformSettings(AppBaseModel):
+    """Fase 4 — aktif/nonaktifkan platform sosial (tanpa menyentuh kredensial)."""
+
+    enabled: bool

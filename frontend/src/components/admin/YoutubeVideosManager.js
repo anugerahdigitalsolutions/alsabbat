@@ -7,10 +7,117 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { LoadingState } from '../shared/LoadingState';
 import { parseYoutubeId, YOUTUBE_VIDEOS_KEY } from '../public/home/YoutubeShowcase';
 
 const rowId = () => `yt-${Math.random().toString(36).slice(2, 10)}`;
+
+/** Modal tambah video — memakai logic ekstraksi ID & penyimpanan existing. */
+const AddVideoDialog = ({ open, onOpenChange, onSubmit, saving }) => {
+  const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    if (open) {
+      setUrl('');
+      setTitle('');
+      setEnabled(true);
+    }
+  }, [open]);
+
+  const videoId = parseYoutubeId(url);
+  const invalid = Boolean(url.trim()) && !videoId;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg bg-white" data-testid="admin-youtube-add-dialog">
+        <DialogHeader>
+          <DialogTitle className="font-display">Tambah Video YouTube</DialogTitle>
+          <DialogDescription>
+            Tempel link YouTube (watch, youtu.be, atau shorts). Video baru langsung menjadi urutan paling atas.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div
+            className="relative w-full overflow-hidden rounded-[var(--radius-sm)]"
+            style={{ aspectRatio: '16 / 9', backgroundColor: 'rgba(1,40,145,0.08)' }}
+          >
+            {videoId ? (
+              <img
+                src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
+                alt="Pratinjau video"
+                className="absolute inset-0 h-full w-full object-cover"
+                loading="lazy"
+                data-testid="admin-youtube-add-preview"
+              />
+            ) : (
+              <span className="absolute inset-0 grid place-items-center">
+                <Youtube className="h-8 w-8" style={{ color: 'var(--club-secondary)' }} aria-hidden="true" />
+              </span>
+            )}
+          </div>
+
+          <div>
+            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+              Link YouTube
+            </Label>
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=xxxxxxxxxxx"
+              className="bg-white"
+              autoFocus
+              data-testid="admin-youtube-add-url"
+            />
+            {invalid ? (
+              <p className="mt-1 text-xs font-semibold" style={{ color: '#991B1B' }} data-testid="admin-youtube-add-invalid">
+                Link YouTube tidak valid.
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+              Judul (opsional)
+            </Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Judul video di Beranda"
+              className="bg-white"
+              data-testid="admin-youtube-add-title"
+            />
+          </div>
+
+          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+            <Switch checked={enabled} onCheckedChange={setEnabled} data-testid="admin-youtube-add-enabled" />
+            {enabled ? 'Aktif' : 'Nonaktif'}
+          </label>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="admin-youtube-add-cancel">
+            Batal
+          </Button>
+          <Button
+            type="button"
+            onClick={() => onSubmit({ url: url.trim(), title: title.trim(), enabled })}
+            disabled={saving || !videoId}
+            className="font-semibold"
+            style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+            data-testid="admin-youtube-add-submit"
+          >
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Simpan
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 /**
  * Admin → Konten Halaman → Video YouTube.
@@ -22,6 +129,7 @@ export const YoutubeVideosManager = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,14 +156,18 @@ export const YoutubeVideosManager = () => {
           .filter((item) => item.url);
       }
 
+      // Urutan admin = urutan tampil di Beranda: terbaru (order tertinggi) di paling atas.
       setRows(
-        list.map((item, i) => ({
-          key: rowId(),
-          url: item.url || item.id || '',
-          title: item.title || '',
-          enabled: item.enabled !== false,
-          order: Number.isFinite(Number(item.order)) ? Number(item.order) : i,
-        }))
+        list
+          .map((item, i) => ({
+            key: rowId(),
+            url: item.url || item.id || '',
+            title: item.title || '',
+            enabled: item.enabled !== false,
+            order: Number.isFinite(Number(item.order)) ? Number(item.order) : i,
+            _i: i,
+          }))
+          .sort((a, b) => b.order - a.order || b._i - a._i)
       );
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Gagal memuat daftar video YouTube'));
@@ -82,25 +194,25 @@ export const YoutubeVideosManager = () => {
       return next;
     });
 
-  const add = () =>
-    setRows((prev) => [...prev, { key: rowId(), url: '', title: '', enabled: true, order: prev.length }]);
+  const add = () => setAddOpen(true);
 
-  const save = async () => {
-    const invalid = rows.filter((row) => row.url.trim() && !parseYoutubeId(row.url));
+  // Simpan daftar ke CMS. Baris paling atas mendapat `order` tertinggi
+  // supaya urutan admin sama dengan urutan tampil di Beranda (terbaru di atas).
+  const persist = async (list) => {
+    const invalid = list.filter((row) => row.url.trim() && !parseYoutubeId(row.url));
     if (invalid.length) {
       toast.error('Ada link YouTube yang tidak valid. Contoh: https://www.youtube.com/watch?v=xxxxxxxxxxx');
-      return;
+      return false;
     }
     setSaving(true);
     try {
-      const payload = rows
-        .filter((row) => row.url.trim())
-        .map((row, i) => ({
-          url: row.url.trim(),
-          title: row.title.trim(),
-          enabled: row.enabled !== false,
-          order: i,
-        }));
+      const kept = list.filter((row) => row.url.trim());
+      const payload = kept.map((row, i) => ({
+        url: row.url.trim(),
+        title: row.title.trim(),
+        enabled: row.enabled !== false,
+        order: kept.length - 1 - i,
+      }));
       await api.put('/site-content/bulk', {
         items: [
           {
@@ -113,11 +225,20 @@ export const YoutubeVideosManager = () => {
       });
       toast.success('Video YouTube tersimpan');
       await load();
+      return true;
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Gagal menyimpan video YouTube'));
+      return false;
     } finally {
       setSaving(false);
     }
+  };
+
+  const save = () => persist(rows);
+
+  const submitNew = async (video) => {
+    const ok = await persist([{ key: rowId(), ...video }, ...rows]);
+    if (ok) setAddOpen(false);
   };
 
   if (loading) return <LoadingState rows={3} testId="admin-youtube-loading" />;
@@ -126,11 +247,12 @@ export const YoutubeVideosManager = () => {
 
   return (
     <div className="space-y-5" data-testid="admin-youtube-videos">
+      <AddVideoDialog open={addOpen} onOpenChange={setAddOpen} onSubmit={submitNew} saving={saving} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm" style={{ color: 'var(--muted-fg)' }}>
           Tempel link YouTube biasa (watch, youtu.be, atau shorts) — ID video diambil otomatis. Video aktif tampil
           sebagai slider 16:9 di Beranda dan berpindah otomatis saat video selesai. Bila tidak ada video aktif,
-          section YouTube tidak ditampilkan.
+          section YouTube tidak ditampilkan. Video terbaru otomatis berada di urutan paling atas.
         </p>
         {canWrite ? (
           <div className="flex items-center gap-2">

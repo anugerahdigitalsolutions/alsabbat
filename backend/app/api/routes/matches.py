@@ -1,7 +1,7 @@
 """Matches module — primary football domain.
 
 Phase 1 delivered the data architecture and relationship endpoints.
-Phase 3 (Match Center V1) adds lineups + events aggregation on top of the
+Phase 3 (Match Center V1) adds match events aggregation on top of the
 same relationship model — Gallery / Video / News / Social remain separate
 referenced resources (no media arrays embedded in Match).
 """
@@ -21,7 +21,6 @@ matches = Repository(Collections.MATCHES)
 posts = Repository(Collections.POSTS)
 media = Repository(Collections.MEDIA)
 albums = Repository(Collections.GALLERY_ALBUMS)
-lineups = Repository(Collections.MATCH_LINEUPS)
 events = Repository(Collections.MATCH_EVENTS)
 players = Repository(Collections.PLAYERS)
 teams = Repository(Collections.TEAMS)
@@ -135,7 +134,7 @@ async def head_to_head(match_id: str):
     return await _head_to_head(match)
 
 
-@router.get("/{match_id}/relations", summary="Match Center payload (relations + lineups + events)")
+@router.get("/{match_id}/relations", summary="Match Center payload (relations + events)")
 async def match_relations(match_id: str):
     match = await matches.get(match_id)
     if not match:
@@ -166,11 +165,6 @@ async def match_relations(match_id: str):
         for item in items:
             match_media.append({**item, "album_id": album["id"], "album_title": album.get("title")})
 
-    lineup_items, _ = await lineups.list(
-        {"match_id": match_id},
-        limit=200,
-        sort=(("display_order", 1), ("created_at", 1)),
-    )
     event_items, _ = await events.list(
         {"match_id": match_id},
         limit=200,
@@ -178,8 +172,6 @@ async def match_relations(match_id: str):
     )
 
     player_ids: List[str] = []
-    for item in lineup_items:
-        player_ids.append(item.get("player_id"))
     for item in event_items:
         player_ids.append(item.get("player_id"))
         player_ids.append(item.get("related_player_id"))
@@ -197,7 +189,6 @@ async def match_relations(match_id: str):
         "competition": competition,
         "season": season,
         # Match Center V1
-        "lineups": lineup_items,
         "events": event_items,
         "players": players_by_id,
         # Integration points (referenced resources, never embedded arrays)

@@ -10,14 +10,13 @@ from app.api.crud_factory import Repository
 from app.api.deps import require_permission
 from app.core.config import settings
 from app.core.database import Collections, ping
-from app.core.rbac import ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_PERMISSIONS
+from app.core.rbac import ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_PERMISSIONS, SELECTABLE_ROLES
 from app.models.auth import AuthContext
 from app.models.enums import (
     AnalyticsEventType,
     CompetitionType,
     EntityStatus,
     GalleryStatus,
-    LineupRole,
     MatchEventSide,
     MatchEventType,
     MatchStatus,
@@ -33,6 +32,7 @@ from app.models.enums import (
     TeamCategory,
 )
 from app.services.media_service import media_service
+from app.models.staff_structure import meta_departments
 
 router = APIRouter(tags=["system"])
 STARTED_AT = time.time()
@@ -62,11 +62,12 @@ async def meta():
         "player_positions": opts(PlayerPosition),
         "player_status": opts(PlayerStatus),
         "staff_roles": opts(StaffRole),
+        # Master Bagian & Jabatan Staff (dependent dropdown di UI).
+        "staff_departments": meta_departments(),
         "season_status": opts(SeasonStatus),
         "competition_types": opts(CompetitionType),
         "match_status": opts(MatchStatus),
         "match_venue_types": opts(MatchVenueType),
-        "lineup_roles": opts(LineupRole),
         "match_event_types": opts(MatchEventType),
         "match_event_sides": opts(MatchEventSide),
         "post_status": opts(PostStatus),
@@ -81,6 +82,7 @@ async def meta():
                 "label": ROLE_LABELS.get(role, role),
                 "description": ROLE_DESCRIPTIONS.get(role, ""),
                 "permissions": perms,
+                "selectable": role in SELECTABLE_ROLES,
             }
             for role, perms in ROLE_PERMISSIONS.items()
         ],
@@ -99,7 +101,6 @@ async def status(_user: AuthContext = Depends(require_permission("system:read"))
         ("seasons", Collections.SEASONS),
         ("competitions", Collections.COMPETITIONS),
         ("matches", Collections.MATCHES),
-        ("match_lineups", Collections.MATCH_LINEUPS),
         ("match_events", Collections.MATCH_EVENTS),
         ("posts", Collections.POSTS),
         ("categories", Collections.CATEGORIES),

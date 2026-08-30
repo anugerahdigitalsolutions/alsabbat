@@ -119,6 +119,29 @@ async def optional_customer(
         return None
 
 
+def require_gallery_access(feature: str):
+    """Fase 3 — Galeri & Sorotan Pemain hanya untuk PEMAIN & STAF (dipaksa di server)."""
+
+    async def _dependency(
+        auth: Optional[CustomerAuthContext] = Depends(optional_customer),
+    ) -> dict:
+        role = "GUEST"
+        roles = []
+        if auth:
+            doc = await get_db()[Collections.CUSTOMERS].find_one({"id": auth.customer_id})
+            role = (doc or {}).get("role") or "MEMBER"
+            # Satu akun bisa memiliki beberapa profil (PEMAIN + STAFF).
+            roles = (doc or {}).get("roles") or [role]
+        if not set(roles) & {"PEMAIN", "STAFF"}:
+            raise ForbiddenError(
+                f"{feature} hanya dapat diakses oleh Pemain dan Staf AL SABBAT. "
+                "Ajukan diri sebagai Pemain untuk mendapatkan akses."
+            )
+        return {"role": role, "roles": roles}
+
+    return _dependency
+
+
 def request_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for", "")
     if forwarded:

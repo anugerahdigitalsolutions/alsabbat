@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Images, Share2, Video } from 'lucide-react';
 import { Badge } from '../../ui/badge';
+import { resolveMediaUrl } from '../gallery/mediaUtils';
 
 const PanelShell = ({ title, count, children, testId }) => (
   <div className="als-card p-5" data-testid={testId}>
@@ -54,7 +55,7 @@ export const MatchMediaPanel = ({ galleryAlbums = [], images = [], videos = [], 
             >
               {album.cover_url ? (
                 <img
-                  src={album.cover_url}
+                  src={resolveMediaUrl(album.cover_url)}
                   alt={album.title}
                   className="h-10 w-14 rounded object-cover"
                   loading="lazy"
@@ -78,7 +79,7 @@ export const MatchMediaPanel = ({ galleryAlbums = [], images = [], videos = [], 
               {images.slice(0, 6).map((item) => (
                 <img
                   key={item.id}
-                  src={item.thumbnail_url || item.url}
+                  src={resolveMediaUrl(item.thumbnail_url || item.url)}
                   alt={item.alt_text || 'Foto pertandingan'}
                   className="h-16 w-full rounded object-cover"
                   loading="lazy"

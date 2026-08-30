@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Users } from 'lucide-react';
 import { EmptyState } from '../../shared/EmptyState';
+import { resolveMediaUrl } from '../gallery/mediaUtils';
 
 const POSITION_LABEL = {
   GOALKEEPER: 'Penjaga Gawang',
@@ -19,7 +20,7 @@ const PlayerCard = ({ player, index }) => (
   >
     {player.photo ? (
       <img
-        src={player.photo}
+        src={resolveMediaUrl(player.photo)}
         alt={player.display_name || player.full_name}
         className="absolute inset-0 h-full w-full object-cover object-top"
         loading="lazy"

@@ -24,6 +24,7 @@ from app.core.rate_limit import write_rate_limit
 from app.models.auth import AuthContext
 from app.models.base import new_id, utcnow
 from app.models.social import (
+    SocialPlatformSettings,
     SocialPublicationCreate,
     SocialPublicationStatus,
     SocialPublicationUpdate,
@@ -104,6 +105,37 @@ async def list_connections(user: AuthContext = social_read) -> Dict[str, Any]:
     return {"items": items, "total": len(items)}
 
 
+@router.patch("/connections/{platform}/settings", summary="Aktif/nonaktifkan platform sosial")
+async def update_connection_settings(
+    platform: str,
+    payload: SocialPlatformSettings,
+    request: Request,
+    user: AuthContext = social_publish,
+) -> Dict[str, Any]:
+    platform = platform.upper()
+    if platform not in social_oauth.PLATFORMS:
+        raise NotFoundError("Platform tidak dikenal")
+    write_rate_limit(request)
+    coll = get_db()[Collections.SOCIAL_CONNECTIONS]
+    await coll.update_one(
+        {"platform": platform},
+        {
+            "$set": {
+                "platform": platform,
+                "enabled": payload.enabled,
+                "updated_at": utcnow().isoformat(),
+            },
+            "$setOnInsert": {"id": new_id()},
+        },
+        upsert=True,
+    )
+    logger.info(
+        "social platform toggled", extra={"platform": platform, "enabled": payload.enabled}
+    )
+    doc = await coll.find_one({"platform": platform})
+    return social_oauth.connection_state(platform, doc)
+
+
 @router.post("/connections/{platform}/authorize", summary="Mulai OAuth resmi platform")
 async def start_authorization(
     platform: str, request: Request, user: AuthContext = social_publish
@@ -115,6 +147,11 @@ async def start_authorization(
         raise ValidationFailedError(
             f"{platform.title()} belum dikonfigurasi. Env yang belum tersedia: "
             + ", ".join(social_oauth.missing_env(platform))
+        )
+    existing = await get_db()[Collections.SOCIAL_CONNECTIONS].find_one({"platform": platform})
+    if existing and not existing.get("enabled", True):
+        raise ValidationFailedError(
+            f"{platform.title()} sedang dinonaktifkan. Aktifkan dulu platform ini di Admin → Media Sosial."
         )
     write_rate_limit(request)
     state = await social_oauth.create_state(platform, user.user_id)
@@ -332,6 +369,17 @@ async def _run_publish(doc: Dict[str, Any], user: AuthContext) -> Dict[str, Any]
         raise ValidationFailedError(
             f"Batas percobaan ({MAX_ATTEMPTS}) tercapai. Perbaiki konfigurasi lalu buat publikasi baru."
         )
+
+    # Fase 4 — platform yang dinonaktifkan Admin tidak boleh menerbitkan apa pun.
+    base_platform = str(doc["platform"]).split("_")[0]
+    if base_platform in social_oauth.PLATFORMS:
+        connection = await get_db()[Collections.SOCIAL_CONNECTIONS].find_one(
+            {"platform": base_platform}
+        )
+        if connection and not connection.get("enabled", True):
+            raise ValidationFailedError(
+                f"{base_platform.title()} sedang dinonaktifkan di Admin → Media Sosial."
+            )
 
     publisher = get_publisher(doc["platform"])
     media = await _media_items(doc.get("media_ids") or [])

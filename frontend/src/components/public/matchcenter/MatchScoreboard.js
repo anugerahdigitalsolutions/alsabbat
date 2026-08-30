@@ -86,10 +86,11 @@ export const MatchScoreboard = ({ match, clubName, clubLogo, competition, season
       <div className="als-container relative">
         <div className={`mb-2 ${revealClass}`} style={step(0)}>
           <p
-            className="font-display text-[11px] font-semibold uppercase tracking-[0.28em]"
+            className="font-display text-[22px] font-semibold uppercase leading-none tracking-[0.28em]"
             style={{ color: 'var(--club-primary)' }}
+            data-testid="match-scoreboard-matchday"
           >
-            Hari Pertandingan
+            Match Day
           </p>
         </div>
 

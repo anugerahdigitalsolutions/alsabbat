@@ -43,8 +43,8 @@ export const JourneyCta = ({ t = defaultSiteText }) => (
           <Link to="/teams" className="als-btn-ghost als-focus" data-testid="home-cta-squad">
             {t('home.cta.btn_squad')}
           </Link>
-          <Link to="/gallery" className="als-btn-ghost als-focus" data-testid="home-cta-gallery">
-            {t('home.cta.btn_gallery')}
+          <Link to="/login" className="als-btn-ghost als-focus" data-testid="home-cta-login">
+            {t('home.cta.btn_login')}
           </Link>
         </div>
       </div>

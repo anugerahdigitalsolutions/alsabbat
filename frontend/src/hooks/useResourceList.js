@@ -6,7 +6,7 @@ import api, { apiErrorMessage } from '../lib/api';
  * Handles loading / error / empty states consistently across the app.
  */
 export function useResourceList(endpoint, params = {}, options = {}) {
-  const { enabled = true } = options;
+  const { enabled = true, client = api } = options;
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(enabled);
@@ -26,7 +26,7 @@ export function useResourceList(endpoint, params = {}, options = {}) {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get(endpoint, { params: JSON.parse(key) });
+      const { data } = await client.get(endpoint, { params: JSON.parse(key) });
       if (!mounted.current) return;
       setItems(data?.items || []);
       setTotal(data?.total || 0);
@@ -38,7 +38,7 @@ export function useResourceList(endpoint, params = {}, options = {}) {
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [endpoint, key, enabled]);
+  }, [endpoint, key, enabled, client]);
 
   useEffect(() => {
     fetchData();

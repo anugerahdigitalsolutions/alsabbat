@@ -11,17 +11,22 @@ import { GalleryStrip } from '../../components/public/home/GalleryStrip';
 import { YoutubeShowcase, collectYoutubeVideos } from '../../components/public/home/YoutubeShowcase';
 import { NewsShowcase } from '../../components/public/home/NewsShowcase';
 import { TopScorersShowcase } from '../../components/public/home/TopScorersShowcase';
+import { AchievementsTimeline } from '../../components/public/home/AchievementsTimeline';
 import { JourneyCta } from '../../components/public/home/JourneyCta';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { SponsorsStrip } from '../../components/public/SponsorsStrip';
-import { PlayerSpotlight, pickSpotlightPlayer } from '../../components/public/PlayerSpotlight';
+import { PlayerSpotlight, SpotlightDots, useRotatingSpotlight } from '../../components/public/PlayerSpotlight';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useClub } from '../../context/ClubContext';
+import { useBaraya } from '../../context/BarayaAuthContext';
+import { RestrictedAccessPanel } from '../../components/public/RestrictedAccessPanel';
+import { barayaApi } from '../../lib/api';
 import { useSiteText } from '../../lib/siteContent';
 import { bannerToSlide } from '../../lib/banners';
+import { kickoffAt } from '../../components/public/MatchdayCountdown';
 
 const UPCOMING = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 const SOCIAL_ICONS = { instagram: Instagram, youtube: Youtube, facebook: Facebook, twitter: Twitter, tiktok: Music2 };
@@ -57,13 +62,19 @@ const RowHeader = ({ label, to, actionLabel, testId }) => {
 };
 
 const Band = ({ children, className = '', testId }) => (
-  <section className={`als-frame-inner py-10 sm:py-12 ${className}`} data-testid={testId}>
+  <section className={`als-frame-inner py-6 sm:py-8 ${className}`} data-testid={testId}>
     {children}
   </section>
 );
 
 export default function HomePage() {
   const { club, clubName, shortName } = useClub();
+  // Fase 3 — Galeri & Sorotan Pemain hanya untuk Pemain & Staf.
+  const { canViewGallery, isBaraya, loading: authLoading } = useBaraya();
+  // Fase 4A — Guest: section Galeri TIDAK dirender sama sekali.
+  // Member (sudah login): dirender dengan panel terkunci + CTA Daftar Pemain.
+  // Sorotan Pemain: tampil untuk semua (Guest, Member, Pemain, Staf) — data pemain memang publik.
+  const showGallery = canViewGallery || isBaraya;
   usePageSeo({
     title: 'Beranda',
     description: club?.description || `Website resmi ${clubName}: jadwal, hasil, skuad, berita, galeri, dan merchandise.`,
@@ -72,24 +83,52 @@ export default function HomePage() {
 
   const news = useResourceList('/content/posts', { status: 'PUBLISHED', limit: 4 });
   const matches = useResourceList('/matches', { limit: 40 });
-  const albums = useResourceList('/gallery/public/albums', { limit: 5 });
+  const albums = useResourceList(
+    '/gallery/public/albums',
+    { limit: 5 },
+    { enabled: canViewGallery && !authLoading, client: barayaApi }
+  );
   const players = useResourceList('/players', { status: 'ACTIVE', limit: 8 });
   const sponsors = useResourceList('/sponsors', { status: 'ACTIVE', limit: 10 });
   const products = useResourceList('/merchandise/products', { limit: 4 });
   const banners = useResourceList('/banners/public', { limit: 20 });
+  const achievements = useResourceList('/achievements', { status: 'ACTIVE', limit: 4 });
 
   const badge = shortName || 'AL SABBAT';
   const t = useSiteText({ club: badge });
   const upcoming = matches.items.filter((m) => UPCOMING.includes(m.status));
   const finished = matches.items.filter((m) => m.status === 'FINISHED');
-  const nextMatch = upcoming[upcoming.length - 1] || null;
+  // "Pertandingan Berikutnya" = kick-off (WIB) yang belum lewat & hasil belum diisi,
+  // diambil yang PALING DEKAT. Pertandingan yang sudah lewat tidak pernah dipakai.
+  const nextMatch = useMemo(() => {
+    const nowMs = Date.now();
+    const hasResult = (m) =>
+      m.home_score !== null && m.home_score !== undefined && m.away_score !== null && m.away_score !== undefined;
+    return (
+      upcoming
+        .filter((m) => !hasResult(m))
+        .map((m) => ({ match: m, at: kickoffAt(m) }))
+        .filter((item) => item.at && item.at.getTime() > nowMs)
+        .sort((a, b) => a.at - b.at)[0]?.match || null
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matches.items]);
   const lastMatch = finished[0] || null;
   const featuredMatch = nextMatch || lastMatch;
-  const spotlightPlayer = useMemo(() => pickSpotlightPlayer(players.items), [players.items]);
+  const spotlight = useRotatingSpotlight(players.items);
+  const spotlightPlayer = spotlight.player;
 
   const teamStats = useMemo(() => {
     const scored = finished.filter((m) => m.home_score !== null && m.home_score !== undefined);
-    if (!scored.length) return null;
+    // Baseline historis klub (Admin → Club) sebagai nilai awal.
+    const base = {
+      played: Number(club?.historical_played) || 0,
+      wins: Number(club?.historical_wins) || 0,
+      draws: Number(club?.historical_draws) || 0,
+      losses: Number(club?.historical_losses) || 0,
+    };
+    const hasBaseline = base.played || base.wins || base.draws || base.losses;
+    if (!scored.length && !hasBaseline) return null;
     let wins = 0;
     let draws = 0;
     let losses = 0;
@@ -101,8 +140,13 @@ export default function HomePage() {
       else if (own === other) draws += 1;
       else losses += 1;
     });
-    return { played: scored.length, wins, draws, losses };
-  }, [finished]);
+    return {
+      played: scored.length + base.played,
+      wins: wins + base.wins,
+      draws: draws + base.draws,
+      losses: losses + base.losses,
+    };
+  }, [finished, club]);
 
   const socials = useMemo(
     () =>
@@ -207,6 +251,14 @@ export default function HomePage() {
         <PillarStrip t={t} />
       </Band>
 
+      {/* Sponsors */}
+      {sponsors.items.length ? (
+        <Band className="pt-0" testId="home-section-sponsors">
+          <RowHeader label={t('home.label.sponsors')} to="/sponsors" actionLabel={t('home.label.sponsors_action')} testId="home-label-sponsors" />
+          <SponsorsStrip sponsors={sponsors.items} />
+        </Band>
+      ) : null}
+
       {/* Matchday + Newsroom */}
       <Band className="pt-0" testId="home-section-matchday-news">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,330px)_minmax(0,1fr)]">
@@ -218,7 +270,7 @@ export default function HomePage() {
               <UpcomingMatchCard
                 match={featuredMatch}
                 clubName={badge}
-                competitionName={featuredMatch.competition_name || (nextMatch ? 'Hari Pertandingan' : 'Selesai')}
+                competitionName={featuredMatch.competition_name || (nextMatch ? 'Match Day' : 'Selesai')}
                 testId="home-featured-match"
               />
             ) : (
@@ -242,11 +294,24 @@ export default function HomePage() {
       <Band className="pt-0" testId="home-section-spotlight">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]">
           <div>
-            <RowHeader label={t('home.label.spotlight')} to="/teams" actionLabel={t('home.label.spotlight_action')} testId="home-label-spotlight" />
+            <RowHeader
+              label={t('home.label.spotlight')}
+              to="/teams"
+              actionLabel={t('home.label.spotlight_action')}
+              testId="home-label-spotlight"
+            />
             {players.loading ? (
               <LoadingState rows={1} testId="home-spotlight-loading" />
             ) : spotlightPlayer ? (
-              <PlayerSpotlight player={spotlightPlayer} />
+              <>
+                <PlayerSpotlight player={spotlightPlayer} />
+                <SpotlightDots
+                  total={spotlight.total}
+                  index={spotlight.index}
+                  onSelect={spotlight.select}
+                  testId="home-spotlight-dots"
+                />
+              </>
             ) : (
               <EmptyState
                 icon={Users}
@@ -288,11 +353,37 @@ export default function HomePage() {
         <TopScorersShowcase />
       </Band>
 
-      {/* Gallery */}
-      <Band className="pt-0" testId="home-section-gallery">
-        <RowHeader label={t('home.label.gallery')} to="/gallery" actionLabel={t('home.label.gallery_action')} testId="home-label-gallery" />
-        {albums.loading ? <LoadingState rows={2} testId="home-gallery-loading" /> : <GalleryStrip albums={albums.items} />}
-      </Band>
+      {/* Prestasi Klub — dari Admin Panel (status ACTIVE), section hanya tampil bila ada data */}
+      {achievements.items.length ? (
+        <Band className="pt-0" testId="home-section-achievements">
+          <RowHeader
+            label={t('home.label.achievements')}
+            to="/achievements"
+            actionLabel={t('home.label.achievements_action')}
+            testId="home-label-achievements"
+          />
+          <AchievementsTimeline items={achievements.items} />
+        </Band>
+      ) : null}
+
+      {/* Gallery — disembunyikan penuh untuk Guest (Fase 4A) */}
+      {showGallery ? (
+        <Band className="pt-0" testId="home-section-gallery">
+          <RowHeader
+            label={t('home.label.gallery')}
+            to={canViewGallery ? '/gallery' : undefined}
+            actionLabel={t('home.label.gallery_action')}
+            testId="home-label-gallery"
+          />
+          {!canViewGallery ? (
+            <RestrictedAccessPanel feature="Galeri AL SABBAT" compact testId="home-gallery-restricted" />
+          ) : albums.loading || authLoading ? (
+            <LoadingState rows={2} testId="home-gallery-loading" />
+          ) : (
+            <GalleryStrip albums={albums.items} />
+          )}
+        </Band>
+      ) : null}
 
       {/* YouTube */}
       {youtubeVideos.length || youtubeChannel ? (
@@ -304,14 +395,6 @@ export default function HomePage() {
             testId="home-label-youtube"
           />
           <YoutubeShowcase videos={youtubeVideos} channelUrl={youtubeChannel} />
-        </Band>
-      ) : null}
-
-      {/* Sponsors */}
-      {sponsors.items.length ? (
-        <Band className="pt-0" testId="home-section-sponsors">
-          <RowHeader label={t('home.label.sponsors')} to="/sponsors" actionLabel={t('home.label.sponsors_action')} testId="home-label-sponsors" />
-          <SponsorsStrip sponsors={sponsors.items} />
         </Band>
       ) : null}
 

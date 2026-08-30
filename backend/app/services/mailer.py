@@ -14,6 +14,7 @@ never point at an admin route.
 from __future__ import annotations
 
 import asyncio
+import html as html_escape
 import smtplib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -91,7 +92,64 @@ class MemoryMailer(Mailer):
         return True
 
 
+class Smtp2GoMailer(Mailer):
+    """Fase 3 — SMTP2GO REST API v3. API key hanya dari environment."""
+
+    ENDPOINT = "https://api.smtp2go.com/v3/email/send"
+
+    async def send(self, message: MailMessage) -> bool:
+        import httpx
+
+        sender_name = settings.SMTP2GO_SENDER_NAME or settings.MAIL_FROM_NAME
+        payload = {
+            "sender": f"{sender_name} <{settings.SMTP2GO_SENDER_EMAIL}>",
+            "to": [message.to],
+            "subject": message.subject,
+            "text_body": message.text,
+            "fastaccept": False,
+        }
+        if message.html:
+            payload["html_body"] = message.html
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                response = await client.post(
+                    self.ENDPOINT,
+                    headers={
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "X-Smtp2go-Api-Key": settings.SMTP2GO_API_KEY,
+                    },
+                    json=payload,
+                )
+        except Exception as exc:
+            logger.error("mail.failed provider=SMTP2GO to=%s error=%s", message.to, type(exc).__name__)
+            return False
+
+        try:
+            body = response.json()
+        except ValueError:
+            body = {}
+        data = body.get("data", body) if isinstance(body, dict) else {}
+        failed = data.get("failed", 0) if isinstance(data, dict) else 0
+        failures = data.get("failures", []) if isinstance(data, dict) else []
+        # SMTP2GO can answer HTTP 200 while reporting per-recipient failures.
+        if response.status_code >= 400 or failed or failures:
+            logger.error(
+                "mail.rejected provider=SMTP2GO to=%s http=%s failed=%s",
+                message.to,
+                response.status_code,
+                failed,
+            )
+            return False
+        logger.info("mail.sent provider=SMTP2GO to=%s subject=%s", message.to, message.subject)
+        return True
+
+
 _mailer: Mailer | None = None
+
+
+def smtp2go_configured() -> bool:
+    return bool(settings.SMTP2GO_API_KEY and settings.SMTP2GO_SENDER_EMAIL)
 
 
 def get_mailer() -> Mailer:
@@ -99,14 +157,87 @@ def get_mailer() -> Mailer:
     if _mailer is not None:
         return _mailer
     provider = (settings.MAIL_PROVIDER or "LOG").upper()
-    if provider == "SMTP" and settings.SMTP_HOST and settings.MAIL_FROM:
-        _mailer = SmtpMailer()
-    elif provider == "MEMORY":
+    if provider == "MEMORY":
         _mailer = MemoryMailer()
+    elif smtp2go_configured():
+        _mailer = Smtp2GoMailer()
+    elif provider == "SMTP" and settings.SMTP_HOST and settings.MAIL_FROM:
+        _mailer = SmtpMailer()
     else:
         _mailer = LogMailer()
     logger.info("Mailer initialised with provider=%s", type(_mailer).__name__)
     return _mailer
+
+
+def reset_mailer() -> None:
+    """Test helper — forces provider re-selection after settings change."""
+    global _mailer
+    _mailer = None
+
+
+def mail_status() -> dict:
+    """Honest report for the Admin panel — never exposes the API key."""
+    mailer = get_mailer()
+    name = type(mailer).__name__
+    configured = isinstance(mailer, (Smtp2GoMailer, SmtpMailer))
+    return {
+        "provider": {
+            "Smtp2GoMailer": "SMTP2GO",
+            "SmtpMailer": "SMTP",
+            "MemoryMailer": "MEMORY",
+            "LogMailer": "NOT_CONFIGURED",
+        }.get(name, "NOT_CONFIGURED"),
+        "configured": configured,
+        "sender": settings.SMTP2GO_SENDER_EMAIL or settings.MAIL_FROM or "",
+        "sender_name": settings.SMTP2GO_SENDER_NAME or settings.MAIL_FROM_NAME,
+        "note": (
+            "Email OTP & reset aktif."
+            if configured
+            else "Isi SMTP2GO_API_KEY dan SMTP2GO_SENDER_EMAIL di environment server agar email benar-benar terkirim."
+        ),
+    }
+
+
+OTP_SUBJECTS = {
+    "REGISTER": "Kode Verifikasi Pendaftaran Baraya AL SABBAT",
+    "RESET": "Kode Reset Kata Sandi Baraya AL SABBAT",
+}
+
+OTP_INTROS = {
+    "REGISTER": "Gunakan kode berikut untuk menyelesaikan pendaftaran akun Baraya AL SABBAT Anda.",
+    "RESET": "Gunakan kode berikut untuk mengatur ulang kata sandi akun Baraya AL SABBAT Anda.",
+}
+
+
+async def send_customer_otp_email(
+    *, email: str, full_name: str, code: str, purpose: str, expires_minutes: int
+) -> bool:
+    """Deliver a one-time code. The code is never written to the application log."""
+    greeting = f"Baraya {full_name}".strip()
+    intro = OTP_INTROS.get(purpose, OTP_INTROS["REGISTER"])
+    text = (
+        f"Halo {greeting},\n\n{intro}\n\n"
+        f"Kode verifikasi: {code}\n\n"
+        f"Kode ini berlaku {expires_minutes} menit dan hanya dapat dipakai satu kali.\n"
+        "Jangan bagikan kode ini kepada siapa pun, termasuk pengurus klub.\n\n"
+        "Salam,\nAL SABBAT Football Club"
+    )
+    html = (
+        f"<p>Halo <strong>{html_escape.escape(greeting)}</strong>,</p>"
+        f"<p>{html_escape.escape(intro)}</p>"
+        f"<p style='font-size:30px;font-weight:800;letter-spacing:8px'>{html_escape.escape(code)}</p>"
+        f"<p>Kode ini berlaku {expires_minutes} menit dan hanya dapat dipakai satu kali.</p>"
+        "<p>Jangan bagikan kode ini kepada siapa pun.</p>"
+        "<p>Salam,<br/>AL SABBAT Football Club</p>"
+    )
+    return await get_mailer().send(
+        MailMessage(
+            to=email,
+            subject=OTP_SUBJECTS.get(purpose, OTP_SUBJECTS["REGISTER"]),
+            text=text,
+            html=html,
+        )
+    )
 
 
 def reset_link(token: str) -> str:

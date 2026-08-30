@@ -7,6 +7,8 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useBaraya } from '../../context/BarayaAuthContext';
+import { OtpVerifyForm } from '../../components/public/OtpVerifyForm';
+import { GoogleLoginButton } from '../../components/public/GoogleLoginButton';
 
 const BENEFITS = [
   'Simpan data pembeli agar checkout merchandise lebih cepat',
@@ -21,12 +23,13 @@ export default function BarayaLoginPage() {
     path: '/login',
     robots: 'noindex,follow',
   });
-  const { login } = useBaraya();
+  const { login, verifyOtp } = useBaraya();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = location.state?.from || '/akun';
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
+  const [verification, setVerification] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async (event) => {
@@ -39,8 +42,45 @@ export default function BarayaLoginPage() {
       navigate(redirectTo, { replace: true });
       return;
     }
+    if (result.needsVerification) {
+      setVerification({ email: form.email, message: result.message });
+      return;
+    }
     setError(result.message);
   };
+
+  const confirmOtp = async (code) => {
+    const result = await verifyOtp({ email: verification.email, code });
+    if (result.ok) {
+      navigate(redirectTo, { replace: true });
+      return { ok: true };
+    }
+    return result;
+  };
+
+  if (verification) {
+    return (
+      <div data-testid="page-baraya-login">
+        <PublicPageHeader
+          label="Baraya AL SABBAT"
+          title="Verifikasi Email Anda"
+          description="Akun Anda belum terverifikasi. Masukkan kode 6 digit yang kami kirim ke email Anda."
+          breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Login', to: '/login' }, { label: 'Verifikasi' }]}
+        />
+        <div className="als-container py-10 sm:py-14">
+          <div className="als-card mx-auto max-w-lg p-6 sm:p-8" data-testid="baraya-login-otp-step">
+            <OtpVerifyForm
+              email={verification.email}
+              purpose="REGISTER"
+              onSubmit={confirmOtp}
+              submitLabel="Verifikasi & Masuk"
+              testId="baraya-login-otp"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div data-testid="page-baraya-login">
@@ -114,6 +154,13 @@ export default function BarayaLoginPage() {
               <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
               {submitting ? 'Memproses…' : 'Masuk'}
             </Button>
+
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+              <span className="h-px flex-1" style={{ backgroundColor: 'var(--border-soft)' }} />
+              atau
+              <span className="h-px flex-1" style={{ backgroundColor: 'var(--border-soft)' }} />
+            </div>
+            <GoogleLoginButton testId="baraya-login-google" />
 
             {error ? (
               <p

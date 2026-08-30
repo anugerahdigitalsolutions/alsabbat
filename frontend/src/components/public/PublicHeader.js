@@ -11,6 +11,8 @@ import { useBaraya } from '../../context/BarayaAuthContext';
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { ClubCrestMark } from '../shared/ClubCrestMark';
+import { NotificationBell } from '../shared/NotificationBell';
+import { barayaApi } from '../../lib/api';
 import { SearchDialog } from './SearchDialog';
 import { useClub } from '../../context/ClubContext';
 
@@ -61,7 +63,7 @@ const NavItem = ({ item, testIdPrefix }) => (
 
 export const PublicHeader = () => {
   const { clubName, shortName } = useClub();
-  const { customer, logout } = useBaraya();
+  const { customer, logout, canViewGallery } = useBaraya();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -81,7 +83,12 @@ export const PublicHeader = () => {
     setTimeout(() => navigate(to), 180);
   };
 
-  const overflowActive = OVERFLOW_NAV.some((item) => pathname.startsWith(item.to));
+  // Fase 4A — menu GALERI hanya untuk Pemain & Staf (Guest/Member tidak melihatnya).
+  const visible = (items) => items.filter((item) => item.id !== 'gallery' || canViewGallery);
+  const publicNav = visible(PUBLIC_NAV);
+  const priorityNav = visible(PRIORITY_NAV);
+  const overflowNav = visible(OVERFLOW_NAV);
+  const overflowActive = overflowNav.some((item) => pathname.startsWith(item.to));
 
   return (
     <header
@@ -108,14 +115,14 @@ export const PublicHeader = () => {
 
         {/* ≥1280px — semua menu utama tampil langsung */}
         <nav className="hidden items-center gap-5 xl:flex" data-testid="public-header-primary-nav">
-          {PUBLIC_NAV.map((item) => (
+          {publicNav.map((item) => (
             <NavItem key={item.id} item={item} testIdPrefix="public-nav" />
           ))}
         </nav>
 
         {/* 1024px–1279px — 6 menu prioritas + dropdown LAINNYA */}
         <nav className="hidden items-center gap-5 lg:flex xl:hidden" data-testid="public-header-compact-nav">
-          {PRIORITY_NAV.map((item) => (
+          {priorityNav.map((item) => (
             <NavItem key={item.id} item={item} testIdPrefix="public-nav-compact" />
           ))}
           <DropdownMenu>
@@ -140,7 +147,7 @@ export const PublicHeader = () => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52 bg-white" data-testid="public-nav-more-content">
-              {OVERFLOW_NAV.map((item) => (
+              {overflowNav.map((item) => (
                 <DropdownMenuItem key={item.id} asChild>
                   <Link
                     to={item.to}
@@ -167,7 +174,13 @@ export const PublicHeader = () => {
           </button>
 
           {customer ? (
-            <DropdownMenu>
+            <>
+              <NotificationBell
+                client={barayaApi}
+                basePath="/baraya/notifications"
+                testId="baraya-notification-bell"
+              />
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
@@ -196,6 +209,7 @@ export const PublicHeader = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             <>
               <span
@@ -234,7 +248,7 @@ export const PublicHeader = () => {
                 <span className="font-display text-sm font-bold">{clubName}</span>
               </div>
               <div className="flex flex-col">
-                {[...PUBLIC_NAV, ...SECONDARY_NAV].map((item) => (
+                {[...publicNav, ...SECONDARY_NAV].map((item) => (
                   <NavLink
                     key={item.id}
                     to={item.to}

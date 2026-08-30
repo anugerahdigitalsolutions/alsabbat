@@ -12,6 +12,7 @@ import { formatIDR } from '../../context/CartContext';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useSiteText } from '../../lib/siteContent';
 import { useClub } from '../../context/ClubContext';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
 export default function MerchandisePage() {
   const { clubName, shortName } = useClub();
@@ -98,13 +99,13 @@ export default function MerchandisePage() {
             {items.map((product, index) => (
               <Reveal key={product.id} delay={Math.min(index, 6) * 60} className="h-full">
                 <Link
-                  to={`/merchandise/${product.slug}`}
+                  to={`/merchandise/${product.slug || product.id}`}
                   className="als-card als-zoom als-lift als-focus flex h-full flex-col overflow-hidden"
                   data-testid={`product-card-${product.id}`}
                 >
                   <div className="relative h-52" style={{ backgroundColor: 'var(--surface-3)' }}>
                     {product.cover_url ? (
-                      <img src={product.cover_url} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
+                      <img src={resolveMediaUrl(product.cover_url)} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
                     ) : (
                       <div className="als-stadium-glow flex h-full w-full items-center justify-center" style={{ backgroundColor: '#000000' }}>
                         <ShoppingBag className="h-9 w-9" style={{ color: 'rgba(252,207,43,0.55)' }} />

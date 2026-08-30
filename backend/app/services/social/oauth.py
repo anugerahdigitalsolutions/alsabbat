@@ -297,10 +297,12 @@ def connection_state(platform: str, doc: Optional[Dict[str, Any]]) -> Dict[str, 
     """State aman untuk UI — tidak pernah memuat token."""
     cfg = provider(platform)
     configured = is_configured(platform)
+    enabled = True if doc is None else bool(doc.get("enabled", True))
     if not configured:
         status = SocialConnectionStatus.NOT_CONFIGURED.value
-    elif not doc:
-        status = "NOT_CONNECTED"
+    elif not doc or not doc.get("access_token_enc"):
+        # Fase 4 — status eksplisit sesuai kondisi nyata (bukan "tidak ada data").
+        status = "DISCONNECTED"
     elif doc.get("status") == "ERROR":
         status = "ERROR"
     elif doc.get("expires_at") and float(doc["expires_at"]) <= time.time():
@@ -312,6 +314,7 @@ def connection_state(platform: str, doc: Optional[Dict[str, Any]]) -> Dict[str, 
         "label": cfg["label"],
         "status": status,
         "configured": configured,
+        "enabled": enabled,
         "missing_env": missing_env(platform),
         "requirements": cfg["requirements"],
         "official_api": cfg["official_api"],

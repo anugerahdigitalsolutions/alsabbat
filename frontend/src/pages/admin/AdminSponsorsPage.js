@@ -26,6 +26,13 @@ export default function AdminSponsorsPage() {
       columns={[
         { key: 'display_order', label: 'Urutan', className: 'w-[80px]' },
         { key: 'name', label: 'Nama' },
+        { key: 'slug', label: 'Slug', render: (r) => r.slug || '—' },
+        {
+          key: 'is_featured',
+          label: 'Utama',
+          className: 'w-[90px]',
+          render: (r) => (r.is_featured ? <Badge variant="outline">UTAMA</Badge> : '—'),
+        },
         { key: 'tier', label: 'Tier' },
         {
           key: 'website',
@@ -43,7 +50,15 @@ export default function AdminSponsorsPage() {
       ]}
       fields={[
         { name: 'name', label: 'Nama Sponsor', type: 'text', required: true },
+        {
+          name: 'slug',
+          label: 'Slug URL',
+          type: 'text',
+          placeholder: 'otomatis dari nama sponsor',
+          help: 'Dipakai untuk URL profil: /sponsors/<slug>. Kosongkan agar dibuat otomatis dari nama. Slug yang sudah tersimpan sebaiknya tidak diubah agar tautan lama tetap hidup. Slug harus unik — duplikat ditolak saat menyimpan.',
+        },
         { name: 'tier', label: 'Tier', type: 'text', placeholder: 'Main Sponsor / Official Partner' },
+        { name: 'is_featured', label: 'Sponsor Utama (tampil lebih besar di beranda)', type: 'switch' },
         { name: 'display_order', label: 'Urutan Tampilan', type: 'number' },
         { name: 'status', label: 'Status', type: 'select', options: opts(meta?.entity_status), required: true },
         {
@@ -55,8 +70,15 @@ export default function AdminSponsorsPage() {
           spec: MEDIA_SPECS.sponsorLogo,
           help: 'Gunakan logo PNG berlatar transparan agar rapi di baris sponsor.',
         },
-        { name: 'website', label: 'Website', type: 'text', full: true },
-        { name: 'description', label: 'Deskripsi', type: 'textarea', full: true },
+        { name: 'website', label: 'Website', type: 'text', full: true, placeholder: 'https://…' },
+        { name: 'description', label: 'Deskripsi / Detail Sponsor', type: 'textarea', full: true, rows: 5 },
+        { name: 'contact.address', label: 'Alamat', type: 'textarea', full: true, rows: 2 },
+        { name: 'contact.phone', label: 'Nomor Telepon', type: 'text' },
+        { name: 'contact.email', label: 'Email', type: 'text' },
+        { name: 'social_media.instagram', label: 'Instagram', type: 'text' },
+        { name: 'social_media.facebook', label: 'Facebook', type: 'text' },
+        { name: 'social_media.tiktok', label: 'TikTok', type: 'text' },
+        { name: 'social_media.youtube', label: 'YouTube', type: 'text' },
       ]}
     />
   );

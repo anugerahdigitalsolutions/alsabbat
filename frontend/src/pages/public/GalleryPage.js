@@ -1,19 +1,22 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Images } from 'lucide-react';
-import api, { apiErrorMessage } from '../../lib/api';
+import { apiErrorMessage, barayaApi } from '../../lib/api';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
-import { MatchAlbumCarousel } from '../../components/public/gallery/MatchAlbumCarousel';
+import { AlbumCard } from '../../components/public/gallery/AlbumCard';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { useSiteText } from '../../lib/siteContent';
 import { useClub } from '../../context/ClubContext';
+import { useBaraya } from '../../context/BarayaAuthContext';
+import { RestrictedAccessPanel } from '../../components/public/RestrictedAccessPanel';
 
 const PAGE_SIZE = 8;
 
 export default function GalleryPage() {
   const { clubName, shortName } = useClub();
+  const { canViewGallery, loading: authLoading } = useBaraya();
   const t = useSiteText({ club: shortName || clubName || 'AL SABBAT' });
   const [albums, setAlbums] = useState([]);
   const [total, setTotal] = useState(0);
@@ -29,12 +32,16 @@ export default function GalleryPage() {
   });
 
   const load = useCallback(async (nextSkip = 0) => {
+    if (authLoading || !canViewGallery) {
+      setLoading(false);
+      return;
+    }
     if (nextSkip === 0) setLoading(true);
     else setLoadingMore(true);
     setError(null);
     try {
-      const { data } = await api.get('/gallery/public/albums', {
-        params: { limit: PAGE_SIZE, skip: nextSkip, include_media: true },
+      const { data } = await barayaApi.get('/gallery/public/albums', {
+        params: { limit: PAGE_SIZE, skip: nextSkip },
       });
       setAlbums((prev) => (nextSkip === 0 ? data.items || [] : [...prev, ...(data.items || [])]));
       setTotal(data.total || 0);
@@ -45,7 +52,7 @@ export default function GalleryPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [canViewGallery, authLoading]);
 
   useEffect(() => {
     load(0);
@@ -62,10 +69,12 @@ export default function GalleryPage() {
       />
       <div className="als-container py-10">
         <p className="mb-6 text-sm" style={{ color: 'var(--muted-fg)' }} data-testid="gallery-total">
-          {loading ? 'Memuat…' : `${total} album dipublikasikan`}
+          {!canViewGallery ? 'Akses terkunci' : loading ? 'Memuat…' : `${total} album dipublikasikan`}
         </p>
 
-        {loading ? (
+        {!authLoading && !canViewGallery ? (
+          <RestrictedAccessPanel feature="Galeri AL SABBAT" testId="gallery-restricted" />
+        ) : loading || authLoading ? (
           <LoadingState rows={6} testId="gallery-loading" />
         ) : error ? (
           <ErrorState message={error} onRetry={() => load(0)} testId="gallery-error" />
@@ -78,9 +87,9 @@ export default function GalleryPage() {
           />
         ) : (
           <>
-            <div className="space-y-5">
+            <div className="als-stagger grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {albums.map((album, index) => (
-                <MatchAlbumCarousel
+                <AlbumCard
                   key={album.id}
                   album={album}
                   index={index}

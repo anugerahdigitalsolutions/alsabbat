@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard, KeyRound, LogOut, Receipt, Save } from 'lucide-react';
+import { ArrowRight, CreditCard, Images, KeyRound, LogOut, Receipt, Save, Star, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
 import { Button } from '../../components/ui/button';
@@ -17,8 +17,14 @@ import {
   barayaUploadPhoto,
 } from '../../services/barayaAuth';
 import { MemberCard } from '../../components/member/MemberCard';
+import { PlayerSpotlight, SpotlightDots, useRotatingSpotlight } from '../../components/public/PlayerSpotlight';
+import { LoadingState } from '../../components/shared/LoadingState';
+import { EmptyState } from '../../components/shared/EmptyState';
+import { useResourceList } from '../../hooks/useResourceList';
 import { MediaPicker } from '../../components/shared/MediaPicker';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
+import { canAccessGallery, canApplyPlayer, canApplyStaff, hasRole, roleLabel } from '../../lib/memberAccess';
+import { UserPlus } from 'lucide-react';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -37,6 +43,9 @@ export default function BarayaAccountPage() {
     robots: 'noindex,follow',
   });
   const { customer, reload, logout } = useBaraya();
+  const hasClubAccess = canAccessGallery(customer);
+  const showPlayerCta = canApplyPlayer(customer);
+  const showStaffCta = canApplyStaff(customer);
   const [profile, setProfile] = useState({
     full_name: customer?.full_name || '',
     phone: customer?.phone || '',
@@ -44,6 +53,9 @@ export default function BarayaAccountPage() {
   });
   const [passwords, setPasswords] = useState({ current_password: '', new_password: '' });
   const [saving, setSaving] = useState(false);
+  const players = useResourceList('/players', { status: 'ACTIVE', limit: 8 });
+  const spotlight = useRotatingSpotlight(players.items);
+  const spotlightPlayer = spotlight.player;
 
   const saveProfile = async (event) => {
     event.preventDefault();
@@ -82,8 +94,23 @@ export default function BarayaAccountPage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
           <div className="space-y-8">
             <form className="als-card space-y-4 p-6" onSubmit={saveProfile} data-testid="baraya-profile-form">
-              <p className="als-section-label">Data Baraya</p>
-              <span className="als-gold-rule mt-1 block" aria-hidden="true" />
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="als-section-label">Data Baraya</p>
+                  <span className="als-gold-rule mt-1 block" aria-hidden="true" />
+                </div>
+                {showPlayerCta ? (
+                  <Link
+                    to="/akun/pengajuan"
+                    className="als-focus font-display inline-flex min-h-[40px] items-center gap-2 rounded-[var(--radius-sm)] px-4 text-sm font-bold"
+                    style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+                    data-testid="baraya-profile-player-cta"
+                  >
+                    <UserPlus className="h-4 w-4" aria-hidden="true" />
+                    Daftar Pemain
+                  </Link>
+                ) : null}
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="mb-1.5 block">Nama Lengkap</Label>
@@ -164,6 +191,39 @@ export default function BarayaAccountPage() {
                 Perbarui Kata Sandi
               </Button>
             </form>
+
+            <section className="als-card space-y-4 p-6" data-testid="baraya-account-spotlight">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="als-section-label">Sorotan Pemain</p>
+                  <span className="als-gold-rule mt-1 block" aria-hidden="true" />
+                </div>
+                <Link to="/teams" className="als-view-all als-focus" data-testid="baraya-account-spotlight-action">
+                  Lihat Pemain
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </div>
+              {players.loading ? (
+                <LoadingState rows={1} testId="baraya-account-spotlight-loading" />
+              ) : spotlightPlayer ? (
+                <>
+                  <PlayerSpotlight player={spotlightPlayer} />
+                  <SpotlightDots
+                    total={spotlight.total}
+                    index={spotlight.index}
+                    onSelect={spotlight.select}
+                    testId="baraya-account-spotlight-dots"
+                  />
+                </>
+              ) : (
+                <EmptyState
+                  icon={Star}
+                  title="Data pemain belum tersedia"
+                  description="Sorotan pemain akan tampil setelah data pemain dilengkapi."
+                  testId="baraya-account-spotlight-empty"
+                />
+              )}
+            </section>
           </div>
 
           <div className="space-y-6">
@@ -176,6 +236,7 @@ export default function BarayaAccountPage() {
                 full_name: customer?.full_name,
                 photo_url: customer?.photo_url,
                 status: customer?.status,
+                role: customer?.role,
                 joined_at: customer?.joined_at || customer?.created_at,
               }} testId="account-member-card" />
               <div className="flex items-center justify-between gap-3 text-sm">
@@ -205,6 +266,12 @@ export default function BarayaAccountPage() {
                 </Badge>
               </div>
               <div className="flex items-center justify-between gap-3">
+                <span style={{ color: 'var(--muted-fg)' }}>Peran</span>
+                <Badge variant="outline" style={{ backgroundColor: 'rgba(1,40,145,0.10)' }} data-testid="baraya-account-role">
+                  {roleLabel(customer)}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between gap-3">
                 <span style={{ color: 'var(--muted-fg)' }}>Bergabung</span>
                 <span className="font-semibold">{formatDate(customer?.created_at)}</span>
               </div>
@@ -213,6 +280,55 @@ export default function BarayaAccountPage() {
                 <span className="font-semibold">{formatDate(customer?.last_login_at)}</span>
               </div>
             </div>
+
+            {showStaffCta ? (
+              <Link
+                to="/akun/pengajuan"
+                className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] text-sm font-bold"
+                style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+                data-testid="baraya-account-staff-link"
+              >
+                <UserPlus className="h-4 w-4" aria-hidden="true" />
+                Daftar Staff
+              </Link>
+            ) : (
+              <Link
+                to="/akun/pengajuan"
+                className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border text-sm font-bold"
+                style={{ borderColor: 'var(--border-soft)' }}
+                data-testid="baraya-account-application-link"
+              >
+                <UserCog className="h-4 w-4" aria-hidden="true" />
+                Pengajuan Saya
+              </Link>
+            )}
+
+            {hasClubAccess ? (
+              <>
+                <Link
+                  to="/gallery"
+                  className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border text-sm font-bold"
+                  style={{ borderColor: 'var(--border-soft)' }}
+                  data-testid="baraya-account-gallery-link"
+                >
+                  <Images className="h-4 w-4" aria-hidden="true" />
+                  Galeri Klub
+                </Link>
+                <Link
+                  to="/teams"
+                  className="als-focus font-display flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border text-sm font-bold"
+                  style={{ borderColor: 'var(--border-soft)' }}
+                  data-testid="baraya-account-spotlight-link"
+                >
+                  <Star className="h-4 w-4" aria-hidden="true" />
+                  {hasRole(customer, 'PEMAIN') ? 'Data Pemain & Sorotan' : 'Sorotan Pemain'}
+                </Link>
+              </>
+            ) : (
+              <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="baraya-account-locked-note">
+                Galeri &amp; Sorotan Pemain terbuka setelah pengajuan Pemain Anda disetujui pengurus.
+              </p>
+            )}
 
             <Link
               to="/akun/pesanan"

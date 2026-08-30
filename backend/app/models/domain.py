@@ -32,7 +32,6 @@ from app.models.enums import (
     CompetitionType,
     EntityStatus,
     GalleryStatus,
-    LineupRole,
     MatchEventSide,
     MatchEventType,
     MatchStatus,
@@ -47,6 +46,7 @@ from app.models.enums import (
     StorageProvider,
     TeamCategory,
 )
+from app.models.staff_structure import normalise_staff_structure
 
 HEX_COLOR = r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
 
@@ -70,10 +70,47 @@ class ClubBase(AppBaseModel):
     official_website: Optional[str] = None
     social_media: SocialLinks = Field(default_factory=SocialLinks)
     seo: SeoMeta = Field(default_factory=SeoMeta)
+    # Fase 4 — tautan aplikasi mobile (additive; kosong => ikon tidak ditampilkan)
+    app_playstore_url: Optional[str] = Field(default=None, max_length=500)
+    app_playstore_enabled: bool = False
+    app_appstore_url: Optional[str] = Field(default=None, max_length=500)
+    app_appstore_enabled: bool = False
+    # Baseline statistik historis klub (nilai awal; total = baseline + pertandingan baru)
+    historical_played: int = Field(default=0, ge=0, le=99999)
+    historical_wins: int = Field(default=0, ge=0, le=99999)
+    historical_draws: int = Field(default=0, ge=0, le=99999)
+    historical_losses: int = Field(default=0, ge=0, le=99999)
     status: EntityStatus = EntityStatus.ACTIVE
 
+    @field_validator("app_playstore_url", "app_appstore_url", mode="before")
+    @classmethod
+    def _store_url(cls, value):
+        # "" dipakai untuk MENGHAPUS tautan (None diabaikan oleh layer update PATCH).
+        if value in (None, ""):
+            return ""
+        url = str(value).strip()
+        lowered = url.lower()
+        if not lowered.startswith("https://"):
+            raise ValueError("Tautan toko aplikasi harus memakai https://")
+        if any(
+            scheme in lowered
+            for scheme in ("javascript:", "data:", "vbscript:", "file:", "<script")
+        ):
+            raise ValueError("Tautan toko aplikasi tidak valid.")
+        if " " in url or "\n" in url or "\t" in url:
+            raise ValueError("Tautan toko aplikasi tidak boleh memuat spasi.")
+        return url
 
-ClubUpdate = make_update_model("ClubUpdate", ClubBase)
+
+ClubUpdate = make_update_model(
+    "ClubUpdate",
+    ClubBase,
+    validators={
+        "_store_url": field_validator("app_playstore_url", "app_appstore_url", mode="before")(
+            ClubBase._store_url.__func__
+        )
+    },
+)
 
 
 class Club(ClubBase, DBModel):
@@ -102,22 +139,43 @@ MAX_GALLERY_IMAGES = 3
 
 
 def normalise_gallery(value):
-    """Maksimal 3 referensi media (URL Media Library), tanpa duplikat/kosong."""
+    """Maksimal 3 referensi media dengan POSISI SLOT yang dipertahankan.
+
+    Slot 1/2/3 harus independen sampai ke database: slot kosong disimpan sebagai
+    string kosong agar foto di slot 3 tidak bergeser ke slot 1 setelah save.
+    Sebelumnya semua nilai kosong dibuang sehingga urutan slot ikut mengecil.
+
+    Backward-compatible: data lama yang rapat (mis. ["a","b"]) tetap valid dan
+    tidak berubah, karena kosong di ekor tetap dipangkas. Konsumen frontend sudah
+    aman terhadap lubang (`personPhotos.js` memfilter falsy, `TeamsPage` memakai
+    fallback `|| photo`).
+    """
     if value is None:
         return []
     if isinstance(value, str):
         value = [value]
     if not isinstance(value, (list, tuple)):
         return []
-    cleaned = []
-    for item in value:
+
+    slots = []
+    seen = set()
+    for item in value[:MAX_GALLERY_IMAGES]:
         if not isinstance(item, str):
+            slots.append("")
             continue
         item = item.strip()
-        if not item or len(item) > 800 or item in cleaned:
+        # Duplikat tidak boleh menggandakan media: slot kedua dikosongkan,
+        # tetapi posisi slot lain tetap utuh.
+        if not item or len(item) > 800 or item in seen:
+            slots.append("")
             continue
-        cleaned.append(item)
-    return cleaned[:MAX_GALLERY_IMAGES]
+        seen.add(item)
+        slots.append(item)
+
+    # Pangkas hanya slot kosong di ekor supaya data lama tetap identik.
+    while slots and not slots[-1]:
+        slots.pop()
+    return slots[:MAX_GALLERY_IMAGES]
 
 
 # --------------------------------------------------------------- Player
@@ -140,6 +198,9 @@ class PlayerBase(AppBaseModel):
     appearances: int = Field(default=0, ge=0, le=9999)
     yellow_cards: int = Field(default=0, ge=0, le=9999)
     red_cards: int = Field(default=0, ge=0, le=9999)
+    # Baseline historis (nilai awal sebelum sistem ini; total = baseline + Match Events)
+    historical_goals: int = Field(default=0, ge=0, le=9999)
+    historical_assists: int = Field(default=0, ge=0, le=9999)
     social_media: SocialLinks = Field(default_factory=SocialLinks)
     gallery_images: List[str] = Field(default_factory=list, max_length=3)
 
@@ -167,20 +228,42 @@ class StaffBase(AppBaseModel):
     team_id: str
     name: str = Field(min_length=2, max_length=160)
     photo: Optional[str] = None
-    role: StaffRole = StaffRole.HEAD_COACH
+    # `role` hanya untuk kompatibilitas data lama; entry baru diturunkan dari
+    # Jabatan (lihat normalise_staff_structure), default OTHER bila tidak diisi.
+    role: StaffRole = StaffRole.OTHER
     role_label: Optional[str] = Field(default=None, max_length=120)
     bio: Optional[str] = Field(default=None, max_length=4000)
     social_media: SocialLinks = Field(default_factory=SocialLinks)
     status: EntityStatus = EntityStatus.ACTIVE
     gallery_images: List[str] = Field(default_factory=list, max_length=3)
+    # Staff multi-entry (additive, semua opsional → data Staff lama tetap valid):
+    # satu akun/pemain dapat memiliki banyak Staff Entry dengan Bagian, Jabatan,
+    # Foto dan status masing-masing. `player_id`/`customer_id` hanya referensi —
+    # profil Pemain & akun tidak pernah diubah/diduplikasi dari sini.
+    player_id: Optional[str] = Field(default=None, max_length=64)
+    customer_id: Optional[str] = Field(default=None, max_length=64)
+    department: Optional[str] = Field(default=None, max_length=120)
+    position_title: Optional[str] = Field(default=None, max_length=120)
 
     @field_validator("gallery_images", mode="before")
     @classmethod
     def _staff_gallery(cls, value):
         return normalise_gallery(value)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _staff_structure(cls, data):
+        return normalise_staff_structure(data)
 
-StaffUpdate = make_update_model("StaffUpdate", StaffBase, GALLERY_VALIDATORS)
+
+STAFF_VALIDATORS = {
+    **GALLERY_VALIDATORS,
+    "_staff_structure": model_validator(mode="before")(
+        classmethod(lambda cls, data: normalise_staff_structure(data))
+    ),
+}
+
+StaffUpdate = make_update_model("StaffUpdate", StaffBase, STAFF_VALIDATORS)
 
 
 class Staff(StaffBase, DBModel):
@@ -242,9 +325,43 @@ class MatchBase(AppBaseModel):
     home_score: Optional[int] = Field(default=None, ge=0, le=99)
     away_score: Optional[int] = Field(default=None, ge=0, le=99)
     match_cover: Optional[str] = None
+    # Kartu Pertandingan per-match (additive, backward-compatible):
+    # background & crop khusus untuk kartu Feed (4:5) dan Story (9:16).
+    # Kosong = pakai pengaturan global site_content seperti sebelumnya.
+    card_feed_background: Optional[str] = None
+    card_feed_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
+    card_feed_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
+    card_feed_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    card_story_background: Optional[str] = None
+    card_story_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
+    card_story_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
+    card_story_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    # Desain visual Kartu Pertandingan — PER MATCH (menggantikan sumber global).
+    card_transparency: Optional[int] = Field(default=None, ge=0, le=100)
+    card_overlay_enabled: Optional[bool] = None
+    card_overlay_color: Optional[str] = Field(default=None, max_length=9)
+    card_overlay_opacity: Optional[int] = Field(default=None, ge=0, le=100)
+    card_logo_zoom: Optional[int] = Field(default=None, ge=60, le=200)
+    card_sponsors_enabled: Optional[bool] = None
+    # Kartu Hasil Pertandingan — set background/crop TERPISAH dari Kartu
+    # Pertandingan (`card_*` di atas tidak pernah diubah oleh alur kartu hasil).
+    result_card_feed_background: Optional[str] = None
+    result_card_feed_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_feed_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_feed_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    result_card_story_background: Optional[str] = None
+    result_card_story_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_story_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_story_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    # Desain visual Kartu Hasil — PER MATCH & independen dari `card_*`.
+    result_card_transparency: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_overlay_enabled: Optional[bool] = None
+    result_card_overlay_color: Optional[str] = Field(default=None, max_length=9)
+    result_card_overlay_opacity: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_logo_zoom: Optional[int] = Field(default=None, ge=60, le=200)
+    result_card_sponsors_enabled: Optional[bool] = None
     description: Optional[str] = Field(default=None, max_length=4000)
-    # Prepared relationship placeholders for the Match Center phase
-    lineup_ready: bool = False
+    # Prepared relationship placeholder for the Match Center phase
     result_summary: Optional[str] = Field(default=None, max_length=1000)
     # Match Center V1 — optional tactical formation (e.g. "4-3-3").
     # Kept as plain text: the pitch/formation visualisation is a later phase.
@@ -262,37 +379,9 @@ class Match(MatchBase, DBModel):
 
 
 # --------------------------------------------------- Match Center (V1)
-class MatchLineupBase(AppBaseModel):
-    """One document per player per match (no Player data duplication).
-
-    Relationship keys: match_id + team_id + player_id.
-    The frontend groups documents into Starting XI / Substitutes via `role`.
-    `pitch_slot` is reserved so a formation visual can be added later
-    without a data migration.
-    """
-
-    match_id: str
-    team_id: str
-    player_id: str
-    role: LineupRole = LineupRole.STARTING
-    position: Optional[PlayerPosition] = None
-    position_label: Optional[str] = Field(default=None, max_length=20)
-    pitch_slot: Optional[str] = Field(default=None, max_length=20)
-    shirt_number: Optional[int] = Field(default=None, ge=0, le=99)
-    is_captain: bool = False
-    minutes_played: Optional[int] = Field(default=None, ge=0, le=200)
-    display_order: int = Field(default=0, ge=0, le=999)
-    note: Optional[str] = Field(default=None, max_length=500)
-    status: EntityStatus = EntityStatus.ACTIVE
-
-
-MatchLineupUpdate = make_update_model("MatchLineupUpdate", MatchLineupBase)
-
-
-class MatchLineup(MatchLineupBase, DBModel):
-    pass
-
-
+# Fitur Match Lineups dihapus (model MatchLineup/LineupRole tidak lagi ada).
+# Koleksi `match_lineups` beserta data historisnya TETAP disimpan dan masih
+# dibaca (read-only) untuk statistik penampilan pemain di routes/players.py.
 class MatchEventBase(AppBaseModel):
     """A single timeline event of a match (goal, card, substitution, ...)."""
 
@@ -515,15 +604,43 @@ class GalleryAlbum(GalleryAlbumBase, DBModel):
 # -------------------------------------------------------------- Sponsor
 class SponsorBase(AppBaseModel):
     name: str = Field(min_length=1, max_length=160)
+    slug: Optional[str] = Field(default=None, max_length=180)
     logo: Optional[str] = None
-    description: Optional[str] = Field(default=None, max_length=1000)
+    description: Optional[str] = Field(default=None, max_length=4000)
     website: Optional[str] = None
     tier: Optional[str] = Field(default=None, max_length=60)
     display_order: int = Field(default=0, ge=0, le=9999)
     status: EntityStatus = EntityStatus.ACTIVE
+    # Additive & backward-compatible: dokumen sponsor lama tanpa field ini tetap valid
+    # (default kosong) dan tidak ada data lama yang hilang.
+    contact: ContactInformation = Field(default_factory=ContactInformation)
+    social_media: SocialLinks = Field(default_factory=SocialLinks)
+    # Sponsor utama ditandai EKSPLISIT oleh admin — tidak ada promosi otomatis.
+    is_featured: bool = False
+
+    @field_validator("slug", mode="before")
+    @classmethod
+    def _sponsor_slug(cls, v):
+        return slugify(v) if v else v
+
+    @model_validator(mode="after")
+    def _ensure_sponsor_slug(self):
+        # Slug dibuat sekali dari nama bila kosong; slug yang SUDAH ada tidak
+        # pernah diubah otomatis walau nama sponsor berubah (link lama aman).
+        if not getattr(self, "slug", None):
+            object.__setattr__(self, "slug", slugify(getattr(self, "name", "") or ""))
+        return self
 
 
-SponsorUpdate = make_update_model("SponsorUpdate", SponsorBase)
+SponsorUpdate = make_update_model(
+    "SponsorUpdate",
+    SponsorBase,
+    {
+        "_sponsor_slug": field_validator("slug", mode="before")(
+            classmethod(lambda cls, v: slugify(v) if v else v)
+        )
+    },
+)
 
 
 class Sponsor(SponsorBase, DBModel):

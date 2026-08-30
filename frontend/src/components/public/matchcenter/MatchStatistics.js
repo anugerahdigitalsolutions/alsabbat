@@ -73,10 +73,10 @@ const Block = ({ title, events, playersById, testId }) =>
   ) : null;
 
 /**
- * Match statistics derived ONLY from existing MatchEvent / MatchLineup data.
+ * Match statistics derived ONLY from existing MatchEvent data.
  * Metrics without a data source (possession, shots, corners, ...) are not shown.
  */
-export const MatchStatistics = ({ events = [], lineups = [], playersById = {} }) => {
+export const MatchStatistics = ({ events = [], playersById = {} }) => {
   const rows = [
     { key: 'goals', label: 'Gol', ...countBySide(events, GOAL_TYPES) },
     { key: 'own-goals', label: 'Gol Sendiri', ...countBySide(events, ['OWN_GOAL']) },
@@ -87,10 +87,7 @@ export const MatchStatistics = ({ events = [], lineups = [], playersById = {} })
     { key: 'substitutions', label: 'Pergantian', ...countBySide(events, ['SUBSTITUTION']) },
   ].filter((row) => row.total > 0);
 
-  const starters = lineups.filter((l) => l.role === 'STARTING').length;
-  const subs = lineups.filter((l) => l.role === 'SUBSTITUTE' || l.role === 'UNUSED_SUBSTITUTE').length;
-
-  if (!rows.length && !lineups.length) {
+  if (!rows.length) {
     return (
       <EmptyState
         icon={BarChart3}
@@ -131,27 +128,6 @@ export const MatchStatistics = ({ events = [], lineups = [], playersById = {} })
             Kejadian pertandingan belum diinput, sehingga statistik belum dapat dihitung.
           </p>
         )}
-
-        {lineups.length ? (
-          <div
-            className="mt-5 grid grid-cols-2 gap-4 border-t pt-4"
-            style={{ borderColor: 'var(--border-soft)' }}
-            data-testid="match-stat-squad"
-          >
-            <div>
-              <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
-                Pemain Inti
-              </p>
-              <p className="font-display text-lg font-bold tabular-nums">{starters}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
-                Pemain Cadangan
-              </p>
-              <p className="font-display text-lg font-bold tabular-nums">{subs}</p>
-            </div>
-          </div>
-        ) : null}
       </div>
 
       {goals.length || cards.length || substitutions.length ? (

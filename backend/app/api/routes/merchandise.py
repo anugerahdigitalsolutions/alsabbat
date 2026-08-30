@@ -228,6 +228,12 @@ async def product_by_slug(slug: str, request: Request) -> Dict[str, Any]:
     public_rate_limit(request)
     product = await products.get_by({"slug": slug, "status": "ACTIVE"})
     if not product:
+        # Backwards compatibility: products created before slugs were generated
+        # reliably have slug=None, so the storefront links with the id instead.
+        # Accepting the id here keeps those existing products reachable without
+        # rewriting any stored document.
+        product = await products.get_by({"id": slug, "status": "ACTIVE"})
+    if not product:
         raise NotFoundError("Product not found")
     return await _enrich_product(product, with_variants=True)
 

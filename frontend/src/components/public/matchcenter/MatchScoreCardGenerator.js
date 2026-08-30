@@ -1,9 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveMediaUrl } from '../gallery/mediaUtils';
 import { Download, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../ui/button';
-import { useMatchCardDesign, MATCH_CARD_DEFAULT_TRANSPARENCY, clampTransparency } from '../../../lib/matchCardDesign';
+import {
+  MATCH_CARD_DEFAULT_TRANSPARENCY,
+  MATCH_CARD_DEFAULTS,
+  clampTransparency,
+  clampPercent,
+  clampLogoZoom,
+  hexToRgba,
+} from '../../../lib/matchCardDesign';
 import { useResourceList } from '../../../hooks/useResourceList';
 
 const BRAND = {
@@ -13,14 +20,20 @@ const BRAND = {
   light: '#FEFEFE',
 };
 
+// Gol yang dihitung sebagai pencetak gol (own goal tidak dihitung).
+const SCORER_TYPES = ['GOAL', 'PENALTY_SCORED'];
+const GOAL_MARK = '\u26BD';
+
 const RATIOS = [
   { id: 'feed', label: '4:5 Feed', width: 1080, height: 1350 },
   { id: 'story', label: '9:16 Story', width: 1080, height: 1920 },
 ];
 
+const MATCH_DAY_LABEL = 'MATCH DAY';
+
 const STATUS_LABEL = {
-  SCHEDULED: 'HARI PERTANDINGAN',
-  UPCOMING: 'HARI PERTANDINGAN',
+  SCHEDULED: MATCH_DAY_LABEL,
+  UPCOMING: MATCH_DAY_LABEL,
   LIVE: 'LIVE',
   FINISHED: 'SELESAI',
   POSTPONED: 'DITUNDA',
@@ -43,11 +56,38 @@ const loadImage = (src) =>
       resolve(null);
       return;
     }
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = resolveMediaUrl(src);
+    const url = resolveMediaUrl(src);
+    const attempt = (href, useCors) =>
+      new Promise((done) => {
+        const img = new Image();
+        if (useCors) img.crossOrigin = 'anonymous';
+        img.onload = () => done(img);
+        img.onerror = () => done(null);
+        img.src = href;
+      });
+
+    // 1) normal (CORS) → 2) fallback fetch→blob (mengatasi header CORS/cache yang
+    // hilang, penyebab logo tim/sponsor "kadang tidak tampil").
+    attempt(url, true).then((img) => {
+      if (img) {
+        resolve(img);
+        return;
+      }
+      fetch(url, { mode: 'cors', cache: 'reload' })
+        .then((res) => (res.ok ? res.blob() : null))
+        .then((blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const objectUrl = URL.createObjectURL(blob);
+          attempt(objectUrl, false).then((img2) => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(img2);
+          });
+        })
+        .catch(() => resolve(null));
+    });
   });
 
 const roundRect = (ctx, x, y, w, h, r) => {
@@ -69,7 +109,7 @@ const initials = (name = '') =>
     .join('')
     .toUpperCase() || '?';
 
-const drawCrest = (ctx, img, cx, cy, size, label) => {
+const drawCrest = (ctx, img, cx, cy, size, label, zoomPercent = 100) => {
   // Container tetap + gaya kartu AL SABBAT
   ctx.save();
   roundRect(ctx, cx - size / 2, cy - size / 2, size, size, size * 0.22);
@@ -82,11 +122,23 @@ const drawCrest = (ctx, img, cx, cy, size, label) => {
 
   if (img) {
     // LOGO = contain (tidak pernah dipotong), dengan safe padding di dalam container.
-    const inner = size * 0.78;
-    const scale = Math.min(inner / img.width, inner / img.height);
+    // Zoom admin benar-benar mengubah besar logo: basis padding dibuat lebih kecil
+    // sehingga zoom maksimum tetap di bawah batas aman (logo tidak pernah terpotong)
+    // dan aspect ratio asli selalu dipertahankan.
+    const zoom = Math.min(140, Math.max(60, Number(zoomPercent) || 100)) / 100;
+    const base = size * 0.68;
+    const safe = size * 0.96; // batas mutlak: logo wajib tetap di dalam container
+    const scale = Math.min(
+      (base / img.width) * zoom,
+      (base / img.height) * zoom,
+      safe / img.width,
+      safe / img.height,
+    );
     const w = img.width * scale;
     const h = img.height * scale;
     ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
     ctx.restore();
   } else {
@@ -125,8 +177,9 @@ const sponsorColumns = (count, isStory) => {
 };
 
 /**
- * Satu sel sponsor: pill terang (bukan hitam) + logo `contain` sehingga logo
- * tidak pernah terpotong dan transparansi logo tetap terjaga.
+ * Satu sel sponsor: pill terang (bagian dari template) + LOGO ASLI sponsor
+ * digambar `contain` sehingga transparansi & desain logo tetap utuh.
+ * Tidak ada box/background tambahan dan tidak pernah diganti teks nama.
  */
 const drawSponsorCell = (ctx, item, x, y, w, h) => {
   ctx.save();
@@ -138,22 +191,16 @@ const drawSponsorCell = (ctx, item, x, y, w, h) => {
   ctx.stroke();
   ctx.restore();
 
-  if (item.img) {
-    const maxW = w * 0.84;
-    const maxH = h * 0.7;
-    const scale = Math.min(maxW / item.img.width, maxH / item.img.height);
-    const dw = item.img.width * scale;
-    const dh = item.img.height * scale;
-    ctx.drawImage(item.img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
-    return;
-  }
-
+  if (!item.img) return;
+  const maxW = w * 0.86;
+  const maxH = h * 0.74;
+  const scale = Math.min(maxW / item.img.width, maxH / item.img.height);
+  const dw = item.img.width * scale;
+  const dh = item.img.height * scale;
   ctx.save();
-  ctx.fillStyle = BRAND.blue;
-  ctx.font = `700 ${h * 0.3}px Poppins, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(truncate(ctx, (item.name || '').toUpperCase(), w * 0.86), x + w / 2, y + h / 2);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(item.img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   ctx.restore();
 };
 
@@ -168,26 +215,96 @@ export const MatchScoreCardGenerator = ({
   competitionName,
   seasonName,
   transparencyOverride = null,
+  designOverride = null,
   fixedRatio = null,
   bare = false,
   sponsors = null,
+  // Pencetak gol Kartu Hasil — sumbernya HANYA Match Events existing.
+  events = null,
+  playersById = null,
+  // 'fixture' = Kartu Pertandingan (pengumuman jadwal, tanpa skor)
+  // 'result'  = Kartu Hasil Pertandingan (skor + status SELESAI)
+  // 'auto'    = ikut data: ada skor -> kartu hasil, belum ada -> kartu jadwal
+  kind = 'auto',
 }) => {
   const canvasRef = useRef(null);
-  const design = useMatchCardDesign();
   const sponsorList = useResourceList('/sponsors', { status: 'ACTIVE', limit: 40 }, { enabled: sponsors === null });
-  const activeSponsors = sponsors === null ? sponsorList.items : sponsors;
+  const [ratio, setRatio] = useState(fixedRatio ? RATIOS.find((r) => r.id === fixedRatio) || RATIOS[0] : RATIOS[0]);
+  const [rendering, setRendering] = useState(true);
+
+  const isStoryRatio = ratio.id === 'story';
+  const scoreAvailable = match?.home_score !== null && match?.home_score !== undefined;
+  const cardKind = kind === 'auto' ? (scoreAvailable ? 'result' : 'fixture') : kind;
+  const isResultCard = cardKind === 'result';
+  // Kartu Pertandingan tidak pernah menampilkan skor; skor hanya di Kartu Hasil.
+  const showScore = isResultCard && scoreAvailable;
+
+  // ------------------------------------------------------------------------
+  // SUMBER DESAIN = MATCH INI SAJA (tidak ada lagi pembacaan Desain Global).
+  // `card_*` untuk Kartu Pertandingan, `result_card_*` untuk Kartu Hasil —
+  // dua set field yang sepenuhnya independen. Bila kosong dipakai default aman.
+  // `designOverride` hanya dipakai preview admin untuk nilai yang belum disimpan.
+  // ------------------------------------------------------------------------
+  const bgPrefix = isResultCard ? 'result_card' : 'card';
+  const ratioKey = isStoryRatio ? 'story' : 'feed';
+  const pick = (key) =>
+    designOverride && designOverride[key] !== undefined && designOverride[key] !== null
+      ? designOverride[key]
+      : match?.[`${bgPrefix}_${key}`];
+
+  const customBackground = pick(`${ratioKey}_background`) || '';
+  const bgFocusX = clampPercent(pick(`${ratioKey}_focus_x`), 50);
+  const bgFocusY = clampPercent(pick(`${ratioKey}_focus_y`), 50);
+  const bgZoom = clampPercent(pick(`${ratioKey}_zoom`), 100, 100, 250);
+  const transparency = clampTransparency(
+    transparencyOverride === null || transparencyOverride === undefined
+      ? pick('transparency') ?? MATCH_CARD_DEFAULT_TRANSPARENCY
+      : transparencyOverride,
+  );
+  const overlayEnabled = pick('overlay_enabled') !== false;
+  const overlayColor = pick('overlay_color') || MATCH_CARD_DEFAULTS.overlayColor;
+  const overlayOpacity = clampPercent(pick('overlay_opacity'), MATCH_CARD_DEFAULTS.overlayOpacity);
+  const logoZoom = clampLogoZoom(pick('logo_zoom'));
+  const sponsorsEnabled = pick('sponsors_enabled') !== false;
+  const activeSponsors = sponsorsEnabled ? (sponsors === null ? sponsorList.items : sponsors) : [];
   const sponsorSignature = JSON.stringify(
     (activeSponsors || []).map((s) => [s.id || s.name, s.logo || '']),
   );
-  const [ratio, setRatio] = useState(fixedRatio ? RATIOS.find((r) => r.id === fixedRatio) || RATIOS[0] : RATIOS[0]);
-  const [rendering, setRendering] = useState(true);
-  const transparency = clampTransparency(
-    transparencyOverride === null || transparencyOverride === undefined
-      ? design.loading
-        ? MATCH_CARD_DEFAULT_TRANSPARENCY
-        : design.transparency
-      : transparencyOverride,
-  );
+
+  // Pencetak gol AL SABBAT dari Match Events existing (nama dari data pemain).
+  // Hanya untuk Kartu Hasil; dikelompokkan per pemain agar tetap rapi.
+  const scorerLines = useMemo(() => {
+    if (!isResultCard || !showScore) return [];
+    const goals = (events || []).filter(
+      (event) =>
+        (event?.status ?? 'ACTIVE') === 'ACTIVE' &&
+        (event?.side ?? 'CLUB') === 'CLUB' &&
+        SCORER_TYPES.includes(event?.type) &&
+        event?.player_id &&
+        (playersById || {})[event.player_id],
+    );
+    if (!goals.length) return [];
+    const grouped = [];
+    goals.forEach((goal) => {
+      const player = playersById[goal.player_id] || {};
+      const name = (player.display_name || player.full_name || '').toUpperCase();
+      if (!name) return;
+      let entry = grouped.find((item) => item.id === goal.player_id);
+      if (!entry) {
+        entry = { id: goal.player_id, name, minutes: [] };
+        grouped.push(entry);
+      }
+      if (goal.minute || goal.minute === 0) entry.minutes.push(Number(goal.minute));
+    });
+    const lines = grouped.map((entry) => {
+      const minutes = entry.minutes.sort((a, b) => a - b).map((m) => `${m}'`).join(', ');
+      return `${GOAL_MARK} ${entry.name}${minutes ? ` ${minutes}` : ''}`;
+    });
+    // Batasi baris agar skor, logo, informasi utama & sponsor tidak tertutup.
+    const maxLines = isStoryRatio ? 5 : 4;
+    if (lines.length <= maxLines) return lines;
+    return [...lines.slice(0, maxLines - 1), `${GOAL_MARK} +${lines.length - (maxLines - 1)} pencetak gol lainnya`];
+  }, [events, playersById, isResultCard, showScore, isStoryRatio]);
 
   const render = useCallback(async () => {
     const canvas = canvasRef.current;
@@ -207,61 +324,94 @@ export const MatchScoreCardGenerator = ({
       }
     }
 
-    const [clubImg, opponentImg, coverImg] = await Promise.all([
+    const [clubImg, opponentImg, coverImg, customBgImg] = await Promise.all([
       loadImage(clubLogo),
       loadImage(match?.opponent?.logo),
       loadImage(match?.match_cover),
+      loadImage(customBackground ? resolveMediaUrl(customBackground) : null),
     ]);
 
-    // Sponsor aktif: semua tampil, logo dimuat contain (tidak pernah dipotong)
-    const sponsorSource = (activeSponsors || []).filter((s) => s && (s.logo || s.name));
+    // Sponsor aktif: hanya yang punya LOGO (tidak pernah diganti teks nama)
+    const sponsorSource = (activeSponsors || []).filter((s) => s && s.logo);
     const sponsorItems = await Promise.all(
       sponsorSource.map(async (s) => ({ name: s.name, img: await loadImage(resolveMediaUrl(s.logo)) })),
     );
 
-    // 1. Foto pertandingan sebagai background (cover, boleh terpotong natural)
-    const t = transparency / 100; // 1 = foto paling terlihat, 0 = warna kartu paling kuat
     ctx.fillStyle = BRAND.dark;
     ctx.fillRect(0, 0, W, H);
-    if (coverImg) {
-      const scale = Math.max(W / coverImg.width, H / coverImg.height);
-      const dw = coverImg.width * scale;
-      const dh = coverImg.height * scale;
-      ctx.drawImage(coverImg, (W - dw) / 2, (H - dh) * 0.35, dw, dh);
+
+    if (customBgImg) {
+      // ---- MODE BACKGROUND CUSTOM (per match, fallback global) ----
+      // Urutan layer: background image (crop) -> overlay -> scrim -> logo/teks/data.
+      const zoom = bgZoom / 100;
+      const scale = Math.max(W / customBgImg.width, H / customBgImg.height) * zoom;
+      const dw = customBgImg.width * scale;
+      const dh = customBgImg.height * scale;
+      // Crop mengikuti titik fokus admin (50/50 = tengah, seperti perilaku lama).
+      ctx.drawImage(customBgImg, (W - dw) * (bgFocusX / 100), (H - dh) * (bgFocusY / 100), dw, dh);
+
+      // Scrim atas & bawah tetap dipakai agar teks selalu terbaca di atas foto apa pun.
+      const topScrimC = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+      topScrimC.addColorStop(0, 'rgba(0,0,0,0.58)');
+      topScrimC.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = topScrimC;
+      ctx.fillRect(0, 0, W, H * 0.3);
+      const bottomScrimC = ctx.createLinearGradient(0, H, 0, H * 0.4);
+      bottomScrimC.addColorStop(0, 'rgba(0,0,0,0.82)');
+      bottomScrimC.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = bottomScrimC;
+      ctx.fillRect(0, H * 0.4, W, H * 0.6);
+    } else {
+      // ---- MODE DEFAULT (tidak diubah) ----
+      // 1. Foto pertandingan sebagai background (cover, boleh terpotong natural)
+      const t = transparency / 100; // 1 = foto paling terlihat, 0 = warna kartu paling kuat
+      if (coverImg) {
+        const scale = Math.max(W / coverImg.width, H / coverImg.height);
+        const dw = coverImg.width * scale;
+        const dh = coverImg.height * scale;
+        ctx.drawImage(coverImg, (W - dw) / 2, (H - dh) * 0.35, dw, dh);
+      }
+
+      // 2. Identitas warna AL SABBAT (navy + gold) — kekuatan mengikuti slider Admin
+      const a = (full, min) => (coverImg ? full - (full - min) * t : full);
+      const navy = ctx.createLinearGradient(0, 0, W * 0.35, H);
+      navy.addColorStop(0, `rgba(1,40,145,${a(0.9, 0.2).toFixed(3)})`);
+      navy.addColorStop(0.55, `rgba(1,40,145,${a(0.68, 0.1).toFixed(3)})`);
+      navy.addColorStop(1, `rgba(1,40,145,${a(0.5, 0.04).toFixed(3)})`);
+      ctx.fillStyle = navy;
+      ctx.fillRect(0, 0, W, H);
+
+      const goldGlow = ctx.createRadialGradient(W * 0.12, H * 0.08, 0, W * 0.12, H * 0.08, W * 0.85);
+      goldGlow.addColorStop(0, `rgba(252,207,43,${a(0.3, 0.1).toFixed(3)})`);
+      goldGlow.addColorStop(1, 'rgba(252,207,43,0)');
+      ctx.fillStyle = goldGlow;
+      ctx.fillRect(0, 0, W, H);
+
+      const blueGlow = ctx.createRadialGradient(W * 0.9, H * 0.95, 0, W * 0.9, H * 0.95, W * 0.9);
+      blueGlow.addColorStop(0, `rgba(1,40,145,${a(0.6, 0.14).toFixed(3)})`);
+      blueGlow.addColorStop(1, 'rgba(1,40,145,0)');
+      ctx.fillStyle = blueGlow;
+      ctx.fillRect(0, 0, W, H);
+
+      // 3. Scrim gelap hanya di area teks (atas & bawah) agar informasi selalu terbaca
+      const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+      topScrim.addColorStop(0, `rgba(0,0,0,${a(0.66, 0.4).toFixed(3)})`);
+      topScrim.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = topScrim;
+      ctx.fillRect(0, 0, W, H * 0.3);
+      const bottomScrim = ctx.createLinearGradient(0, H, 0, H * 0.4);
+      bottomScrim.addColorStop(0, `rgba(0,0,0,${a(0.88, 0.62).toFixed(3)})`);
+      bottomScrim.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = bottomScrim;
+      ctx.fillRect(0, H * 0.4, W, H * 0.6);
     }
 
-    // 2. Identitas warna AL SABBAT (navy + gold) — kekuatan mengikuti slider Admin
-    const a = (full, min) => (coverImg ? full - (full - min) * t : full);
-    const navy = ctx.createLinearGradient(0, 0, W * 0.35, H);
-    navy.addColorStop(0, `rgba(1,40,145,${a(0.9, 0.2).toFixed(3)})`);
-    navy.addColorStop(0.55, `rgba(1,40,145,${a(0.68, 0.1).toFixed(3)})`);
-    navy.addColorStop(1, `rgba(1,40,145,${a(0.5, 0.04).toFixed(3)})`);
-    ctx.fillStyle = navy;
-    ctx.fillRect(0, 0, W, H);
-
-    const goldGlow = ctx.createRadialGradient(W * 0.12, H * 0.08, 0, W * 0.12, H * 0.08, W * 0.85);
-    goldGlow.addColorStop(0, `rgba(252,207,43,${a(0.3, 0.1).toFixed(3)})`);
-    goldGlow.addColorStop(1, 'rgba(252,207,43,0)');
-    ctx.fillStyle = goldGlow;
-    ctx.fillRect(0, 0, W, H);
-
-    const blueGlow = ctx.createRadialGradient(W * 0.9, H * 0.95, 0, W * 0.9, H * 0.95, W * 0.9);
-    blueGlow.addColorStop(0, `rgba(1,40,145,${a(0.6, 0.14).toFixed(3)})`);
-    blueGlow.addColorStop(1, 'rgba(1,40,145,0)');
-    ctx.fillStyle = blueGlow;
-    ctx.fillRect(0, 0, W, H);
-
-    // 3. Scrim gelap hanya di area teks (atas & bawah) agar informasi selalu terbaca
-    const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.3);
-    topScrim.addColorStop(0, `rgba(0,0,0,${a(0.66, 0.4).toFixed(3)})`);
-    topScrim.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = topScrim;
-    ctx.fillRect(0, 0, W, H * 0.3);
-    const bottomScrim = ctx.createLinearGradient(0, H, 0, H * 0.4);
-    bottomScrim.addColorStop(0, `rgba(0,0,0,${a(0.88, 0.62).toFixed(3)})`);
-    bottomScrim.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = bottomScrim;
-    ctx.fillRect(0, H * 0.4, W, H * 0.6);
+    // OVERLAY: berlaku untuk KEDUA mode (custom background maupun default) supaya
+    // hasil Feed & Story selalu konsisten dengan pengaturan admin.
+    if (overlayEnabled) {
+      ctx.fillStyle = hexToRgba(overlayColor, overlayOpacity);
+      ctx.fillRect(0, 0, W, H);
+    }
 
     const pad = W * 0.08;
     const isStory = ratio.id === 'story';
@@ -270,9 +420,12 @@ export const MatchScoreCardGenerator = ({
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = BRAND.gold;
-    ctx.font = `700 ${W * 0.024}px Poppins, sans-serif`;
-    const statusText = STATUS_LABEL[match.status] || 'HARI PERTANDINGAN';
-    ctx.fillText(statusText.split('').join(' '), pad, pad + W * 0.03);
+    // Kartu jadwal selalu bernuansa Match Day; kartu hasil memakai label status.
+    const statusText = isResultCard ? STATUS_LABEL[match.status] || MATCH_DAY_LABEL : MATCH_DAY_LABEL;
+    // "Match Day" tampil 2x lebih besar; status lain memakai ukuran semula.
+    const statusScale = statusText === MATCH_DAY_LABEL ? 0.048 : 0.024;
+    ctx.font = `700 ${W * statusScale}px Poppins, sans-serif`;
+    ctx.fillText(statusText.split('').join(' '), pad, pad + W * 0.038);
 
     ctx.fillStyle = 'rgba(254,254,254,0.72)';
     ctx.font = `500 ${W * 0.022}px Poppins, sans-serif`;
@@ -284,7 +437,7 @@ export const MatchScoreCardGenerator = ({
     ctx.fillRect(pad, pad + W * 0.115, W * 0.16, W * 0.008);
 
     // Kotak informasi pertandingan (dihitung dulu agar matchup bisa menempel di atasnya)
-    const hasScore = match.home_score !== null && match.home_score !== undefined;
+    const hasScore = showScore;
     const isHome = match.venue_type !== 'AWAY';
     const clubGoals = hasScore ? (isHome ? match.home_score : match.away_score ?? 0) : null;
     const opponentGoals = hasScore ? (isHome ? match.away_score ?? 0 : match.home_score) : null;
@@ -295,6 +448,7 @@ export const MatchScoreCardGenerator = ({
       match.date ? `${formatCardDate(match.date)}${match.time ? ` · ${match.time.slice(0, 5)} WIB` : ''}` : null,
       [match.venue, venueLabel].filter(Boolean).join(' · '),
     ].filter(Boolean);
+    if (scorerLines.length) details.push(...scorerLines);
 
     // Panel info: compact (2 baris) agar foto pertandingan tetap focal point
     const lineH = W * 0.042;
@@ -349,8 +503,8 @@ export const MatchScoreCardGenerator = ({
     const opponentCx = W / 2 + crestOffset;
     const crestY = blockY - W * 0.1 - crestSize / 2;
 
-    drawCrest(ctx, clubImg, clubCx, crestY, crestSize, clubName);
-    drawCrest(ctx, opponentImg, opponentCx, crestY, crestSize, match?.opponent?.name || 'OPP');
+    drawCrest(ctx, clubImg, clubCx, crestY, crestSize, clubName, logoZoom);
+    drawCrest(ctx, opponentImg, opponentCx, crestY, crestSize, match?.opponent?.name || 'OPP', logoZoom);
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
@@ -417,7 +571,27 @@ export const MatchScoreCardGenerator = ({
 
     setRendering(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match, clubLogo, clubName, competitionName, seasonName, ratio, transparency, sponsorSignature]);
+  }, [
+    match,
+    clubLogo,
+    clubName,
+    competitionName,
+    seasonName,
+    ratio,
+    transparency,
+    sponsorSignature,
+    customBackground,
+    bgFocusX,
+    bgFocusY,
+    bgZoom,
+    overlayEnabled,
+    overlayColor,
+    overlayOpacity,
+    logoZoom,
+    isResultCard,
+    showScore,
+    scorerLines,
+  ]);
 
   useEffect(() => {
     if (!fixedRatio) return;
@@ -427,11 +601,12 @@ export const MatchScoreCardGenerator = ({
 
   useEffect(() => {
     render();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [render]);
 
   const fileName = () => {
     const opponent = (match?.opponent?.name || 'lawan').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    return `alsabbat-vs-${opponent}-${ratio.id}.png`;
+    return `alsabbat-${isResultCard ? 'hasil' : 'jadwal'}-vs-${opponent}-${ratio.id}.png`;
   };
 
   const toBlob = () =>

@@ -121,6 +121,13 @@ class Customer(DBModel):
     member_code: Optional[str] = None
     photo_url: Optional[str] = None
     joined_at: Optional[str] = None
+    # Fase 3 — peran & verifikasi (akun lama tanpa field ini tetap valid)
+    role: str = "MEMBER"
+    email_verified: bool = True
+    auth_provider: str = "PASSWORD"
+    google_id: Optional[str] = None
+    player_id: Optional[str] = None
+    staff_id: Optional[str] = None
 
 
 class CustomerAuthContext(AppBaseModel):

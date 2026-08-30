@@ -8,7 +8,6 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { MatchScoreboard } from '../../components/public/matchcenter/MatchScoreboard';
 import { MatchInfoPanel } from '../../components/public/matchcenter/MatchInfoPanel';
-import { FormationPitch } from '../../components/public/matchcenter/FormationPitch';
 import { MatchStatistics } from '../../components/public/matchcenter/MatchStatistics';
 import { MatchdayCountdown } from '../../components/public/MatchdayCountdown';
 import { MatchTimeline } from '../../components/public/matchcenter/MatchTimeline';
@@ -16,7 +15,6 @@ import { MatchMediaPanel } from '../../components/public/matchcenter/MatchMediaP
 import { MatchGallerySection } from '../../components/public/matchcenter/MatchGallerySection';
 import { HeadToHeadPanel } from '../../components/public/matchcenter/HeadToHeadPanel';
 import { MatchScoreCardGenerator } from '../../components/public/matchcenter/MatchScoreCardGenerator';
-import { ShareMatchday } from '../../components/public/ShareMatchday';
 import { Reveal } from '../../components/public/Reveal';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 import { useClub } from '../../context/ClubContext';
@@ -27,7 +25,6 @@ const EMPTY = {
   team: null,
   competition: null,
   season: null,
-  lineups: [],
   events: [],
   players: {},
   news: [],
@@ -136,11 +133,8 @@ export default function MatchDetailPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
           <Reveal>
-            <Tabs defaultValue="lineup">
+            <Tabs defaultValue="stats">
               <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto" data-testid="match-detail-tabs">
-                <TabsTrigger value="lineup" data-testid="match-tab-lineup">
-                  Formasi
-                </TabsTrigger>
                 <TabsTrigger value="stats" data-testid="match-tab-stats">
                   Statistik
                 </TabsTrigger>
@@ -152,20 +146,8 @@ export default function MatchDetailPage() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="lineup" className="mt-6">
-                <FormationPitch
-                  lineups={data.lineups}
-                  playersById={data.players}
-                  formation={match.formation}
-                />
-              </TabsContent>
-
               <TabsContent value="stats" className="mt-6">
-                <MatchStatistics
-                  events={data.events}
-                  lineups={data.lineups}
-                  playersById={data.players}
-                />
+                <MatchStatistics events={data.events} playersById={data.players} />
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-6">
@@ -218,23 +200,19 @@ export default function MatchDetailPage() {
 
             <MatchScoreCardGenerator
               match={match}
+              events={data.events}
+              playersById={data.players}
               clubName={shortName || clubName}
               clubLogo={club?.logo}
               competitionName={data.competition?.name}
               seasonName={data.season?.name}
-            />
-
-            <ShareMatchday
-              match={match}
-              clubName={shortName || clubName}
-              competitionName={data.competition?.name}
             />
           </Reveal>
           </div>
 
           <Reveal className="space-y-6" delay={120}>
             {['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'].includes(match.status) ? (
-              <MatchdayCountdown match={match} clubName={shortName || clubName} compact />
+              <MatchdayCountdown match={match} clubName={shortName || clubName} compact showCta={false} />
             ) : null}
 
             <MatchInfoPanel

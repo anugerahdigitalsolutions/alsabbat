@@ -21,12 +21,15 @@ import PlayerDetailPage from './pages/public/PlayerDetailPage';
 import NewsDetailPage from './pages/public/NewsDetailPage';
 import AchievementsPage from './pages/public/AchievementsPage';
 import SponsorsPage from './pages/public/SponsorsPage';
+import SponsorDetailPage from './pages/public/SponsorDetailPage';
 import ContactPage from './pages/public/ContactPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import BarayaLoginPage from './pages/public/BarayaLoginPage';
 import BarayaRegisterPage from './pages/public/BarayaRegisterPage';
 import BarayaForgotPasswordPage from './pages/public/BarayaForgotPasswordPage';
 import BarayaResetPasswordPage from './pages/public/BarayaResetPasswordPage';
+import GoogleAuthCallbackPage from './pages/public/GoogleAuthCallbackPage';
+import BarayaApplicationPage from './pages/public/BarayaApplicationPage';
 import BarayaAccountPage from './pages/public/BarayaAccountPage';
 import BarayaOrdersPage from './pages/public/BarayaOrdersPage';
 import BarayaMemberCardPage from './pages/public/BarayaMemberCardPage';
@@ -46,7 +49,6 @@ import AdminStaffPage from './pages/admin/AdminStaffPage';
 import AdminSeasonsPage from './pages/admin/AdminSeasonsPage';
 import AdminCompetitionsPage from './pages/admin/AdminCompetitionsPage';
 import AdminMatchesPage from './pages/admin/AdminMatchesPage';
-import AdminMatchLineupsPage from './pages/admin/AdminMatchLineupsPage';
 import AdminMatchEventsPage from './pages/admin/AdminMatchEventsPage';
 import AdminPlayerStatsPage from './pages/admin/AdminPlayerStatsPage';
 import AdminContentPage from './pages/admin/AdminContentPage';
@@ -91,6 +93,7 @@ function App() {
               <Route path="/staff/:staffId" element={<StaffDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
               <Route path="/sponsors" element={<SponsorsPage />} />
+              <Route path="/sponsors/:sponsorId" element={<SponsorDetailPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/matches" element={<MatchesPage />} />
               <Route path="/matches/:matchId" element={<MatchDetailPage />} />
@@ -106,6 +109,15 @@ function App() {
               <Route path="/daftar" element={<BarayaRegisterPage />} />
               <Route path="/lupa-password" element={<BarayaForgotPasswordPage />} />
               <Route path="/reset-password" element={<BarayaResetPasswordPage />} />
+              <Route path="/auth/google" element={<GoogleAuthCallbackPage />} />
+              <Route
+                path="/akun/pengajuan"
+                element={
+                  <BarayaRoute>
+                    <BarayaApplicationPage />
+                  </BarayaRoute>
+                }
+              />
               <Route
                 path="/akun"
                 element={
@@ -159,7 +171,6 @@ function App() {
               <Route path="seasons" element={<AdminSeasonsPage />} />
               <Route path="competitions" element={<AdminCompetitionsPage />} />
               <Route path="matches" element={<AdminMatchesPage />} />
-              <Route path="match-lineups" element={<AdminMatchLineupsPage />} />
               <Route path="match-events" element={<AdminMatchEventsPage />} />
               <Route path="player-stats" element={<AdminPlayerStatsPage />} />
               <Route path="content" element={<AdminContentPage />} />

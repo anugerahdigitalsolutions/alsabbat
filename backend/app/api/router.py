@@ -11,10 +11,11 @@ from app.api.routes import (
     customers,
     gallery,
     match_events,
-    match_lineups,
     matches,
     media,
+    membership,
     merchandise,
+    notifications,
     players,
     seasons,
     readiness,
@@ -41,7 +42,6 @@ api_router.include_router(staff.router, prefix="/staff")
 api_router.include_router(seasons.router, prefix="/seasons")
 api_router.include_router(competitions.router, prefix="/competitions")
 api_router.include_router(matches.router, prefix="/matches")
-api_router.include_router(match_lineups.router, prefix="/match-lineups")
 api_router.include_router(match_events.router, prefix="/match-events")
 api_router.include_router(content.router, prefix="/content")
 api_router.include_router(gallery.router, prefix="/gallery")
@@ -49,10 +49,12 @@ api_router.include_router(media.router, prefix="/media")
 api_router.include_router(sponsors.router, prefix="/sponsors")
 api_router.include_router(achievements.router, prefix="/achievements")
 api_router.include_router(analytics.router, prefix="/analytics")
+api_router.include_router(notifications.router, prefix="/notifications")
 api_router.include_router(seo.router, prefix="/seo")
 api_router.include_router(social.router, prefix="/social")
 api_router.include_router(merchandise.router, prefix="/merchandise")
 api_router.include_router(customers.router, prefix="/baraya")
+api_router.include_router(membership.router, prefix="/baraya")
 api_router.include_router(customers.member_router, prefix="/member")
 api_router.include_router(readiness.router, prefix="/readiness")
 api_router.include_router(site.banners_router, prefix="/banners")

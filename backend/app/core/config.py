@@ -85,9 +85,15 @@ class Settings:
     RATE_LIMIT_WEBHOOK_WINDOW: int = int(os.environ.get("RATE_LIMIT_WEBHOOK_WINDOW", "60"))
 
     # -------------------------------------------------------------- media
-    # Storage is pluggable: LOCAL (default / dev) or S3 (Atlas-era CDN target).
+    # Storage is pluggable: LOCAL (default — dev and self-hosted/aaPanel), S3 or
+    # EMERGENT (managed object storage).
     MEDIA_STORAGE_PROVIDER: str = os.environ.get("MEDIA_STORAGE_PROVIDER", "LOCAL").upper()
     MEDIA_LOCAL_DIR: str = os.environ.get("MEDIA_LOCAL_DIR", str(ROOT_DIR / "media_storage"))
+    # On a self-hosted deployment (aaPanel + Nginx) the LOCAL directory lives on a
+    # real server disk and IS persistent across releases — as long as MEDIA_LOCAL_DIR
+    # points outside the deployment folder. Ephemeral containers must leave this
+    # false so the platform never over-claims durability.
+    MEDIA_LOCAL_PERSISTENT: bool = _bool(os.environ.get("MEDIA_LOCAL_PERSISTENT"), False)
     MEDIA_PUBLIC_PATH: str = "/api/media/files"
     MEDIA_CDN_BASE_URL: str = os.environ.get("MEDIA_STORAGE_PUBLIC_BASE_URL", "") or os.environ.get("MEDIA_CDN_BASE_URL", "")
     MEDIA_STORAGE_BUCKET: str = os.environ.get("MEDIA_STORAGE_BUCKET", "")
@@ -147,6 +153,28 @@ class Settings:
         os.environ.get("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "30")
     )
 
+    # ------------------------------ SMTP2GO API (Fase 3 — OTP & reset email)
+    # Kosong => provider melaporkan NOT_CONFIGURED (tidak pernah mengklaim
+    # email terkirim). Kredensial HANYA dari environment.
+    SMTP2GO_API_KEY: str = os.environ.get("SMTP2GO_API_KEY", "")
+    SMTP2GO_SENDER_EMAIL: str = os.environ.get("SMTP2GO_SENDER_EMAIL", "")
+    SMTP2GO_SENDER_NAME: str = os.environ.get("SMTP2GO_SENDER_NAME", "AL SABBAT Football Club")
+
+    # --------------------------------- Google OAuth (Fase 3 — Login Google)
+    GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+
+    # --------------------------- Firebase Cloud Messaging (Fase 4A — notifikasi admin)
+    # Kosong => status NOT_CONFIGURED yang jujur; TIDAK ada notifikasi dummy.
+    FIREBASE_PROJECT_ID: str = os.environ.get("FIREBASE_PROJECT_ID", "")
+    FIREBASE_SERVICE_ACCOUNT_JSON: str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON", "")
+    FIREBASE_ADMIN_TOPIC: str = os.environ.get("FIREBASE_ADMIN_TOPIC", "admin-review")
+
+    # ------------------------------------------------- OTP (Fase 3)
+    OTP_EXPIRE_MINUTES: int = int(os.environ.get("OTP_EXPIRE_MINUTES", "10"))
+    OTP_MAX_ATTEMPTS: int = int(os.environ.get("OTP_MAX_ATTEMPTS", "5"))
+
+
     # ---------------------------------------------------- hardening flags
     # Interactive API docs are disabled in production unless explicitly enabled.
     ENABLE_API_DOCS: bool = _bool(os.environ.get("ENABLE_API_DOCS"), False)
@@ -155,6 +183,10 @@ class Settings:
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() in {"production", "prod"}
+
+    @property
+    def is_staging(self) -> bool:
+        return self.ENVIRONMENT.lower() in {"staging", "stage"}
 
     def resolved_jwt_secret(self) -> str:
         """Return the JWT secret; generate an ephemeral one in development."""

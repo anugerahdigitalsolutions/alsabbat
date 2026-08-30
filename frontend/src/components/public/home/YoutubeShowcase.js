@@ -25,7 +25,8 @@ export const parseYoutubeId = (raw) => {
 
 export const YOUTUBE_VIDEOS_KEY = 'home.youtube.videos';
 
-/** Parse daftar video dari nilai CMS (JSON) → hanya video aktif, terurut. */
+/** Parse daftar video dari nilai CMS (JSON) → hanya video aktif.
+ *  Urutan tampil: TERBARU (terakhir ditambahkan) di paling atas → terlama. */
 export const parseYoutubeList = (raw) => {
   if (!raw) return [];
   try {
@@ -37,7 +38,7 @@ export const parseYoutubeList = (raw) => {
       .sort((a, b) => {
         const oa = Number.isFinite(Number(a.order)) ? Number(a.order) : a._i;
         const ob = Number.isFinite(Number(b.order)) ? Number(b.order) : b._i;
-        return oa - ob || a._i - b._i;
+        return ob - oa || b._i - a._i;
       })
       .map((item) => ({ id: parseYoutubeId(item.url || item.id), title: (item.title || '').trim() }))
       .filter((item) => item.id);
@@ -50,7 +51,7 @@ export const parseYoutubeList = (raw) => {
 export const collectYoutubeVideos = (t) => {
   const list = parseYoutubeList(t(YOUTUBE_VIDEOS_KEY));
   if (list.length) return list;
-  return [1, 2, 3]
+  return [3, 2, 1]
     .map((n) => ({ id: parseYoutubeId(t(`home.youtube.video_${n}`)), title: t(`home.youtube.title_${n}`) }))
     .filter((item) => item.id);
 };

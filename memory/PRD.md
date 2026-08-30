@@ -1,5 +1,500 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## FASE 4B — SATU AKUN, DUA PROFIL (PEMAIN + STAFF) · 29 Agu 2026 · SELESAI
+Additive & backward-compatible; tidak menyentuh Fase 1/2/4 dan tidak mengulang Fase 5.
+
+### Perubahan model/database (additive)
+- `customers` +field **`roles: [str]`** (daftar profil: MEMBER / PEMAIN / STAFF). `role` tetap ada sebagai
+  status tertinggi untuk tampilan. Akun lama tanpa `roles` otomatis dibaca sebagai `[role]`.
+  `player_id` & `staff_id` tetap dipakai sebagai relasi akun ↔ record Pemain ↔ record Staf.
+- `member_applications` +field **`staff_data`** (field mengikuti `StaffBase`: name, role `StaffRole`,
+  role_label, bio, **photo terpisah**, instagram). `player_data` tetap seperti Fase 4A.
+
+### Backend
+- `models/membership.py`: +`StaffApplicationData`; `ApplicationCreate` mewajibkan `staff_data` untuk STAFF
+  dan `player_data` untuk PEMAIN; `ApplicationDataUpdate` + `staff_data`.
+- `api/routes/membership.py`: `_roles_of()`; aturan akses pengajuan → **Pemain: hanya MEMBER murni**,
+  **Staf: hanya akun ber-role PEMAIN dan belum STAFF** (Guest 401, MEMBER 403, STAFF 403);
+  `/baraya/access` kini mengembalikan `roles`, `can_apply_player`, `can_apply_staff`;
+  `_apply_staff_data()` menulis data ke **record `staff` existing** yang dipilih Admin;
+  approve menambah role ke `roles` **tanpa menghapus PEMAIN** (role utama = STAFF bila keduanya ada).
+- `api/deps.py`: `require_gallery_access` memakai `roles` (profil ganda tetap punya akses).
+- `api/routes/customers.py`: +`POST /api/baraya/me/upload` — upload foto pengajuan **tanpa** mengubah
+  `photo_url` akun, sehingga foto Pemain dan foto Staf benar-benar terpisah.
+- `services/membership.py`: payload kartu member +`roles`.
+
+### Frontend
+- `lib/memberAccess.js`: `rolesOf`, `hasRole`, `canApplyPlayer`, `canApplyStaff`; label "Pemain & Staf".
+- `pages/public/BarayaApplicationPage.js`: pilihan tipe mengikuti kelayakan (MEMBER → Pemain, PEMAIN →
+  Staf, keduanya → panel tertutup); **form Staf terpisah** (Nama, Role Staf `StaffRole`, Label Role,
+  Foto Staf, Bio, Instagram) dan tidak lagi memakai field Pemain; judul jadi "Daftar Staff".
+- `pages/public/BarayaAccountPage.js`: tombol **"Daftar Staff"** untuk Pemain, "Daftar Pemain" untuk Member.
+- `components/admin/MemberApplications.js`: panel edit **Data Staf** (4 field + bio + pratinjau foto staf)
+  dan tetap wajib menautkan record existing saat approve.
+- `components/member/MemberCard.js`: badge peran memakai `roleLabel` (menampilkan "Pemain & Staf").
+- `services/barayaAuth.js`: +`barayaUploadApplicationPhoto`.
+
+### Pemeriksaan minimal
+- `scripts/phase4b_verify.py` **25/25 PASS** (sandbox, di-drop): MEMBER tidak bisa ajukan Staf (403),
+  Guest 401, tanpa `staff_data` 422, MEMBER→PEMAIN, PEMAIN→Staf, admin edit data staf, approve tanpa
+  record 422, akun jadi **PEMAIN + STAFF** (player_id & staff_id tersimpan), **0 duplikat** pemain/staf,
+  data & **foto Pemain vs Staf terpisah**, kartu member membawa dua profil, STAFF tidak bisa ajukan lagi,
+  galeri tetap terbuka, `/players` & `/staff` menampilkan entitas + foto masing-masing, akun lama tanpa
+  `roles` tetap valid, 6 regresi endpoint.
+- `phase4a_verify.py` **27/27 PASS** (regresi Fase 4A), `yarn build` sukses, `/api/health` ok.
+- UI live (akun uji, lalu dihapus): akun Pemain menampilkan "Daftar Staff", halaman pengajuan hanya
+  menawarkan tipe STAFF dengan field staf saja.
+- CATATAN DATA: record pemain di staging berisi nilai uji (`Uji 4B`, #19, FORWARD) dari verifikasi
+  Fase 4A/4B; foto uji yang tidak ada sudah dibersihkan (photo=null). Silakan sunting nama/nomor/foto
+  pemain sebenarnya di Admin → Pemain. Akun/pengajuan/OTP uji sudah dihapus (customers 0).
+
+
+## FASE 5 — FINAL TESTING STAGING · 29 Agu 2026 · STATUS: READY (dengan konfigurasi eksternal pending)
+Tanpa Testing Agent, hemat credit, tanpa data dummy permanen (semua uji di database sandbox yang di-DROP;
+sandbox tersisa: 0). Data existing utuh: clubs 1, teams 1, players 1 (tanpa duplikat), matches 1,
+sponsors 2, users 1, site_content 6, customers 0, member_applications 0, customer_otps 0.
+
+### Regresi sandbox (0 penulisan ke DB staging)
+- `phase3_verify.py` **56/56 PASS** (setelah payload uji disesuaikan Fase 4A: `player_data` wajib)
+- `phase4a_verify.py` **27/27 PASS**
+- `phase17_verify.py` **39/39 PASS** (patched: akun sandbox ditandai `email_verified` karena Fase 3)
+- `phase18_verify.py` **30/30 PASS** (patched: galeri kini 403 untuk Guest — aturan Fase 3)
+
+### Pemeriksaan live (read-only)
+- `/api/health` → ok, environment=staging, database=connected; `ENVIRONMENT=staging`,
+  `DB_NAME=alsabbat_platform_staging`, Mongo localhost, frontend `REACT_APP_BACKEND_URL` = domain staging.
+- 13 endpoint publik 200; galeri Guest 403; POST pengajuan Guest 401; 4 endpoint admin tanpa token 401;
+  media & match tidak ada → 404 (bukan 5xx).
+- 13 halaman publik: 0 console error, 0 respons 5xx, overflow 0 px; banner abstrak tampil di semua halaman.
+- Guest: section Galeri & Sorotan Pemain tidak dirender, tanpa CTA Daftar Pemain, tombol CTA → `/login`,
+  badge Play/App Store tersembunyi (belum dikonfigurasi).
+- Admin: login OK (SUPER_ADMIN), 7 halaman admin terbuka tanpa error/console error
+  (dashboard, baraya + pengajuan, matches, social + app store, gallery, players, users).
+- Social: 3 platform NOT_CONFIGURED + `enabled` true; respons TIDAK memuat token/secret
+  (hanya NAMA env yang belum diisi); auth-settings: email NOT_CONFIGURED, google false, firebase NOT_CONFIGURED.
+- Match Card (canvas export feed & story): background feed vs story TIDAK tertukar
+  ("BG FEED 4:5" vs "BG STORY 9:16"), overlay + logo Home/Away tampil, logo sponsor berupa gambar asli
+  (tanpa fallback teks nama), template utuh, `MATCH DAY` 2×.
+- Logika "Pertandingan Berikutnya" (review kode + live): kick-off lewat / sudah ada skor / FINISHED
+  tidak pernah dipakai; countdown tidak berjalan untuk pertandingan lewat.
+
+### BUG DITEMUKAN & DIPERBAIKI (Fase 5)
+1. **Kartu pertandingan (canvas) masih menulis "HARI PERTANDINGAN"** — permintaan Fase 4A belum
+   diterapkan di `MatchScoreCardGenerator.js` (hanya di countdown & scoreboard).
+   Fix: label → `MATCH DAY`, ukuran font 0.024W → **0.048W (2×)**, baseline 0.03W → 0.038W; status lain
+   (LIVE/SELESAI/DITUNDA/DIBATALKAN) tetap ukuran semula. Diverifikasi lewat ekspor canvas feed & story.
+2. **Chip kartu beranda masih "Hari Pertandingan"** → diganti "Match Day" (`HomePage.js`, ukuran tidak diubah).
+3. Skrip regresi lama (phase17/18) gagal karena perubahan sah Fase 3 → skrip uji dipatch (bukan produk).
+
+### Konfigurasi eksternal yang masih NOT_CONFIGURED (bukan bug)
+SMTP2GO, Google OAuth, Firebase FCM, Instagram/TikTok/YouTube OAuth, Google Drive API key.
+Semua melaporkan status jujur, tanpa dummy, dan tidak membuat website crash.
+
+
+## BACKGROUND BANNER HALAMAN DALAM (abstrak landscape) · 29 Agu 2026 · SELESAI (revisi 2: line-mesh)
+Revisi 2 (setelah user melampirkan referensi asli): pola diganti dari wave sederhana menjadi
+**jalinan garis tipis (line-mesh) yang memilin** seperti referensi — 32–38 garis paralel per keluarga,
+dua keluarga saling menyilang, kilau cyan `#63E6FF` pada puntiran (blur halus + radial pinch),
+dasar `#012891 → #02308F → #01102F`, aksen gold `#FCCF2B` sangat lembut (1 garis 20% + radial 14%),
+serta veil navy kiri→kanan agar area teks tetap bersih dan teks putih tetap terbaca.
+Pola tetap 5 variasi per rute dengan satu identitas visual.
+Permintaan: ganti HANYA background kotak biru pada banner halaman dalam (Tentang Klub, Pemain,
+Pertandingan, Merchandise, dll) menjadi abstrak landscape elegan; teks/layout/ukuran/rounded/navbar/
+typography/spacing tidak diubah.
+- BARU `components/public/PageHeaderBackdrop.js` — SVG inline (`viewBox 0 0 1200 420`,
+  `preserveAspectRatio="none"` → landscape mengikuti banner). Gradasi `#012891 → #02329E → #010F38`,
+  glow biru halus kanan-atas, radial gold `#FCCF2B` sangat lembut kanan-bawah, 4 wave mengalir
+  (putih 10–22% + satu garis gold 28–30%) plus 2 pita lebar transparan untuk kedalaman.
+  **5 variasi pola** dipetakan per rute: `/club|/contact`=0, `/teams|/players`=1, `/matches`=2,
+  `/merchandise|/order|/checkout`=3, `/news|/achievements|/sponsors`=4; rute lain memakai hash nama
+  rute (stabil, tetap satu identitas visual).
+- `components/public/PublicPageHeader.js` — backdrop dirender hanya bila TIDAK ada `backgroundImage`
+  (halaman dengan foto hero tetap seperti semula); `als-pitch-lines` diturunkan ke opacity 25% dan
+  scrim kiri→kanan dilembutkan (0.78 → 0.1) agar area teks tetap tenang & teks putih tetap terbaca,
+  sisi kanan memperlihatkan wave.
+- Tidak ada perubahan lain: ukuran banner tetap 1328×330/357 px, rounded 26px, teks, urutan elemen,
+  navbar, tipografi, dan spacing identik.
+- Pemeriksaan: `yarn build` sukses; screenshot `/club` (variasi 0), `/teams` (1), `/matches` (2),
+  `/merchandise` (3), `/news` (4) — semua wave tampil, teks tetap kontras, overflow horizontal 0 px.
+  CATATAN: frontend perlu `sudo supervisorctl restart frontend` bila komponen baru tidak ter-hot-reload.
+
+
+## FASE 4A (permintaan user) — USER FLOW, MATCH CARD & PENDAFTARAN PEMAIN · 29 Agu 2026 · SELESAI
+Scope terbatas Fase 4A. Fase 1–4 lain tidak diubah. Firebase belum dikonfigurasi → mode NOT_CONFIGURED jujur.
+
+### Frontend
+- `components/public/MatchdayCountdown.js` — "Hari Pertandingan" → **"Match Day"**, ukuran 14px → **28px**
+  (2×, `text-[1.75rem]`); +prop `showCta` agar tombol "Pusat Pertandingan" bisa disembunyikan.
+- `components/public/matchcenter/MatchScoreboard.js` — eyebrow → **"Match Day"** 11px → **22px** (2×).
+- `pages/public/MatchDetailPage.js` — section **"Bagikan Pertandingan" dihapus** (komponen `ShareMatchday`
+  tetap ada di sistem, tidak dipakai di halaman ini) dan tombol **"Pusat Pertandingan" dihapus**
+  (`showCta={false}`); route `/matches/:id` tetap utuh.
+- `components/public/home/JourneyCta.js` + `lib/siteContent.js` — tombol ke-3 "Galeri" → **"Login"**
+  (`/login`), key CMS `home.cta.btn_gallery` → `home.cta.btn_login` (nilai lama di DB tidak dihapus).
+- `pages/public/HomePage.js` — **Guest: section Sorotan Pemain & Galeri tidak dirender** (bukan hanya
+  terkunci); grid otomatis 3 kolom → 2 kolom agar tidak ada ruang kosong. Member: kedua section dirender
+  dengan panel terkunci + CTA.
+- `components/public/RestrictedAccessPanel.js` — CTA **"Daftar Pemain" hanya untuk akun login (Member)**;
+  Guest hanya melihat tombol Login / Buat Akun.
+- `components/public/PublicHeader.js` + `PublicFooter.js` — menu & tautan **GALERI hanya untuk Pemain/Staf**.
+- `pages/public/BarayaApplicationPage.js` (ditulis ulang) — formulir mengikuti **form Pemain Admin Panel**:
+  nama lengkap, display name, nomor punggung (0–99), posisi (enum `PlayerPosition`), tanggal lahir,
+  kebangsaan, tinggi, berat, foto (MediaPicker + endpoint foto Baraya existing), bio, Instagram +
+  alamat/pengalaman/motivasi. Non-Member melihat panel "sudah berstatus X" (tanpa form).
+- `pages/public/BarayaAccountPage.js` — UI per peran: Member → tombol **Daftar Pemain** (primer) + catatan
+  terkunci; Pemain/Staf → **Pengajuan Saya**, **Galeri Klub**, **Data Pemain & Sorotan**; kartu member
+  tetap menampilkan peran.
+- `components/admin/MemberApplications.js` — dialog review diperluas: **edit/lengkapi data pemain**
+  (9 field + bio + pratinjau foto) → `PATCH …/applications/{id}/data`, badge **"N perlu direview"**,
+  wajib memilih record Pemain existing saat approve.
+- `components/admin/AuthSettingsPanel.js` — +baris status **Notifikasi Firebase**.
+
+### Backend (additive)
+- `models/membership.py` — +`PlayerApplicationData` (memakai field `PlayerBase` existing, enum
+  `PlayerPosition`), `ApplicationCreate.player_data` (wajib untuk PEMAIN), `ApplicationDataUpdate`,
+  `MemberApplication.player_data`.
+- `api/routes/membership.py` — pengajuan **hanya untuk role MEMBER** (403 untuk PEMAIN/STAFF, 401 Guest);
+  foto memakai foto profil Baraya bila kosong; endpoint baru `PATCH /api/baraya/admin/applications/{id}/data`
+  (hanya PENDING); saat approve → `_apply_player_data()` menulis data ke **record `players` yang dipilih**
+  (tidak membuat record baru), peran akun jadi PEMAIN; REJECT menyimpan status+catatan dan pemohon boleh
+  mengajukan ulang.
+- BARU `services/notifications.py` — Firebase Cloud Messaging (topik `admin-review`) dengan
+  `firebase_status()`; tanpa kredensial → `{"delivered": false, "provider": "NOT_CONFIGURED"}`,
+  tidak ada notifikasi dummy, dan tidak ada koleksi/sistem notifikasi kedua (indikator PENDING dipakai).
+- `core/config.py` + `.env.example` — `FIREBASE_PROJECT_ID`, `FIREBASE_SERVICE_ACCOUNT_JSON`,
+  `FIREBASE_ADMIN_TOPIC`.
+
+### Pemeriksaan minimal
+- `scripts/phase4a_verify.py`: **27/27 PASS** (sandbox `alsabbat_phase4a_sandbox`, di-DROP): pengajuan
+  tanpa data pemain 422, posisi di luar enum 422, Guest 401, admin edit data 200 & Member 401,
+  approve → peran PEMAIN + **jumlah record pemain tetap 1 (tanpa duplikat)** + data masuk ke record pemain,
+  kartu member PEMAIN, galeri 200 untuk Pemain / 403 untuk Member & Guest, PEMAIN dilarang mengajukan (403),
+  pengajuan yang sudah diputuskan tidak bisa diedit (409), REJECT + pengajuan ulang, 5 regresi endpoint.
+- `yarn build` sukses (313.74 kB gz). UI live: Guest (section Galeri/Sorotan hilang, menu GALERI hilang,
+  CTA "Login", overflow 0), Member (2 panel terkunci + CTA Daftar Pemain, form pemain lengkap, akun
+  menampilkan Daftar Pemain), halaman detail pertandingan ("MATCH DAY" 22px, tanpa Bagikan Pertandingan &
+  tanpa tombol Pusat Pertandingan), Admin (badge "1 perlu direview", status Firebase BELUM DIKONFIGURASI,
+  dialog review terisi data pemohon).
+- Data uji dibersihkan: akun/pengajuan/OTP uji dihapus, counter member direset (customers 0,
+  member_applications 0); record pemain & tim milik user tidak diubah.
+
+### Masih perlu konfigurasi manual
+- Firebase: `FIREBASE_PROJECT_ID` + `FIREBASE_SERVICE_ACCOUNT_JSON` (service account JSON) dan paket
+  `firebase-admin` di server; sebelum itu status NOT_CONFIGURED dan admin mengandalkan badge PENDING.
+
+
+## FASE 4 (permintaan user) — MEDIA SOSIAL + PLAY STORE / APP STORE · 29 Agu 2026 · SELESAI
+Scope terbatas Fase 4; Fase 1–3 tidak diubah. Kredensial sosial belum tersedia → mode
+**NOT_CONFIGURED jujur** (tanpa dummy/koneksi palsu).
+
+### Backend (additive)
+- `app/services/social/oauth.py` — `connection_state()`: status `NOT_CONNECTED` → **`DISCONNECTED`**
+  (dan CONNECTED hanya bila token benar-benar tersimpan), +field `enabled` (default true).
+  Kredensial tetap hanya dari environment; token tetap terenkripsi & tidak pernah keluar ke UI.
+- `app/models/social.py` — +`SocialPlatformSettings {enabled: bool}`.
+- `app/api/routes/social.py` — endpoint baru **`PATCH /api/social/connections/{platform}/settings`**
+  (aktif/nonaktif, permission `social:publish`); `authorize` menolak platform yang dinonaktifkan;
+  `_run_publish` menolak publikasi ke platform yang dinonaktifkan (termasuk `YOUTUBE_SHORTS` → basis `YOUTUBE`).
+  Endpoint existing (`/platforms`, `/connections`, OAuth authorize/callback, DELETE disconnect) TIDAK dirombak.
+- `app/models/domain.py` — `ClubBase` +4 field additive: `app_playstore_url`, `app_playstore_enabled`,
+  `app_appstore_url`, `app_appstore_enabled` + validator URL (**wajib https://**, menolak
+  `javascript:`/`data:`/`vbscript:`/`file:`/`<script`, menolak spasi). `ClubUpdate` kini MEMBAWA validator
+  yang sama sehingga PATCH juga tervalidasi. String kosong `""` dipakai untuk MENGHAPUS tautan
+  (layer update Repository mengabaikan `None`).
+
+### Frontend
+- `components/admin/SocialConnections.js` — label status `DISCONNECTED` = "BELUM TERHUBUNG", **switch
+  Aktif/Nonaktif** per platform, tombol Hubungkan mati bila belum dikonfigurasi ATAU dinonaktifkan,
+  dan baris info syarat + env yang belum tersedia saat NOT_CONFIGURED.
+- BARU `components/admin/AppStoreLinksPanel.js` — panel "Aplikasi (Play Store & App Store)":
+  URL + switch tampil/sembunyi + Simpan + Hapus URL per platform, memakai `GET /api/club/active`
+  dan `PATCH /api/club/{id}` (tanpa sistem konfigurasi kedua).
+- `pages/admin/AdminSocialPage.js` — panel aplikasi dipasang di bawah panel Media Sosial.
+- `components/public/PublicFooter.js` — badge Google Play/App Store kini **anchor** ke URL konfigurasi
+  (`target=_blank`, `rel="noopener noreferrer"`), tampil HANYA bila enabled + URL https valid; blok
+  "APLIKASI" hilang bila keduanya nonaktif; popup "Segera hadir" dihapus (tidak lagi relevan).
+  Ukuran/warna/posisi badge TIDAK diubah (tetap 152×48, hitam).
+
+### Pemeriksaan minimal (tanpa Testing Agent)
+- `yarn build` sukses (311.87 kB gz, hanya warning lama `PlayerStatsBoard.js`).
+- API (admin token, preview): `/social/connections` → 3 platform `NOT_CONFIGURED` + `enabled:true`,
+  0 secret/token di respons; toggle nonaktif→aktif OK; `authorize` melaporkan env yang kurang (bukan sukses palsu);
+  `PATCH /club/{id}` → `javascript:alert(1)` **422**, `http://` **422**, `https://…` tersimpan, `""` menghapus.
+- UI: `/admin/social` menampilkan status BELUM DIKONFIGURASI + switch + syarat env; footer menampilkan badge
+  Google Play (152×48, href benar) saat aktif, dan menyembunyikan App Store yang belum diisi; setelah
+  dinonaktifkan blok badge hilang; overflow horizontal 0 px; website tidak crash pada mode NOT_CONFIGURED.
+- Data uji dibersihkan: URL toko dikosongkan kembali, dokumen `social_connections` uji dihapus
+  (social_connections 0, social_publications 0).
+
+### Masih perlu konfigurasi manual (BLOCKER eksternal)
+- Instagram: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_REDIRECT_URI`
+- TikTok: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`
+- YouTube: `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REDIRECT_URI`
+  (semua sudah terdokumentasi di `backend/.env.example`; redirect URI harus sama persis dengan
+  `/api/social/oauth/{platform}/callback` pada domain API). Setelah env diisi + restart backend,
+  status otomatis berubah ke DISCONNECTED dan tombol Hubungkan aktif — tanpa perubahan kode.
+
+
+## FASE 3 (permintaan user) — SISTEM USER, OTP, GOOGLE LOGIN, MEMBER/PEMAIN/STAFF · 29 Agu 2026 · SELESAI
+Keputusan user: SMTP2GO API Key (A), Google OAuth milik klub sendiri (B), OTP untuk pendaftaran + reset
+kata sandi (C, bukan 2FA), Galeri **dan** Sorotan Pemain terkunci total untuk MEMBER (C),
+approve pengajuan WAJIB menautkan ke record `players`/`staff` existing (A). Kredensial belum diberikan →
+dibangun dengan mode **NOT_CONFIGURED yang jujur** (tanpa dummy/hard-code).
+
+### Backend (additive, tanpa sistem auth kedua — tetap koleksi `customers` + sesi Baraya Fase 13)
+- `app/core/config.py`: +`SMTP2GO_API_KEY`, `SMTP2GO_SENDER_EMAIL`, `SMTP2GO_SENDER_NAME`,
+  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OTP_EXPIRE_MINUTES` (10), `OTP_MAX_ATTEMPTS` (5).
+- `app/services/mailer.py`: +`Smtp2GoMailer` (REST v3, header `X-Smtp2go-Api-Key`, cek `failed`/`failures`
+  meski HTTP 200), `mail_status()`, `send_customer_otp_email()`; pemilihan provider: MEMORY → SMTP2GO → SMTP → LOG.
+- BARU `app/services/otp.py`: kode 6 digit `secrets.randbelow`, disimpan **hash SHA-256** saja, sekali pakai,
+  maks 5 percobaan, kadaluarsa 10 menit, kode lama dihapus saat kode baru dibuat. Bila email belum
+  dikonfigurasi & bukan produksi, kode ditulis di log server (satu-satunya cara uji tanpa SMTP2GO).
+- BARU `app/services/google_auth.py`: authorization-code flow (token exchange + verifikasi `id_token` via
+  tokeninfo, cek `aud` = client_id & `email_verified`). Client secret tidak pernah keluar dari server.
+- BARU `app/models/membership.py`: `MemberRole` (MEMBER/PEMAIN/STAFF), pengajuan + keputusan + role update.
+- BARU `app/api/routes/membership.py` (prefix `/api/baraya`): `auth/config`, `otp/request`, `otp/verify`,
+  `reset-password-otp`, `google/login`, `access`, `applications`, `applications/mine`,
+  `admin/auth-settings`, `admin/applications`, `admin/applications/{id}` (PATCH), `admin/{id}/role` (PATCH).
+- `app/api/routes/customers.py`: register kini `email_verified=false` + role MEMBER + kirim OTP (daftar ulang
+  akun belum terverifikasi TIDAK membuat akun ganda); login menolak akun belum terverifikasi (403 + kirim
+  ulang OTP). Akun lama tanpa field `email_verified` tetap dianggap terverifikasi (backward compatible).
+- `app/api/deps.py`: +`require_gallery_access(feature)` → Galeri dipaksa di server (Guest/Member 403).
+- `app/api/routes/gallery.py`: 4 endpoint publik (`albums`, `albums/{id}`, `drive-photos`, `drive-browse`)
+  kini butuh peran PEMAIN/STAFF. Endpoint admin gallery tidak berubah.
+- `app/core/database.py`: +koleksi `customer_otps`, `member_applications` + index; `customers` +index `role`.
+- `app/services/membership.py`: payload kartu & verifikasi QR kini memuat `role`.
+
+### Frontend
+- BARU: `lib/memberAccess.js`, `components/public/GoogleLoginButton.js` (tombol hanya muncul bila Google
+  dikonfigurasi), `components/public/OtpVerifyForm.js`, `components/public/RestrictedAccessPanel.js`,
+  `pages/public/GoogleAuthCallbackPage.js` (`/auth/google`), `pages/public/BarayaApplicationPage.js`
+  (`/akun/pengajuan`), `components/admin/MemberApplications.js`, `components/admin/AuthSettingsPanel.js`.
+- DIUBAH: `context/BarayaAuthContext.js` (+verifyOtp, googleLogin, role, canViewGallery),
+  `services/barayaAuth.js` (+7 fungsi Fase 3), `hooks/useResourceList.js` (+opsi `client`),
+  `BarayaRegisterPage` (langkah OTP), `BarayaLoginPage` (Google + langkah OTP bila belum terverifikasi),
+  `BarayaForgotPasswordPage` (alur OTP; halaman token `/reset-password` lama tetap ada),
+  `GalleryPage`/`GalleryDetailPage`/`DriveFolderBrowser` (pakai `barayaApi` + panel terkunci),
+  `HomePage` (strip Galeri & Sorotan Pemain terkunci), `MemberCard` (badge peran),
+  `BarayaAccountPage` (peran + tautan pengajuan), `AdminBarayaPage` (kolom Peran, filter peran,
+  panel Pengaturan Login & OTP, tabel Pengajuan), `App.js` (2 rute baru).
+
+### Verifikasi (tanpa Testing Agent, sesuai permintaan user)
+- `scripts/phase3_verify.py`: **56/56 PASS** di sandbox `alsabbat_phase3_sandbox` (**DI-DROP**), mailer MEMORY
+  (0 email nyata): OTP hash-only & sekali pakai, login diblokir sebelum verifikasi, 403 Galeri untuk
+  Guest & MEMBER, approve wajib tautan record (422/404), peran naik + `player_id` tertaut, galeri terbuka,
+  penurunan peran melepas tautan & mengunci galeri lagi, reset kata sandi via OTP mencabut semua sesi,
+  respons generik anti-enumerasi, Google tanpa konfigurasi → 422 jujur, isolasi token admin↔Baraya,
+  admin auth-settings tanpa secret, 10 regresi endpoint publik, QR verify tanpa email/telepon.
+- E2E nyata di staging: daftar → OTP (dibaca dari log server karena SMTP2GO belum diisi) → MEMBER
+  (galeri 403) → pengajuan Pemain → Admin `/admin/baraya` (panel status BELUM DIKONFIGURASI, tabel
+  pengajuan, dialog tinjau, tautkan ke record pemain existing, Setujui) → peran **Pemain** → galeri 200 →
+  `/akun` badge Pemain + kartu member badge PEMAIN → `/akun/pengajuan` riwayat "Disetujui".
+  **Semua data uji dihapus** (customers 0, sessions 0, applications 0, otps 0, counter member direset);
+  record pemain milik user tidak diubah.
+- `yarn build` sukses (310.93 kB gz), backend import 216 route, `/api/health` 200.
+
+### BLOCKER (menunggu user)
+- `SMTP2GO_API_KEY` + `SMTP2GO_SENDER_EMAIL` → tanpa ini email OTP TIDAK terkirim (sistem melaporkan jujur).
+- `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` → tombol "Masuk dengan Google" disembunyikan sampai diisi.
+  Redirect URI wajib: `https://achievement-bug-fix.preview.emergentagent.com/auth/google`).
+- Kunci hanya ditulis ke `backend/.env` (sudah ada placeholder kosong) + `backend/.env.example` terdokumentasi.
+
+
+## FASE 2 — MATCH CARD (29 Agu 2026) · SELESAI
+File: `backend/app/models/domain.py` (MatchBase +8 field additive: card_feed/story_background,
+focus_x, focus_y, zoom), `frontend/src/components/public/matchcenter/MatchScoreCardGenerator.js`,
+`frontend/src/pages/admin/AdminMatchesPage.js`.
+Perbaikan: background & crop (focus X/Y + zoom 100-250%) PER MATCH dengan fallback global;
+overlay kini digambar di KEDUA mode (dulu hanya saat ada background custom → penyebab
+"kadang muncul kadang tidak") + render ditunda sampai pengaturan selesai dimuat;
+`loadImage` fallback fetch→blob (logo tim/sponsor tidak lagi hilang saat header CORS/cache gagal);
+zoom crest efektif (basis 0.68, cap 0.96) + imageSmoothing high; sel sponsor hanya LOGO ASLI
+(fallback teks nama dihapus, sponsor tanpa logo dilewati), pill putih template dipertahankan.
+Verifikasi: piksel canvas — match QA (bg per-match) vs match asli (bg global) berbeda → isolasi terbukti;
+Feed focusY=0 vs Story focusY=100/zoom150 menghasilkan crop berbeda; overlay ON vs OFF berubah di
+feed & story (preview admin, tanpa disimpan); sponsor band ada piksel pill putih + tinta logo;
+0 console error; `yarn build` sukses. Data uji dihapus (matches=1), setting global tidak berubah.
+
+## FASE 1 — PERBAIKAN UI & BUG (29 Agu 2026) · SELESAI
+File yang diubah (5):
+1. `frontend/src/pages/public/HomePage.js` — `nextMatch` kini: status upcoming + **belum ada skor** +
+   `kickoffAt()` (WIB, `+07:00`) **> sekarang**, lalu diurutkan dan diambil yang **paling dekat**.
+   Pertandingan yang kick-off-nya sudah lewat tidak pernah dipilih lagi (countdown tak pernah 00 00 00 00).
+   `Band` py-10/12 → **py-6/8** (spacing antar section lebih rapat; struktur/desain tidak diubah).
+2. `frontend/src/components/public/home/YoutubeShowcase.js` — urutan dibalik: video **terakhir
+   ditambahkan tampil paling atas** (`parseYoutubeList` sort turun; fallback key lama `[3,2,1]`).
+3. `frontend/src/components/public/matchcenter/MatchScoreCardGenerator.js` — blok HTML "Didukung oleh"
+   (grid logo sponsor di bawah kartu) **dihapus**. Band sponsor DI DALAM gambar kartu tidak diubah.
+4. Thumbnail presisi center + crop rapi: `home/GalleryStrip.js`, `gallery/AlbumCard.js`
+   (absolute inset-0 + `object-cover object-center`), `gallery/DriveFolderBrowser.js`
+   (grid `object-contain` → `object-cover object-center`).
+5. `frontend/src/pages/admin/AdminMatchesPage.js` — form hasil pertandingan: field `time` duplikat
+   dihapus, label jadi "Skor Tim Kandang (Home)" / "Skor Tim Tandang (Away)" + placeholder + help,
+   status diberi help ("pilih FINISHED lalu isi kedua skor…"), kolom Slug/Utama tidak tersentuh.
+
+Verifikasi minimal (tanpa Testing Agent, semua data uji dibuat lalu dihapus):
+- 3 pertandingan uji (LEWAT 29-08, DEKAT 01-09, JAUH 01-12) → panel memilih **DEKAT** (bukan yang lewat,
+  bukan yang jauh), countdown berjalan.
+- DEKAT di-set FINISHED 3-1 → panel otomatis pindah ke 03-09 (real), jadi hasil yang sudah diinput
+  tidak lagi dianggap "Pertandingan Berikutnya".
+- Halaman detail pertandingan: `score-card-sponsors` = **0**, canvas kartu tetap ada.
+- Thumbnail: album card & strip beranda `object-fit: cover`, `object-position: 50% 50%`, ukuran gambar
+  == ukuran frame (tanpa geser/ruang kosong).
+- Spacing section: padding 32px (sebelumnya 40/48px). Overflow horizontal 0 px. 0 console error.
+- `yarn build` sukses (hanya warning lama `PlayerStatsBoard.js`). Data pertandingan asli tidak diubah.
+
+## BLOCKER DEPLOY aaPanel DIBERESKAN (29 Agu 2026) · SELESAI
+- `backend/requirements.txt` (satu-satunya file yang diubah):
+  **dihapus** `emergentintegrations==0.2.0` (tidak diimpor kode apa pun & tidak tersedia di PyPI →
+  `pip install -r` gagal total di aaPanel), **ditambahkan** `Pillow>=10.3.0` (dipakai
+  `services/media_service.sanitize_upload()` dan `api/routes/media.py`).
+- Verifikasi: venv Python bersih → `pip install -r backend/requirements.txt` **sukses** (Pillow 12.3.0,
+  jq 1.12.0 pakai wheel, tanpa compile error); import aplikasi di venv bersih sukses (204 route);
+  `scripts/media_sanitizer_verify.py` 13/13 PASS di venv bersih;
+  `/api/health` = ok/connected; `scripts/p2_sponsor_slug_media_verify.py` 23/23 PASS.
+- Sisa item aaPanel murni konfigurasi server (JWT_SECRET, GOOGLE_DRIVE_API_KEY,
+  REACT_APP_PUBLIC_BASE_URL, backfill slug sponsor, jangan `alias` Nginx untuk /api/media/files).
+
+## VENUE 2 BARIS DI PANEL "PERTANDINGAN BERIKUTNYA" (29 Agu 2026) · SELESAI
+- `frontend/src/components/public/home/HeroNextMatchPanel.js` (satu file): helper `splitVenue()`
+  memecah nama venue menjadi 2 baris SEIMBANG pada batas kata (tidak memotong kata, data DB tidak
+  diubah). Blok meta kini: baris 1 = `tanggal · jam WIB` (tidak berubah), baris 2-3 = venue
+  (`LAPANGAN BOLA` / `PASIRMUNCANG`, `font-semibold`, `leading-tight`). Ukuran font tetap 12/13px.
+- Verifikasi 1920/1440/1280/1024/768/390/360: venue selalu 2 baris tanpa terpotong, jadwal utuh,
+  tidak bertabrakan dengan countdown/logo/nama tim/tombol (uji overlap bounding box = false),
+  tidak keluar panel, overflow horizontal 0 px, tinggi panel 124-128 px (desktop/tablet) &
+  255 px (mobile, stacked), 0 console error, `yarn build` sukses.
+
+## PANEL "PERTANDINGAN BERIKUTNYA" — ISI DIPERBESAR (29 Agu 2026) · SELESAI
+- `frontend/src/components/public/home/HeroNextMatchPanel.js`: label 9px → 11/12/13px, crest 24px → 34px
+  (mobile/tablet) & 44px (desktop, tetap `object-contain`), nama tim 11px → 14/16px, VS 10px → 14/18px,
+  angka countdown 13px → 18/20/24px + label 7px → 8/9/10px (layout 4 kolom tetap), meta tanggal/jam/venue
+  10px → 12/13px (`line-clamp-2`, teks lengkap tidak terpotong), tombol CTA 38px/10px → 42-48px/12-13px
+  dengan ikon panah 12px → 16/18px, divider 32px → 36/48px.
+- `frontend/src/components/public/CinematicHero.js`: HANYA padding vertikal wrapper panel
+  (py-7/8/9 → py-4/3/2) supaya tinggi total panel tetap (min-h 116/120/124 tidak diubah).
+- Verifikasi: tinggi panel desktop **128 px** (sebelumnya 124 px), 1024 = 128, overflow horizontal
+  **0 px** di 1920/1440/1280/1024/768/390/360, tidak ada elemen keluar panel, logo rasio 1.00 = rasio
+  render `object-contain` (natural 1.54 tidak dipaksa), teks meta lengkap "2026-09-03 · 15:30 WIB ·
+  LAPANGAN BOLA PASIRMUNCANG" di semua ukuran, **0 console error**, `yarn build` sukses.
+- Tidak mengubah data/countdown logic/API/warna/posisi section/sponsor/hero/navbar.
+
+## SANITIZER + SLUG SPONSOR + SPONSOR UTAMA (29 Agu 2026) · SELESAI
+### File yang berubah
+- `backend/app/services/media_service.py` — urutan sanitizer diperbaiki: cek magic executable (MZ/ELF di
+  offset 0) → sniff signature → **Pillow verify + re-encode** untuk gambar; pemindaian cuplikan
+  `<script>/<html>/<?php` kini HANYA untuk berkas NON-gambar (PDF/dokumen/video) yang tidak di-re-encode.
+- `backend/app/models/domain.py` — `SponsorBase` +`slug` (auto dari nama, slugify, unik) +`is_featured`;
+  `SponsorUpdate` mendapat validator slugify (slug yang sudah ada TIDAK pernah diubah otomatis).
+- `backend/app/api/routes/sponsors.py` — `unique_fields=("slug",)`, filter `is_featured`, endpoint
+  `GET /api/sponsors/by-slug/{value}` (menerima slug BARU **atau** id LAMA).
+- `frontend/src/components/public/SponsorsStrip.js` — helper `sponsorPath()` (slug → fallback id) +
+  baris **Sponsor Utama** (tile & logo lebih besar) di atas sponsor biasa; posisi section tidak berubah.
+- `frontend/src/pages/public/SponsorsPage.js`, `SponsorDetailPage.js` — URL slug + lookup by-slug/id.
+- `frontend/src/pages/admin/AdminSponsorsPage.js` — field **Slug URL** (opsional, otomatis) + switch
+  **Sponsor Utama** + kolom Slug & Utama di tabel.
+- Skrip baru: `scripts/media_sanitizer_verify.py`, `scripts/p2_sponsor_slug_media_verify.py`,
+  `scripts/sponsor_slug_backfill.py` (dry-run + `--apply`, hanya MENAMBAH slug).
+### Root cause sanitizer
+Pemindaian cuplikan `<script>/<html>/<?php` dijalankan sebagai **substring pada 2 KB pertama berkas
+mentah** — data terkompresi PNG/JPEG (atau blok metadata) bisa memuat urutan byte itu secara kebetulan,
+sehingga gambar sah ditolak "konten tidak aman untuk media". Untuk gambar, mitigasi sebenarnya adalah
+**re-encode Pillow** (payload apa pun ikut hilang), jadi pemindaian mentah tidak diperlukan dan hanya
+menghasilkan false positive. Validasi keamanan lain tetap utuh: MIME allowlist, batas ukuran,
+signature/content sniffing, penolakan executable, Pillow verify, SVG tetap dilarang.
+### Verifikasi (tanpa Testing Agent)
+- `scripts/media_sanitizer_verify.py` → **13/13 PASS**; `scripts/p2_sponsor_slug_media_verify.py` → **23/23 PASS**
+  (upload nyata PNG transparan/JPEG/PNG ber-metadata HTML diterima & payload hilang di server;
+  HTML-berkedok-jpg, SVG, executable, berkas kosong ditolak; slug otomatis, GET via slug & id,
+  duplikat 409, slug stabil saat nama berubah, slug manual dinormalisasi, filter `is_featured`).
+- UI 1440/768/390: tile utama 160/160/128 px vs biasa 96 px, logo utama 112/112/72 px vs 56 px,
+  `object-fit: contain` dengan rasio = rasio asli (4.29 & 0.38), section tetap di bawah 4 pilar,
+  overflow **0 px**, `href` memakai slug, `/sponsors/{id}` lama tetap membuka profil, **0 console error**.
+- `yarn build` sukses. Sponsor uji dihapus (sponsors = 2 milik user); backfill slug menambahkan
+  `sponsor-wide` & `sponsor-tall` tanpa mengubah data lain.
+
+## SPONSOR PROFILE + BADGE STORE HITAM (29 Agu 2026) · SELESAI
+### File yang berubah
+- `backend/app/models/domain.py` — `SponsorBase` +`contact: ContactInformation` +`social_media: SocialLinks`,
+  `description` max 1000 → 4000. **Additive & backward-compatible** (dokumen sponsor lama tanpa field ini
+  tetap terbaca, `contact: None` ditangani di frontend). Tidak ada koleksi/endpoint/RBAC baru.
+- `frontend/src/pages/admin/AdminSponsorsPage.js` — field baru: Alamat, Telepon, Email, Instagram,
+  Facebook, TikTok, YouTube (+ label "Deskripsi / Detail Sponsor"). Logo tetap MediaPicker existing.
+- **BARU** `frontend/src/pages/public/SponsorDetailPage.js` (`/sponsors/:sponsorId`, id sponsor = stabil).
+- `frontend/src/App.js` — rute profil sponsor.
+- `frontend/src/components/public/SponsorsStrip.js` — logo → `<Link>` profil internal (bukan website
+  eksternal), `object-contain`, posisi/layout di beranda TIDAK diubah (tetap di bawah 4 pilar).
+- `frontend/src/pages/public/SponsorsPage.js` — kartu sponsor → profil internal ("Lihat Profil →").
+- `frontend/src/components/public/PublicFooter.js` — badge Google Play & App Store gaya **HITAM**
+  (bg #000, teks putih, 152×48, radius 8px, glyph Google Play 4 warna resmi + Apple putih);
+  fungsi klik & popup "Segera hadir, aplikasi masih dalam pengembangan" tidak berubah, tanpa URL eksternal.
+### Verifikasi (tanpa Testing Agent)
+- Admin: 7 field baru render, isi → Simpan → buka ulang → semua nilai tersimpan, logo tetap.
+- API: create sponsor lengkap (contact + 4 sosial) tersimpan; sponsor lama tanpa field baru tetap terbaca
+  (data user SPONSOR WIDE / SPONSOR TALL utuh).
+- Publik: beranda 5 logo (di bawah pilar), klik → `/sponsors/{id}`; kartu daftar sponsor `href=/sponsors/{id}`
+  (0 tautan eksternal); profil menampilkan logo/nama/tier/deskripsi/website/alamat/telepon/email/4 sosial;
+  sponsor minimal → panel Informasi & baris kosong tidak dirender.
+- Footer: kedua badge `rgb(0,0,0)` 152×48, popup identik pada keduanya.
+- Responsive: overflow **0 px** di 390/768/1440; rasio logo = rasio asli (4.29 = 4.29, `object-fit: contain`).
+- **0 console error**; `yarn build` sukses (hanya warning lama `PlayerStatsBoard.js`).
+- Semua data uji sponsor dihapus → sponsors = 2 (milik user).
+### Catatan / keterbatasan
+- Sponsor pada **Kartu Pertandingan** digambar di **canvas** (gambar hasil unduh) → logo tampil tetapi
+  **tidak bisa diklik**; klik ke profil hanya mungkin di HTML (beranda & halaman sponsor). Layout kartu
+  pertandingan tidak diubah sama sekali.
+
+## P1 — GALERI GOOGLE DRIVE (navigasi folder + lazy loading) · 29 Agu 2026 · SELESAI (butuh API key untuk e2e nyata)
+### Yang dibuat/diubah
+- `backend/app/services/drive.py` (+`browse_folder`, `_ancestor_path`, `_get_meta`, `_image_item`;
+  `list_folder_images` LAMA tidak diubah → album lama tetap kompatibel).
+- `backend/app/api/routes/gallery.py`: endpoint publik baru
+  `GET /api/gallery/public/albums/{id}/drive-browse?folder_id=&page_token=&page_size=`.
+- BARU `frontend/src/components/public/gallery/DriveFolderBrowser.js` (breadcrumb, folder, grid,
+  infinite scroll, lightbox preview/share/download).
+- `frontend/src/pages/public/GalleryDetailPage.js`: album ber-`drive_folder_url` memakai browser baru
+  (fetch "semua foto sekaligus" dihapus).
+- `frontend/src/pages/public/GalleryPage.js`: menu GALERI = daftar album (AlbumCard), tidak lagi
+  memuat foto Drive semua album sekaligus. `AlbumCard.js`: label "Foto dari Google Drive".
+### Perilaku
+- Satu query Drive per folder (`orderBy=folder,name_natural`) → subfolder + foto dalam satu pageToken.
+- `page_size` = kolom grid × 10 baris (mobile 20 / tablet 30 / laptop 40 / desktop 50), maks 100.
+- Batch berikutnya hanya via IntersectionObserver (sentinel) + tombol manual sebagai fallback.
+- Grid `aspect 4/3` + `object-contain` → ukuran seragam, tidak gepeng, tidak terpotong.
+- Thumbnail `sz=w800` di grid, `sz=w1920` hanya saat preview dibuka.
+- Keamanan: `folder_id` wajib turunan folder album (validasi lewat `parents`) → API key server tidak
+  bisa dipakai menelusuri folder Drive lain (`FORBIDDEN_SCOPE`). Cache 5 menit per (folder, token).
+- Link album yang menunjuk satu FILE gambar → foto langsung ditampilkan (`is_file`).
+### Verifikasi (tanpa Testing Agent)
+- `scripts/p1_drive_browse_verify.py`: **29/29 PASS** (Drive API di-stub): folder/subfolder rekursif,
+  breadcrumb, 120 foto lewat 3 batch tanpa duplikat, page_size, folder kosong, folder luar album ditolak,
+  link foto langsung, cache, link invalid, tanpa API key → NOT_CONFIGURED.
+- Endpoint nyata: 200 (NOT_CONFIGURED, karena key belum diisi), album tidak ada → 404, page_size 500 → 422.
+- UI (album uji + Drive dimock di browser): Sorotan beranda → folder → subfolder → foto (breadcrumb
+  3 level), GALERI → album → folder/foto, album langsung foto, infinite scroll 50→100 (token benar),
+  1 request per folder, kolom 2/3/4/5 dengan page_size 20/30/40/50, rasio tile 1.33, overflow 0 px di
+  390/768/1100/1920, preview full-res (naturalWidth 1200), Download & Share ada, Escape menutup,
+  tombol back browser mengikuti breadcrumb, **0 console error**. `yarn build` sukses.
+- Album/data uji sudah dihapus (albums = 0).
+### KETERBATASAN (blocker e2e)
+- `GOOGLE_DRIVE_API_KEY` **belum ada** di environment pod ini (`backend/.env` tidak memuatnya) →
+  belum bisa diuji dengan folder Drive nyata. Endpoint melaporkan `NOT_CONFIGURED` secara jujur.
+- Google Drive API tidak menyediakan jumlah total item folder → UI menampilkan "N dimuat", bukan total.
+
+## P0 FIX — Slot Foto Pemain & Staf tidak bergeser (28 Agu 2026) · SELESAI
+- Akar masalah terakhir: `frontend/src/components/admin/ResourceManager.js` memakai `.filter(Boolean)`
+  pada field `type: 'gallery'` di `buildInitialValues` (load form) dan `preparePayload` (submit),
+  sehingga slot kosong `""` dibuang → foto Slot 3 bergeser ke Slot 1.
+- Perbaikan: load form kini **pad ke `max` slot** (`['', '', url]`); submit **mempertahankan posisi**
+  dan hanya memangkas kosong di ekor (kompatibel dengan data lama yang rapat).
+- Backend (`normalise_gallery`) & `MediaGalleryField.js` sudah benar sebelumnya → tidak diubah.
+- Verifikasi (tanpa Testing Agent): `scripts/p0_gallery_slots_verify.py` **13/13 PASS**
+  (slot1 kosong+slot3 terisi, reload tetap, slot1+slot3, hapus slot1 tak menggeser slot3,
+  ganti slot2 saja, maks 3 slot, data lama rapat identik, semua kosong → `[]`, pemain & staf).
+- Verifikasi UI (screenshot Admin → Players → Edit): sebelum simpan Slot1/2 kosong & Slot3 bergambar;
+  setelah **Simpan + buka ulang** tetap Slot3 (`Galeri Foto — 1/3`), DB `['', '', '<url>']`.
+- `yarn build` sukses. Data uji dihapus kembali. Galeri Google Drive **belum dikerjakan** (menunggu instruksi user).
+
 ## Original problem statement
 Membangun platform digital resmi ALSABBAT Football Club (FARM stack: FastAPI + React + MongoDB)
 secara bertahap per fase, dengan identitas brand ketat:
@@ -654,3 +1149,208 @@ Semua resource sudah CMS-driven (Fase 15–18), field wajib sudah ada di Resourc
 - Layout baru 3 baris rapat: (1) label + countdown inline (4 unit kecil), (2) crest 26 px + nama tim + VS satu baris, (3) tanggal·jam·stadion (truncate) + CTA "Pusat Pertandingan" compact (min-h 30 px).
 - Gaya: glass `rgba(1,12,40,0.56)` + `blur(10px)` + border gold `rgba(252,207,43,0.22)` + soft shadow (bukan kotak hitam solid) → foto banner tetap focal point.
 - Verifikasi: 1440 → 320×128, 390 → 300×128 (tepi kanan 340 px, di dalam frame), overflow 0 px pada keduanya, countdown tetap berjalan (detik menurun, logic existing), CTA menuju `/matches/:id`, console 0 error, build sukses tanpa warning, DB & data tidak disentuh.
+
+## FASE 5 — FINAL TESTING SETELAH FASE 4B (29 Agu 2026)
+Ruang lingkup: hanya pengujian & perbaikan regresi (tanpa fitur baru, tanpa redesign, tanpa reset DB, tanpa Testing Agent).
+
+**Hasil**
+- `yarn build`: SUKSES (1 warning eslint lama di `PlayerStatsBoard.js`, bukan error).
+- `/api/health`: OK (`database: connected`, env `staging`).
+- Backend: tidak ada 5xx runtime (traceback di log hanya sisa reload dev lama).
+- Skrip regresi (sandbox DB, di-drop): `phase3_verify` 56/56, `phase4a_verify` 27/27, `phase4b_verify` 25/25, **`phase5_final_verify` 25/25 (baru)**.
+- `phase5_db_audit.py` (READ-ONLY pada `alsabbat_platform_staging`): customers 0, players 1, staff 0, matches 1, member_applications 0 — tidak ada duplikat email/`player_id`/`staff_id`, tidak ada sisa akun testing.
+- Public website: 13 halaman → semua HTTP 200, console 0 error, overflow 0 px (1920 & 390), banner/backdrop benar.
+- Match Card: MATCH DAY 2× (`statusScale` 0.048 vs 0.024), background Feed & Story terpisah (`card_feed_*` / `card_story_*`), logo sponsor memakai logo asli (sponsor tanpa logo di-skip, tanpa fallback teks), tidak ada sponsor di luar kartu.
+- Match: pertandingan lewat tidak pernah jadi "Pertandingan Berikutnya" (filter kickoff WIB + tanpa skor), countdown berjalan realtime, admin dapat input hasil (3-1 FINISHED).
+- Google: akun Google baru → MEMBER, email Google existing tidak membuat duplikat (google_id ditautkan), login password tetap jalan (disimulasikan dengan client id/secret sandbox).
+- Social/App Store: `/social/platforms` & `/social/connections` bebas secret/token; URL Play Store/App Store tervalidasi (https, `javascript:` ditolak 422), string kosong = NOT_CONFIGURED.
+
+**Bug ditemukan & diperbaiki**
+1. `components/public/GoogleLoginButton.js` — tombol "Masuk dengan Google" hilang total saat Google `NOT_CONFIGURED`, menyisakan pemisah "ATAU" menggantung di /login dan /daftar. Kini tombol tetap tampil dalam keadaan **disabled** + keterangan jujur "Login Google belum dikonfigurasi. Gunakan email dan kata sandi." (`data-testid=*-not-configured`).
+
+**Masih NOT_CONFIGURED (menunggu kredensial user)**
+SMTP2GO (OTP email), Google OAuth, Firebase (push), Google Drive API key, Instagram/TikTok/YouTube/YouTube Shorts.
+
+**Cleanup**: seluruh sandbox DB (`alsabbat_phase3/4a/4b/5_sandbox`) sudah di-drop; DB staging tidak diubah.
+**Status**: READY untuk deploy ke GitHub → aaPanel STAGING.
+
+## UI — Sorotan Pemain publik + CTA Daftar Pemain di Akun Baraya (29 Agu 2026)
+Frontend only (tanpa backend/API/DB/auth/Admin).
+- `pages/public/HomePage.js`: section **Sorotan Pemain** kini tampil untuk SEMUA pengunjung (Guest, Member, Pemain, Staf) memakai komponen existing `PlayerSpotlight` + data publik `/players`. `RestrictedAccessPanel` untuk spotlight dihapus (gating Galeri TIDAK diubah), grid 3 kolom konsisten, link "Lihat Pemain" → `/teams`.
+- `pages/public/BarayaAccountPage.js`:
+  - Tombol **"Daftar Pemain"** (`data-testid="baraya-profile-player-cta"`) di **pojok kanan atas card "Data Baraya"**, hanya saat `canApplyPlayer` (MEMBER). Tanpa tombol Staf di area profil; alur tetap ke `/akun/pengajuan` yang sudah ada.
+  - CTA duplikat "Daftar Pemain" di sidebar Ringkasan Akun dihilangkan (dipindah ke atas); "Daftar Staff" untuk PEMAIN dan fallback "Pengajuan Saya" tetap seperti semula.
+  - Section **Sorotan Pemain** (`baraya-account-spotlight`) memakai `PlayerSpotlight` yang sama → tampil untuk Member, Pemain, dan Staf.
+- Verifikasi: Guest & Member melihat spotlight di beranda; /akun menampilkan spotlight + CTA; tanpa tombol Staf di card profil; overflow 0 px (1920/1440/390); console 0 error; `yarn build` sukses (hanya warning eslint lama `PlayerStatsBoard.js`).
+- Akun uji `uji.ui@sandbox-alsabbat.dev` beserta sesi & OTP sudah dihapus; counter nomor member direset ke 0; customers kembali 0.
+- Catatan: DB staging masih memuat data uji lama dari fork sebelumnya (`players`: "Uji 4B", match "AL SABBAT AWAY") — belum dihapus karena di luar scope.
+
+## UI — Rotasi Sorotan Pemain 10 detik (29 Agu 2026)
+- `components/public/PlayerSpotlight.js`: helper `spotlightOrder()` (urutan deterministik yang sama seperti sebelumnya) + hook baru **`useRotatingSpotlight(players, 10000)`**. Satu pemain per waktu, pindah tiap 10 detik, kembali ke pemain pertama setelah yang terakhir (`% length`). **< 2 pemain → tidak ada timer** (tanpa rotasi). `clearInterval` pada unmount / perubahan data. `pickSpotlightPlayer` tetap diekspor (dipakai `TeamsPage`) — desain kartu tidak diubah.
+- `pages/public/HomePage.js` & `pages/public/BarayaAccountPage.js`: memakai `useRotatingSpotlight(players.items)` → rotasi aktif di beranda publik (Guest) dan beranda akun (Member/Pemain/Staf).
+- Verifikasi: beranda publik 0s → "Uji 4B" · 10s → "ROTASI UJI 1" · 20s → "ROTASI UJI 2" · 30s → kembali "Uji 4B"; /akun berganti setelah 10s; pindah halaman lalu tunggu 11s → 0 console error (timer bersih). `yarn build` sukses (hanya warning eslint lama).
+- Cleanup: 2 pemain uji dihapus (players kembali 1), akun uji `uji.rot@sandbox-alsabbat.dev` + sesi/OTP dihapus, counter nomor member direset ke 0.
+
+## UI — Titik indikator (dots) Sorotan Pemain (30 Agu 2026)
+- `components/public/PlayerSpotlight.js`: `useRotatingSpotlight` kini mengembalikan `{ player, total, index, select }` dan memakai `setTimeout` per-index sehingga **timer 10 detik dimulai ulang dari pemain yang dipilih**. Komponen baru **`SpotlightDots`** (pill gold 22×8 untuk aktif, dot 8×8 `rgba(1,40,145,0.25)` untuk non-aktif, transisi 200ms, `aria-label`/`aria-current`, `data-testid` per titik). `total < 2` → indikator tidak dirender.
+- `pages/public/HomePage.js` (`home-spotlight-dots`) & `pages/public/BarayaAccountPage.js` (`baraya-account-spotlight-dots`): dots ditempatkan **di bawah kartu**, desain kartu `PlayerSpotlight` tidak diubah. Tanpa perubahan API/DB/backend.
+- Verifikasi: 3 pemain → 3 titik; klik titik ke-3 langsung pindah ke pemain ke-3; pada t+8s masih pemain yang dipilih, t+11s berputar ke pemain pertama (timer restart benar); 1 pemain → dots tidak tampil; overflow 0 px (1440 & 390); console 0 error; `yarn build` sukses (hanya warning eslint lama).
+- Cleanup: 2 pemain uji (`DOT UJI 1/2`) dihapus, players kembali 1.
+
+## Fix — Tombol "Tambah Video" YouTube + urutan konten terbaru (30 Jun 2026)
+- Penyebab: di `components/admin/YoutubeVideosManager.js`, tombol "+ Tambah Video" hanya `add()` → menambahkan baris kosong di PALING BAWAH daftar (tanpa modal, tanpa auto-scroll, belum tersimpan sampai klik "Simpan" utama), sehingga terasa tidak berfungsi. Selain itu urutan admin (order asc) berlawanan dengan urutan Beranda (order desc).
+- Perbaikan (komponen existing Dialog/Input/Switch + `parseYoutubeId` + key CMS `home.youtube.videos`):
+  - `AddVideoDialog` (modal): link YouTube + judul opsional + status aktif + pratinjau thumbnail + validasi; tombol Simpan di modal LANGSUNG menyimpan (satu langkah).
+  - `persist()` menyimpan `order = kept.length - 1 - i` → baris paling atas = order tertinggi, jadi urutan daftar admin identik dengan urutan Beranda (terbaru di atas). `load()` mengurutkan desc by order (mirror `parseYoutubeList`).
+  - Video baru di-prepend ke daftar → langsung paling atas di Admin & Homepage.
+- `backend/app/api/routes/content.py`: posts `default_sort=(("published_at", -1), ("created_at", -1))` → berita terbaru selalu paling atas di Homepage. Galeri/album sudah `published_at desc` (tidak diubah). Banner Hero & Produk Store TETAP `display_order` (keputusan user: opsi A).
+- Validasi: modal terbuka, 2 video tersimpan, setelah refresh row0 = "Video Terbaru B", Homepage slider + Daftar Video menampilkan video terbaru pertama, 0 console error, `yarn build` sukses. Data uji sudah dibersihkan (site_content kembali kosong).
+
+## Fix — Menu "Media Sosial" → "Aplikasi Mobile" + bug tombol App Store/Play Store (30 Jun 2026)
+- File diubah: `pages/admin/AdminSocialPage.js` (dirampingkan jadi halaman "Aplikasi Mobile" hanya berisi `AppStoreLinksPanel`), `components/admin/AppStoreLinksPanel.js` (`Row` inline → komponen `StoreRow` di luar), `components/admin/AdminSidebar.js` (label "Aplikasi Mobile", ikon `Smartphone`), `components/public/PublicFooter.js` (hanya komentar).
+- PENYEBAB App Store/Play Store tidak muncul di website: komponen `Row` didefinisikan DI DALAM `AppStoreLinksPanel`, sehingga setiap perubahan state me-remount `<Input>` → input kehilangan fokus setelah 1 karakter. URL yang tersimpan hanya "h" (dibuktikan lewat playwright `type()` → nilai akhir `'h'`), lalu validasi https menolak/menyimpan URL tidak valid → footer menyembunyikan badge. Backend & data (`PATCH /api/club/{id}`, `GET /api/club/active`, field `app_playstore_url/enabled`, `app_appstore_url/enabled`) sudah benar dan TIDAK diubah.
+- Section social publishing (Instagram/TikTok/YouTube/Composer/Publikasi/SocialConnections) hanya DISEMBUNYIKAN dari halaman ini; file `SocialConnections.js`, route `/admin/social`, dan API `/api/social/*` tetap utuh (non-destruktif).
+- Validasi (tanpa Testing Agent, sesuai permintaan user): menu & judul = "Aplikasi Mobile"; halaman hanya App Store & Play Store (Instagram/TikTok/YouTube/Composer/Publikasi = tidak ada); URL panjang bisa diketik penuh & tersimpan setelah refresh; toggle persist (checked/checked); footer → keduanya aktif = 2 badge dengan href benar, Play off = hanya App Store, keduanya off = tidak ada badge; 0 error console JS baru; `yarn build` sukses (316.17 kB gzip, hanya warning eslint lama `PlayerStatsBoard.js`). URL uji sudah dibersihkan (field kembali kosong/nonaktif).
+
+## RBAC — 7 role admin fungsional baru (30 Jun 2026)
+- Role existing sebelum perubahan: `SUPER_ADMIN` (wildcard `*`), `CONTENT_ADMIN`, `GALLERY_ADMIN`, `SOCIAL_MEDIA_ADMIN`, `STORE_ADMIN`, `ORDER_ADMIN`. Tidak ada role internal `admin`/`user` (user biasa = akun Baraya/customer, auth terpisah). Keputusan user: `SUPER_ADMIN` TIDAK dimigrasi, role `VIEWER/User` TIDAK ditambahkan.
+- Role baru + permission (`backend/app/core/rbac.py`):
+  - `CLUB_ADMIN` "Admin Klub": club:read/write, team:write, achievement:write, media:read, analytics:read
+  - `PLAYER_STAFF_ADMIN` "Admin Pemain & Staff": club:read, player:write, staff:write, media:read/write, member:read/write
+  - `MATCH_ADMIN` "Admin Pertandingan": club:read, season:write, competition:write, match:write, event:write, media:read/write
+  - `MEDIA_CONTENT_ADMIN` "Admin Media & Konten": club:read, club:write (dibutuhkan halaman Aplikasi Mobile — efek samping: menu Club juga terbuka), content:read/write/publish, gallery:read/write, media:read/write, sponsor:write, social:read
+  - `STORE_MANAGER` "Admin Store": club:read, media:read/write, merchandise:read/write, store:manage, order:read
+  - `FINANCE_ADMIN` "Admin Keuangan": club:read, merchandise:read, order:read/write/manage (tanpa system:read)
+  - `IT_ADMIN` "Admin IT / Developer": club:read, system:read, analytics:read, media:read (tanpa order/user)
+- Permission BARU (hanya 2): `member:read`, `member:write` untuk route Baraya/pengajuan (`membership.py`, `customers.py` sebelumnya memakai `user:read/write` sehingga akan memberi akses kelola akun admin). `user:read/write` sekarang murni untuk akun Admin (hanya Super Admin).
+- Role lama TIDAK dihapus dan tetap berfungsi; hanya disembunyikan dari dropdown via `SELECTABLE_ROLES` + flag `selectable` pada `/api/system/meta`.
+- Frontend: `AdminSidebar.js` (permission per menu + filter + export `ADMIN_ROUTE_PERMISSIONS`), `AdminShell.js` (guard route → panel "Akses Ditolak", label role baru), `AdminUsersPage.js` (dropdown hanya role selectable, default `MEDIA_CONTENT_ADMIN`).
+- Skema/DB tidak berubah (role hanya string pada dokumen `users`); tidak ada migrasi.
+- Validasi: `python scripts/rbac_roles_verify.py <base_url>` → 24/24 lolos (7 akun uji dibuat lalu DIHAPUS otomatis); legacy `CONTENT_ADMIN` diuji manual (content 404=allowed, /api/users 403) lalu akun dihapus; Super Admin tetap 200 pada /api/users, /api/baraya/admin/list, /api/system/status; UI: sidebar terfilter sesuai role, `/admin/users|matches|orders|system` → "Akses Ditolak", `/admin/content|social` terbuka; `yarn build` sukses (316.74 kB gzip, hanya warning eslint lama). Database bersih: tersisa 1 akun admin (`admin@alsabbat.com`).
+
+## Statistik historis (baseline) pemain & klub (30 Jun 2026)
+- Field baseline BARU (additive, optional, default 0 — tanpa migrasi):
+  - `players`: `historical_goals`, `historical_assists` (`domain.py PlayerBase`)
+  - `clubs`: `historical_played`, `historical_wins`, `historical_draws`, `historical_losses` (`domain.py ClubBase`)
+- Cara penggabungan (sumber data tetap satu: Match/Match Events existing):
+  - `/api/players/stats/leaderboard`: `goals = event_goals + historical_goals`, `assists = event_assists + historical_assists`; pemain dengan baseline > 0 kini ikut tampil walau belum ada Match Events (early-return `empty` diganti alur yang tetap menghitung baseline). Field `historical_goals/assists` juga dikirim agar transparan. Dipakai otomatis oleh Top Scorer & Papan Statistik publik.
+  - `/api/players/{id}/statistics`: statistik PER MUSIM tetap murni dari Match Events (tidak diubah); ditambah blok `historical: {goals, assists}` yang ditampilkan `PlayerSeasonStats.js` sebagai catatan.
+  - Homepage `TeamStatsBlock`: `played/wins/draws/losses = hasil pertandingan FINISHED + baseline klub`; kalau dua-duanya kosong tetap tampil `—` seperti sebelumnya.
+- Admin: field "Goal Historis"/"Assist Historis" pada form Pemain (`AdminPlayersPage.js`) dan "Main/Menang/Seri/Kalah (Historis)" pada form Club (`AdminClubPage.js`) — memakai ResourceManager existing, tanpa halaman admin baru.
+- Statistik existing TIDAK dihapus/diubah: field manual `goals/assists/appearances/yellow_cards/red_cards` pada player tetap ada, perhitungan Match Events, Top Scorer, MatchStatistics, PlayerStatsBoard tetap sama.
+- Validasi: `python scripts/historical_baseline_verify.py <base_url>` → 17/17 lolos (baseline 80 gol + 2 event = 82; 25 assist + 1 event = 26; klub 120/75/15/30 tersimpan; seluruh data uji dihapus dan baseline klub dikembalikan ke 0). UI: Homepage menampilkan 120/75/15/30 saat baseline diisi, form admin memuat field baru dengan nilai tersimpan; `yarn build` sukses (317.15 kB gzip, hanya warning eslint lama).
+- Catatan lingkungan: dev-server webpack sempat tidak memuat perubahan `HomePage.js` → perlu `sudo supervisorctl restart frontend`.
+
+## Fix — CORS berkas media (Media Library → ImageCropper) (30 Jun 2026)
+- ROOT CAUSE: endpoint `GET /api/media/files/{path}` (`backend/app/api/routes/media.py`) hanya menyertakan `Access-Control-Allow-Origin` pada cabang object storage; cabang **disk lokal** (`FileResponse`, provider LOCAL yang dipakai staging aaPanel) mengandalkan `CORSMiddleware`. Di staging, origin `https://staging.alsabbat.com` tidak menghasilkan header ACAO pada response berkas (konfigurasi CORS_ORIGINS/web server berbeda dengan preview yang memakai `*`), sehingga `fetch(source)` di `components/shared/ImageCropper.js:67` ditolak browser → `net::ERR_FAILED` + "CROPPER SOURCE LOAD FAILED".
+- SOLUSI MINIMAL: helper `_file_headers()` di `media.py` dipakai kedua cabang (object storage & disk lokal) → `Access-Control-Allow-Origin: *`, `Cross-Origin-Resource-Policy: cross-origin`, `Vary: Origin`, plus `Cache-Control`/`nosniff` existing. Aman karena berkas media publik dan tidak memakai cookie; bila origin terdaftar di CORS_ORIGINS, `CORSMiddleware` menimpa nilainya (tidak ada duplikasi header). Tidak ada perubahan .env/Nginx/schema/storage/auth/RBAC, ImageCropper & MediaPicker tidak diubah.
+- Validasi: `python scripts/media_cors_verify.py` → 6/6 lolos (menyimulasikan CORS_ORIGINS tanpa origin frontend; ACAO tetap ada, path traversal tetap 404). Live: `curl -H "Origin: https://staging.alsabbat.com"` → 200 dengan tepat satu header ACAO `*`. UI: pilih foto dari Media Library → cropper menampilkan gambar (naturalWidth 1200, blob URL), zoom 1.4×, geser & "Simpan Crop" (hasil 1000×1000) berhasil, 0 error CORS/console. Upload via API tetap 201. `yarn build` sukses (317.15 kB gzip, hanya warning eslint lama). Media uji sudah di-hard delete (media total = 0), logo klub tidak diubah.
+
+## Fix — Gallery image viewer (MediaLightbox) tidak center & tertinggal saat scroll (30 Jun 2026)
+- ROOT CAUSE: `MediaLightbox` sudah memakai `position: fixed; inset: 0`, tetapi dirender sebagai anak halaman. Halaman publik memakai animasi `.als-page-enter` / `.als-reveal*` dengan `animation-fill-mode: both` dan keyframe `transform: translate3d(...)` → elemen induk **permanen memiliki `transform`**, sehingga menjadi *containing block* untuk descendant `position: fixed`. Akibatnya overlay memakai koordinat induk (terukur `x=260, y=94` pada viewport 1920×1080) → viewer bergeser ke kanan dan mengikuti dokumen saat scroll (setelah scroll `y` berubah).
+- SOLUSI MINIMAL: `components/public/gallery/MediaLightbox.js` dirender lewat `createPortal(..., document.body)` (3 baris: import + wrap return). Semua style, tombol close/prev/next/download/share, keyboard shortcut, dan lock scroll body tetap sama. Karena satu komponen ini dipakai GalleryDetailPage, DriveFolderBrowser, MatchAlbumCarousel, dan MatchGallerySection, keempat pemakaian ikut terperbaiki. Tidak menyentuh Google Drive, Media Storage, schema, .env, Nginx, auth, RBAC.
+- Validasi (tanpa Testing Agent; fixture `scripts/gallery_lightbox_fixture.py` setup/teardown): bug direproduksi dulu (overlay `x=260,y=94`, `parentIsBody=false`, ikut scroll) → setelah fix: `parentIsBody=true`, overlay `0,0` 1920×1080 = viewport, offset center gambar dx=0, tetap `0,0` setelah `scrollTo(0,1500)`, next/prev berpindah foto (1/2 ↔ 2/2), close bekerja & `body.overflow` kembali normal, viewport 900×600 tetap `0,0` dengan dx=0, 0 console error. `yarn build` sukses (hanya warning eslint lama). Data uji (album, 2 media, akun Baraya + sesi/OTP, pemain, tim) sudah dibersihkan → media/albums/players/teams/customers = 0.
+- Catatan: `PersonPhotoGallery.js` punya lightbox inline sendiri dengan pola sama (potensi bug serupa) — DI LUAR SCOPE permintaan user, belum diubah.
+
+## Kartu Pertandingan — desain 100% PER MATCH (30 Jun 2026)
+Keputusan user: Desain Kartu Global TIDAK lagi menjadi sumber desain kartu; Kartu Hasil TIDAK boleh fallback ke `card_*`.
+- Field BARU per match (additive, optional, default null → dipakai default aman):
+  `card_transparency`, `card_overlay_enabled`, `card_overlay_color`, `card_overlay_opacity`, `card_logo_zoom`,
+  `card_sponsors_enabled` + pasangan `result_card_*` yang identik (`backend/app/models/domain.py`).
+  Field lama tetap: `card_/result_card_{feed,story}_{background,focus_x,focus_y,zoom}`.
+- `MatchScoreCardGenerator.js`: hook global `useMatchCardDesign` TIDAK dipakai lagi. Semua nilai dibaca dari
+  `match[<prefix>_<key>]` dengan prefix `card` / `result_card` (+ `designOverride` hanya untuk nilai preview yang
+  belum disimpan). Tidak ada fallback lintas jenis kartu maupun ke site_content. Default aman: transparansi 35,
+  overlay navy 55% aktif, logo zoom 100, sponsor tampil.
+- `MatchCardSettings.js`: satu tombol "Simpan Desain" menyimpan SEMUA (background feed/story, focus X/Y, zoom bg,
+  transparansi gradient, overlay on/off + warna + opacity, zoom logo, toggle sponsor). Tombol kedua kini
+  "Kembalikan Default". Status logo lawan ditampilkan (terpasang / belum diunggah).
+- `AdminMatchesPage.js`: tombol + dialog "Desain Kartu Global" DIHAPUS dari UI (file `MatchCardDesign.js` dan seluruh
+  key site_content `match.card.*` dibiarkan utuh — tidak ada penghapusan data).
+- `lib/matchCardDesign.js`: LOGO_ZOOM_MAX 130 → 140 (batas nyata `drawCrest` agar logo tetap utuh).
+- Sponsor: master Sponsors existing (`GET /api/sponsors?status=ACTIVE`), hanya sponsor ber-logo digambar; per match
+  hanya ada toggle tampil/tidak (tidak ada sistem sponsor baru).
+- Validasi: `python scripts/match_card_design_verify.py <base_url>` → 42/42 lolos (persist, Match A vs B independen,
+  result_card_* independen dari card_*, relations membawa semua field). UI: nilai per-match muncul benar di dialog,
+  canvas berbeda antar match & antar rasio, tab Kartu Hasil menampilkan nilainya sendiri (bg kosong = tidak mewarisi),
+  Media Library → cropper tampil (blob, 1080px) & bg terpasang, simpan → refresh → semua nilai tetap
+  (125%/37%/64%/18% + background), 0 console error, `yarn build` sukses 315.06 kB (-2.12 kB). Data uji dihapus
+  (matches/teams/media = 0).
+
+## Achievement di Beranda — sorting deterministik (30 Agu 2026)
+- Root cause bug "Achievement tidak muncul di Beranda": section `home-section-achievements` baru ditulis pada commit
+  terakhir sesi sebelumnya (`fdb8543`) dan belum pernah diverifikasi/di-build; di workspace baru service frontend
+  juga mati (`craco: not found`) dan MongoDB preview kosong. Tidak ada bug logika/field/endpoint.
+- Perubahan kode (1 baris efektif): `backend/app/api/routes/achievements.py`
+  `default_sort=(("year", -1),)` → `default_sort=(("display_order", 1), ("year", -1))`.
+  Admin kini menentukan urutan lewat field "Urutan Tampilan" (`display_order` ASC), `year` DESC sebagai secondary.
+- Homepage tetap `GET /api/achievements?status=ACTIVE&limit=4` (limit TIDAK dinaikkan), layout/desain tidak diubah,
+  model & collection tidak diubah.
+- Validasi manual (tanpa Testing Agent): admin UI /admin/achievements membuat Achievement (toast "Data berhasil
+  dibuat"), API mengembalikan urutan display_order→year, Beranda menampilkan urutan identik dengan API
+  (E order=2 tahun 2026 tetap terakhir → display_order primary terbukti), INACTIVE tidak tampil, 0 console error baru,
+  `yarn build` sukses 315.48 kB. Semua data uji (UJI A–E) dihapus; achievements = 0.
+
+## Pengajuan Pemain — approve tanpa linking + foto konsisten (30 Agu 2026)
+Root cause (3, terpisah):
+1. `_validate_link()` di `backend/app/api/routes/membership.py` MEWAJIBKAN `player_id` untuk approve PEMAIN
+   (`ValidationFailedError`), dan UI menonaktifkan tombol Setujui (`disabled={busy || (type==='PEMAIN' && !linkId)}`).
+2. Preview foto di `MemberApplications.js` memakai `src={playerData.photo}` / `staffData.photo` MENTAH tanpa
+   `resolveMediaUrl()`. Foto lokal disimpan sebagai path relatif `/api/media/files/...` (LocalStorageBackend),
+   sehingga di produksi (frontend domain ≠ API domain) gambar broken. Komponen lain seluruh app memakai resolver ini.
+3. Approve PEMAIN hanya menulis data ke player existing (`_apply_player_data`) — tanpa player existing tidak ada
+   record Pemain, jadi foto tidak pernah sampai ke Player.
+
+Perubahan:
+- `membership.py`: `_validate_link` → linking PEMAIN OPSIONAL (validasi hanya bila diisi); fungsi baru
+  `_create_player_entry()` membuat Pemain baru dari `player_data` (team dari `_resolve_team_id`); di
+  `admin_decide_application` bila APPROVED & PEMAIN tanpa `player_id` → buat Pemain baru lalu tautkan ke akun.
+  `admin_set_role` (ubah peran manual) tetap WAJIB `player_id` (guard eksplisit) agar tidak regresi.
+- `MemberApplications.js`: komponen `ApplicantPhoto` (pakai `resolveMediaUrl`, fallback "Pemohon tidak mengunggah
+  foto", error ditampilkan bila gambar gagal dimuat), tombol Setujui tidak lagi disabled, label dinamis
+  "Setujui & Buat Pemain Baru", select linking jadi opsional + hint, copy dialog/header diperbarui.
+- Foto pendaftaran user SUDAH memakai mekanisme yang sama dengan Admin: komponen `MediaPicker` + `ImageCropper`
+  (uploader `/api/baraya/me/upload`, Media Library dimatikan karena butuh permission admin). Field foto sama: `photo`.
+Alur foto: MediaPicker (user) → `/baraya/me/upload` → `application.player_data.photo` (`/api/media/files/...`)
+  → preview Admin via `resolveMediaUrl` → approve → `players.photo` → tampil di halaman publik pemain.
+Validasi manual (tanpa Testing Agent, sesuai larangan user): submit pengajuan dari UI Baraya (preview foto tampil,
+  naturalWidth 900), foto tersimpan di application, Admin review menampilkan foto (naturalWidth 900), select linking
+  kosong & tombol Setujui aktif, approve → Pemain baru #77 dengan foto identik + halaman `/players/{id}` menampilkan
+  foto, Admin "Tambah Pemain" tetap normal, 0 error console baru, `yarn build` sukses 315.58 kB (+99 B).
+  Semua data uji dihapus (players/teams/media/member_applications/customers = 0, file media_storage = 0).
+Catatan di luar scope (TIDAK diperbaiki): (a) `POST /api/players` menolak 422 bila field opsional angka/tanggal
+  dikirim string kosong dari form Admin (ResourceManager tidak menormalkan "" → null); (b) warning hydration
+  React lama di header MemberApplications (`Badge` <div> di dalam <p>).
+
+## Fase 2 — Notification Center (icon lonceng user & admin) + approve tanpa linking (30 Agu 2026)
+Audit: sistem notifikasi existing HANYA push Firebase (`app/services/notifications.py`, status NOT_CONFIGURED karena
+`FIREBASE_PROJECT_ID`/`FIREBASE_SERVICE_ACCOUNT_JSON` kosong) tanpa penyimpanan riwayat dan tanpa icon lonceng di UI.
+Tidak ada sistem notifikasi lain → tidak ada duplikasi. Push Firebase existing DIBIARKAN UTUH (tetap dipanggil).
+
+Backend (additive):
+- Koleksi baru `notifications` (satu-satunya yang diperlukan) + index; `Collections.NOTIFICATIONS` di `core/database.py`.
+- `app/services/notification_center.py`: create/list/mark-read untuk 2 audience — ADMIN (broadcast, status read per
+  akun admin via `read_by`) dan CUSTOMER (per `recipient_id`, field `read`/`read_at`).
+  Field: id, audience, recipient_id, type, title, message, link, reference_type, reference_id, read, read_at, created_at.
+- `app/api/routes/notifications.py` (prefix `/api/notifications`, akses: admin yang login — TANPA permission baru,
+  RBAC tidak diubah): GET `` (items+unread), PATCH `/{id}/read`, POST `/read-all`.
+- `membership.py`: endpoint akun Baraya GET `/api/baraya/notifications`, PATCH `/api/baraya/notifications/{id}/read`,
+  POST `/api/baraya/notifications/read-all`. Event: pengajuan dibuat → notifikasi ADMIN "Pengajuan Pemain/Staff Baru";
+  keputusan → notifikasi CUSTOMER ("Pengajuan Pemain Disetujui" / "Pengajuan Staff Disetujui" / versi Ditolak) +
+  notifikasi ADMIN berisi ringkasan keputusan.
+Frontend:
+- `components/shared/NotificationBell.js` (dipakai 2 tempat): icon lonceng + badge unread + daftar riwayat
+  (judul, pesan, waktu relatif, status read/unread), klik item = tandai dibaca + buka `link`, tombol
+  "Tandai dibaca" (read-all), polling 60 detik.
+- `AdminShell.js`: lonceng di topbar sebelah menu profil admin (`api`, `/notifications`).
+- `PublicHeader.js`: lonceng di sebelah menu akun Baraya (`barayaApi`, `/baraya/notifications`), hanya saat login.
+Approve tanpa linking: Pemain (Fase 1) + Staf (sudah opsional sejak awal) — keduanya TINJAU → SETUJUI membuat
+  record baru dari data pengajuan lalu menautkannya ke akun.
+Validasi (tanpa Testing Agent): skrip API 30/30 PASS (notifikasi admin saat pengajuan, approve PEMAIN & STAFF tanpa
+  linking → Player/Staff baru, notifikasi user dengan judul/pesan sesuai spesifikasi, unread naik/turun, read-all,
+  proteksi 401 untuk anonim & token Baraya di endpoint admin). UI: lonceng admin badge 4 → klik item = navigasi
+  `/admin/baraya` + badge 3 → read-all = badge hilang; lonceng Baraya badge 2 → daftar tampil → read 1 → badge 1 →
+  read-all = hilang. 0 error console baru. `yarn build` sukses 317.88 kB (+2.3 kB).
+  Semua data uji dihapus (notifications/applications/players/staff/teams/customers = 0).
+CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan penuh. Untuk push HP perlu
+  `FIREBASE_PROJECT_ID` + `FIREBASE_SERVICE_ACCOUNT_JSON` di environment server (plus token device/topik).
