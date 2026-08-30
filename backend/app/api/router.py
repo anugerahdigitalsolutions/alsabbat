@@ -15,6 +15,7 @@ from app.api.routes import (
     media,
     membership,
     merchandise,
+    notifications,
     players,
     seasons,
     readiness,
@@ -48,6 +49,7 @@ api_router.include_router(media.router, prefix="/media")
 api_router.include_router(sponsors.router, prefix="/sponsors")
 api_router.include_router(achievements.router, prefix="/achievements")
 api_router.include_router(analytics.router, prefix="/analytics")
+api_router.include_router(notifications.router, prefix="/notifications")
 api_router.include_router(seo.router, prefix="/seo")
 api_router.include_router(social.router, prefix="/social")
 api_router.include_router(merchandise.router, prefix="/merchandise")

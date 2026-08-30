@@ -44,6 +44,7 @@ from app.models.membership import (
 from app.services import google_auth
 from app.models.staff_structure import role_for_position
 from app.services.mailer import mail_status
+from app.services import notification_center as center
 from app.services.notifications import firebase_status, notify_admin_review
 from app.services.membership import ensure_member_identity
 from app.services.otp import PURPOSE_REGISTER, PURPOSE_RESET, issue_otp, verify_otp
@@ -315,6 +316,18 @@ async def create_application(
         title=f"Pengajuan {payload.type.value.title()} baru",
         body=f"{payload.full_name} mengajukan diri sebagai {payload.type.value}. Perlu direview.",
         data={"kind": "member_application", "application_id": created["id"], "type": payload.type.value},
+    )
+    # Riwayat notifikasi Admin Panel (icon lonceng) — tersimpan permanen,
+    # tidak bergantung pada konfigurasi push Firebase.
+    await center.create_notification(
+        audience=center.AUDIENCE_ADMIN,
+        type="APPLICATION_SUBMITTED",
+        title=f"Pengajuan {'Pemain' if payload.type.value == 'PEMAIN' else 'Staff'} Baru",
+        message=f"{payload.full_name} mengajukan diri sebagai "
+        f"{'Pemain' if payload.type.value == 'PEMAIN' else 'Staff'}. Perlu ditinjau.",
+        link="/admin/baraya",
+        reference_type="member_application",
+        reference_id=created["id"],
     )
     logger.info(
         "baraya.application.created customer=%s type=%s notified=%s",
@@ -600,10 +613,76 @@ async def admin_decide_application(
 
     updated = await applications.update(application_id, changes)
     customer = await customers.get(existing["customer_id"])
+
+    # ---- Notifikasi persisten (icon lonceng) untuk pemohon & admin ----
+    is_player = existing["type"] == ApplicationType.PEMAIN.value
+    role_label = "Pemain" if is_player else "Staff"
+    role_word = "pemain" if is_player else "staff"
+    if payload.decision == ApplicationStatus.APPROVED:
+        user_title = f"Pengajuan {role_label} Disetujui"
+        user_message = f"Selamat, pengajuan Anda sebagai {role_word} telah disetujui."
+        notif_type = "APPLICATION_APPROVED"
+    else:
+        user_title = f"Pengajuan {role_label} Ditolak"
+        user_message = (
+            f"Pengajuan Anda sebagai {role_word} belum dapat disetujui."
+            + (f" Catatan pengurus: {payload.note}" if payload.note else "")
+        )
+        notif_type = "APPLICATION_REJECTED"
+    await center.create_notification(
+        audience=center.AUDIENCE_CUSTOMER,
+        recipient_id=existing["customer_id"],
+        type=notif_type,
+        title=user_title,
+        message=user_message,
+        link="/akun",
+        reference_type="member_application",
+        reference_id=application_id,
+    )
+    await center.create_notification(
+        audience=center.AUDIENCE_ADMIN,
+        type=notif_type,
+        title=f"{user_title} — {existing.get('full_name', '')}".strip(),
+        message=f"Pengajuan {role_label} {existing.get('full_name', '')} "
+        f"{'disetujui' if payload.decision == ApplicationStatus.APPROVED else 'ditolak'} oleh {user.email}.",
+        link="/admin/baraya",
+        reference_type="member_application",
+        reference_id=application_id,
+    )
+
     return {
         **_public_application(updated or existing),
         "customer": _public_customer(customer) if customer else None,
     }
+
+
+# ------------------------------------------------- notifikasi akun Baraya
+@router.get("/notifications", summary="Daftar notifikasi akun Baraya + jumlah belum dibaca")
+async def my_notifications(
+    limit: int = Query(30, ge=1, le=100),
+    auth: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    items, total, unread = await center.list_customer(auth.customer_id, limit=limit)
+    return {"items": items, "total": total, "unread": unread}
+
+
+@router.patch("/notifications/{notification_id}/read", summary="Tandai notifikasi sudah dibaca")
+async def read_my_notification(
+    notification_id: str, auth: CustomerAuthContext = Depends(get_current_customer)
+) -> Dict[str, Any]:
+    updated = await center.mark_customer_read(notification_id, auth.customer_id)
+    if not updated:
+        raise NotFoundError("Notifikasi tidak ditemukan.")
+    _, _, unread = await center.list_customer(auth.customer_id, limit=1)
+    return {"success": True, "notification": updated, "unread": unread}
+
+
+@router.post("/notifications/read-all", summary="Tandai semua notifikasi sudah dibaca")
+async def read_all_my_notifications(
+    auth: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    updated = await center.mark_customer_read_all(auth.customer_id)
+    return {"success": True, "updated": updated, "unread": 0}
 
 
 @router.patch("/admin/{customer_id}/role", summary="Admin: ubah peran akun Baraya")

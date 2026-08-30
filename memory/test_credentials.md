@@ -72,3 +72,8 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
   tim/klub uji, dan berkas media uji. Database preview kembali bersih (players/teams/media/customers = 0).
 - Admin tetap `admin@alsabbat.com` / `Alsabbat2026!` (SUPER_ADMIN). Catatan: saat pembersihan data uji, koleksi
   `sessions`/`customer_sessions` dikosongkan → sesi login lama perlu login ulang (tidak ada data konten yang hilang).
+
+## Update — validasi Fase 2 notifikasi (30 Agu 2026)
+- Akun uji `uji.notif@sandbox-alsabbat.dev` / `Sandbox123` SUDAH DIHAPUS beserta notifikasi, pengajuan,
+  Player/Staff uji, tim uji, dan sesi. Database preview bersih (notifications/applications/players/staff/teams/customers = 0).
+- Admin tetap `admin@alsabbat.com` / `Alsabbat2026!`.

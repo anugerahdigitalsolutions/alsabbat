@@ -1321,3 +1321,36 @@ Validasi manual (tanpa Testing Agent, sesuai larangan user): submit pengajuan da
 Catatan di luar scope (TIDAK diperbaiki): (a) `POST /api/players` menolak 422 bila field opsional angka/tanggal
   dikirim string kosong dari form Admin (ResourceManager tidak menormalkan "" → null); (b) warning hydration
   React lama di header MemberApplications (`Badge` <div> di dalam <p>).
+
+## Fase 2 — Notification Center (icon lonceng user & admin) + approve tanpa linking (30 Agu 2026)
+Audit: sistem notifikasi existing HANYA push Firebase (`app/services/notifications.py`, status NOT_CONFIGURED karena
+`FIREBASE_PROJECT_ID`/`FIREBASE_SERVICE_ACCOUNT_JSON` kosong) tanpa penyimpanan riwayat dan tanpa icon lonceng di UI.
+Tidak ada sistem notifikasi lain → tidak ada duplikasi. Push Firebase existing DIBIARKAN UTUH (tetap dipanggil).
+
+Backend (additive):
+- Koleksi baru `notifications` (satu-satunya yang diperlukan) + index; `Collections.NOTIFICATIONS` di `core/database.py`.
+- `app/services/notification_center.py`: create/list/mark-read untuk 2 audience — ADMIN (broadcast, status read per
+  akun admin via `read_by`) dan CUSTOMER (per `recipient_id`, field `read`/`read_at`).
+  Field: id, audience, recipient_id, type, title, message, link, reference_type, reference_id, read, read_at, created_at.
+- `app/api/routes/notifications.py` (prefix `/api/notifications`, akses: admin yang login — TANPA permission baru,
+  RBAC tidak diubah): GET `` (items+unread), PATCH `/{id}/read`, POST `/read-all`.
+- `membership.py`: endpoint akun Baraya GET `/api/baraya/notifications`, PATCH `/api/baraya/notifications/{id}/read`,
+  POST `/api/baraya/notifications/read-all`. Event: pengajuan dibuat → notifikasi ADMIN "Pengajuan Pemain/Staff Baru";
+  keputusan → notifikasi CUSTOMER ("Pengajuan Pemain Disetujui" / "Pengajuan Staff Disetujui" / versi Ditolak) +
+  notifikasi ADMIN berisi ringkasan keputusan.
+Frontend:
+- `components/shared/NotificationBell.js` (dipakai 2 tempat): icon lonceng + badge unread + daftar riwayat
+  (judul, pesan, waktu relatif, status read/unread), klik item = tandai dibaca + buka `link`, tombol
+  "Tandai dibaca" (read-all), polling 60 detik.
+- `AdminShell.js`: lonceng di topbar sebelah menu profil admin (`api`, `/notifications`).
+- `PublicHeader.js`: lonceng di sebelah menu akun Baraya (`barayaApi`, `/baraya/notifications`), hanya saat login.
+Approve tanpa linking: Pemain (Fase 1) + Staf (sudah opsional sejak awal) — keduanya TINJAU → SETUJUI membuat
+  record baru dari data pengajuan lalu menautkannya ke akun.
+Validasi (tanpa Testing Agent): skrip API 30/30 PASS (notifikasi admin saat pengajuan, approve PEMAIN & STAFF tanpa
+  linking → Player/Staff baru, notifikasi user dengan judul/pesan sesuai spesifikasi, unread naik/turun, read-all,
+  proteksi 401 untuk anonim & token Baraya di endpoint admin). UI: lonceng admin badge 4 → klik item = navigasi
+  `/admin/baraya` + badge 3 → read-all = badge hilang; lonceng Baraya badge 2 → daftar tampil → read 1 → badge 1 →
+  read-all = hilang. 0 error console baru. `yarn build` sukses 317.88 kB (+2.3 kB).
+  Semua data uji dihapus (notifications/applications/players/staff/teams/customers = 0).
+CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan penuh. Untuk push HP perlu
+  `FIREBASE_PROJECT_ID` + `FIREBASE_SERVICE_ACCOUNT_JSON` di environment server (plus token device/topik).

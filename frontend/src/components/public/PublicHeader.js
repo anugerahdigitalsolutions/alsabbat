@@ -11,6 +11,8 @@ import { useBaraya } from '../../context/BarayaAuthContext';
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { ClubCrestMark } from '../shared/ClubCrestMark';
+import { NotificationBell } from '../shared/NotificationBell';
+import { barayaApi } from '../../lib/api';
 import { SearchDialog } from './SearchDialog';
 import { useClub } from '../../context/ClubContext';
 
@@ -172,7 +174,13 @@ export const PublicHeader = () => {
           </button>
 
           {customer ? (
-            <DropdownMenu>
+            <>
+              <NotificationBell
+                client={barayaApi}
+                basePath="/baraya/notifications"
+                testId="baraya-notification-bell"
+              />
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
@@ -201,6 +209,7 @@ export const PublicHeader = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             <>
               <span

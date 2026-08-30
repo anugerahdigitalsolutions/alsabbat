@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { AdminSidebar, ADMIN_NAV, ADMIN_ROUTE_PERMISSIONS } from './AdminSidebar';
+import { NotificationBell } from '../shared/NotificationBell';
+import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
 const ROLE_LABELS = {
@@ -102,6 +104,13 @@ export const AdminShell = () => {
                 Lihat Website
               </Button>
             </Link>
+
+            <NotificationBell
+              client={api}
+              basePath="/notifications"
+              testId="admin-notification-bell"
+              iconStyle={{ color: 'var(--club-secondary)' }}
+            />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -53,6 +53,7 @@ class Collections:
     COUNTERS = "counters"
     BANNERS = "banners"
     SITE_CONTENT = "site_content"
+    NOTIFICATIONS = "notifications"
 
 
 def get_client() -> AsyncIOMotorClient:
@@ -248,6 +249,12 @@ async def ensure_indexes() -> None:
         await db[Collections.ANALYTICS_EVENTS].create_index(
             [("entity_type", ASCENDING), ("entity_id", ASCENDING)]
         )
+        # Notification center (Fase 4B) — riwayat notifikasi user & admin
+        await db[Collections.NOTIFICATIONS].create_index([("id", ASCENDING)], unique=True)
+        await db[Collections.NOTIFICATIONS].create_index(
+            [("audience", ASCENDING), ("recipient_id", ASCENDING), ("created_at", DESCENDING)]
+        )
+        await db[Collections.NOTIFICATIONS].create_index([("read", ASCENDING)])
         logger.info("MongoDB indexes ensured")
     except Exception as exc:  # pragma: no cover
         logger.warning("Index creation skipped/failed: %s", exc)
