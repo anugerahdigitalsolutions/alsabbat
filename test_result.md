@@ -449,3 +449,20 @@ agent_communication:
       per-match kosong; match tanpa skor → notice Kartu Hasil belum aktif; unduh &
       bagikan ada; sponsor tetap di bawah kartu; tidak ada error console/API.
       yarn build sukses (main.560cb5fd.js, +789 B). Fixture uji dihapus semua.
+
+    -agent: "main"
+    -message: |
+      PENCETAK GOL DI KARTU HASIL — SELESAI (tanpa perubahan DB/API).
+      MatchScoreCardGenerator dapat prop opsional `events` + `playersById`; baris
+      pencetak gol (GOAL/PENALTY_SCORED, side CLUB, player_id ada) dikelompokkan per
+      pemain dan disisipkan ke panel informasi kartu existing (renderer sama, tidak
+      ada renderer/field/API/collection baru). Nama diambil dari data pemain
+      existing; gol lawan (player_name) & own goal tidak dihitung; baris dibatasi
+      4 (Feed) / 5 (Story) dengan ringkasan "+N pencetak gol lainnya".
+      Sumber data: GET /match-events?match_id= + GET /players?team_id= (admin) dan
+      payload /matches/{id}/relations (publik) — semuanya endpoint existing.
+      Verifikasi: kartu hasil 3-1 menampilkan "VIDISTA 12', 78'" dan "RAKA 47'"
+      (gol lawan tidak muncul); kartu 0-0 tanpa blok pencetak gol; Kartu Pertandingan
+      tetap VS tanpa pencetak gol; skor/logo/sponsor/footer tidak tertutup; Unduh PNG
+      & Bagikan tetap ada; tidak ada error console/API. yarn build sukses
+      (main.c46b0d22.js, +561 B). Fixture uji dihapus.

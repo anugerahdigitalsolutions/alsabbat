@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveMediaUrl } from '../gallery/mediaUtils';
 import { Download, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,6 +20,10 @@ const BRAND = {
   dark: '#000000',
   light: '#FEFEFE',
 };
+
+// Gol yang dihitung sebagai pencetak gol (own goal tidak dihitung).
+const SCORER_TYPES = ['GOAL', 'PENALTY_SCORED'];
+const GOAL_MARK = '\u26BD';
 
 const RATIOS = [
   { id: 'feed', label: '4:5 Feed', width: 1080, height: 1350 },
@@ -216,6 +220,9 @@ export const MatchScoreCardGenerator = ({
   fixedRatio = null,
   bare = false,
   sponsors = null,
+  // Pencetak gol Kartu Hasil — sumbernya HANYA Match Events existing.
+  events = null,
+  playersById = null,
   // 'fixture' = Kartu Pertandingan (pengumuman jadwal, tanpa skor)
   // 'result'  = Kartu Hasil Pertandingan (skor + status SELESAI)
   // 'auto'    = ikut data: ada skor -> kartu hasil, belum ada -> kartu jadwal
@@ -264,6 +271,41 @@ export const MatchScoreCardGenerator = ({
   const bgFocusX = clampPercent(match?.[`${bgPrefix}_${ratioKey}_focus_x`], 50);
   const bgFocusY = clampPercent(match?.[`${bgPrefix}_${ratioKey}_focus_y`], 50);
   const bgZoom = clampPercent(match?.[`${bgPrefix}_${ratioKey}_zoom`], 100, 100, 250);
+
+  // Pencetak gol AL SABBAT dari Match Events existing (nama dari data pemain).
+  // Hanya untuk Kartu Hasil; dikelompokkan per pemain agar tetap rapi.
+  const scorerLines = useMemo(() => {
+    if (!isResultCard || !showScore) return [];
+    const goals = (events || []).filter(
+      (event) =>
+        (event?.status ?? 'ACTIVE') === 'ACTIVE' &&
+        (event?.side ?? 'CLUB') === 'CLUB' &&
+        SCORER_TYPES.includes(event?.type) &&
+        event?.player_id &&
+        (playersById || {})[event.player_id],
+    );
+    if (!goals.length) return [];
+    const grouped = [];
+    goals.forEach((goal) => {
+      const player = playersById[goal.player_id] || {};
+      const name = (player.display_name || player.full_name || '').toUpperCase();
+      if (!name) return;
+      let entry = grouped.find((item) => item.id === goal.player_id);
+      if (!entry) {
+        entry = { id: goal.player_id, name, minutes: [] };
+        grouped.push(entry);
+      }
+      if (goal.minute || goal.minute === 0) entry.minutes.push(Number(goal.minute));
+    });
+    const lines = grouped.map((entry) => {
+      const minutes = entry.minutes.sort((a, b) => a - b).map((m) => `${m}'`).join(', ');
+      return `${GOAL_MARK} ${entry.name}${minutes ? ` ${minutes}` : ''}`;
+    });
+    // Batasi baris agar skor, logo, informasi utama & sponsor tidak tertutup.
+    const maxLines = isStoryRatio ? 5 : 4;
+    if (lines.length <= maxLines) return lines;
+    return [...lines.slice(0, maxLines - 1), `${GOAL_MARK} +${lines.length - (maxLines - 1)} pencetak gol lainnya`];
+  }, [events, playersById, isResultCard, showScore, isStoryRatio]);
   const overlayEnabled = pick('overlayEnabled') !== false;
   const overlayColor = pick('overlayColor') || MATCH_CARD_DEFAULTS.overlayColor;
   const overlayOpacity = clampPercent(pick('overlayOpacity'), MATCH_CARD_DEFAULTS.overlayOpacity);
@@ -411,6 +453,7 @@ export const MatchScoreCardGenerator = ({
       match.date ? `${formatCardDate(match.date)}${match.time ? ` · ${match.time.slice(0, 5)} WIB` : ''}` : null,
       [match.venue, venueLabel].filter(Boolean).join(' · '),
     ].filter(Boolean);
+    if (scorerLines.length) details.push(...scorerLines);
 
     // Panel info: compact (2 baris) agar foto pertandingan tetap focal point
     const lineH = W * 0.042;
@@ -552,6 +595,7 @@ export const MatchScoreCardGenerator = ({
     logoZoom,
     isResultCard,
     showScore,
+    scorerLines,
   ]);
 
   useEffect(() => {

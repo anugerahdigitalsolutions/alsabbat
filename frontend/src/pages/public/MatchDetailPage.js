@@ -200,6 +200,8 @@ export default function MatchDetailPage() {
 
             <MatchScoreCardGenerator
               match={match}
+              events={data.events}
+              playersById={data.players}
               clubName={shortName || clubName}
               clubLogo={club?.logo}
               competitionName={data.competition?.name}

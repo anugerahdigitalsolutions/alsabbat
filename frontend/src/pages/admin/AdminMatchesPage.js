@@ -26,6 +26,9 @@ export default function AdminMatchesPage() {
   const { meta, club, clubName, shortName } = useClub();
   const [cardMatch, setCardMatch] = useState(null);
   const [cardKind, setCardKind] = useState('fixture');
+  // Pencetak gol Kartu Hasil: dibaca dari Match Events existing (tanpa API baru).
+  const [cardEvents, setCardEvents] = useState([]);
+  const [cardPlayers, setCardPlayers] = useState({});
   const [designOpen, setDesignOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [pending, setPending] = useState([]);
@@ -49,6 +52,38 @@ export default function AdminMatchesPage() {
   }, [loadPending]);
 
   // Dipakai setelah simpan hasil/desain kartu dari luar tabel: muat ulang daftar.
+  useEffect(() => {
+    if (!cardMatch?.id) {
+      setCardEvents([]);
+      setCardPlayers({});
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const [eventRes, playerRes] = await Promise.all([
+          api.get('/match-events', { params: { match_id: cardMatch.id, limit: 100 } }),
+          api.get('/players', { params: { team_id: cardMatch.team_id, limit: 100 } }),
+        ]);
+        if (!active) return;
+        setCardEvents(eventRes.data?.items || []);
+        const map = {};
+        (playerRes.data?.items || []).forEach((player) => {
+          map[player.id] = player;
+        });
+        setCardPlayers(map);
+      } catch {
+        if (active) {
+          setCardEvents([]);
+          setCardPlayers({});
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [cardMatch?.id, cardMatch?.team_id]);
+
   const afterChange = useCallback(() => {
     setListKey((k) => k + 1);
     loadPending();
@@ -252,6 +287,8 @@ export default function AdminMatchesPage() {
                 <MatchScoreCardGenerator
                   match={cardMatch}
                   kind={cardKind}
+                  events={cardEvents}
+                  playersById={cardPlayers}
                   clubName={shortName || clubName}
                   clubLogo={club?.logo}
                   competitionName={cardMatch.competition?.name}
