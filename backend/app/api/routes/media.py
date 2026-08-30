@@ -43,6 +43,25 @@ def _image_dimensions(content: bytes):
         return None, None
 
 
+def _file_headers() -> dict:
+    """Header untuk berkas media publik.
+
+    Berkas media dibaca lintas-origin oleh frontend (mis. ImageCropper memakai
+    fetch -> blob, dan canvas butuh piksel yang tidak "tainted"), sedangkan
+    domain frontend & API berbeda pada staging/produksi. Karena berkas ini
+    memang publik dan tidak memakai cookie/kredensial, ACAO `*` dikirim
+    langsung dari endpoint agar tidak bergantung pada konfigurasi CORS_ORIGINS
+    atau header tambahan di web server.
+    """
+    return {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400",
+        "Access-Control-Allow-Origin": "*",
+        "Cross-Origin-Resource-Policy": "cross-origin",
+        "Vary": "Origin",
+    }
+
+
 @router.get("/storage/status", summary="Media storage architecture status")
 async def storage_status(_user: AuthContext = Depends(require_permission("media:read"))):
     return media_service.status()
@@ -107,20 +126,13 @@ async def serve_file(file_path: str):
         return Response(
             content=content,
             media_type=content_type,
-            headers={
-                "X-Content-Type-Options": "nosniff",
-                "Cache-Control": "public, max-age=86400",
-                "Access-Control-Allow-Origin": "*",
-            },
+            headers=_file_headers(),
         )
     base = Path(settings.MEDIA_LOCAL_DIR).resolve()
     target = (base / file_path).resolve()
     if not str(target).startswith(str(base)) or not target.is_file():
         raise NotFoundError("Media file not found")
-    headers = {
-        "X-Content-Type-Options": "nosniff",
-        "Cache-Control": "public, max-age=86400",
-    }
+    headers = _file_headers()
     if target.suffix.lower() in {".svg", ".svgz", ".html", ".htm"}:
         # Never render user-uploaded markup inline (stored XSS prevention).
         headers["Content-Disposition"] = f'attachment; filename="{target.name}"'
