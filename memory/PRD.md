@@ -1196,3 +1196,12 @@ Frontend only (tanpa backend/API/DB/auth/Admin).
 - `pages/public/HomePage.js` (`home-spotlight-dots`) & `pages/public/BarayaAccountPage.js` (`baraya-account-spotlight-dots`): dots ditempatkan **di bawah kartu**, desain kartu `PlayerSpotlight` tidak diubah. Tanpa perubahan API/DB/backend.
 - Verifikasi: 3 pemain → 3 titik; klik titik ke-3 langsung pindah ke pemain ke-3; pada t+8s masih pemain yang dipilih, t+11s berputar ke pemain pertama (timer restart benar); 1 pemain → dots tidak tampil; overflow 0 px (1440 & 390); console 0 error; `yarn build` sukses (hanya warning eslint lama).
 - Cleanup: 2 pemain uji (`DOT UJI 1/2`) dihapus, players kembali 1.
+
+## Fix — Tombol "Tambah Video" YouTube + urutan konten terbaru (30 Jun 2026)
+- Penyebab: di `components/admin/YoutubeVideosManager.js`, tombol "+ Tambah Video" hanya `add()` → menambahkan baris kosong di PALING BAWAH daftar (tanpa modal, tanpa auto-scroll, belum tersimpan sampai klik "Simpan" utama), sehingga terasa tidak berfungsi. Selain itu urutan admin (order asc) berlawanan dengan urutan Beranda (order desc).
+- Perbaikan (komponen existing Dialog/Input/Switch + `parseYoutubeId` + key CMS `home.youtube.videos`):
+  - `AddVideoDialog` (modal): link YouTube + judul opsional + status aktif + pratinjau thumbnail + validasi; tombol Simpan di modal LANGSUNG menyimpan (satu langkah).
+  - `persist()` menyimpan `order = kept.length - 1 - i` → baris paling atas = order tertinggi, jadi urutan daftar admin identik dengan urutan Beranda (terbaru di atas). `load()` mengurutkan desc by order (mirror `parseYoutubeList`).
+  - Video baru di-prepend ke daftar → langsung paling atas di Admin & Homepage.
+- `backend/app/api/routes/content.py`: posts `default_sort=(("published_at", -1), ("created_at", -1))` → berita terbaru selalu paling atas di Homepage. Galeri/album sudah `published_at desc` (tidak diubah). Banner Hero & Produk Store TETAP `display_order` (keputusan user: opsi A).
+- Validasi: modal terbuka, 2 video tersimpan, setelah refresh row0 = "Video Terbaru B", Homepage slider + Daftar Video menampilkan video terbaru pertama, 0 console error, `yarn build` sukses. Data uji sudah dibersihkan (site_content kembali kosong).
