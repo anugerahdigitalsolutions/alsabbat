@@ -9,6 +9,9 @@ export const MATCH_CARD_DEFAULT_TRANSPARENCY = 35;
 export const MATCH_CARD_KEYS = {
   feedBackground: 'match.card.feed_background_url',
   storyBackground: 'match.card.story_background_url',
+  // Background global khusus Kartu Hasil (independen dari Kartu Pertandingan).
+  resultFeedBackground: 'match.card.result_feed_background_url',
+  resultStoryBackground: 'match.card.result_story_background_url',
   overlayEnabled: 'match.card.overlay_enabled',
   overlayColor: 'match.card.overlay_color',
   overlayOpacity: 'match.card.overlay_opacity',
@@ -63,6 +66,8 @@ export const useMatchCardDesign = () => {
   const [transparency, setTransparency] = useState(MATCH_CARD_DEFAULT_TRANSPARENCY);
   const [feedBackground, setFeedBackground] = useState('');
   const [storyBackground, setStoryBackground] = useState('');
+  const [resultFeedBackground, setResultFeedBackground] = useState('');
+  const [resultStoryBackground, setResultStoryBackground] = useState('');
   const [overlayEnabled, setOverlayEnabled] = useState(MATCH_CARD_DEFAULTS.overlayEnabled);
   const [overlayColor, setOverlayColor] = useState(MATCH_CARD_DEFAULTS.overlayColor);
   const [overlayOpacity, setOverlayOpacity] = useState(MATCH_CARD_DEFAULTS.overlayOpacity);
@@ -77,6 +82,8 @@ export const useMatchCardDesign = () => {
       setTransparency(raw === undefined || raw === null || raw === '' ? MATCH_CARD_DEFAULT_TRANSPARENCY : clampTransparency(raw));
       setFeedBackground(asText(items[MATCH_CARD_KEYS.feedBackground]));
       setStoryBackground(asText(items[MATCH_CARD_KEYS.storyBackground]));
+      setResultFeedBackground(asText(items[MATCH_CARD_KEYS.resultFeedBackground]));
+      setResultStoryBackground(asText(items[MATCH_CARD_KEYS.resultStoryBackground]));
       setOverlayEnabled(asBool(items[MATCH_CARD_KEYS.overlayEnabled], MATCH_CARD_DEFAULTS.overlayEnabled));
       setOverlayColor(asText(items[MATCH_CARD_KEYS.overlayColor]) || MATCH_CARD_DEFAULTS.overlayColor);
       setOverlayOpacity(clampPercent(items[MATCH_CARD_KEYS.overlayOpacity], MATCH_CARD_DEFAULTS.overlayOpacity));
@@ -96,6 +103,8 @@ export const useMatchCardDesign = () => {
     transparency,
     feedBackground,
     storyBackground,
+    resultFeedBackground,
+    resultStoryBackground,
     overlayEnabled,
     overlayColor,
     overlayOpacity,

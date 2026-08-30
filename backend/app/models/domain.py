@@ -328,6 +328,16 @@ class MatchBase(AppBaseModel):
     card_story_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
     card_story_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
     card_story_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    # Kartu Hasil Pertandingan — set background/crop TERPISAH dari Kartu
+    # Pertandingan (`card_*` di atas tidak pernah diubah oleh alur kartu hasil).
+    result_card_feed_background: Optional[str] = None
+    result_card_feed_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_feed_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_feed_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    result_card_story_background: Optional[str] = None
+    result_card_story_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_story_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_story_zoom: Optional[int] = Field(default=None, ge=100, le=250)
     description: Optional[str] = Field(default=None, max_length=4000)
     # Prepared relationship placeholder for the Match Center phase
     result_summary: Optional[str] = Field(default=None, max_length=1000)

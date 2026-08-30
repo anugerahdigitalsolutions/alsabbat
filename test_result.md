@@ -424,3 +424,28 @@ agent_communication:
       default 50/50/100, sponsor tampil di bawah kartu, unduh/bagikan ada;
       publik: tab Statistik/Timeline/Media, tab Formasi tetap tidak ada.
       yarn build sukses (main.563189ef.js, +3.52 kB). Semua fixture dihapus.
+
+    -agent: "main"
+    -message: |
+      KARTU PERTANDINGAN vs KARTU HASIL — BACKGROUND INDEPENDEN (additive).
+      Schema baru (opsional, tanpa migrasi) pada Match: result_card_feed_background,
+      result_card_feed_focus_x/y, result_card_feed_zoom, result_card_story_background,
+      result_card_story_focus_x/y, result_card_story_zoom. Field `card_*` lama tetap
+      milik Kartu Pertandingan dan tidak diubah.
+      Global key baru di site_content: match.card.result_feed_background_url &
+      match.card.result_story_background_url (fallback: global kartu pertandingan).
+      Renderer MatchScoreCardGenerator dapat prop `kind` (fixture/result/auto):
+      fixture = VS + MATCH DAY tanpa skor, result = skor + status SELESAI; pemilihan
+      background/crop mengikuti prefix set field. Dialog admin punya pemilih
+      [Kartu Pertandingan][Kartu Hasil]; MatchCardSettings dipakai ulang via prop
+      `prefix`. Overlay/opacity/zoom logo/sponsor tetap dari MatchCardDesign global.
+      BUG yang ditemukan & diperbaiki saat verifikasi: push preview di
+      MatchCardSettings masih memakai key `card_*` statis sehingga tab Kartu Hasil
+      ter-reset dan berisiko menimpa Kartu Pertandingan — kini dinamis per prefix.
+      Verifikasi browser + API: upload+crop background feed fixture (hijau, zoom 130)
+      lalu feed+story kartu hasil (merah & kuning, posisi V 25, zoom 145) → nilai
+      tiap kartu terpisah dan tetap setelah refresh; preview kartu jadwal "VS" tanpa
+      skor, kartu hasil "3 - 1 SELESAI"; global result background dipakai saat
+      per-match kosong; match tanpa skor → notice Kartu Hasil belum aktif; unduh &
+      bagikan ada; sponsor tetap di bawah kartu; tidak ada error console/API.
+      yarn build sukses (main.560cb5fd.js, +789 B). Fixture uji dihapus semua.

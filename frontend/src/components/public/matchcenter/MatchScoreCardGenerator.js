@@ -216,6 +216,10 @@ export const MatchScoreCardGenerator = ({
   fixedRatio = null,
   bare = false,
   sponsors = null,
+  // 'fixture' = Kartu Pertandingan (pengumuman jadwal, tanpa skor)
+  // 'result'  = Kartu Hasil Pertandingan (skor + status SELESAI)
+  // 'auto'    = ikut data: ada skor -> kartu hasil, belum ada -> kartu jadwal
+  kind = 'auto',
 }) => {
   const canvasRef = useRef(null);
   const design = useMatchCardDesign();
@@ -240,12 +244,26 @@ export const MatchScoreCardGenerator = ({
       ? designOverride[key]
       : design[key];
   const isStoryRatio = ratio.id === 'story';
+  const scoreAvailable = match?.home_score !== null && match?.home_score !== undefined;
+  const cardKind = kind === 'auto' ? (scoreAvailable ? 'result' : 'fixture') : kind;
+  const isResultCard = cardKind === 'result';
+  // Kartu Pertandingan tidak pernah menampilkan skor; skor hanya di Kartu Hasil.
+  const showScore = isResultCard && scoreAvailable;
   // Background & crop PER MATCH (prioritas) → fallback ke pengaturan global.
-  const matchBackground = isStoryRatio ? match?.card_story_background : match?.card_feed_background;
-  const customBackground = matchBackground || (isStoryRatio ? pick('storyBackground') : pick('feedBackground'));
-  const bgFocusX = clampPercent(isStoryRatio ? match?.card_story_focus_x : match?.card_feed_focus_x, 50);
-  const bgFocusY = clampPercent(isStoryRatio ? match?.card_story_focus_y : match?.card_feed_focus_y, 50);
-  const bgZoom = clampPercent(isStoryRatio ? match?.card_story_zoom : match?.card_feed_zoom, 100, 100, 250);
+  // Set field `card_*` (Kartu Pertandingan) dan `result_card_*` (Kartu Hasil)
+  // sepenuhnya terpisah, termasuk antara Feed dan Story.
+  const bgPrefix = isResultCard ? 'result_card' : 'card';
+  const ratioKey = isStoryRatio ? 'story' : 'feed';
+  const matchBackground = match?.[`${bgPrefix}_${ratioKey}_background`];
+  const globalBackground = isResultCard
+    ? (isStoryRatio
+        ? pick('resultStoryBackground') || pick('storyBackground')
+        : pick('resultFeedBackground') || pick('feedBackground'))
+    : (isStoryRatio ? pick('storyBackground') : pick('feedBackground'));
+  const customBackground = matchBackground || globalBackground;
+  const bgFocusX = clampPercent(match?.[`${bgPrefix}_${ratioKey}_focus_x`], 50);
+  const bgFocusY = clampPercent(match?.[`${bgPrefix}_${ratioKey}_focus_y`], 50);
+  const bgZoom = clampPercent(match?.[`${bgPrefix}_${ratioKey}_zoom`], 100, 100, 250);
   const overlayEnabled = pick('overlayEnabled') !== false;
   const overlayColor = pick('overlayColor') || MATCH_CARD_DEFAULTS.overlayColor;
   const overlayOpacity = clampPercent(pick('overlayOpacity'), MATCH_CARD_DEFAULTS.overlayOpacity);
@@ -365,7 +383,8 @@ export const MatchScoreCardGenerator = ({
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = BRAND.gold;
-    const statusText = STATUS_LABEL[match.status] || MATCH_DAY_LABEL;
+    // Kartu jadwal selalu bernuansa Match Day; kartu hasil memakai label status.
+    const statusText = isResultCard ? STATUS_LABEL[match.status] || MATCH_DAY_LABEL : MATCH_DAY_LABEL;
     // "Match Day" tampil 2x lebih besar; status lain memakai ukuran semula.
     const statusScale = statusText === MATCH_DAY_LABEL ? 0.048 : 0.024;
     ctx.font = `700 ${W * statusScale}px Poppins, sans-serif`;
@@ -381,7 +400,7 @@ export const MatchScoreCardGenerator = ({
     ctx.fillRect(pad, pad + W * 0.115, W * 0.16, W * 0.008);
 
     // Kotak informasi pertandingan (dihitung dulu agar matchup bisa menempel di atasnya)
-    const hasScore = match.home_score !== null && match.home_score !== undefined;
+    const hasScore = showScore;
     const isHome = match.venue_type !== 'AWAY';
     const clubGoals = hasScore ? (isHome ? match.home_score : match.away_score ?? 0) : null;
     const opponentGoals = hasScore ? (isHome ? match.away_score ?? 0 : match.home_score) : null;
@@ -531,6 +550,8 @@ export const MatchScoreCardGenerator = ({
     overlayColor,
     overlayOpacity,
     logoZoom,
+    isResultCard,
+    showScore,
   ]);
 
   useEffect(() => {
@@ -549,7 +570,7 @@ export const MatchScoreCardGenerator = ({
 
   const fileName = () => {
     const opponent = (match?.opponent?.name || 'lawan').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    return `alsabbat-vs-${opponent}-${ratio.id}.png`;
+    return `alsabbat-${isResultCard ? 'hasil' : 'jadwal'}-vs-${opponent}-${ratio.id}.png`;
   };
 
   const toBlob = () =>

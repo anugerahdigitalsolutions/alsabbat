@@ -32,6 +32,8 @@ export const MatchCardDesign = () => {
   const [transparency, setTransparency] = useState(MATCH_CARD_DEFAULT_TRANSPARENCY);
   const [feedBackground, setFeedBackground] = useState('');
   const [storyBackground, setStoryBackground] = useState('');
+  const [resultFeedBackground, setResultFeedBackground] = useState('');
+  const [resultStoryBackground, setResultStoryBackground] = useState('');
   const [overlayEnabled, setOverlayEnabled] = useState(MATCH_CARD_DEFAULTS.overlayEnabled);
   const [overlayColor, setOverlayColor] = useState(MATCH_CARD_DEFAULTS.overlayColor);
   const [overlayOpacity, setOverlayOpacity] = useState(MATCH_CARD_DEFAULTS.overlayOpacity);
@@ -52,6 +54,8 @@ export const MatchCardDesign = () => {
       setTransparency(raw === undefined || raw === null || raw === '' ? MATCH_CARD_DEFAULT_TRANSPARENCY : clampTransparency(raw));
       setFeedBackground(String(items[MATCH_CARD_KEYS.feedBackground] || '').trim());
       setStoryBackground(String(items[MATCH_CARD_KEYS.storyBackground] || '').trim());
+      setResultFeedBackground(String(items[MATCH_CARD_KEYS.resultFeedBackground] || '').trim());
+      setResultStoryBackground(String(items[MATCH_CARD_KEYS.resultStoryBackground] || '').trim());
       const enabledRaw = items[MATCH_CARD_KEYS.overlayEnabled];
       setOverlayEnabled(
         enabledRaw === undefined || enabledRaw === null || enabledRaw === ''
@@ -102,6 +106,8 @@ export const MatchCardDesign = () => {
         items: [
           { key: MATCH_CARD_KEYS.feedBackground, value: String(feedBackground || '').trim(), label: 'Background Kartu — Feed', group: 'Kartu Pertandingan' },
           { key: MATCH_CARD_KEYS.storyBackground, value: String(storyBackground || '').trim(), label: 'Background Kartu — Story', group: 'Kartu Pertandingan' },
+          { key: MATCH_CARD_KEYS.resultFeedBackground, value: String(resultFeedBackground || '').trim(), label: 'Background Kartu Hasil — Feed', group: 'Kartu Hasil Pertandingan' },
+          { key: MATCH_CARD_KEYS.resultStoryBackground, value: String(resultStoryBackground || '').trim(), label: 'Background Kartu Hasil — Story', group: 'Kartu Hasil Pertandingan' },
           { key: MATCH_CARD_KEYS.overlayEnabled, value: overlayEnabled ? 'true' : 'false', label: 'Overlay Kartu — Aktif', group: 'Kartu Pertandingan' },
           { key: MATCH_CARD_KEYS.overlayColor, value: String(overlayColor || MATCH_CARD_DEFAULTS.overlayColor), label: 'Overlay Kartu — Warna', group: 'Kartu Pertandingan' },
           { key: MATCH_CARD_KEYS.overlayOpacity, value: String(overlayOpacity), label: 'Overlay Kartu — Opacity (%)', group: 'Kartu Pertandingan' },
@@ -119,6 +125,8 @@ export const MatchCardDesign = () => {
   const resetDesign = () => {
     setFeedBackground('');
     setStoryBackground('');
+    setResultFeedBackground('');
+    setResultStoryBackground('');
     setOverlayEnabled(MATCH_CARD_DEFAULTS.overlayEnabled);
     setOverlayColor(MATCH_CARD_DEFAULTS.overlayColor);
     setOverlayOpacity(MATCH_CARD_DEFAULTS.overlayOpacity);
@@ -128,6 +136,8 @@ export const MatchCardDesign = () => {
   const designOverride = {
     feedBackground,
     storyBackground,
+    resultFeedBackground,
+    resultStoryBackground,
     overlayEnabled,
     overlayColor,
     overlayOpacity,
@@ -234,6 +244,33 @@ export const MatchCardDesign = () => {
               />
               <p className="mt-1.5 text-xs" style={{ color: 'var(--muted-fg)' }}>
                 Feed dan Story bisa memakai gambar berbeda.
+              </p>
+            </div>
+          </div>
+
+          {/* Background global KARTU HASIL — independen dari Kartu Pertandingan */}
+          <div className="mb-6 grid gap-5 lg:grid-cols-2" data-testid="admin-match-card-result-backgrounds">
+            <div>
+              <p className="als-section-label mb-2">Background Kartu Hasil · Feed 4:5</p>
+              <MediaPicker
+                value={resultFeedBackground}
+                onChange={setResultFeedBackground}
+                testId="admin-match-card-result-feed-bg"
+              />
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--muted-fg)' }}>
+                Dipakai kartu hasil yang belum punya background sendiri. Tidak memengaruhi Kartu
+                Pertandingan.
+              </p>
+            </div>
+            <div>
+              <p className="als-section-label mb-2">Background Kartu Hasil · Story 9:16</p>
+              <MediaPicker
+                value={resultStoryBackground}
+                onChange={setResultStoryBackground}
+                testId="admin-match-card-result-story-bg"
+              />
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--muted-fg)' }}>
+                Kosongkan untuk memakai background Kartu Pertandingan sebagai cadangan.
               </p>
             </div>
           </div>

@@ -20,9 +20,12 @@ import { MEDIA_SPECS } from '../../lib/mediaHints';
 
 const opts = (values = []) => values.map((v) => ({ value: v, label: v }));
 
+const hasScore = (match) => match?.home_score !== null && match?.home_score !== undefined;
+
 export default function AdminMatchesPage() {
   const { meta, club, clubName, shortName } = useClub();
   const [cardMatch, setCardMatch] = useState(null);
+  const [cardKind, setCardKind] = useState('fixture');
   const [designOpen, setDesignOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [pending, setPending] = useState([]);
@@ -91,6 +94,7 @@ export default function AdminMatchesPage() {
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
+              setCardKind('fixture');
               setCardMatch(row);
             }}
             data-testid={`admin-matches-card-${row.id}`}
@@ -193,28 +197,67 @@ export default function AdminMatchesPage() {
           <DialogHeader>
             <DialogTitle className="font-display">Kartu Pertandingan</DialogTitle>
             <DialogDescription>
-              Atur background Feed 4:5 dan Story 9:16 untuk pertandingan ini, lalu preview, unduh,
-              atau bagikan kartunya. Overlay, opacity, zoom logo, dan sponsor mengikuti Desain Kartu
-              Global.
+              Dua jenis kartu dengan background sendiri-sendiri: Kartu Pertandingan (pengumuman
+              jadwal, tanpa skor) dan Kartu Hasil (skor + status SELESAI). Atur Feed 4:5 &amp; Story
+              9:16 masing-masing, lalu preview, unduh, atau bagikan. Overlay, opacity, zoom logo,
+              dan sponsor mengikuti Desain Kartu Global.
             </DialogDescription>
           </DialogHeader>
           {cardMatch ? (
             <div className="space-y-5">
+              <div className="flex flex-wrap gap-2" data-testid="admin-matches-card-kind-switch">
+                <Button
+                  size="sm"
+                  variant={cardKind === 'fixture' ? 'default' : 'outline'}
+                  onClick={() => setCardKind('fixture')}
+                  style={cardKind === 'fixture' ? { backgroundColor: 'var(--club-secondary)', color: '#FEFEFE' } : undefined}
+                  data-testid="admin-matches-card-kind-fixture"
+                >
+                  Kartu Pertandingan
+                </Button>
+                <Button
+                  size="sm"
+                  variant={cardKind === 'result' ? 'default' : 'outline'}
+                  onClick={() => setCardKind('result')}
+                  style={cardKind === 'result' ? { backgroundColor: 'var(--club-secondary)', color: '#FEFEFE' } : undefined}
+                  data-testid="admin-matches-card-kind-result"
+                >
+                  Kartu Hasil
+                </Button>
+              </div>
+
+              {cardKind === 'result' && !hasScore(cardMatch) ? (
+                <p
+                  className="rounded-[var(--radius-sm)] p-3 text-sm"
+                  style={{ backgroundColor: 'rgba(1,40,145,0.06)', color: 'var(--muted-fg)' }}
+                  data-testid="admin-matches-card-result-locked"
+                >
+                  Kartu Hasil tersedia setelah hasil pertandingan diisi lewat tombol “Hasil
+                  Pertandingan”. Background Kartu Hasil tetap bisa disiapkan lebih dulu di bawah.
+                </p>
+              ) : null}
+
               <MatchCardSettings
+                key={cardKind}
                 match={cardMatch}
+                prefix={cardKind === 'result' ? 'result_card' : 'card'}
+                title={cardKind === 'result' ? 'Desain Kartu Hasil Pertandingan Ini' : 'Desain Kartu Pertandingan Ini'}
                 onChange={(patch) => setCardMatch((prev) => ({ ...prev, ...patch }))}
                 onSaved={(updated) => {
                   setCardMatch((prev) => ({ ...prev, ...updated }));
                   afterChange();
                 }}
               />
-              <MatchScoreCardGenerator
-                match={cardMatch}
-                clubName={shortName || clubName}
-                clubLogo={club?.logo}
-                competitionName={cardMatch.competition?.name}
-                seasonName={cardMatch.season?.name}
-              />
+              {cardKind === 'result' && !hasScore(cardMatch) ? null : (
+                <MatchScoreCardGenerator
+                  match={cardMatch}
+                  kind={cardKind}
+                  clubName={shortName || clubName}
+                  clubLogo={club?.logo}
+                  competitionName={cardMatch.competition?.name}
+                  seasonName={cardMatch.season?.name}
+                />
+              )}
             </div>
           ) : null}
         </DialogContent>

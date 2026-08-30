@@ -49,7 +49,10 @@ const RangeRow = ({ id, label, value, min, max, onChange, testId, hint }) => (
  * Memakai MediaPicker + cropper existing dan endpoint PATCH /matches/{id} —
  * tidak ada uploader, cropper, atau sistem media baru.
  */
-export const MatchCardSettings = ({ match, onChange, onSaved }) => {
+export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', title }) => {
+  // `prefix` menentukan set field yang diatur: 'card' (Kartu Pertandingan) atau
+  // 'result_card' (Kartu Hasil) — sepenuhnya independen satu sama lain.
+  const field = (ratio, key) => `${prefix}_${ratio}_${key}`;
   const [feedBackground, setFeedBackground] = useState('');
   const [storyBackground, setStoryBackground] = useState('');
   const [feedCrop, setFeedCrop] = useState(DEFAULTS);
@@ -58,34 +61,35 @@ export const MatchCardSettings = ({ match, onChange, onSaved }) => {
 
   useEffect(() => {
     if (!match) return;
-    setFeedBackground(match.card_feed_background || '');
-    setStoryBackground(match.card_story_background || '');
+    setFeedBackground(match[`${prefix}_feed_background`] || '');
+    setStoryBackground(match[`${prefix}_story_background`] || '');
     setFeedCrop({
-      focus_x: num(match.card_feed_focus_x, DEFAULTS.focus_x),
-      focus_y: num(match.card_feed_focus_y, DEFAULTS.focus_y),
-      zoom: num(match.card_feed_zoom, DEFAULTS.zoom),
+      focus_x: num(match[`${prefix}_feed_focus_x`], DEFAULTS.focus_x),
+      focus_y: num(match[`${prefix}_feed_focus_y`], DEFAULTS.focus_y),
+      zoom: num(match[`${prefix}_feed_zoom`], DEFAULTS.zoom),
     });
     setStoryCrop({
-      focus_x: num(match.card_story_focus_x, DEFAULTS.focus_x),
-      focus_y: num(match.card_story_focus_y, DEFAULTS.focus_y),
-      zoom: num(match.card_story_zoom, DEFAULTS.zoom),
+      focus_x: num(match[`${prefix}_story_focus_x`], DEFAULTS.focus_x),
+      focus_y: num(match[`${prefix}_story_focus_y`], DEFAULTS.focus_y),
+      zoom: num(match[`${prefix}_story_zoom`], DEFAULTS.zoom),
     });
-  }, [match]);
+  }, [match, prefix]);
 
   // Preview kartu (renderer publik) mengikuti perubahan sebelum disimpan.
   const push = (patch) => {
     if (onChange) onChange(patch);
   };
 
+  // Hanya field milik kartu yang sedang diatur yang dikirim → kartu lainnya aman.
   const payloadFrom = (feedBg, storyBg, feed, story) => ({
-    card_feed_background: feedBg || '',
-    card_feed_focus_x: feed.focus_x,
-    card_feed_focus_y: feed.focus_y,
-    card_feed_zoom: feed.zoom,
-    card_story_background: storyBg || '',
-    card_story_focus_x: story.focus_x,
-    card_story_focus_y: story.focus_y,
-    card_story_zoom: story.zoom,
+    [field('feed', 'background')]: feedBg || '',
+    [field('feed', 'focus_x')]: feed.focus_x,
+    [field('feed', 'focus_y')]: feed.focus_y,
+    [field('feed', 'zoom')]: feed.zoom,
+    [field('story', 'background')]: storyBg || '',
+    [field('story', 'focus_x')]: story.focus_x,
+    [field('story', 'focus_y')]: story.focus_y,
+    [field('story', 'zoom')]: story.zoom,
   });
 
   const save = async () => {
@@ -94,7 +98,11 @@ export const MatchCardSettings = ({ match, onChange, onSaved }) => {
     try {
       const payload = payloadFrom(feedBackground, storyBackground, feedCrop, storyCrop);
       const { data } = await api.patch(`/matches/${match.id}`, payload);
-      toast.success('Pengaturan kartu pertandingan disimpan.');
+      toast.success(
+        prefix === 'result_card'
+          ? 'Desain Kartu Hasil disimpan (Kartu Pertandingan tidak berubah).'
+          : 'Desain Kartu Pertandingan disimpan (Kartu Hasil tidak berubah).'
+      );
       if (onSaved) onSaved(data);
     } catch (error) {
       toast.error(apiErrorMessage(error, 'Gagal menyimpan pengaturan kartu.'));
@@ -114,13 +122,14 @@ export const MatchCardSettings = ({ match, onChange, onSaved }) => {
   if (!match) return null;
 
   return (
-    <div className="als-card p-4 sm:p-5" data-testid="admin-match-card-settings">
+    <div className="als-card p-4 sm:p-5" data-testid={`admin-match-card-settings-${prefix}`}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="als-section-label">Desain Kartu Pertandingan Ini</p>
+          <p className="als-section-label">{title || 'Desain Kartu Pertandingan Ini'}</p>
           <p className="mt-1 text-xs" style={{ color: 'var(--muted-fg)' }}>
-            Background Feed dan Story boleh berbeda. Kosongkan untuk memakai background global
-            beserta overlay, opacity, zoom logo, dan sponsor dari Pengaturan Desain Kartu.
+            Background Feed dan Story boleh berbeda dan hanya berlaku untuk kartu ini. Kosongkan
+            untuk memakai background global; overlay, opacity, zoom logo, dan sponsor mengikuti
+            Desain Kartu Global.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -129,7 +138,7 @@ export const MatchCardSettings = ({ match, onChange, onSaved }) => {
             size="sm"
             onClick={resetToGlobal}
             disabled={saving}
-            data-testid="admin-match-card-settings-reset"
+            data-testid={`admin-match-card-settings-${prefix}-reset`}
           >
             <RotateCcw className="mr-2 h-3.5 w-3.5" />
             Pakai Global
@@ -140,7 +149,7 @@ export const MatchCardSettings = ({ match, onChange, onSaved }) => {
             disabled={saving}
             className="font-semibold"
             style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-            data-testid="admin-match-card-settings-save"
+            data-testid={`admin-match-card-settings-${prefix}-save`}
           >
             <Save className="mr-2 h-3.5 w-3.5" />
             {saving ? 'Menyimpan…' : 'Simpan Desain'}
@@ -155,45 +164,45 @@ export const MatchCardSettings = ({ match, onChange, onSaved }) => {
             value={feedBackground}
             onChange={(url) => {
               setFeedBackground(url || '');
-              push({ card_feed_background: url || '' });
+              push({ [field('feed', 'background')]: url || '' });
             }}
             spec={MEDIA_SPECS.matchCardFeed}
-            testId="admin-match-card-settings-feed-bg"
+            testId={`admin-match-card-settings-${prefix}-feed-bg`}
           />
           <RangeRow
-            id="match-card-feed-focus-x"
+            id={`match-card-${prefix}-feed-focus-x`}
             label="Posisi Horizontal"
             value={feedCrop.focus_x}
             min={0}
             max={100}
-            testId="admin-match-card-settings-feed-focus-x"
+            testId={`admin-match-card-settings-${prefix}-feed-focus-x`}
             onChange={(v) => {
               setFeedCrop((c) => ({ ...c, focus_x: v }));
-              push({ card_feed_focus_x: v });
+              push({ [field('feed', 'focus_x')]: v });
             }}
           />
           <RangeRow
-            id="match-card-feed-focus-y"
+            id={`match-card-${prefix}-feed-focus-y`}
             label="Posisi Vertikal"
             value={feedCrop.focus_y}
             min={0}
             max={100}
-            testId="admin-match-card-settings-feed-focus-y"
+            testId={`admin-match-card-settings-${prefix}-feed-focus-y`}
             onChange={(v) => {
               setFeedCrop((c) => ({ ...c, focus_y: v }));
-              push({ card_feed_focus_y: v });
+              push({ [field('feed', 'focus_y')]: v });
             }}
           />
           <RangeRow
-            id="match-card-feed-zoom"
+            id={`match-card-${prefix}-feed-zoom`}
             label="Zoom Background"
             value={feedCrop.zoom}
             min={100}
             max={250}
-            testId="admin-match-card-settings-feed-zoom"
+            testId={`admin-match-card-settings-${prefix}-feed-zoom`}
             onChange={(v) => {
               setFeedCrop((c) => ({ ...c, zoom: v }));
-              push({ card_feed_zoom: v });
+              push({ [field('feed', 'zoom')]: v });
             }}
           />
         </div>
@@ -204,45 +213,45 @@ export const MatchCardSettings = ({ match, onChange, onSaved }) => {
             value={storyBackground}
             onChange={(url) => {
               setStoryBackground(url || '');
-              push({ card_story_background: url || '' });
+              push({ [field('story', 'background')]: url || '' });
             }}
             spec={MEDIA_SPECS.matchCardStory}
-            testId="admin-match-card-settings-story-bg"
+            testId={`admin-match-card-settings-${prefix}-story-bg`}
           />
           <RangeRow
-            id="match-card-story-focus-x"
+            id={`match-card-${prefix}-story-focus-x`}
             label="Posisi Horizontal"
             value={storyCrop.focus_x}
             min={0}
             max={100}
-            testId="admin-match-card-settings-story-focus-x"
+            testId={`admin-match-card-settings-${prefix}-story-focus-x`}
             onChange={(v) => {
               setStoryCrop((c) => ({ ...c, focus_x: v }));
-              push({ card_story_focus_x: v });
+              push({ [field('story', 'focus_x')]: v });
             }}
           />
           <RangeRow
-            id="match-card-story-focus-y"
+            id={`match-card-${prefix}-story-focus-y`}
             label="Posisi Vertikal"
             value={storyCrop.focus_y}
             min={0}
             max={100}
-            testId="admin-match-card-settings-story-focus-y"
+            testId={`admin-match-card-settings-${prefix}-story-focus-y`}
             onChange={(v) => {
               setStoryCrop((c) => ({ ...c, focus_y: v }));
-              push({ card_story_focus_y: v });
+              push({ [field('story', 'focus_y')]: v });
             }}
           />
           <RangeRow
-            id="match-card-story-zoom"
+            id={`match-card-${prefix}-story-zoom`}
             label="Zoom Background"
             value={storyCrop.zoom}
             min={100}
             max={250}
-            testId="admin-match-card-settings-story-zoom"
+            testId={`admin-match-card-settings-${prefix}-story-zoom`}
             onChange={(v) => {
               setStoryCrop((c) => ({ ...c, zoom: v }));
-              push({ card_story_zoom: v });
+              push({ [field('story', 'zoom')]: v });
             }}
           />
         </div>
