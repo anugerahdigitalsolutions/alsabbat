@@ -16,6 +16,59 @@ const EMPTY = {
 
 const isHttps = (value) => !value || /^https:\/\/[^\s]+$/i.test(value.trim());
 
+/** Satu baris konfigurasi toko aplikasi. Didefinisikan di luar panel agar input
+ *  tidak di-remount (dan kehilangan fokus) setiap kali state berubah. */
+const StoreRow = ({ title, urlKey, enabledKey, placeholder, testId, form, setForm, onSave, onClear, busy }) => (
+  <div className="rounded-[var(--radius-md)] border p-4" style={{ borderColor: 'rgba(1,40,145,0.12)' }} data-testid={testId}>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="font-display text-sm font-semibold">{title}</p>
+      <label className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--muted-fg)' }}>
+        <Switch
+          checked={form[enabledKey]}
+          onCheckedChange={(value) => setForm((f) => ({ ...f, [enabledKey]: value }))}
+          data-testid={`${testId}-enabled`}
+        />
+        {form[enabledKey] ? 'Tampil di website' : 'Disembunyikan'}
+      </label>
+    </div>
+    <Label className="mb-1.5 mt-3 block">URL</Label>
+    <Input
+      value={form[urlKey]}
+      onChange={(e) => setForm((f) => ({ ...f, [urlKey]: e.target.value }))}
+      placeholder={placeholder}
+      data-testid={`${testId}-url`}
+    />
+    <div className="mt-3 flex flex-wrap gap-2">
+      <Button
+        type="button"
+        size="sm"
+        onClick={() => onSave()}
+        disabled={busy}
+        className="font-semibold"
+        style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+        data-testid={`${testId}-save`}
+      >
+        <Save className="mr-2 h-4 w-4" aria-hidden="true" />
+        Simpan
+      </Button>
+      {form[urlKey] ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => onClear(urlKey, enabledKey)}
+          disabled={busy}
+          className="font-semibold"
+          data-testid={`${testId}-clear`}
+        >
+          <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+          Hapus URL
+        </Button>
+      ) : null}
+    </div>
+  </div>
+);
+
 /** Fase 4 — konfigurasi tautan Google Play & App Store (dipakai ikon di footer website). */
 export const AppStoreLinksPanel = () => {
   const [form, setForm] = useState(EMPTY);
@@ -75,56 +128,7 @@ export const AppStoreLinksPanel = () => {
 
   const clearOne = (key, enabledKey) => save({ [key]: '', [enabledKey]: false });
 
-  const Row = ({ title, urlKey, enabledKey, placeholder, testId }) => (
-    <div className="rounded-[var(--radius-md)] border p-4" style={{ borderColor: 'rgba(1,40,145,0.12)' }} data-testid={testId}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="font-display text-sm font-semibold">{title}</p>
-        <label className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--muted-fg)' }}>
-          <Switch
-            checked={form[enabledKey]}
-            onCheckedChange={(value) => setForm((f) => ({ ...f, [enabledKey]: value }))}
-            data-testid={`${testId}-enabled`}
-          />
-          {form[enabledKey] ? 'Tampil di website' : 'Disembunyikan'}
-        </label>
-      </div>
-      <Label className="mb-1.5 mt-3 block">URL</Label>
-      <Input
-        value={form[urlKey]}
-        onChange={(e) => setForm((f) => ({ ...f, [urlKey]: e.target.value }))}
-        placeholder={placeholder}
-        data-testid={`${testId}-url`}
-      />
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => save()}
-          disabled={saving || loading}
-          className="font-semibold"
-          style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-          data-testid={`${testId}-save`}
-        >
-          <Save className="mr-2 h-4 w-4" aria-hidden="true" />
-          Simpan
-        </Button>
-        {form[urlKey] ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => clearOne(urlKey, enabledKey)}
-            disabled={saving || loading}
-            className="font-semibold"
-            data-testid={`${testId}-clear`}
-          >
-            <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-            Hapus URL
-          </Button>
-        ) : null}
-      </div>
-    </div>
-  );
+  const rowProps = { form, setForm, onSave: save, onClear: clearOne, busy: saving || loading };
 
   return (
     <section className="als-card p-5 sm:p-6" data-testid="admin-app-store-links">
@@ -137,19 +141,21 @@ export const AppStoreLinksPanel = () => {
       </p>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Row
+        <StoreRow
           title="Google Play Store"
           urlKey="app_playstore_url"
           enabledKey="app_playstore_enabled"
           placeholder="https://play.google.com/store/apps/details?id=..."
           testId="admin-app-playstore"
+          {...rowProps}
         />
-        <Row
+        <StoreRow
           title="Apple App Store"
           urlKey="app_appstore_url"
           enabledKey="app_appstore_enabled"
           placeholder="https://apps.apple.com/id/app/..."
           testId="admin-app-appstore"
+          {...rowProps}
         />
       </div>
     </section>

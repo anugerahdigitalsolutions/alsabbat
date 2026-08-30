@@ -172,7 +172,7 @@ export const PublicFooter = () => {
             ) : null}
           </div>
 
-          {/* Badge aplikasi — tampil hanya bila dikonfigurasi di Admin → Media Sosial. */}
+          {/* Badge aplikasi — tampil hanya bila dikonfigurasi di Admin → Aplikasi Mobile. */}
           {playstoreUrl || appstoreUrl ? (
             <div className="mt-5">
               <p
