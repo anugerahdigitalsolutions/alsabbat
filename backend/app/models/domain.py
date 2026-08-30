@@ -336,6 +336,13 @@ class MatchBase(AppBaseModel):
     card_story_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
     card_story_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
     card_story_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    # Desain visual Kartu Pertandingan — PER MATCH (menggantikan sumber global).
+    card_transparency: Optional[int] = Field(default=None, ge=0, le=100)
+    card_overlay_enabled: Optional[bool] = None
+    card_overlay_color: Optional[str] = Field(default=None, max_length=9)
+    card_overlay_opacity: Optional[int] = Field(default=None, ge=0, le=100)
+    card_logo_zoom: Optional[int] = Field(default=None, ge=60, le=200)
+    card_sponsors_enabled: Optional[bool] = None
     # Kartu Hasil Pertandingan — set background/crop TERPISAH dari Kartu
     # Pertandingan (`card_*` di atas tidak pernah diubah oleh alur kartu hasil).
     result_card_feed_background: Optional[str] = None
@@ -346,6 +353,13 @@ class MatchBase(AppBaseModel):
     result_card_story_focus_x: Optional[int] = Field(default=None, ge=0, le=100)
     result_card_story_focus_y: Optional[int] = Field(default=None, ge=0, le=100)
     result_card_story_zoom: Optional[int] = Field(default=None, ge=100, le=250)
+    # Desain visual Kartu Hasil — PER MATCH & independen dari `card_*`.
+    result_card_transparency: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_overlay_enabled: Optional[bool] = None
+    result_card_overlay_color: Optional[str] = Field(default=None, max_length=9)
+    result_card_overlay_opacity: Optional[int] = Field(default=None, ge=0, le=100)
+    result_card_logo_zoom: Optional[int] = Field(default=None, ge=60, le=200)
+    result_card_sponsors_enabled: Optional[bool] = None
     description: Optional[str] = Field(default=None, max_length=4000)
     # Prepared relationship placeholder for the Match Center phase
     result_summary: Optional[str] = Field(default=None, max_length=1000)

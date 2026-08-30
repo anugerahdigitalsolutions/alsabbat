@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image as ImageIcon, Palette, Swords, Trophy } from 'lucide-react';
+import { Image as ImageIcon, Swords, Trophy } from 'lucide-react';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import {
@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from '../../components/ui/dialog';
 import { MatchScoreCardGenerator } from '../../components/public/matchcenter/MatchScoreCardGenerator';
-import { MatchCardDesign } from '../../components/admin/MatchCardDesign';
 import { MatchCardSettings } from '../../components/admin/MatchCardSettings';
 import { MatchResultDialog, needsResult } from '../../components/admin/MatchResultDialog';
 import { ResourceManager } from '../../components/admin/ResourceManager';
@@ -29,7 +28,6 @@ export default function AdminMatchesPage() {
   // Pencetak gol Kartu Hasil: dibaca dari Match Events existing (tanpa API baru).
   const [cardEvents, setCardEvents] = useState([]);
   const [cardPlayers, setCardPlayers] = useState({});
-  const [designOpen, setDesignOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [pending, setPending] = useState([]);
   const [listKey, setListKey] = useState(0);
@@ -90,30 +88,18 @@ export default function AdminMatchesPage() {
   }, [loadPending]);
 
   const extraActions = useMemo(
-    () => (
-      <>
-        {pending.length ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setResultOpen(true)}
-            data-testid="admin-matches-result-button"
-          >
-            <Trophy className="mr-2 h-3.5 w-3.5" />
-            Hasil Pertandingan ({pending.length})
-          </Button>
-        ) : null}
+    () =>
+      pending.length ? (
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setDesignOpen(true)}
-          data-testid="admin-matches-design-button"
+          onClick={() => setResultOpen(true)}
+          data-testid="admin-matches-result-button"
         >
-          <Palette className="mr-2 h-3.5 w-3.5" />
-          Desain Kartu Global
+          <Trophy className="mr-2 h-3.5 w-3.5" />
+          Hasil Pertandingan ({pending.length})
         </Button>
-      </>
-    ),
+      ) : null,
     [pending.length]
   );
 
@@ -234,8 +220,8 @@ export default function AdminMatchesPage() {
             <DialogDescription>
               Dua jenis kartu dengan background sendiri-sendiri: Kartu Pertandingan (pengumuman
               jadwal, tanpa skor) dan Kartu Hasil (skor + status SELESAI). Atur Feed 4:5 &amp; Story
-              9:16 masing-masing, lalu preview, unduh, atau bagikan. Overlay, opacity, zoom logo,
-              dan sponsor mengikuti Desain Kartu Global.
+              9:16 masing-masing — termasuk overlay, gradient, opacity, zoom logo, dan sponsor —
+              lalu preview, unduh, atau bagikan. Seluruh pengaturan hanya berlaku untuk kartu ini.
             </DialogDescription>
           </DialogHeader>
           {cardMatch ? (
@@ -268,7 +254,7 @@ export default function AdminMatchesPage() {
                   data-testid="admin-matches-card-result-locked"
                 >
                   Kartu Hasil tersedia setelah hasil pertandingan diisi lewat tombol “Hasil
-                  Pertandingan”. Background Kartu Hasil tetap bisa disiapkan lebih dulu di bawah.
+                  Pertandingan”. Desain Kartu Hasil tetap bisa disiapkan lebih dulu di bawah.
                 </p>
               ) : null}
 
@@ -300,19 +286,7 @@ export default function AdminMatchesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Desain kartu global (overlay, opacity, zoom logo, sponsor, background default) */}
-      <Dialog open={designOpen} onOpenChange={setDesignOpen}>
-        <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto bg-white" data-testid="admin-matches-design-dialog">
-          <DialogHeader>
-            <DialogTitle className="font-display">Desain Kartu Pertandingan (Global)</DialogTitle>
-            <DialogDescription>
-              Pengaturan ini berlaku untuk semua kartu pertandingan yang tidak memiliki background
-              khusus.
-            </DialogDescription>
-          </DialogHeader>
-          <MatchCardDesign />
-        </DialogContent>
-      </Dialog>
+      {/* Desain Kartu Global disembunyikan: seluruh desain kartu kini per Match. */}
 
       <MatchResultDialog
         open={resultOpen}

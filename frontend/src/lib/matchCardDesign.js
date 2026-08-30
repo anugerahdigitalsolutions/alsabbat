@@ -27,7 +27,7 @@ export const MATCH_CARD_DEFAULTS = {
 
 /** Batas zoom logo — dijaga agar logo selalu utuh di dalam containernya. */
 export const LOGO_ZOOM_MIN = 60;
-export const LOGO_ZOOM_MAX = 130;
+export const LOGO_ZOOM_MAX = 140;
 
 export const clampTransparency = (value) => {
   const num = Number(value);

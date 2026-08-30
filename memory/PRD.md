@@ -1251,3 +1251,28 @@ Frontend only (tanpa backend/API/DB/auth/Admin).
 - SOLUSI MINIMAL: `components/public/gallery/MediaLightbox.js` dirender lewat `createPortal(..., document.body)` (3 baris: import + wrap return). Semua style, tombol close/prev/next/download/share, keyboard shortcut, dan lock scroll body tetap sama. Karena satu komponen ini dipakai GalleryDetailPage, DriveFolderBrowser, MatchAlbumCarousel, dan MatchGallerySection, keempat pemakaian ikut terperbaiki. Tidak menyentuh Google Drive, Media Storage, schema, .env, Nginx, auth, RBAC.
 - Validasi (tanpa Testing Agent; fixture `scripts/gallery_lightbox_fixture.py` setup/teardown): bug direproduksi dulu (overlay `x=260,y=94`, `parentIsBody=false`, ikut scroll) → setelah fix: `parentIsBody=true`, overlay `0,0` 1920×1080 = viewport, offset center gambar dx=0, tetap `0,0` setelah `scrollTo(0,1500)`, next/prev berpindah foto (1/2 ↔ 2/2), close bekerja & `body.overflow` kembali normal, viewport 900×600 tetap `0,0` dengan dx=0, 0 console error. `yarn build` sukses (hanya warning eslint lama). Data uji (album, 2 media, akun Baraya + sesi/OTP, pemain, tim) sudah dibersihkan → media/albums/players/teams/customers = 0.
 - Catatan: `PersonPhotoGallery.js` punya lightbox inline sendiri dengan pola sama (potensi bug serupa) — DI LUAR SCOPE permintaan user, belum diubah.
+
+## Kartu Pertandingan — desain 100% PER MATCH (30 Jun 2026)
+Keputusan user: Desain Kartu Global TIDAK lagi menjadi sumber desain kartu; Kartu Hasil TIDAK boleh fallback ke `card_*`.
+- Field BARU per match (additive, optional, default null → dipakai default aman):
+  `card_transparency`, `card_overlay_enabled`, `card_overlay_color`, `card_overlay_opacity`, `card_logo_zoom`,
+  `card_sponsors_enabled` + pasangan `result_card_*` yang identik (`backend/app/models/domain.py`).
+  Field lama tetap: `card_/result_card_{feed,story}_{background,focus_x,focus_y,zoom}`.
+- `MatchScoreCardGenerator.js`: hook global `useMatchCardDesign` TIDAK dipakai lagi. Semua nilai dibaca dari
+  `match[<prefix>_<key>]` dengan prefix `card` / `result_card` (+ `designOverride` hanya untuk nilai preview yang
+  belum disimpan). Tidak ada fallback lintas jenis kartu maupun ke site_content. Default aman: transparansi 35,
+  overlay navy 55% aktif, logo zoom 100, sponsor tampil.
+- `MatchCardSettings.js`: satu tombol "Simpan Desain" menyimpan SEMUA (background feed/story, focus X/Y, zoom bg,
+  transparansi gradient, overlay on/off + warna + opacity, zoom logo, toggle sponsor). Tombol kedua kini
+  "Kembalikan Default". Status logo lawan ditampilkan (terpasang / belum diunggah).
+- `AdminMatchesPage.js`: tombol + dialog "Desain Kartu Global" DIHAPUS dari UI (file `MatchCardDesign.js` dan seluruh
+  key site_content `match.card.*` dibiarkan utuh — tidak ada penghapusan data).
+- `lib/matchCardDesign.js`: LOGO_ZOOM_MAX 130 → 140 (batas nyata `drawCrest` agar logo tetap utuh).
+- Sponsor: master Sponsors existing (`GET /api/sponsors?status=ACTIVE`), hanya sponsor ber-logo digambar; per match
+  hanya ada toggle tampil/tidak (tidak ada sistem sponsor baru).
+- Validasi: `python scripts/match_card_design_verify.py <base_url>` → 42/42 lolos (persist, Match A vs B independen,
+  result_card_* independen dari card_*, relations membawa semua field). UI: nilai per-match muncul benar di dialog,
+  canvas berbeda antar match & antar rasio, tab Kartu Hasil menampilkan nilainya sendiri (bg kosong = tidak mewarisi),
+  Media Library → cropper tampil (blob, 1080px) & bg terpasang, simpan → refresh → semua nilai tetap
+  (125%/37%/64%/18% + background), 0 console error, `yarn build` sukses 315.06 kB (-2.12 kB). Data uji dihapus
+  (matches/teams/media = 0).

@@ -6,8 +6,22 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { MediaPicker } from '../shared/MediaPicker';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
+import {
+  MATCH_CARD_DEFAULTS,
+  MATCH_CARD_DEFAULT_TRANSPARENCY,
+  LOGO_ZOOM_MIN,
+  LOGO_ZOOM_MAX,
+} from '../../lib/matchCardDesign';
 
 const DEFAULTS = { focus_x: 50, focus_y: 50, zoom: 100 };
+const LOOK_DEFAULTS = {
+  transparency: MATCH_CARD_DEFAULT_TRANSPARENCY,
+  overlay_enabled: MATCH_CARD_DEFAULTS.overlayEnabled,
+  overlay_color: MATCH_CARD_DEFAULTS.overlayColor,
+  overlay_opacity: MATCH_CARD_DEFAULTS.overlayOpacity,
+  logo_zoom: MATCH_CARD_DEFAULTS.logoZoom,
+  sponsors_enabled: true,
+};
 
 const num = (value, fallback) => {
   if (value === null || value === undefined || value === '') return fallback;
@@ -57,6 +71,7 @@ export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', t
   const [storyBackground, setStoryBackground] = useState('');
   const [feedCrop, setFeedCrop] = useState(DEFAULTS);
   const [storyCrop, setStoryCrop] = useState(DEFAULTS);
+  const [look, setLook] = useState(LOOK_DEFAULTS);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -73,6 +88,20 @@ export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', t
       focus_y: num(match[`${prefix}_story_focus_y`], DEFAULTS.focus_y),
       zoom: num(match[`${prefix}_story_zoom`], DEFAULTS.zoom),
     });
+    setLook({
+      transparency: num(match[`${prefix}_transparency`], LOOK_DEFAULTS.transparency),
+      overlay_enabled:
+        match[`${prefix}_overlay_enabled`] === undefined || match[`${prefix}_overlay_enabled`] === null
+          ? LOOK_DEFAULTS.overlay_enabled
+          : Boolean(match[`${prefix}_overlay_enabled`]),
+      overlay_color: match[`${prefix}_overlay_color`] || LOOK_DEFAULTS.overlay_color,
+      overlay_opacity: num(match[`${prefix}_overlay_opacity`], LOOK_DEFAULTS.overlay_opacity),
+      logo_zoom: num(match[`${prefix}_logo_zoom`], LOOK_DEFAULTS.logo_zoom),
+      sponsors_enabled:
+        match[`${prefix}_sponsors_enabled`] === undefined || match[`${prefix}_sponsors_enabled`] === null
+          ? LOOK_DEFAULTS.sponsors_enabled
+          : Boolean(match[`${prefix}_sponsors_enabled`]),
+    });
   }, [match, prefix]);
 
   // Preview kartu (renderer publik) mengikuti perubahan sebelum disimpan.
@@ -81,7 +110,7 @@ export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', t
   };
 
   // Hanya field milik kartu yang sedang diatur yang dikirim → kartu lainnya aman.
-  const payloadFrom = (feedBg, storyBg, feed, story) => ({
+  const payloadFrom = (feedBg, storyBg, feed, story, visual) => ({
     [field('feed', 'background')]: feedBg || '',
     [field('feed', 'focus_x')]: feed.focus_x,
     [field('feed', 'focus_y')]: feed.focus_y,
@@ -90,13 +119,27 @@ export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', t
     [field('story', 'focus_x')]: story.focus_x,
     [field('story', 'focus_y')]: story.focus_y,
     [field('story', 'zoom')]: story.zoom,
+    [`${prefix}_transparency`]: visual.transparency,
+    [`${prefix}_overlay_enabled`]: visual.overlay_enabled,
+    [`${prefix}_overlay_color`]: visual.overlay_color,
+    [`${prefix}_overlay_opacity`]: visual.overlay_opacity,
+    [`${prefix}_logo_zoom`]: visual.logo_zoom,
+    [`${prefix}_sponsors_enabled`]: visual.sponsors_enabled,
   });
+
+  // Semua kontrol memakai satu tombol simpan ini (tidak ada penyimpanan terpisah).
+  const setVisual = (patch) => {
+    setLook((prev) => ({ ...prev, ...patch }));
+    push(
+      Object.fromEntries(Object.entries(patch).map(([key, value]) => [`${prefix}_${key}`, value])),
+    );
+  };
 
   const save = async () => {
     if (!match?.id) return;
     setSaving(true);
     try {
-      const payload = payloadFrom(feedBackground, storyBackground, feedCrop, storyCrop);
+      const payload = payloadFrom(feedBackground, storyBackground, feedCrop, storyCrop, look);
       const { data } = await api.patch(`/matches/${match.id}`, payload);
       toast.success(
         prefix === 'result_card'
@@ -116,7 +159,8 @@ export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', t
     setStoryBackground('');
     setFeedCrop(DEFAULTS);
     setStoryCrop(DEFAULTS);
-    push(payloadFrom('', '', DEFAULTS, DEFAULTS));
+    setLook(LOOK_DEFAULTS);
+    push(payloadFrom('', '', DEFAULTS, DEFAULTS, LOOK_DEFAULTS));
   };
 
   if (!match) return null;
@@ -127,9 +171,9 @@ export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', t
         <div>
           <p className="als-section-label">{title || 'Desain Kartu Pertandingan Ini'}</p>
           <p className="mt-1 text-xs" style={{ color: 'var(--muted-fg)' }}>
-            Background Feed dan Story boleh berbeda dan hanya berlaku untuk kartu ini. Kosongkan
-            untuk memakai background global; overlay, opacity, zoom logo, dan sponsor mengikuti
-            Desain Kartu Global.
+            Semua pengaturan visual di bawah hanya berlaku untuk kartu ini (Feed 4:5 &amp; Story 9:16
+            terpisah) dan tersimpan bersama satu tombol “Simpan Desain”. Tidak ada lagi Desain Kartu
+            Global.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -141,7 +185,7 @@ export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', t
             data-testid={`admin-match-card-settings-${prefix}-reset`}
           >
             <RotateCcw className="mr-2 h-3.5 w-3.5" />
-            Pakai Global
+            Kembalikan Default
           </Button>
           <Button
             size="sm"
@@ -254,6 +298,95 @@ export const MatchCardSettings = ({ match, onChange, onSaved, prefix = 'card', t
               push({ [field('story', 'zoom')]: v });
             }}
           />
+        </div>
+      </div>
+
+      {/* Tampilan kartu ini: overlay, gradient, opacity, zoom logo, sponsor — PER MATCH */}
+      <div
+        className="mt-5 rounded-[var(--radius-sm)] p-4"
+        style={{ backgroundColor: 'rgba(1,40,145,0.04)' }}
+        data-testid={`admin-match-card-settings-${prefix}-look`}
+      >
+        <p className="als-section-label">Tampilan Kartu Ini</p>
+        <div className="mt-3 grid gap-5 lg:grid-cols-2">
+          <RangeRow
+            id={`match-card-${prefix}-transparency`}
+            label="Transparansi Gradient Warna Klub"
+            value={look.transparency}
+            min={0}
+            max={100}
+            testId={`admin-match-card-settings-${prefix}-transparency`}
+            hint="0% = warna AL SABBAT paling kuat · 100% = foto paling terlihat (berlaku saat memakai desain default tanpa background custom)."
+            onChange={(v) => setVisual({ transparency: v })}
+          />
+          <RangeRow
+            id={`match-card-${prefix}-logo-zoom`}
+            label="Zoom Logo / Crest"
+            value={look.logo_zoom}
+            min={LOGO_ZOOM_MIN}
+            max={LOGO_ZOOM_MAX}
+            testId={`admin-match-card-settings-${prefix}-logo-zoom`}
+            hint="Berlaku untuk logo AL SABBAT dan logo lawan. Logo selalu utuh (contain) dan tidak pernah terpotong."
+            onChange={(v) => setVisual({ logo_zoom: v })}
+          />
+        </div>
+
+        <div className="mt-4 grid gap-5 lg:grid-cols-2">
+          <div>
+            <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
+              <input
+                type="checkbox"
+                checked={look.overlay_enabled}
+                onChange={(e) => setVisual({ overlay_enabled: e.target.checked })}
+                data-testid={`admin-match-card-settings-${prefix}-overlay-enabled`}
+              />
+              Overlay {look.overlay_enabled ? 'aktif' : 'nonaktif'}
+            </label>
+            <div className="mt-3 flex items-center gap-3">
+              <input
+                type="color"
+                value={look.overlay_color}
+                onChange={(e) => setVisual({ overlay_color: e.target.value })}
+                disabled={!look.overlay_enabled}
+                className="h-9 w-14 cursor-pointer rounded border"
+                data-testid={`admin-match-card-settings-${prefix}-overlay-color`}
+              />
+              <span className="font-mono text-xs uppercase" style={{ color: 'var(--muted-fg)' }}>
+                {look.overlay_color}
+              </span>
+            </div>
+          </div>
+          <RangeRow
+            id={`match-card-${prefix}-overlay-opacity`}
+            label="Opacity Overlay"
+            value={look.overlay_opacity}
+            min={0}
+            max={100}
+            testId={`admin-match-card-settings-${prefix}-overlay-opacity`}
+            onChange={(v) => setVisual({ overlay_opacity: v })}
+          />
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
+            <input
+              type="checkbox"
+              checked={look.sponsors_enabled}
+              onChange={(e) => setVisual({ sponsors_enabled: e.target.checked })}
+              data-testid={`admin-match-card-settings-${prefix}-sponsors-enabled`}
+            />
+            Tampilkan band sponsor pada kartu ini
+          </label>
+          <span className="text-[11px]" style={{ color: 'var(--muted-fg)' }}>
+            Logo lawan:{' '}
+            <span
+              className="font-semibold"
+              style={{ color: match?.opponent?.logo ? 'var(--club-secondary)' : '#991B1B' }}
+              data-testid={`admin-match-card-settings-${prefix}-opponent-logo-status`}
+            >
+              {match?.opponent?.logo ? 'terpasang & dipakai kartu' : 'belum diunggah (kartu memakai inisial)'}
+            </span>
+          </span>
         </div>
       </div>
     </div>

@@ -4,7 +4,6 @@ import { Download, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../ui/button';
 import {
-  useMatchCardDesign,
   MATCH_CARD_DEFAULT_TRANSPARENCY,
   MATCH_CARD_DEFAULTS,
   clampTransparency,
@@ -126,7 +125,7 @@ const drawCrest = (ctx, img, cx, cy, size, label, zoomPercent = 100) => {
     // Zoom admin benar-benar mengubah besar logo: basis padding dibuat lebih kecil
     // sehingga zoom maksimum tetap di bawah batas aman (logo tidak pernah terpotong)
     // dan aspect ratio asli selalu dipertahankan.
-    const zoom = Math.min(130, Math.max(60, Number(zoomPercent) || 100)) / 100;
+    const zoom = Math.min(140, Math.max(60, Number(zoomPercent) || 100)) / 100;
     const base = size * 0.68;
     const safe = size * 0.96; // batas mutlak: logo wajib tetap di dalam container
     const scale = Math.min(
@@ -229,48 +228,48 @@ export const MatchScoreCardGenerator = ({
   kind = 'auto',
 }) => {
   const canvasRef = useRef(null);
-  const design = useMatchCardDesign();
   const sponsorList = useResourceList('/sponsors', { status: 'ACTIVE', limit: 40 }, { enabled: sponsors === null });
-  const activeSponsors = sponsors === null ? sponsorList.items : sponsors;
-  const sponsorSignature = JSON.stringify(
-    (activeSponsors || []).map((s) => [s.id || s.name, s.logo || '']),
-  );
   const [ratio, setRatio] = useState(fixedRatio ? RATIOS.find((r) => r.id === fixedRatio) || RATIOS[0] : RATIOS[0]);
   const [rendering, setRendering] = useState(true);
-  const transparency = clampTransparency(
-    transparencyOverride === null || transparencyOverride === undefined
-      ? design.loading
-        ? MATCH_CARD_DEFAULT_TRANSPARENCY
-        : design.transparency
-      : transparencyOverride,
-  );
 
-  // Admin preview boleh mengirim nilai yang belum tersimpan lewat `designOverride`.
-  const pick = (key) =>
-    designOverride && designOverride[key] !== undefined && designOverride[key] !== null
-      ? designOverride[key]
-      : design[key];
   const isStoryRatio = ratio.id === 'story';
   const scoreAvailable = match?.home_score !== null && match?.home_score !== undefined;
   const cardKind = kind === 'auto' ? (scoreAvailable ? 'result' : 'fixture') : kind;
   const isResultCard = cardKind === 'result';
   // Kartu Pertandingan tidak pernah menampilkan skor; skor hanya di Kartu Hasil.
   const showScore = isResultCard && scoreAvailable;
-  // Background & crop PER MATCH (prioritas) → fallback ke pengaturan global.
-  // Set field `card_*` (Kartu Pertandingan) dan `result_card_*` (Kartu Hasil)
-  // sepenuhnya terpisah, termasuk antara Feed dan Story.
+
+  // ------------------------------------------------------------------------
+  // SUMBER DESAIN = MATCH INI SAJA (tidak ada lagi pembacaan Desain Global).
+  // `card_*` untuk Kartu Pertandingan, `result_card_*` untuk Kartu Hasil —
+  // dua set field yang sepenuhnya independen. Bila kosong dipakai default aman.
+  // `designOverride` hanya dipakai preview admin untuk nilai yang belum disimpan.
+  // ------------------------------------------------------------------------
   const bgPrefix = isResultCard ? 'result_card' : 'card';
   const ratioKey = isStoryRatio ? 'story' : 'feed';
-  const matchBackground = match?.[`${bgPrefix}_${ratioKey}_background`];
-  const globalBackground = isResultCard
-    ? (isStoryRatio
-        ? pick('resultStoryBackground') || pick('storyBackground')
-        : pick('resultFeedBackground') || pick('feedBackground'))
-    : (isStoryRatio ? pick('storyBackground') : pick('feedBackground'));
-  const customBackground = matchBackground || globalBackground;
-  const bgFocusX = clampPercent(match?.[`${bgPrefix}_${ratioKey}_focus_x`], 50);
-  const bgFocusY = clampPercent(match?.[`${bgPrefix}_${ratioKey}_focus_y`], 50);
-  const bgZoom = clampPercent(match?.[`${bgPrefix}_${ratioKey}_zoom`], 100, 100, 250);
+  const pick = (key) =>
+    designOverride && designOverride[key] !== undefined && designOverride[key] !== null
+      ? designOverride[key]
+      : match?.[`${bgPrefix}_${key}`];
+
+  const customBackground = pick(`${ratioKey}_background`) || '';
+  const bgFocusX = clampPercent(pick(`${ratioKey}_focus_x`), 50);
+  const bgFocusY = clampPercent(pick(`${ratioKey}_focus_y`), 50);
+  const bgZoom = clampPercent(pick(`${ratioKey}_zoom`), 100, 100, 250);
+  const transparency = clampTransparency(
+    transparencyOverride === null || transparencyOverride === undefined
+      ? pick('transparency') ?? MATCH_CARD_DEFAULT_TRANSPARENCY
+      : transparencyOverride,
+  );
+  const overlayEnabled = pick('overlay_enabled') !== false;
+  const overlayColor = pick('overlay_color') || MATCH_CARD_DEFAULTS.overlayColor;
+  const overlayOpacity = clampPercent(pick('overlay_opacity'), MATCH_CARD_DEFAULTS.overlayOpacity);
+  const logoZoom = clampLogoZoom(pick('logo_zoom'));
+  const sponsorsEnabled = pick('sponsors_enabled') !== false;
+  const activeSponsors = sponsorsEnabled ? (sponsors === null ? sponsorList.items : sponsors) : [];
+  const sponsorSignature = JSON.stringify(
+    (activeSponsors || []).map((s) => [s.id || s.name, s.logo || '']),
+  );
 
   // Pencetak gol AL SABBAT dari Match Events existing (nama dari data pemain).
   // Hanya untuk Kartu Hasil; dikelompokkan per pemain agar tetap rapi.
@@ -306,10 +305,6 @@ export const MatchScoreCardGenerator = ({
     if (lines.length <= maxLines) return lines;
     return [...lines.slice(0, maxLines - 1), `${GOAL_MARK} +${lines.length - (maxLines - 1)} pencetak gol lainnya`];
   }, [events, playersById, isResultCard, showScore, isStoryRatio]);
-  const overlayEnabled = pick('overlayEnabled') !== false;
-  const overlayColor = pick('overlayColor') || MATCH_CARD_DEFAULTS.overlayColor;
-  const overlayOpacity = clampPercent(pick('overlayOpacity'), MATCH_CARD_DEFAULTS.overlayOpacity);
-  const logoZoom = clampLogoZoom(pick('logoZoom'));
 
   const render = useCallback(async () => {
     const canvas = canvasRef.current;
@@ -605,12 +600,9 @@ export const MatchScoreCardGenerator = ({
   }, [fixedRatio]);
 
   useEffect(() => {
-    // Tunggu pengaturan desain selesai dimuat agar overlay/background tidak
-    // pernah dirender dengan nilai default sementara (penyebab overlay "kadang tidak muncul").
-    if (design.loading && !designOverride) return;
     render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [render, design.loading]);
+  }, [render]);
 
   const fileName = () => {
     const opponent = (match?.opponent?.name || 'lawan').toLowerCase().replace(/[^a-z0-9]+/g, '-');
