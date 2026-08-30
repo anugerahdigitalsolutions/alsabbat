@@ -65,23 +65,15 @@ async def player_stats_leaderboard(
     season_list = [_season_brief(s) for s in season_items]
     season = await _resolve_season(season_id)
 
-    empty = {
-        "season": _season_brief(season),
-        "seasons": season_list,
-        "items": [],
-        "events_available": False,
-        "matches": 0,
-    }
-    if not season:
-        return empty
-
-    match_items, _ = await matches.list({"season_id": season["id"]}, limit=500)
-    match_ids = [m["id"] for m in match_items if m.get("id")]
-    if not match_ids:
-        return empty
-
-    lineup_items, _ = await lineups.list({"match_id": {"$in": match_ids}}, limit=2000)
-    event_items, _ = await events.list({"match_id": {"$in": match_ids}}, limit=2000)
+    match_ids: List[str] = []
+    lineup_items: List[Dict[str, Any]] = []
+    event_items: List[Dict[str, Any]] = []
+    if season:
+        match_items, _ = await matches.list({"season_id": season["id"]}, limit=500)
+        match_ids = [m["id"] for m in match_items if m.get("id")]
+    if match_ids:
+        lineup_items, _ = await lineups.list({"match_id": {"$in": match_ids}}, limit=2000)
+        event_items, _ = await events.list({"match_id": {"$in": match_ids}}, limit=2000)
 
     buckets: Dict[str, Dict[str, int]] = {}
 
@@ -115,7 +107,12 @@ async def player_stats_leaderboard(
         if related and event_type in GOAL_TYPES:
             bucket(related)["assists"] += 1
 
-    player_ids = list(buckets.keys())
+    # Baseline historis (nilai awal sebelum sistem ini) ikut dihitung agar pemain
+    # dengan sejarah gol/assist tetap muncul walau belum ada Match Events.
+    baseline_items, _ = await players.list(
+        {"$or": [{"historical_goals": {"$gt": 0}}, {"historical_assists": {"$gt": 0}}]}, limit=500
+    )
+    player_ids = list(set(buckets.keys()) | {p["id"] for p in baseline_items})
     player_items, _ = (
         await players.list({"id": {"$in": player_ids}}, limit=500) if player_ids else ([], 0)
     )
@@ -123,6 +120,8 @@ async def player_stats_leaderboard(
     items: List[Dict[str, Any]] = []
     for player in player_items:
         stats = buckets.get(player["id"], {})
+        historical_goals = int(player.get("historical_goals") or 0)
+        historical_assists = int(player.get("historical_assists") or 0)
         items.append(
             {
                 "id": player["id"],
@@ -132,11 +131,13 @@ async def player_stats_leaderboard(
                 "photo": player.get("photo"),
                 "jersey_number": player.get("jersey_number"),
                 "position": player.get("position"),
-                "goals": stats.get("goals", 0),
-                "assists": stats.get("assists", 0),
+                "goals": stats.get("goals", 0) + historical_goals,
+                "assists": stats.get("assists", 0) + historical_assists,
                 "appearances": stats.get("appearances", 0),
                 "yellow_cards": stats.get("yellow_cards", 0),
                 "red_cards": stats.get("red_cards", 0),
+                "historical_goals": historical_goals,
+                "historical_assists": historical_assists,
             }
         )
 
@@ -165,6 +166,10 @@ async def player_statistics(
     if not player:
         raise NotFoundError("Player not found")
 
+    historical = {
+        "goals": int(player.get("historical_goals") or 0),
+        "assists": int(player.get("historical_assists") or 0),
+    }
     # Penampilan historis dibaca dari `match_lineups` (data lama, read-only);
     # gol/assist/kartu dari Match Events yang masih aktif diinput admin.
     lineup_items, _ = await lineups.list({"player_id": player_id}, limit=500)
@@ -173,7 +178,7 @@ async def player_statistics(
     # (konvensi yang sama dipakai papan statistik / Top Scorer).
     assist_events, _ = await events.list({"related_player_id": player_id}, limit=1000)
     if not lineup_items and not player_events and not assist_events:
-        return {"player_id": player_id, "available": False, "seasons": []}
+        return {"player_id": player_id, "available": False, "seasons": [], "historical": historical}
 
     match_ids = sorted(
         {item["match_id"] for item in lineup_items if item.get("match_id")}
@@ -270,4 +275,9 @@ async def player_statistics(
     result.sort(key=lambda b: (b.get("season_name") or "", b.get("season_id") or ""), reverse=True)
     if season_id:
         result = [b for b in result if b.get("season_id") == season_id]
-    return {"player_id": player_id, "available": bool(result), "seasons": result}
+    return {
+        "player_id": player_id,
+        "available": bool(result),
+        "seasons": result,
+        "historical": historical,
+    }

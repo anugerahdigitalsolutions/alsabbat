@@ -118,7 +118,15 @@ export default function HomePage() {
 
   const teamStats = useMemo(() => {
     const scored = finished.filter((m) => m.home_score !== null && m.home_score !== undefined);
-    if (!scored.length) return null;
+    // Baseline historis klub (Admin → Club) sebagai nilai awal.
+    const base = {
+      played: Number(club?.historical_played) || 0,
+      wins: Number(club?.historical_wins) || 0,
+      draws: Number(club?.historical_draws) || 0,
+      losses: Number(club?.historical_losses) || 0,
+    };
+    const hasBaseline = base.played || base.wins || base.draws || base.losses;
+    if (!scored.length && !hasBaseline) return null;
     let wins = 0;
     let draws = 0;
     let losses = 0;
@@ -130,8 +138,13 @@ export default function HomePage() {
       else if (own === other) draws += 1;
       else losses += 1;
     });
-    return { played: scored.length, wins, draws, losses };
-  }, [finished]);
+    return {
+      played: scored.length + base.played,
+      wins: wins + base.wins,
+      draws: draws + base.draws,
+      losses: losses + base.losses,
+    };
+  }, [finished, club]);
 
   const socials = useMemo(
     () =>

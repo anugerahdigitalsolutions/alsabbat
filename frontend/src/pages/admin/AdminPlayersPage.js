@@ -60,6 +60,18 @@ export default function AdminPlayersPage() {
         { name: 'height_cm', label: 'Tinggi (cm)', type: 'number' },
         { name: 'weight_kg', label: 'Berat (kg)', type: 'number' },
         {
+          name: 'historical_goals',
+          label: 'Goal Historis',
+          type: 'number',
+          help: 'Nilai awal sebelum sistem ini. Total gol = nilai ini + gol dari Match Events.',
+        },
+        {
+          name: 'historical_assists',
+          label: 'Assist Historis',
+          type: 'number',
+          help: 'Nilai awal sebelum sistem ini. Total assist = nilai ini + assist dari Match Events.',
+        },
+        {
           name: 'photo',
           label: 'Foto Pemain',
           type: 'media',

@@ -1227,3 +1227,16 @@ Frontend only (tanpa backend/API/DB/auth/Admin).
 - Frontend: `AdminSidebar.js` (permission per menu + filter + export `ADMIN_ROUTE_PERMISSIONS`), `AdminShell.js` (guard route → panel "Akses Ditolak", label role baru), `AdminUsersPage.js` (dropdown hanya role selectable, default `MEDIA_CONTENT_ADMIN`).
 - Skema/DB tidak berubah (role hanya string pada dokumen `users`); tidak ada migrasi.
 - Validasi: `python scripts/rbac_roles_verify.py <base_url>` → 24/24 lolos (7 akun uji dibuat lalu DIHAPUS otomatis); legacy `CONTENT_ADMIN` diuji manual (content 404=allowed, /api/users 403) lalu akun dihapus; Super Admin tetap 200 pada /api/users, /api/baraya/admin/list, /api/system/status; UI: sidebar terfilter sesuai role, `/admin/users|matches|orders|system` → "Akses Ditolak", `/admin/content|social` terbuka; `yarn build` sukses (316.74 kB gzip, hanya warning eslint lama). Database bersih: tersisa 1 akun admin (`admin@alsabbat.com`).
+
+## Statistik historis (baseline) pemain & klub (30 Jun 2026)
+- Field baseline BARU (additive, optional, default 0 — tanpa migrasi):
+  - `players`: `historical_goals`, `historical_assists` (`domain.py PlayerBase`)
+  - `clubs`: `historical_played`, `historical_wins`, `historical_draws`, `historical_losses` (`domain.py ClubBase`)
+- Cara penggabungan (sumber data tetap satu: Match/Match Events existing):
+  - `/api/players/stats/leaderboard`: `goals = event_goals + historical_goals`, `assists = event_assists + historical_assists`; pemain dengan baseline > 0 kini ikut tampil walau belum ada Match Events (early-return `empty` diganti alur yang tetap menghitung baseline). Field `historical_goals/assists` juga dikirim agar transparan. Dipakai otomatis oleh Top Scorer & Papan Statistik publik.
+  - `/api/players/{id}/statistics`: statistik PER MUSIM tetap murni dari Match Events (tidak diubah); ditambah blok `historical: {goals, assists}` yang ditampilkan `PlayerSeasonStats.js` sebagai catatan.
+  - Homepage `TeamStatsBlock`: `played/wins/draws/losses = hasil pertandingan FINISHED + baseline klub`; kalau dua-duanya kosong tetap tampil `—` seperti sebelumnya.
+- Admin: field "Goal Historis"/"Assist Historis" pada form Pemain (`AdminPlayersPage.js`) dan "Main/Menang/Seri/Kalah (Historis)" pada form Club (`AdminClubPage.js`) — memakai ResourceManager existing, tanpa halaman admin baru.
+- Statistik existing TIDAK dihapus/diubah: field manual `goals/assists/appearances/yellow_cards/red_cards` pada player tetap ada, perhitungan Match Events, Top Scorer, MatchStatistics, PlayerStatsBoard tetap sama.
+- Validasi: `python scripts/historical_baseline_verify.py <base_url>` → 17/17 lolos (baseline 80 gol + 2 event = 82; 25 assist + 1 event = 26; klub 120/75/15/30 tersimpan; seluruh data uji dihapus dan baseline klub dikembalikan ke 0). UI: Homepage menampilkan 120/75/15/30 saat baseline diisi, form admin memuat field baru dengan nilai tersimpan; `yarn build` sukses (317.15 kB gzip, hanya warning eslint lama).
+- Catatan lingkungan: dev-server webpack sempat tidak memuat perubahan `HomePage.js` → perlu `sudo supervisorctl restart frontend`.

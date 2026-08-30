@@ -75,6 +75,11 @@ class ClubBase(AppBaseModel):
     app_playstore_enabled: bool = False
     app_appstore_url: Optional[str] = Field(default=None, max_length=500)
     app_appstore_enabled: bool = False
+    # Baseline statistik historis klub (nilai awal; total = baseline + pertandingan baru)
+    historical_played: int = Field(default=0, ge=0, le=99999)
+    historical_wins: int = Field(default=0, ge=0, le=99999)
+    historical_draws: int = Field(default=0, ge=0, le=99999)
+    historical_losses: int = Field(default=0, ge=0, le=99999)
     status: EntityStatus = EntityStatus.ACTIVE
 
     @field_validator("app_playstore_url", "app_appstore_url", mode="before")
@@ -193,6 +198,9 @@ class PlayerBase(AppBaseModel):
     appearances: int = Field(default=0, ge=0, le=9999)
     yellow_cards: int = Field(default=0, ge=0, le=9999)
     red_cards: int = Field(default=0, ge=0, le=9999)
+    # Baseline historis (nilai awal sebelum sistem ini; total = baseline + Match Events)
+    historical_goals: int = Field(default=0, ge=0, le=9999)
+    historical_assists: int = Field(default=0, ge=0, le=9999)
     social_media: SocialLinks = Field(default_factory=SocialLinks)
     gallery_images: List[str] = Field(default_factory=list, max_length=3)
 
