@@ -47,6 +47,7 @@ from app.models.enums import (
     StorageProvider,
     TeamCategory,
 )
+from app.models.staff_structure import normalise_staff_structure
 
 HEX_COLOR = r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
 
@@ -220,20 +221,42 @@ class StaffBase(AppBaseModel):
     team_id: str
     name: str = Field(min_length=2, max_length=160)
     photo: Optional[str] = None
-    role: StaffRole = StaffRole.HEAD_COACH
+    # `role` hanya untuk kompatibilitas data lama; entry baru diturunkan dari
+    # Jabatan (lihat normalise_staff_structure), default OTHER bila tidak diisi.
+    role: StaffRole = StaffRole.OTHER
     role_label: Optional[str] = Field(default=None, max_length=120)
     bio: Optional[str] = Field(default=None, max_length=4000)
     social_media: SocialLinks = Field(default_factory=SocialLinks)
     status: EntityStatus = EntityStatus.ACTIVE
     gallery_images: List[str] = Field(default_factory=list, max_length=3)
+    # Staff multi-entry (additive, semua opsional → data Staff lama tetap valid):
+    # satu akun/pemain dapat memiliki banyak Staff Entry dengan Bagian, Jabatan,
+    # Foto dan status masing-masing. `player_id`/`customer_id` hanya referensi —
+    # profil Pemain & akun tidak pernah diubah/diduplikasi dari sini.
+    player_id: Optional[str] = Field(default=None, max_length=64)
+    customer_id: Optional[str] = Field(default=None, max_length=64)
+    department: Optional[str] = Field(default=None, max_length=120)
+    position_title: Optional[str] = Field(default=None, max_length=120)
 
     @field_validator("gallery_images", mode="before")
     @classmethod
     def _staff_gallery(cls, value):
         return normalise_gallery(value)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _staff_structure(cls, data):
+        return normalise_staff_structure(data)
 
-StaffUpdate = make_update_model("StaffUpdate", StaffBase, GALLERY_VALIDATORS)
+
+STAFF_VALIDATORS = {
+    **GALLERY_VALIDATORS,
+    "_staff_structure": model_validator(mode="before")(
+        classmethod(lambda cls, data: normalise_staff_structure(data))
+    ),
+}
+
+StaffUpdate = make_update_model("StaffUpdate", StaffBase, STAFF_VALIDATORS)
 
 
 class Staff(StaffBase, DBModel):

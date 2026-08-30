@@ -355,3 +355,20 @@ agent_communication:
       env hygiene (no duplicate keys, LOCAL media, isolated staging DB), committed env
       templates with no real secrets, LOCAL upload/serve round-trip, and the existing
       public routes still returning 200.
+
+    -agent: "main"
+    -message: |
+      STAFF MULTI-ENTRY (Bagian, Jabatan & Foto per Staff Entry) — SELESAI.
+      Testing Agent tetap TIDAK dipakai (dilarang user). Verifikasi memakai skrip
+      self-cleaning + browser screenshot:
+        python scripts/staff_multientry_verify.py  -> 73/73 PASS (0 FAIL)
+        UI (Playwright screenshot): Admin -> Staff (pilih pemain terdaftar, Bagian,
+        Jabatan dependent, upload foto asli, simpan 2 entry untuk pemain yang sama),
+        /akun/pengajuan (3 pengajuan Staf dari 1 akun), Admin -> Baraya AL SABBAT
+        (approve 1 pengajuan -> Staff Entry baru otomatis, 2 lainnya tetap PENDING),
+        publik /teams & /teams/{id} (3 kartu staf terpisah + Bagian/Jabatan).
+      Perubahan backend bersifat additive (field opsional pada StaffBase:
+      player_id, customer_id, department, position_title) + master Bagian/Jabatan di
+      app/models/staff_structure.py yang diekspos lewat /api/meta. Tidak ada migrasi,
+      tidak ada perubahan .env/Nginx/deployment/auth/media storage.
+      Semua fixture uji dihapus (staff/players/teams/customers/media kembali 0).

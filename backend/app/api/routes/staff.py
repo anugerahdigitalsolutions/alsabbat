@@ -10,8 +10,8 @@ router = build_crud_router(
     update_model=StaffUpdate,
     write_permission="staff:write",
     public_read=True,
-    search_fields=("name", "role_label"),
-    filter_fields=("team_id", "role", "status"),
+    search_fields=("name", "role_label", "position_title", "department"),
+    filter_fields=("team_id", "role", "status", "department", "player_id", "customer_id"),
     default_sort=(("created_at", 1),),
     tags=["staff"],
 )

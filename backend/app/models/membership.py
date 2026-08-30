@@ -14,6 +14,7 @@ from pydantic import EmailStr, Field, field_validator, model_validator
 from app.models.base import AppBaseModel, DBModel
 from app.models.customer import _validate_password
 from app.models.enums import PlayerPosition, StaffRole
+from app.models.staff_structure import normalise_staff_structure
 
 GALLERY_ROLES = {"PEMAIN", "STAFF"}
 
@@ -110,6 +111,14 @@ class StaffApplicationData(AppBaseModel):
     bio: Optional[str] = Field(default=None, max_length=4000)
     photo: Optional[str] = Field(default=None, max_length=800)
     instagram: Optional[str] = Field(default=None, max_length=200)
+    # Multi-entry: setiap pengajuan Staf punya Bagian, Jabatan dan Foto sendiri.
+    department: Optional[str] = Field(default=None, max_length=120)
+    position_title: Optional[str] = Field(default=None, max_length=120)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _structure(cls, data):
+        return normalise_staff_structure(data)
 
 
 class ApplicationCreate(AppBaseModel):

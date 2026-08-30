@@ -9,6 +9,7 @@ import { PersonPhotoGallery } from '../../components/public/PersonPhotoGallery';
 import { personPhotos } from '../../lib/personPhotos';
 import { Badge } from '../../components/ui/badge';
 import { usePageSeo } from '../../hooks/usePageSeo';
+import { staffPositionLabel } from '../../lib/staffStructure';
 
 export default function StaffDetailPage() {
   const { staffId } = useParams();
@@ -127,8 +128,13 @@ export default function StaffDetailPage() {
                 data-testid="staff-hero-meta"
               >
                 <span className="font-display font-semibold uppercase tracking-[0.16em]">
-                  {member?.role_label || member?.role || 'Staf'}
+                  {staffPositionLabel(member)}
                 </span>
+                {member?.department ? (
+                  <span className="font-display font-semibold uppercase tracking-[0.16em]">
+                    {member.department}
+                  </span>
+                ) : null}
                 {team ? (
                   <Link
                     to={`/teams/${team.id}`}

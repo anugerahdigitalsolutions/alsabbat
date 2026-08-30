@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from '../ui/textarea';
 import { EmptyState } from '../shared/EmptyState';
 import { LoadingState } from '../shared/LoadingState';
+import { useClub } from '../../context/ClubContext';
+import { departmentOptions, positionOptions } from '../../lib/staffStructure';
 
 const STATUS_STYLE = {
   PENDING: { label: 'Menunggu', bg: 'rgba(252,207,43,0.22)' },
@@ -22,13 +24,8 @@ const TYPE_LABEL = { PEMAIN: 'Pemain', STAFF: 'Staf' };
 // Sama dengan pilihan Admin → Pemain (PlayerPosition).
 const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
-const STAFF_ROLES = ['HEAD_COACH', 'ASSISTANT_COACH', 'GOALKEEPER_COACH', 'FITNESS_COACH',
-  'TEAM_MANAGER', 'MEDICAL_STAFF', 'ANALYST', 'KIT_MANAGER', 'OTHER'];
-
 const STAFF_FIELDS = [
   { key: 'name', label: 'Nama' },
-  { key: 'role', label: 'Role Staf', type: 'select' },
-  { key: 'role_label', label: 'Label Role' },
   { key: 'instagram', label: 'Instagram' },
 ];
 
@@ -55,6 +52,8 @@ const formatDate = (value) => {
 
 /** Fase 3 — Admin: tinjau pengajuan Pemain/Staf dan tautkan ke record existing. */
 export const MemberApplications = ({ onDecided }) => {
+  const { meta } = useClub();
+  const departments = departmentOptions(meta);
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState('PENDING');
   const [loading, setLoading] = useState(true);
@@ -112,9 +111,9 @@ export const MemberApplications = ({ onDecided }) => {
     try {
       const isStaff = dialog.type === 'STAFF';
       const payload = isStaff ? { staff_data: { ...staffData } } : { player_data: { ...playerData } };
-      if (payload.player_data.jersey_number === '') payload.player_data.jersey_number = null;
-      if (payload.player_data.height_cm === '') payload.player_data.height_cm = null;
-      if (payload.player_data.weight_kg === '') payload.player_data.weight_kg = null;
+      if (payload.player_data?.jersey_number === '') payload.player_data.jersey_number = null;
+      if (payload.player_data?.height_cm === '') payload.player_data.height_cm = null;
+      if (payload.player_data?.weight_kg === '') payload.player_data.weight_kg = null;
       const { data } = await api.patch(`/baraya/admin/applications/${dialog.id}/data`, payload);
       setDialog((d) => ({ ...d, ...data }));
       if (data.staff_data) setStaffData({ ...data.staff_data });
@@ -134,7 +133,7 @@ export const MemberApplications = ({ onDecided }) => {
       const payload = { decision, note: note || null };
       if (decision === 'APPROVED') {
         if (dialog.type === 'PEMAIN') payload.player_id = linkId;
-        else payload.staff_id = linkId;
+        else payload.staff_id = linkId || null;
       }
       await api.patch(`/baraya/admin/applications/${dialog.id}`, payload);
       toast.success(decision === 'APPROVED' ? 'Pengajuan disetujui.' : 'Pengajuan ditolak.');
@@ -167,7 +166,8 @@ export const MemberApplications = ({ onDecided }) => {
             ) : null}
           </p>
           <p className="text-sm" style={{ color: 'var(--muted-fg)' }}>
-            Setujui pengajuan dengan menautkan akun ke record Pemain/Staf yang sudah ada (tidak membuat data ganda).
+            Pengajuan Pemain ditautkan ke record Pemain yang sudah ada. Pengajuan Staf otomatis membuat
+            Staff Entry baru sesuai Bagian &amp; Jabatan (akun dan profil Pemain tidak diubah).
           </p>
         </div>
         <select
@@ -241,9 +241,10 @@ export const MemberApplications = ({ onDecided }) => {
           <DialogHeader>
             <DialogTitle className="font-display">Tinjau Pengajuan {TYPE_LABEL[dialog?.type] || ''}</DialogTitle>
             <DialogDescription>
-              Data yang disetujui ditulis ke record existing yang Anda pilih (tanpa membuat data baru).
-              Satu akun Baraya dapat memiliki profil Pemain dan Staf sekaligus — menyetujui pengajuan Staf
-              tidak menghapus status Pemain.
+              Pengajuan Pemain ditulis ke record Pemain yang Anda pilih. Pengajuan Staf membuat Staff
+              Entry baru sesuai Bagian &amp; Jabatan (atau ditulis ke Staff Entry yang Anda pilih).
+              Satu akun Baraya dapat memiliki profil Pemain dan beberapa Staff Entry sekaligus —
+              menyetujui pengajuan Staf tidak menghapus status Pemain.
             </DialogDescription>
           </DialogHeader>
 
@@ -268,29 +269,52 @@ export const MemberApplications = ({ onDecided }) => {
                     {STAFF_FIELDS.map((field) => (
                       <div key={field.key}>
                         <Label className="mb-1 block text-xs">{field.label}</Label>
-                        {field.type === 'select' ? (
-                          <select
-                            value={staffData[field.key] || 'TEAM_MANAGER'}
-                            onChange={(e) => setStaffData((d) => ({ ...d, [field.key]: e.target.value }))}
-                            className="h-10 w-full rounded-[var(--radius-sm)] border px-2 text-sm"
-                            style={{ borderColor: 'var(--border-soft)' }}
-                            data-testid={`admin-application-staff-field-${field.key}`}
-                          >
-                            {STAFF_ROLES.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <Input
-                            value={staffData[field.key] ?? ''}
-                            onChange={(e) => setStaffData((d) => ({ ...d, [field.key]: e.target.value }))}
-                            data-testid={`admin-application-staff-field-${field.key}`}
-                          />
-                        )}
+                        <Input
+                          value={staffData[field.key] ?? ''}
+                          onChange={(e) => setStaffData((d) => ({ ...d, [field.key]: e.target.value }))}
+                          data-testid={`admin-application-staff-field-${field.key}`}
+                        />
                       </div>
                     ))}
+                    <div>
+                      <Label className="mb-1 block text-xs">Bagian / Department</Label>
+                      <select
+                        value={staffData.department || ''}
+                        onChange={(e) =>
+                          setStaffData((d) => ({ ...d, department: e.target.value, position_title: '' }))
+                        }
+                        className="h-10 w-full rounded-[var(--radius-sm)] border px-2 text-sm"
+                        style={{ borderColor: 'var(--border-soft)' }}
+                        data-testid="admin-application-staff-field-department"
+                      >
+                        <option value="">— pilih bagian —</option>
+                        {departments.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="mb-1 block text-xs">Jabatan / Position</Label>
+                      <select
+                        value={staffData.position_title || ''}
+                        onChange={(e) => setStaffData((d) => ({ ...d, position_title: e.target.value }))}
+                        className="h-10 w-full rounded-[var(--radius-sm)] border px-2 text-sm"
+                        style={{ borderColor: 'var(--border-soft)' }}
+                        disabled={!staffData.department}
+                        data-testid="admin-application-staff-field-position"
+                      >
+                        <option value="">
+                          {staffData.department ? '— pilih jabatan —' : 'pilih bagian dulu'}
+                        </option>
+                        {positionOptions(meta, staffData.department).map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="sm:col-span-2">
                       <Label className="mb-1 block text-xs">Bio</Label>
                       <Textarea
@@ -394,7 +418,9 @@ export const MemberApplications = ({ onDecided }) => {
 
               <div>
                 <Label className="mb-1.5 block">
-                  Tautkan ke record {TYPE_LABEL[dialog.type]} yang sudah ada
+                  {dialog.type === 'STAFF'
+                    ? 'Tautkan ke Staff Entry yang sudah ada (opsional)'
+                    : `Tautkan ke record ${TYPE_LABEL[dialog.type]} yang sudah ada`}
                 </Label>
                 <select
                   value={linkId}
@@ -403,19 +429,29 @@ export const MemberApplications = ({ onDecided }) => {
                   style={{ borderColor: 'var(--border-soft)' }}
                   data-testid="admin-application-link"
                 >
-                  <option value="">— pilih record —</option>
+                  <option value="">
+                    {dialog.type === 'STAFF' ? '— buat Staff Entry baru —' : '— pilih record —'}
+                  </option>
                   {linkOptions.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.full_name || option.display_name || option.name}
                       {option.jersey_number ? ` · #${option.jersey_number}` : ''}
-                      {option.role_label || option.position ? ` · ${option.role_label || option.position}` : ''}
+                      {option.position_title || option.role_label || option.position
+                        ? ` · ${option.position_title || option.role_label || option.position}`
+                        : ''}
                     </option>
                   ))}
                 </select>
-                {!linkOptions.length ? (
+                {dialog.type === 'STAFF' ? (
+                  <p className="mt-2 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="admin-application-staff-hint">
+                    Dibiarkan kosong → sistem otomatis membuat Staff Entry baru dari data pengajuan
+                    (Bagian, Jabatan, Foto, pemain & tim). Akun dan profil Pemain tidak diubah.
+                  </p>
+                ) : null}
+                {!linkOptions.length && dialog.type !== 'STAFF' ? (
                   <p className="mt-2 text-xs" style={{ color: '#991B1B' }} data-testid="admin-application-no-records">
                     Belum ada record {TYPE_LABEL[dialog.type]} di Admin Panel. Buat datanya terlebih dahulu di menu{' '}
-                    {dialog.type === 'PEMAIN' ? 'Pemain' : 'Staf'}.
+                    Pemain.
                   </p>
                 ) : null}
               </div>
@@ -428,13 +464,13 @@ export const MemberApplications = ({ onDecided }) => {
               <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={() => decide('APPROVED')}
-                  disabled={busy || !linkId}
+                  disabled={busy || (dialog.type === 'PEMAIN' && !linkId)}
                   className="min-h-[44px] font-semibold"
                   style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
                   data-testid="admin-application-approve"
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Setujui &amp; Tautkan
+                  {dialog.type === 'STAFF' && !linkId ? 'Setujui & Buat Staff Entry' : 'Setujui & Tautkan'}
                 </Button>
                 <Button
                   variant="outline"

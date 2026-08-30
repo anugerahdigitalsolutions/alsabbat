@@ -42,6 +42,7 @@ from app.models.membership import (
     RoleUpdate,
 )
 from app.services import google_auth
+from app.models.staff_structure import role_for_position
 from app.services.mailer import mail_status
 from app.services.notifications import firebase_status, notify_admin_review
 from app.services.membership import ensure_member_identity
@@ -54,6 +55,7 @@ customers = Repository(Collections.CUSTOMERS)
 applications = Repository(Collections.MEMBER_APPLICATIONS)
 players = Repository(Collections.PLAYERS)
 staff = Repository(Collections.STAFF)
+teams = Repository(Collections.TEAMS)
 
 member_read = Depends(require_permission("user:read"))
 member_write = Depends(require_permission("user:write"))
@@ -218,7 +220,8 @@ async def my_access(
         "can_view_gallery": allowed,
         "can_view_spotlight": allowed,
         "can_apply_player": roles == ["MEMBER"],
-        "can_apply_staff": "PEMAIN" in roles and "STAFF" not in roles,
+        # Multi-entry: Pemain boleh mengajukan Staf berkali-kali (bagian/jabatan berbeda).
+        "can_apply_staff": "PEMAIN" in roles,
     }
 
 
@@ -251,13 +254,29 @@ async def create_application(
             raise ForbiddenError(
                 "Pengajuan Staf hanya untuk akun Pemain. Ajukan diri sebagai Pemain terlebih dahulu."
             )
-        if "STAFF" in roles:
-            raise ForbiddenError("Akun Anda sudah memiliki profil Staf.")
-    pending = await applications.get_by(
-        {"customer_id": auth.customer_id, "type": payload.type.value, "status": "PENDING"}
-    )
-    if pending:
-        raise ConflictError("Pengajuan Anda masih diproses pengurus klub.")
+    if payload.type.value == "STAFF":
+        # Multi-entry: satu akun boleh punya banyak pengajuan/entry Staf.
+        # Yang ditolak hanya duplikat persis (bagian + jabatan sama) yang masih PENDING.
+        staff_payload = payload.staff_data
+        duplicate = await applications.get_by(
+            {
+                "customer_id": auth.customer_id,
+                "type": "STAFF",
+                "status": "PENDING",
+                "staff_data.department": staff_payload.department if staff_payload else None,
+                "staff_data.position_title": staff_payload.position_title if staff_payload else None,
+            }
+        )
+        if duplicate:
+            raise ConflictError(
+                "Pengajuan Staf untuk bagian & jabatan ini masih diproses pengurus klub."
+            )
+    else:
+        pending = await applications.get_by(
+            {"customer_id": auth.customer_id, "type": payload.type.value, "status": "PENDING"}
+        )
+        if pending:
+            raise ConflictError("Pengajuan Anda masih diproses pengurus klub.")
 
     data = payload.model_dump()
     player_data = data.pop("player_data", None)
@@ -363,12 +382,53 @@ async def _validate_link(app_type: str, player_id: Optional[str], staff_id: Opti
             raise NotFoundError("Record pemain tidak ditemukan.")
         return {"player_id": player_id, "staff_id": None}
     if not staff_id:
-        raise ValidationFailedError(
-            "Pilih record Staf yang sudah ada untuk ditautkan sebelum menyetujui."
-        )
+        # Multi-entry (keputusan produk): Staff Entry baru dibuat otomatis dari
+        # data pengajuan saat disetujui, jadi tautan manual bersifat opsional.
+        return {"player_id": None, "staff_id": None}
     if not await staff.get(staff_id):
         raise NotFoundError("Record staf tidak ditemukan.")
     return {"player_id": None, "staff_id": staff_id}
+
+
+async def _resolve_team_id(customer_doc: Optional[Dict[str, Any]]) -> str:
+    """Tim untuk Staff Entry baru: ikut tim Pemain, fallback tim pertama klub."""
+    player_id = (customer_doc or {}).get("player_id")
+    if player_id:
+        player = await players.get(player_id)
+        if player and player.get("team_id"):
+            return player["team_id"]
+    items, _ = await teams.list({}, limit=1, sort=(("created_at", 1),))
+    if items:
+        return items[0]["id"]
+    raise ValidationFailedError("Belum ada data Tim. Tambahkan Tim terlebih dahulu.")
+
+
+async def _create_staff_entry(
+    customer_doc: Optional[Dict[str, Any]], application: Dict[str, Any]
+) -> str:
+    """Buat Staff Entry baru dari data pengajuan (tanpa membuat akun/pemain baru)."""
+    data = application.get("staff_data") or {}
+    position = data.get("position_title")
+    social = {"instagram": data.get("instagram")} if data.get("instagram") else {}
+    created = await staff.create(
+        {
+            "team_id": await _resolve_team_id(customer_doc),
+            "name": data.get("name") or application.get("full_name"),
+            "photo": data.get("photo") or None,
+            "role": data.get("role") or role_for_position(position) or "OTHER",
+            # `role_label` diisi Jabatan agar tampilan lama tetap informatif.
+            "role_label": data.get("role_label") or position or None,
+            "department": data.get("department") or None,
+            "position_title": position or None,
+            "bio": data.get("bio") or None,
+            "social_media": social,
+            "status": "ACTIVE",
+            "gallery_images": [],
+            "player_id": (customer_doc or {}).get("player_id"),
+            "customer_id": (customer_doc or {}).get("id"),
+        }
+    )
+    return created["id"]
 
 
 @router.patch("/admin/applications/{application_id}/data", summary="Admin: lengkapi/koreksi data pengajuan")
@@ -431,7 +491,7 @@ async def _apply_staff_data(staff_id: str, staff_data: Optional[Dict[str, Any]])
     if not staff_data:
         return
     changes: Dict[str, Any] = {}
-    for key in ("name", "role", "role_label", "bio", "photo"):
+    for key in ("name", "role", "role_label", "bio", "photo", "department", "position_title"):
         value = staff_data.get(key)
         if value not in (None, ""):
             changes[key] = value.value if hasattr(value, "value") else value
@@ -465,8 +525,11 @@ async def admin_decide_application(
 
     if payload.decision == ApplicationStatus.APPROVED:
         link = await _validate_link(existing["type"], payload.player_id, payload.staff_id)
-        changes.update(link)
         customer_doc = await customers.get(existing["customer_id"])
+        if existing["type"] == ApplicationType.STAFF.value and not link.get("staff_id"):
+            # Staff Entry baru per pengajuan: bagian, jabatan, foto & status sendiri.
+            link["staff_id"] = await _create_staff_entry(customer_doc, existing)
+        changes.update(link)
         roles = [r for r in _roles_of(customer_doc) if r != "MEMBER"]
         if existing["type"] not in roles:
             roles.append(existing["type"])

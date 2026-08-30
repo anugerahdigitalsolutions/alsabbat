@@ -33,6 +33,7 @@ from app.models.enums import (
     TeamCategory,
 )
 from app.services.media_service import media_service
+from app.models.staff_structure import meta_departments
 
 router = APIRouter(tags=["system"])
 STARTED_AT = time.time()
@@ -62,6 +63,8 @@ async def meta():
         "player_positions": opts(PlayerPosition),
         "player_status": opts(PlayerStatus),
         "staff_roles": opts(StaffRole),
+        # Master Bagian & Jabatan Staff (dependent dropdown di UI).
+        "staff_departments": meta_departments(),
         "season_status": opts(SeasonStatus),
         "competition_types": opts(CompetitionType),
         "match_status": opts(MatchStatus),

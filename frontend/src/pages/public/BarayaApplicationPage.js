@@ -19,6 +19,8 @@ import {
 import { MediaPicker } from '../../components/shared/MediaPicker';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
 import { canApplyPlayer, canApplyStaff, roleLabel } from '../../lib/memberAccess';
+import { departmentOptions, positionOptions } from '../../lib/staffStructure';
+import { useClub } from '../../context/ClubContext';
 
 const STATUS_LABEL = {
   PENDING: 'Menunggu Persetujuan',
@@ -27,19 +29,6 @@ const STATUS_LABEL = {
 };
 
 const TYPE_LABEL = { PEMAIN: 'Pemain', STAFF: 'Staf' };
-
-// Sama dengan pilihan Role Staf di Admin Panel (StaffRole).
-const STAFF_ROLES = [
-  { value: 'HEAD_COACH', label: 'Kepala Pelatih' },
-  { value: 'ASSISTANT_COACH', label: 'Asisten Pelatih' },
-  { value: 'GOALKEEPER_COACH', label: 'Pelatih Kiper' },
-  { value: 'FITNESS_COACH', label: 'Pelatih Fisik' },
-  { value: 'TEAM_MANAGER', label: 'Manajer Tim' },
-  { value: 'MEDICAL_STAFF', label: 'Staf Medis' },
-  { value: 'ANALYST', label: 'Analis' },
-  { value: 'KIT_MANAGER', label: 'Manajer Perlengkapan' },
-  { value: 'OTHER', label: 'Lainnya' },
-];
 
 // Sama dengan pilihan di Admin Panel (PlayerPosition).
 const POSITIONS = [
@@ -69,6 +58,7 @@ export default function BarayaApplicationPage() {
     robots: 'noindex,follow',
   });
   const { customer, reload } = useBaraya();
+  const { meta } = useClub();
   const playerAllowed = canApplyPlayer(customer);
   const staffAllowed = canApplyStaff(customer);
   const canApply = playerAllowed || staffAllowed;
@@ -83,8 +73,8 @@ export default function BarayaApplicationPage() {
     motivation: '',
     staff: {
       name: customer?.full_name || '',
-      role: 'TEAM_MANAGER',
-      role_label: '',
+      department: '',
+      position_title: '',
       bio: '',
       photo: '',
       instagram: '',
@@ -132,7 +122,7 @@ export default function BarayaApplicationPage() {
         type: form.type,
         full_name: isPlayer ? form.player.full_name : form.staff.name,
         phone: form.phone,
-        position: isPlayer ? form.player.position : form.staff.role,
+        position: isPlayer ? form.player.position : form.staff.position_title,
         birth_date: isPlayer ? form.player.date_of_birth || null : null,
         address: form.address || null,
         experience: form.experience || null,
@@ -157,8 +147,8 @@ export default function BarayaApplicationPage() {
       if (!isPlayer) {
         payload.staff_data = {
           name: form.staff.name,
-          role: form.staff.role,
-          role_label: form.staff.role_label || null,
+          department: form.staff.department || null,
+          position_title: form.staff.position_title || null,
           bio: form.staff.bio || null,
           photo: form.staff.photo || null,
           instagram: form.staff.instagram || null,
@@ -166,7 +156,14 @@ export default function BarayaApplicationPage() {
       }
       await barayaCreateApplication(payload);
       toast.success('Pengajuan terkirim. Pengurus klub akan meninjau data Anda.');
-      setForm((f) => ({ ...f, motivation: '', experience: '' }));
+      setForm((f) => ({
+        ...f,
+        motivation: '',
+        experience: '',
+        // Multi-entry: form dikosongkan agar bisa langsung mengajukan
+        // Bagian/Jabatan lain dengan foto berbeda.
+        staff: { ...f.staff, department: '', position_title: '', photo: '' },
+      }));
       await load();
       await reload();
     } catch (e) {
@@ -176,8 +173,13 @@ export default function BarayaApplicationPage() {
     }
   };
 
-  const pending = items.find((item) => item.status === 'PENDING');
+  // Blokir kirim hanya untuk tipe yang bersangkutan. Pengajuan Staf boleh
+  // banyak (bagian/jabatan berbeda), jadi tidak diblokir oleh pengajuan lain.
+  const pending =
+    form.type === 'PEMAIN' ? items.find((item) => item.type === 'PEMAIN' && item.status === 'PENDING') : null;
   const isPlayerForm = form.type === 'PEMAIN';
+  const departments = departmentOptions(meta);
+  const positions = positionOptions(meta, form.staff.department);
 
   return (
     <div data-testid="page-baraya-application">
@@ -354,15 +356,17 @@ export default function BarayaApplicationPage() {
                       />
                     </div>
                     <div>
-                      <Label className="mb-1.5 block">Role Staf</Label>
+                      <Label className="mb-1.5 block">Bagian / Department</Label>
                       <select
-                        value={form.staff.role}
-                        onChange={(e) => setStaff({ role: e.target.value })}
+                        required
+                        value={form.staff.department}
+                        onChange={(e) => setStaff({ department: e.target.value, position_title: '' })}
                         className={selectClass}
                         style={{ borderColor: 'var(--border-soft)' }}
-                        data-testid="baraya-application-staff-role"
+                        data-testid="baraya-application-staff-department"
                       >
-                        {STAFF_ROLES.map((option) => (
+                        <option value="">Pilih bagian…</option>
+                        {departments.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -370,13 +374,25 @@ export default function BarayaApplicationPage() {
                       </select>
                     </div>
                     <div className="sm:col-span-2">
-                      <Label className="mb-1.5 block">Label Role (opsional)</Label>
-                      <Input
-                        value={form.staff.role_label}
-                        onChange={(e) => setStaff({ role_label: e.target.value })}
-                        placeholder="Untuk role kustom di luar daftar"
-                        data-testid="baraya-application-staff-role-label"
-                      />
+                      <Label className="mb-1.5 block">Jabatan / Position</Label>
+                      <select
+                        required
+                        value={form.staff.position_title}
+                        onChange={(e) => setStaff({ position_title: e.target.value })}
+                        className={selectClass}
+                        style={{ borderColor: 'var(--border-soft)' }}
+                        disabled={!form.staff.department}
+                        data-testid="baraya-application-staff-position"
+                      >
+                        <option value="">
+                          {form.staff.department ? 'Pilih jabatan…' : 'Pilih bagian terlebih dahulu'}
+                        </option>
+                        {positions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="sm:col-span-2">
                       <Label className="mb-1.5 block">Foto Staf</Label>
@@ -387,7 +403,7 @@ export default function BarayaApplicationPage() {
                         libraryEnabled={false}
                         testId="baraya-application-staff-photo"
                         spec={MEDIA_SPECS.staffPhoto || MEDIA_SPECS.playerPhoto}
-                        hint="Foto Staf disimpan terpisah dari foto Pemain."
+                        hint="Foto khusus pengajuan ini — terpisah dari foto Pemain dan pengajuan Staf lainnya."
                       />
                     </div>
                     <div className="sm:col-span-2">

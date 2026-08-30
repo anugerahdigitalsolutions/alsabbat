@@ -35,6 +35,5 @@ export const canApplyPlayer = (customer) => {
   return roles.length === 1 && roles[0] === 'MEMBER';
 };
 
-/** Hanya Pemain (yang belum jadi Staf) boleh mengajukan Staf. */
-export const canApplyStaff = (customer) =>
-  hasRole(customer, 'PEMAIN') && !hasRole(customer, 'STAFF');
+/** Pemain boleh mengajukan Staf berkali-kali (bagian & jabatan berbeda). */
+export const canApplyStaff = (customer) => hasRole(customer, 'PEMAIN');

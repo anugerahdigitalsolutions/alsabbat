@@ -10,6 +10,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
+import { staffPositionLabel } from '../../lib/staffStructure';
 
 const POSITION_ORDER = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
@@ -196,8 +197,13 @@ export default function TeamDetailPage() {
                         <div className="min-w-0">
                           <p className="font-display truncate text-base font-bold">{member.name}</p>
                           <p className="text-xs font-medium" style={{ color: 'var(--club-secondary)' }}>
-                            {member.role_label || member.role}
+                            {staffPositionLabel(member)}
                           </p>
+                          {member.department ? (
+                            <p className="text-[11px]" style={{ color: 'var(--muted-fg)' }}>
+                              {member.department}
+                            </p>
+                          ) : null}
                           {member.bio ? (
                             <p className="mt-2 line-clamp-3 text-xs" style={{ color: 'var(--muted-fg)' }}>
                               {member.bio}

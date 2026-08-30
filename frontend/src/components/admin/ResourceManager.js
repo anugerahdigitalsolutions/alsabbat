@@ -150,6 +150,9 @@ function useRemoteOptions(fields, filters) {
               label: source.labelFn
                 ? source.labelFn(item)
                 : item[source.labelKey || 'name'] || item.title || item.id,
+              // Dokumen mentah tetap dibawa agar field lain bisa terisi otomatis
+              // (mis. Tim mengikuti tim pemain yang dipilih).
+              item,
             }));
             return [source.endpoint, options];
           } catch (e) {
@@ -169,10 +172,14 @@ function useRemoteOptions(fields, filters) {
 }
 
 /* ------------------------------- field -------------------------------- */
-const FieldControl = ({ field, value, onChange, optionMap, testPrefix }) => {
+const FieldControl = ({ field, value, onChange, optionMap, testPrefix, values = {} }) => {
   const testId = `${testPrefix}-field-${field.name.replace(/\./g, '-')}`;
+  // `optionsFn` = opsi dinamis yang bergantung pada nilai field lain
+  // (dependent dropdown, mis. Jabatan mengikuti Bagian).
   const options =
-    field.options || (field.optionsFrom ? optionMap[field.optionsFrom.endpoint] || [] : []);
+    (field.optionsFn ? field.optionsFn(values, optionMap) : null) ||
+    field.options ||
+    (field.optionsFrom ? optionMap[field.optionsFrom.endpoint] || [] : []);
 
   if (field.type === 'textarea') {
     return (
@@ -700,7 +707,21 @@ export const ResourceManager = ({
                 <FieldControl
                   field={field}
                   value={getPath(values, field.name)}
-                  onChange={(v) => setValues((prev) => setPath(prev, field.name, v))}
+                  values={values}
+                  onChange={(v) =>
+                    setValues((prev) => {
+                      let next = setPath(prev, field.name, v);
+                      // `onValueChange` = efek samping opsional: mengembalikan
+                      // patch { path: value } untuk mengisi field lain otomatis.
+                      const patch = field.onValueChange ? field.onValueChange(v, next, optionMap) : null;
+                      if (patch) {
+                        Object.entries(patch).forEach(([path, patchValue]) => {
+                          next = setPath(next, path, patchValue);
+                        });
+                      }
+                      return next;
+                    })
+                  }
                   optionMap={optionMap}
                   testPrefix={testPrefix}
                 />
