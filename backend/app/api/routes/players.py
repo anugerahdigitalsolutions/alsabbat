@@ -165,11 +165,21 @@ async def player_statistics(
     if not player:
         raise NotFoundError("Player not found")
 
+    # Penampilan historis dibaca dari `match_lineups` (data lama, read-only);
+    # gol/assist/kartu dari Match Events yang masih aktif diinput admin.
     lineup_items, _ = await lineups.list({"player_id": player_id}, limit=500)
-    if not lineup_items:
+    player_events, _ = await events.list({"player_id": player_id}, limit=1000)
+    # Assist juga tercatat sebagai `related_player_id` pada event gol
+    # (konvensi yang sama dipakai papan statistik / Top Scorer).
+    assist_events, _ = await events.list({"related_player_id": player_id}, limit=1000)
+    if not lineup_items and not player_events and not assist_events:
         return {"player_id": player_id, "available": False, "seasons": []}
 
-    match_ids = [item["match_id"] for item in lineup_items if item.get("match_id")]
+    match_ids = sorted(
+        {item["match_id"] for item in lineup_items if item.get("match_id")}
+        | {event["match_id"] for event in player_events if event.get("match_id")}
+        | {event["match_id"] for event in assist_events if event.get("match_id")}
+    )
     match_items, _ = await matches.list({"id": {"$in": match_ids}}, limit=500)
     matches_by_id = {m["id"]: m for m in match_items}
 
@@ -179,20 +189,15 @@ async def player_statistics(
     )
     seasons_by_id = {s["id"]: s for s in season_items}
 
-    player_events, _ = await events.list(
-        {"player_id": player_id, "match_id": {"$in": match_ids}}, limit=1000
-    )
     # Any recorded event for these matches proves the event log is being maintained.
     all_events, _ = await events.list({"match_id": {"$in": match_ids}}, limit=1000)
     matches_with_events = {e["match_id"] for e in all_events if e.get("match_id")}
 
     buckets: Dict[str, Dict[str, Any]] = {}
-    for item in lineup_items:
-        match = matches_by_id.get(item.get("match_id"))
-        if not match:
-            continue
+
+    def bucket_for(match: Dict[str, Any]) -> Dict[str, Any]:
         key = match.get("season_id") or "__unassigned__"
-        bucket = buckets.setdefault(
+        return buckets.setdefault(
             key,
             {
                 "season_id": match.get("season_id"),
@@ -208,6 +213,12 @@ async def player_statistics(
                 "match_ids": set(),
             },
         )
+
+    for item in lineup_items:
+        match = matches_by_id.get(item.get("match_id"))
+        if not match:
+            continue
+        bucket = bucket_for(match)
         role = item.get("role")
         if role == "STARTING":
             bucket["starts"] += 1
@@ -223,9 +234,9 @@ async def player_statistics(
         match = matches_by_id.get(event.get("match_id"))
         if not match:
             continue
-        bucket = buckets.get(match.get("season_id") or "__unassigned__")
-        if not bucket:
-            continue
+        bucket = bucket_for(match)
+        bucket["events_available"] = True
+        bucket["match_ids"].add(event.get("match_id"))
         event_type = event.get("type")
         if event_type in GOAL_TYPES:
             bucket["goals"] += 1
@@ -235,6 +246,15 @@ async def player_statistics(
             bucket["yellow_cards"] += 1
         elif event_type == "RED_CARD":
             bucket["red_cards"] += 1
+
+    for event in assist_events:
+        match = matches_by_id.get(event.get("match_id"))
+        if not match or event.get("type") not in GOAL_TYPES:
+            continue
+        bucket = bucket_for(match)
+        bucket["events_available"] = True
+        bucket["match_ids"].add(event.get("match_id"))
+        bucket["assists"] += 1
 
     result: List[Dict[str, Any]] = []
     for bucket in buckets.values():

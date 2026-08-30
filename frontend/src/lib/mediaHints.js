@@ -25,6 +25,9 @@ export const MEDIA_SPECS = {
   opponentLogo: { fit: 'contain', aspect: 1, ratio: '1:1', size: '500 × 500 px', note: 'Utamakan PNG berlatar transparan.' },
   // Kartu & halaman detail pertandingan (landscape)
   matchCover: { aspect: 16 / 9, ratio: '16:9', size: '1920 × 1080 px', note: CROP_NOTE },
+  // Background Kartu Pertandingan (renderer kartu: Feed 4:5 & Story 9:16)
+  matchCardFeed: { aspect: 4 / 5, ratio: '4:5 (Feed)', size: '1080 × 1350 px', note: CROP_NOTE },
+  matchCardStory: { aspect: 9 / 16, ratio: '9:16 (Story)', size: '1080 × 1920 px', note: CROP_NOTE },
   // Baris sponsor: kartu tinggi 96px, logo object-contain
   sponsorLogo: { fit: 'contain', aspect: 3, ratio: '3:1 (horizontal)', size: '1500 × 500 px', note: 'PNG berlatar transparan agar rapi di baris sponsor.' },
   // Frame trofi: tinggi 128px, lebar kartu ±420px

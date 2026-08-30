@@ -396,3 +396,31 @@ agent_communication:
       match_lineups historis. Smoke API: /meta /matches /match-events
       /players /staff /teams /readiness/content = 200, /match-lineups = 404.
       yarn build sukses (main.725ed004.js, -2.35 kB). Fixture uji dihapus.
+
+    -agent: "main"
+    -message: |
+      MATCH & KARTU PERTANDINGAN — ALUR DIRAPIKAN (backward-compatible).
+      Form input Match: field home_score/away_score + field desain kartu
+      (card_feed_*/card_story_*) DIHAPUS DARI FORM (field & data tetap ada di DB).
+      Baru: shortcut "Hasil Pertandingan (N)" hanya muncul bila ada match lampau
+      tanpa skor -> dialog skor AL SABBAT/Lawan (dipetakan HOME/AWAY) + kejadian
+      via Match Events existing (POST /match-events) dengan dropdown pemain
+      terdaftar (player_id / related_player_id), nama bebas hanya untuk pemain
+      lawan. Aksi per baris: [Kartu Pertandingan][Edit][Hapus]; dialog Kartu
+      Pertandingan = MatchCardSettings (MediaPicker + cropper existing, slider
+      posisi/zoom, PATCH /matches/{id}) + MatchScoreCardGenerator (Feed 4:5,
+      Story 9:16, unduh, bagikan). Desain global (overlay/opacity/zoom logo/
+      background default/sponsor) dipindah ke dialog "Desain Kartu Global"
+      memakai komponen MatchCardDesign yang sama (tidak diubah).
+      Backend: hanya routes/players.py /statistics diperbaiki agar statistik
+      pemain tetap terisi dari Match Events (assist juga dari related_player_id)
+      setelah Lineups dihapus; appearances historis tetap dari match_lineups.
+      Tidak ada perubahan schema/migrasi/.env/Nginx/deployment.
+      Verifikasi browser + API: buat match tanpa skor OK; edit match lama skor
+      4-2 & card_feed_zoom 120 tetap utuh; tombol Hasil muncul (2) lalu (1) lalu
+      hilang; skor 3-1 + event GOAL(VIDISTA, assist RAKA)/YELLOW(RAKA)/GOAL
+      lawan(nama teks); Top Scorer VIDISTA 1 gol, RAKA 1 assist; match kedua
+      tidak berubah; upload+crop background feed berhasil (media 200), slider
+      default 50/50/100, sponsor tampil di bawah kartu, unduh/bagikan ada;
+      publik: tab Statistik/Timeline/Media, tab Formasi tetap tidak ada.
+      yarn build sukses (main.563189ef.js, +3.52 kB). Semua fixture dihapus.
