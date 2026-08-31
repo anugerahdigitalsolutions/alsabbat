@@ -553,6 +553,66 @@ class MediaService:
         stored = await self.backend.save(key, content, mime_type)
         return stored, media_type
 
+    async def direct_upload_signature(
+        self, file_name: str, mime_type: str, subfolder: Optional[str] = None
+    ) -> dict:
+        """Data tanda tangan untuk upload LANGSUNG dari browser ke Cloudinary.
+
+        Dipakai agar berkas besar tidak melewati fungsi serverless (batas body
+        request Vercel). Browser -> Cloudinary -> (public_id/secure_url) -> API.
+        Mengembalikan None-safe dict; memanggilnya pada provider non-Cloudinary
+        akan menghasilkan ValidationFailedError sehingga frontend bisa fallback.
+        """
+        if self.backend.provider != StorageProvider.CLOUDINARY:
+            raise ValidationFailedError(
+                "Direct upload hanya tersedia bila MEDIA_STORAGE_PROVIDER=CLOUDINARY."
+            )
+        if not settings.cloudinary_configured:
+            missing = ", ".join(settings.missing_cloudinary_vars()) or "CLOUDINARY_URL"
+            raise ValidationFailedError(
+                f"Cloudinary belum dikonfigurasi. Variable yang belum diisi: {missing}."
+            )
+        import time
+
+        import cloudinary
+        from cloudinary.utils import api_sign_request
+
+        # Pastikan SDK terkonfigurasi (memakai jalur yang sama dengan upload biasa).
+        self.backend._sdk()  # noqa: SLF001 - internal helper milik backend yang sama
+        media_type = detect_media_type(mime_type)
+        if media_type not in MAX_SIZE_MB:
+            raise ValidationFailedError("Tipe berkas ini tidak diizinkan.")
+        key = self.build_key(file_name, media_type)
+        base_public_id = self.backend.public_id(key)
+        if subfolder:
+            folder = settings.cloudinary_folder
+            base_public_id = base_public_id.replace(
+                f"{folder}/", f"{folder}/{subfolder.strip('/')}/", 1
+            )
+        resource_type = CloudinaryStorageBackend._resource_type(mime_type)
+        timestamp = int(time.time())
+        params = {"public_id": base_public_id, "timestamp": timestamp}
+        if settings.CLOUDINARY_UPLOAD_PRESET:
+            params["upload_preset"] = settings.CLOUDINARY_UPLOAD_PRESET
+        signature = api_sign_request(params, cloudinary.config().api_secret)
+        return {
+            "provider": StorageProvider.CLOUDINARY.value,
+            "cloud_name": cloudinary.config().cloud_name,
+            "api_key": cloudinary.config().api_key,
+            "upload_url": (
+                f"https://api.cloudinary.com/v1_1/{cloudinary.config().cloud_name}/"
+                f"{resource_type}/upload"
+            ),
+            "resource_type": resource_type,
+            "public_id": base_public_id,
+            "timestamp": timestamp,
+            "signature": signature,
+            "upload_preset": settings.CLOUDINARY_UPLOAD_PRESET or None,
+            "storage_key": f"{resource_type}:{base_public_id}",
+            "max_bytes": MAX_SIZE_MB.get(media_type, 10) * 1024 * 1024,
+            "media_type": media_type.value,
+        }
+
     def status(self) -> dict:
         is_local = self.backend.provider == StorageProvider.LOCAL
         is_cloudinary = self.backend.provider == StorageProvider.CLOUDINARY

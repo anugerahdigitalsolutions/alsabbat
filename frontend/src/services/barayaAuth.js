@@ -1,4 +1,9 @@
 import { barayaApi, barayaTokenStore } from '../lib/api';
+import {
+  DirectUploadUnavailable,
+  requestUploadSignature,
+  uploadWithSignature,
+} from '../lib/cloudinaryUpload';
 
 /** Baraya AL SABBAT (public customer) auth — separate from Admin/RBAC. */
 export const BARAYA_AUTH_ENABLED = true;
@@ -93,8 +98,21 @@ export const barayaGoogleLogin = async ({ code, redirectUri }) => {
   return data.customer;
 };
 
-/** Upload foto khusus pengajuan (Pemain/Staf) — tidak mengubah foto profil akun. */
+/** Upload foto khusus pengajuan (Pemain/Staf) — tidak mengubah foto profil akun.
+ *  Mencoba direct upload ke Cloudinary lebih dulu (aman untuk batas body request
+ *  serverless), lalu fallback ke upload multipart lewat backend. */
 export const barayaUploadApplicationPhoto = async (file, onProgress) => {
+  try {
+    const signature = await requestUploadSignature({
+      client: barayaApi,
+      signPath: '/baraya/me/upload-signature',
+      file,
+    });
+    const uploaded = await uploadWithSignature({ signature, file, onProgress });
+    return { url: uploaded.secure_url };
+  } catch (error) {
+    if (!(error instanceof DirectUploadUnavailable)) throw error;
+  }
   const form = new FormData();
   form.append('file', file);
   const { data } = await barayaApi.post('/baraya/me/upload', form, {

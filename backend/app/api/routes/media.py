@@ -15,7 +15,8 @@ from app.core.rate_limit import write_rate_limit
 from app.models.auth import AuthContext
 from app.models.domain import MediaBase, MediaUpdate
 from app.models.enums import StorageProvider
-from app.services.media_service import media_service
+from app.models.media_direct import DirectUploadCompleteRequest, DirectUploadSignRequest
+from app.services.media_service import detect_media_type, media_service
 
 router = APIRouter(tags=["media"])
 repo = Repository(Collections.MEDIA)
@@ -66,6 +67,61 @@ def _file_headers() -> dict:
 @router.get("/storage/status", summary="Media storage architecture status")
 async def storage_status(_user: AuthContext = Depends(require_permission("media:read"))):
     return media_service.status()
+
+
+@router.post(
+    "/direct-upload/sign",
+    summary="Tanda tangan upload langsung browser -> Cloudinary (bypass batas body serverless)",
+)
+async def sign_direct_upload(
+    request: Request,
+    payload: DirectUploadSignRequest,
+    user: AuthContext = Depends(require_permission("media:write")),
+):
+    write_rate_limit(request)
+    return await media_service.direct_upload_signature(
+        payload.file_name, payload.mime_type
+    )
+
+
+@router.post(
+    "/direct-upload/complete",
+    status_code=201,
+    summary="Catat media hasil upload langsung ke Cloudinary",
+)
+async def complete_direct_upload(
+    request: Request,
+    payload: DirectUploadCompleteRequest,
+    user: AuthContext = Depends(require_permission("media:write")),
+):
+    write_rate_limit(request)
+    if not payload.secure_url.startswith("https://"):
+        raise ValidationFailedError("secure_url Cloudinary tidak valid.")
+    media_type = detect_media_type(payload.mime_type or "image/jpeg")
+    doc = {
+        "file_name": payload.file_name,
+        "file_type": media_type.value,
+        "mime_type": payload.mime_type,
+        "file_size": payload.bytes or 0,
+        "url": payload.secure_url,
+        "storage_provider": StorageProvider.CLOUDINARY.value,
+        "storage_key": payload.storage_key
+        or f"{payload.resource_type or 'image'}:{payload.public_id}",
+        "thumbnail_url": payload.secure_url if media_type.value == "IMAGE" else None,
+        "width": payload.width,
+        "height": payload.height,
+        "duration": payload.duration,
+        "alt_text": payload.alt_text,
+        "caption": payload.caption,
+        "album_id": payload.album_id or None,
+        "match_id": payload.match_id or None,
+        "team_id": payload.team_id or None,
+        "player_id": payload.player_id or None,
+        "post_id": payload.post_id or None,
+        "status": "ACTIVE",
+        "uploaded_by": user.user_id,
+    }
+    return await repo.create(jsonable_encoder(doc))
 
 
 @router.post("/upload", status_code=201, summary="Upload a media file through the Media Service")

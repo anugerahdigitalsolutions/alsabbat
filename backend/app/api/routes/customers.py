@@ -47,6 +47,7 @@ from app.models.customer import (
 )
 from app.models.base import new_id, utcnow
 from app.models.enums import MediaType
+from app.models.media_direct import DirectUploadSignRequest
 from app.services.mailer import send_customer_password_reset_email
 from app.services.otp import PURPOSE_REGISTER, issue_otp
 from app.services.media_service import media_service
@@ -343,6 +344,26 @@ async def upload_my_photo(
     await customers.update(customer.customer_id, {"photo_url": stored.url})
     logger.info("baraya.photo.upload customer=%s", customer.customer_id)
     return {"success": True, "photo_url": stored.url}
+
+
+@router.post(
+    "/me/upload-signature",
+    summary="Tanda tangan upload langsung foto pengajuan ke Cloudinary (opsional)",
+)
+async def sign_my_upload(
+    request: Request,
+    payload: DirectUploadSignRequest,
+    customer: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    """Dipakai frontend bila provider media = Cloudinary agar berkas tidak
+    melewati fungsi serverless. Bila provider lain, endpoint ini menolak dan
+    frontend otomatis kembali memakai upload multipart biasa."""
+    write_rate_limit(request)
+    data = await media_service.direct_upload_signature(
+        payload.file_name, payload.mime_type, subfolder="baraya"
+    )
+    logger.info("baraya.direct_upload.sign customer=%s", customer.customer_id)
+    return data
 
 
 @router.post("/me/upload", summary="Upload foto untuk pengajuan (tanpa mengubah foto profil)")

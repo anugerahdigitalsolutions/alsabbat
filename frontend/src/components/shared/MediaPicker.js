@@ -7,8 +7,9 @@ import { ImageCropper } from './ImageCropper';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { DirectUploadUnavailable, directUploadMedia } from '../../lib/cloudinaryUpload';
 
-const defaultUploader = async (file, onProgress) => {
+const multipartUpload = async (file, onProgress) => {
   const form = new FormData();
   form.append('file', file);
   const { data } = await api.post('/media/upload', form, {
@@ -18,6 +19,24 @@ const defaultUploader = async (file, onProgress) => {
     },
   });
   return data;
+};
+
+/**
+ * Upload default Admin Panel.
+ * 1) Coba direct/signed upload browser -> Cloudinary (aman untuk batas body
+ *    request serverless Vercel).
+ * 2) Bila provider media bukan Cloudinary (mis. LOCAL saat pengembangan),
+ *    otomatis kembali ke upload multipart lewat backend seperti sebelumnya.
+ */
+const defaultUploader = async (file, onProgress) => {
+  try {
+    return await directUploadMedia({ client: api, file, onProgress });
+  } catch (error) {
+    if (error instanceof DirectUploadUnavailable) {
+      return multipartUpload(file, onProgress);
+    }
+    throw error;
+  }
 };
 
 const LibraryDialog = ({ open, onOpenChange, onPick, testId }) => {

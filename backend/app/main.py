@@ -1,6 +1,6 @@
 """FastAPI application factory — ALSABBAT Football Club API.
 
-Production (Railway):   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+Vercel (serverless):    entrypoint `app.main:app` (lihat vercel.json, services.api)
 Development:            uvicorn app.main:app --reload --port 8001
 """
 from __future__ import annotations
@@ -12,10 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.config import settings
-from app.core.database import close_db, ensure_indexes, ping
+from app.core.database import close_db
 from app.core.errors import register_exception_handlers
 from app.core.logging_config import get_logger, setup_logging
-from app.services.bootstrap import run_bootstrap
+from app.services.startup_tasks import run_startup_tasks_once
 
 setup_logging()
 logger = get_logger("alsabbat.api")
@@ -24,27 +24,45 @@ logger = get_logger("alsabbat.api")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     logger.info(
-        "Starting %s v%s (env=%s)", settings.APP_NAME, settings.APP_VERSION, settings.ENVIRONMENT
+        "Starting %s v%s (env=%s, serverless=%s)",
+        settings.APP_NAME,
+        settings.APP_VERSION,
+        settings.ENVIRONMENT,
+        settings.is_serverless,
     )
-    if await ping():
-        await ensure_indexes()
-        await run_bootstrap()
-    else:
-        logger.error("Database unreachable at startup — API will serve degraded health status")
+    # ensure_indexes() + run_bootstrap() TETAP dijalankan, tetapi lewat runner
+    # yang aman untuk cold start & concurrent invocation di serverless.
+    await run_startup_tasks_once()
     yield
-    await close_db()
+    if not settings.is_serverless:
+        # Di serverless client sengaja dibiarkan hidup agar dipakai ulang oleh
+        # invocation berikutnya selama instance masih hangat.
+        await close_db()
     logger.info("Shutdown complete")
 
 
 def resolve_cors_origins() -> list[str]:
-    """Production must never run with a wildcard CORS policy."""
+    """Staging & production di Vercel tidak boleh berjalan dengan CORS wildcard.
+
+    - production: WAJIB daftar eksplisit (gagal start bila wildcard/kosong).
+    - staging di Vercel (serverless): WAJIB daftar eksplisit.
+    - staging di environment terkelola/preview lokal: hanya peringatan, agar
+      lingkungan pengembangan yang sudah berjalan tidak ikut mati.
+    """
     origins = [origin for origin in settings.CORS_ORIGINS if origin]
-    if settings.is_production and (not origins or "*" in origins):
-        raise RuntimeError(
-            "CORS_ORIGINS must list the exact production origins (no '*') when "
-            "ENVIRONMENT=production. Example: "
-            "CORS_ORIGINS=https://alsabbat.com,https://www.alsabbat.com"
+    wildcard = (not origins) or ("*" in origins)
+    if wildcard:
+        must_fail = settings.is_production or (settings.is_staging and settings.is_serverless)
+        message = (
+            "CORS_ORIGINS wajib berisi daftar origin eksplisit (tanpa '*') saat "
+            f"ENVIRONMENT={settings.ENVIRONMENT}. Contoh production: "
+            "CORS_ORIGINS=https://alsabbat.com,https://www.alsabbat.com — contoh staging: "
+            "CORS_ORIGINS=https://<nama-deployment-staging>.vercel.app"
         )
+        if must_fail:
+            raise RuntimeError(message)
+        if settings.is_staging:
+            logger.warning("CORS wildcard aktif (staging non-Vercel). %s", message)
     return origins or ["*"]
 
 

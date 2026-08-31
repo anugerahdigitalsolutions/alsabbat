@@ -10,7 +10,7 @@ import os
 import secrets
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from dotenv import load_dotenv
 
@@ -54,6 +54,21 @@ class Settings:
         os.environ.get("MONGODB_DB_NAME")
         or os.environ.get("DB_NAME")
         or "alsabbat_platform"
+    )
+    # Connection pool — nilai default disetel untuk serverless (Vercel Functions):
+    # pool kecil per instance + minPoolSize 0 agar koneksi Atlas tidak habis.
+    MONGODB_MAX_POOL_SIZE: int = int(os.environ.get("MONGODB_MAX_POOL_SIZE", "10"))
+    MONGODB_MIN_POOL_SIZE: int = int(os.environ.get("MONGODB_MIN_POOL_SIZE", "0"))
+    MONGODB_MAX_IDLE_TIME_MS: int = int(os.environ.get("MONGODB_MAX_IDLE_TIME_MS", "30000"))
+    MONGODB_SERVER_SELECTION_TIMEOUT_MS: int = int(
+        os.environ.get("MONGODB_SERVER_SELECTION_TIMEOUT_MS", "8000")
+    )
+    MONGODB_CONNECT_TIMEOUT_MS: int = int(os.environ.get("MONGODB_CONNECT_TIMEOUT_MS", "8000"))
+    MONGODB_SOCKET_TIMEOUT_MS: int = int(os.environ.get("MONGODB_SOCKET_TIMEOUT_MS", "20000"))
+    # Interval minimum antar eksekusi startup task (index + bootstrap admin) agar
+    # cold start berulang di serverless tidak menjalankan operasi berat tiap kali.
+    STARTUP_TASKS_MIN_INTERVAL_MINUTES: int = int(
+        os.environ.get("STARTUP_TASKS_MIN_INTERVAL_MINUTES", "360")
     )
 
     # --------------------------------------------------------------- auth
@@ -125,6 +140,32 @@ class Settings:
     CLOUDINARY_UPLOAD_PRESET: str = os.environ.get("CLOUDINARY_UPLOAD_PRESET", "")
     CLOUDINARY_FOLDER: str = os.environ.get("CLOUDINARY_FOLDER", "")
     CLOUDINARY_URL: str = os.environ.get("CLOUDINARY_URL", "")
+
+    # ------------------------------------------------ serverless / Vercel
+    # Vercel menyetel VERCEL=1 di runtime function.
+    @property
+    def is_serverless(self) -> bool:
+        return bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+
+    @property
+    def mongodb_uri_is_local(self) -> bool:
+        uri = (self.MONGODB_URI or "").lower()
+        return ("localhost" in uri) or ("127.0.0.1" in uri) or ("@mongo:" in uri)
+
+    def unsafe_db_config_reason(self) -> Optional[str]:
+        """Alasan konfigurasi database TIDAK aman untuk staging/production.
+
+        Tidak pernah menampilkan connection string / kredensial apa pun.
+        """
+        if not (self.is_production or self.is_staging):
+            return None
+        if not (os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URL")):
+            return "MONGODB_URI belum diset (aplikasi akan memakai fallback development)"
+        if self.mongodb_uri_is_local:
+            return "MONGODB_URI menunjuk ke localhost/127.0.0.1 (database lokal/VPS)"
+        if not (os.environ.get("MONGODB_DB_NAME") or os.environ.get("DB_NAME")):
+            return "MONGODB_DB_NAME belum diset (aplikasi akan memakai nama database default)"
+        return None
 
     @property
     def cloudinary_folder(self) -> str:

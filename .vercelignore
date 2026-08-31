@@ -1,0 +1,13 @@
+# Hanya berpengaruh pada deploy via Vercel CLI — menjaga ukuran bundle function.
+backend/media_storage
+backend/__pycache__
+**/__pycache__
+*.pyc
+tests
+frontend/build
+frontend/node_modules
+memory
+scripts
+docs
+.emergent
+test_result.md

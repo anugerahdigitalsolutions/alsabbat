@@ -1375,3 +1375,28 @@ CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan pe
   validasi staging tanpa kredensial → RuntimeError, status Cloudinary benar (folder `alsabbat/staging`),
   public_id/resource_type/storage_key benar, upload/replace/delete tervalidasi dengan uploader palsu,
   `serve_file` tidak menyentuh disk. Preview tetap LOCAL karena kredensial belum ada. Tidak ada migrasi data.
+
+## Fase 2 — Backend FastAPI siap Vercel Serverless (31 Agu 2026)
+- `vercel.json` (ROOT, baru): Vercel **Services** (beta) — service `web` (root `frontend/`, CRA, build `yarn build`,
+  output `build`, SPA rewrite) + service `api` (root `backend/`, framework `fastapi`, entrypoint `app.main:app`).
+  Top-level rewrites: `/api/(.*)` → service api (path asli DIPERTAHANKAN, jadi prefix `/api` FastAPI tetap dipakai),
+  `/(.*)` → service web. Header cache/security dipindahkan ke root. WAJIB: set Framework project = **Services**.
+  `frontend/vercel.json` dibiarkan (diabaikan saat deploy Services). `.vercelignore` baru untuk CLI.
+- `app/main.py`: docstring Railway→Vercel, lifespan memanggil `run_startup_tasks_once()` (ensure_indexes + bootstrap
+  TIDAK dihapus), `close_db()` dilewati saat serverless agar client dipakai ulang; CORS wildcard kini juga
+  ditolak untuk staging **di Vercel** (di preview terkelola hanya warning agar dev tidak mati).
+- `app/services/startup_tasks.py` (baru): flag per proses + klaim `system_startup` di Mongo
+  (`STARTUP_TASKS_MIN_INTERVAL_MINUTES`, default 360) + force otomatis bila koleksi `users` kosong (deploy pertama
+  DB kosong) + klaim dilepas bila task gagal. Tidak pernah jalan per request.
+- `app/core/database.py`: pool serverless (`MONGODB_MAX_POOL_SIZE=10`, `MIN=0`, `maxIdleTimeMS`, timeouts,
+  retryWrites/retryReads, appname) + `_assert_safe_db_config()` (staging/production dilarang URI kosong/localhost/
+  fallback DB; keras di production & serverless, warning di preview lokal; tanpa menampilkan kredensial).
+- `app/core/config.py`: `is_serverless`, `mongodb_uri_is_local`, `unsafe_db_config_reason()`, env pool & interval.
+- Direct/signed upload Cloudinary: `media_service.direct_upload_signature()`, endpoint
+  `POST /api/media/direct-upload/sign` + `/complete` (media:write) dan `POST /api/baraya/me/upload-signature`;
+  model `app/models/media_direct.py`. Frontend `src/lib/cloudinaryUpload.js` + MediaPicker & barayaAuth mencoba
+  direct upload lalu **fallback otomatis** ke multipart lama bila provider bukan Cloudinary (cache per sesi).
+- Validasi (tanpa Testing Agent): /api/health ok; startup task jalan sekali lalu skip; DB kosong → indexes+admin
+  dibuat; guard DB & CORS terbukti; sign ditolak 422 saat LOCAL dan frontend fallback sukses (bukti jaringan:
+  422 sign → 201 /media/upload → foto tampil); signature Cloudinary valid (dummy creds, folder staging/baraya);
+  `yarn build` sukses 318.97 kB. Data uji dibersihkan; probe DB di-drop. Tidak ada deploy/migrasi.
