@@ -113,6 +113,46 @@ class Settings:
     S3_ACCESS_KEY_ID: str = os.environ.get("S3_ACCESS_KEY_ID", "")
     S3_SECRET_ACCESS_KEY: str = os.environ.get("S3_SECRET_ACCESS_KEY", "")
 
+    # ------------------------------------------------ Cloudinary (media CDN)
+    # Dipakai bila MEDIA_STORAGE_PROVIDER=CLOUDINARY. Kredensial HANYA dari
+    # environment. Staging & production memakai folder berbeda lewat
+    # CLOUDINARY_FOLDER (fallback: MEDIA_STORAGE_PREFIX) sehingga media tidak
+    # pernah tercampur antar environment.
+    CLOUDINARY_CLOUD_NAME: str = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_API_KEY: str = os.environ.get("CLOUDINARY_API_KEY", "")
+    CLOUDINARY_API_SECRET: str = os.environ.get("CLOUDINARY_API_SECRET", "")
+    # Opsional: hanya dipakai bila memang preset dibutuhkan oleh akun Cloudinary.
+    CLOUDINARY_UPLOAD_PRESET: str = os.environ.get("CLOUDINARY_UPLOAD_PRESET", "")
+    CLOUDINARY_FOLDER: str = os.environ.get("CLOUDINARY_FOLDER", "")
+    CLOUDINARY_URL: str = os.environ.get("CLOUDINARY_URL", "")
+
+    @property
+    def cloudinary_folder(self) -> str:
+        """Folder/prefix Cloudinary aktif (env-driven, terpisah per environment)."""
+        folder = (self.CLOUDINARY_FOLDER or self.MEDIA_STORAGE_PREFIX or "alsabbat").strip("/")
+        return folder
+
+    @property
+    def cloudinary_configured(self) -> bool:
+        if self.CLOUDINARY_URL.strip():
+            return True
+        return bool(
+            self.CLOUDINARY_CLOUD_NAME and self.CLOUDINARY_API_KEY and self.CLOUDINARY_API_SECRET
+        )
+
+    def missing_cloudinary_vars(self) -> List[str]:
+        """Nama variable yang belum diisi (tanpa pernah menampilkan nilainya)."""
+        if self.CLOUDINARY_URL.strip():
+            return []
+        missing = []
+        if not self.CLOUDINARY_CLOUD_NAME:
+            missing.append("CLOUDINARY_CLOUD_NAME")
+        if not self.CLOUDINARY_API_KEY:
+            missing.append("CLOUDINARY_API_KEY")
+        if not self.CLOUDINARY_API_SECRET:
+            missing.append("CLOUDINARY_API_SECRET")
+        return missing
+
     # ------------------------------------- social publishing (Phase 8)
     # Values are read from the environment/secret manager ONLY. Empty value =>
     # the platform reports NOT_CONFIGURED (never a fake publish).

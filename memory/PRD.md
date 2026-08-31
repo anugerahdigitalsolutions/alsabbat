@@ -1354,3 +1354,24 @@ Validasi (tanpa Testing Agent): skrip API 30/30 PASS (notifikasi admin saat peng
   Semua data uji dihapus (notifications/applications/players/staff/teams/customers = 0).
 CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan penuh. Untuk push HP perlu
   `FIREBASE_PROJECT_ID` + `FIREBASE_SERVICE_ACCOUNT_JSON` di environment server (plus token device/topik).
+
+## Cloudinary sebagai provider media (31 Agu 2026)
+- `models/enums.py`: `StorageProvider.CLOUDINARY`.
+- `core/config.py`: `CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET/UPLOAD_PRESET/FOLDER/URL` + helper
+  `cloudinary_folder` (fallback `MEDIA_STORAGE_PREFIX`), `cloudinary_configured`, `missing_cloudinary_vars()`
+  (hanya NAMA variable, tidak pernah nilainya).
+- `services/media_service.py`: `CloudinaryStorageBackend` (save → secure_url + `storage_key` =
+  `"<resource_type>:<public_id>"`, `replace()` overwrite in-place + invalidate CDN, `delete()` destroy),
+  factory provider CLOUDINARY dengan **validasi fail-fast**: ENVIRONMENT staging/production + provider
+  CLOUDINARY tanpa kredensial → RuntimeError dengan daftar variable yang kurang. `status()` melaporkan
+  Cloudinary (folder, persisten, cdn) alih-alih disk lokal. `MediaService.replace()` baru (fallback aman
+  ke upload biasa untuk backend lain).
+- `api/routes/media.py`: `GET /api/media/files/{path}` **tidak pernah membaca filesystem** saat provider
+  CLOUDINARY (404 + penjelasan); hard delete kini juga menghapus berkas di Cloudinary.
+- `requirements.txt`: `cloudinary>=1.40.0`.
+- Semua jalur upload (Admin Media, foto profil Baraya, foto pengajuan Pemain/Staf) memakai `media_service`
+  sehingga otomatis ikut Cloudinary; frontend tidak diubah (`resolveMediaUrl` meneruskan URL https apa adanya).
+- Verifikasi (tanpa Testing Agent, tanpa kredensial nyata): provider LOCAL tetap normal (upload & status),
+  validasi staging tanpa kredensial → RuntimeError, status Cloudinary benar (folder `alsabbat/staging`),
+  public_id/resource_type/storage_key benar, upload/replace/delete tervalidasi dengan uploader palsu,
+  `serve_file` tidak menyentuh disk. Preview tetap LOCAL karena kredensial belum ada. Tidak ada migrasi data.

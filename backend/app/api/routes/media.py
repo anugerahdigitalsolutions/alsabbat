@@ -14,6 +14,7 @@ from app.core.errors import NotFoundError, ValidationFailedError
 from app.core.rate_limit import write_rate_limit
 from app.models.auth import AuthContext
 from app.models.domain import MediaBase, MediaUpdate
+from app.models.enums import StorageProvider
 from app.services.media_service import media_service
 
 router = APIRouter(tags=["media"])
@@ -118,6 +119,13 @@ async def serve_file(file_path: str):
     if ".." in file_path:
         raise NotFoundError("Media file not found")
     backend = getattr(media_service, "backend", None)
+    if getattr(backend, "provider", None) == StorageProvider.CLOUDINARY:
+        # Cloudinary menyajikan media langsung lewat URL HTTPS-nya sendiri.
+        # Endpoint ini TIDAK boleh menyentuh filesystem server.
+        raise NotFoundError(
+            "Media disimpan di Cloudinary dan diakses langsung melalui URL HTTPS-nya "
+            "(bukan melalui endpoint ini)."
+        )
     if hasattr(backend, "fetch"):
         try:
             content, content_type = backend.fetch(file_path)
@@ -149,7 +157,7 @@ async def hard_delete(
     doc = await repo.get(media_id)
     if not doc:
         raise NotFoundError("Media not found")
-    if doc.get("storage_provider") in {"LOCAL", "S3"}:
+    if doc.get("storage_provider") in {"LOCAL", "S3", "CLOUDINARY"}:
         await media_service.remove(doc.get("storage_key"))
     await repo.delete(media_id)
     return {"success": True, "id": media_id}

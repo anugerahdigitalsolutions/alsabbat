@@ -344,6 +344,138 @@ class EmergentStorageBackend(StorageBackend):
         return False
 
 
+class CloudinaryStorageBackend(StorageBackend):
+    """Cloudinary — penyimpanan media utama untuk staging & production.
+
+    - `save()` mengunggah biner ke Cloudinary dan mengembalikan **secure_url**
+      (HTTPS) beserta `storage_key` = **public_id** (dipakai untuk delete/replace).
+    - `replace()` mengunggah ke public_id yang sama (`overwrite=True`) sehingga
+      URL tetap dan cache CDN di-invalidate.
+    - Folder/prefix diambil dari `CLOUDINARY_FOLDER` (fallback `MEDIA_STORAGE_PREFIX`)
+      agar staging dan production tidak pernah berbagi folder.
+    Tidak ada berkas yang ditulis ke disk server.
+    """
+
+    provider = StorageProvider.CLOUDINARY
+    _configured_sdk = False
+
+    def is_configured(self) -> bool:
+        return settings.cloudinary_configured
+
+    def _sdk(self):
+        try:
+            import cloudinary
+            import cloudinary.uploader  # noqa: F401
+        except Exception as exc:  # pragma: no cover - dependency missing
+            raise ValidationFailedError(
+                "Paket 'cloudinary' belum terpasang di server. Jalankan "
+                "pip install -r requirements.txt."
+            ) from exc
+        if not self.is_configured():
+            missing = ", ".join(settings.missing_cloudinary_vars()) or "CLOUDINARY_URL"
+            raise ValidationFailedError(
+                f"Cloudinary belum dikonfigurasi. Variable yang belum diisi: {missing}."
+            )
+        if not CloudinaryStorageBackend._configured_sdk:
+            if settings.CLOUDINARY_URL.strip():
+                cloudinary.config(secure=True)
+            else:
+                cloudinary.config(
+                    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+                    api_key=settings.CLOUDINARY_API_KEY,
+                    api_secret=settings.CLOUDINARY_API_SECRET,
+                    secure=True,
+                )
+            CloudinaryStorageBackend._configured_sdk = True
+        return cloudinary
+
+    @staticmethod
+    def _resource_type(mime_type: str) -> str:
+        mime = (mime_type or "").lower()
+        if mime.startswith("image/"):
+            return "image"
+        if mime.startswith("video/") or mime.startswith("audio/"):
+            return "video"
+        return "raw"
+
+    def public_id(self, key: str) -> str:
+        """public_id = <folder>/<key tanpa ekstensi> (ekstensi diurus Cloudinary)."""
+        clean = key.lstrip("/")
+        stem = clean.rsplit(".", 1)[0] if "." in clean.rsplit("/", 1)[-1] else clean
+        return f"{settings.cloudinary_folder}/{stem}"
+
+    async def save(
+        self, key: str, content: bytes, mime_type: str, public_id: Optional[str] = None
+    ) -> StoredFile:
+        import asyncio
+
+        cloudinary = self._sdk()
+        from cloudinary import uploader
+
+        target_id = public_id or self.public_id(key)
+        resource_type = self._resource_type(mime_type)
+        options = {
+            "public_id": target_id,
+            "resource_type": resource_type,
+            "overwrite": True,
+            "invalidate": True,
+        }
+        if settings.CLOUDINARY_UPLOAD_PRESET:
+            options["upload_preset"] = settings.CLOUDINARY_UPLOAD_PRESET
+
+        def _upload():
+            return uploader.upload(content, **options)
+
+        try:
+            result = await asyncio.to_thread(_upload)
+        except ValidationFailedError:
+            raise
+        except Exception as exc:
+            logger.error("CLOUDINARY UPLOAD FAILED type=%s", type(exc).__name__)
+            raise ValidationFailedError(
+                "Gagal mengunggah media ke Cloudinary. Periksa konfigurasi Cloudinary di server."
+            ) from exc
+        secure_url = result.get("secure_url") or result.get("url") or ""
+        stored_id = result.get("public_id") or target_id
+        # `storage_key` menyimpan resource_type agar delete/replace tetap akurat
+        # untuk video/raw (Cloudinary butuh resource_type saat destroy).
+        storage_key = f"{resource_type}:{stored_id}"
+        logger.info("cloudinary.upload ok resource=%s", resource_type)
+        return StoredFile(
+            url=secure_url,
+            storage_key=storage_key,
+            provider=self.provider,
+            size=int(result.get("bytes") or len(content)),
+        )
+
+    async def replace(self, storage_key: str, content: bytes, mime_type: str) -> StoredFile:
+        """Update media di tempat: public_id sama, URL tetap, cache di-invalidate."""
+        resource_type, _, stored_id = (storage_key or "").partition(":")
+        if not stored_id:
+            stored_id = resource_type or ""
+        return await self.save(stored_id, content, mime_type, public_id=stored_id)
+
+    async def delete(self, key: str) -> bool:
+        import asyncio
+
+        self._sdk()
+        from cloudinary import uploader
+
+        resource_type, _, stored_id = (key or "").partition(":")
+        if not stored_id:
+            stored_id, resource_type = resource_type, "image"
+
+        def _destroy():
+            return uploader.destroy(stored_id, resource_type=resource_type, invalidate=True)
+
+        try:
+            result = await asyncio.to_thread(_destroy)
+        except Exception as exc:
+            logger.warning("cloudinary.delete_failed type=%s", type(exc).__name__)
+            return False
+        return str(result.get("result", "")).lower() in {"ok", "not found"}
+
+
 class MediaService:
     def __init__(self) -> None:
         provider = settings.MEDIA_STORAGE_PROVIDER
@@ -351,6 +483,21 @@ class MediaService:
             self.backend: StorageBackend = S3StorageBackend()
         elif provider == StorageProvider.EMERGENT.value:
             self.backend = EmergentStorageBackend()
+        elif provider == StorageProvider.CLOUDINARY.value:
+            # Validasi konfigurasi: staging/production TIDAK boleh berjalan dengan
+            # provider CLOUDINARY tanpa kredensial (fail fast, pesan jelas,
+            # nilai kredensial tidak pernah ditampilkan).
+            if not settings.cloudinary_configured and (
+                settings.is_production or settings.is_staging
+            ):
+                missing = ", ".join(settings.missing_cloudinary_vars()) or "CLOUDINARY_URL"
+                raise RuntimeError(
+                    "MEDIA_STORAGE_PROVIDER=CLOUDINARY pada ENVIRONMENT="
+                    f"{settings.ENVIRONMENT} tetapi kredensial Cloudinary belum lengkap. "
+                    f"Isi variable berikut di environment server: {missing} "
+                    "(atau CLOUDINARY_URL). Media TIDAK akan disimpan ke disk server."
+                )
+            self.backend = CloudinaryStorageBackend()
         else:
             self.backend = LocalStorageBackend(
                 settings.MEDIA_LOCAL_DIR, settings.MEDIA_PUBLIC_PATH
@@ -388,11 +535,56 @@ class MediaService:
             logger.warning("Failed to delete media key %s: %s", key, exc)
             return False
 
+    async def replace(
+        self, storage_key: Optional[str], file_name: str, content: bytes, mime_type: str
+    ) -> Tuple[StoredFile, MediaType]:
+        """Update berkas media di tempat bila backend mendukungnya (Cloudinary).
+
+        Fallback: unggah sebagai berkas baru (perilaku lama tetap aman).
+        """
+        validate_file(mime_type, len(content))
+        file_name, content, mime_type = sanitize_upload(file_name, content, mime_type)
+        media_type = validate_file(mime_type, len(content))
+        replacer = getattr(self.backend, "replace", None)
+        if storage_key and callable(replacer):
+            stored = await replacer(storage_key, content, mime_type)
+            return stored, media_type
+        key = self.build_key(file_name, media_type)
+        stored = await self.backend.save(key, content, mime_type)
+        return stored, media_type
+
     def status(self) -> dict:
         is_local = self.backend.provider == StorageProvider.LOCAL
+        is_cloudinary = self.backend.provider == StorageProvider.CLOUDINARY
         # LOCAL on a self-hosted server (aaPanel + Nginx) is genuinely persistent
         # when MEDIA_LOCAL_DIR points at a directory outside the release folder.
         local_persistent = is_local and settings.MEDIA_LOCAL_PERSISTENT
+        if is_cloudinary:
+            configured = self.backend.is_configured()
+            if configured:
+                note = (
+                    "Cloudinary aktif sebagai penyimpanan media utama (HTTPS/CDN, persisten). "
+                    f"Folder: {settings.cloudinary_folder}. Tidak ada berkas media yang "
+                    "ditulis ke disk server."
+                )
+            else:
+                missing = ", ".join(settings.missing_cloudinary_vars()) or "CLOUDINARY_URL"
+                note = (
+                    "Cloudinary dipilih tetapi kredensial belum lengkap. Isi variable berikut "
+                    f"di environment server: {missing}. Upload media akan ditolak sampai diisi."
+                )
+            return {
+                "provider": self.backend.provider.value,
+                "configured": configured,
+                "cdn_enabled": True,
+                "persistent": configured,
+                "local_dir": None,
+                "cloudinary_folder": settings.cloudinary_folder,
+                "upload_preset_used": bool(settings.CLOUDINARY_UPLOAD_PRESET),
+                "note": note,
+                "limits_mb": {k.value: v for k, v in MAX_SIZE_MB.items()},
+                "allowed_mime_types": {k.value: sorted(v) for k, v in ALLOWED_MIME_TYPES.items()},
+            }
         if not is_local:
             note = "Penyimpanan objek persisten aktif."
         elif local_persistent:
