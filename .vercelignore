@@ -1,13 +1,15 @@
-# Hanya berpengaruh pada deploy via Vercel CLI — menjaga ukuran bundle function.
-backend/media_storage
-backend/__pycache__
+# Hanya berlaku untuk sumber deployment Vercel — menjaga ukuran bundle.
+# PENTING: pola diawali "/" agar hanya cocok di root repo dan TIDAK ikut
+# mengecualikan folder bernama sama di dalam frontend/ atau backend/
+# (mis. frontend/scripts/generate-seo-files.js yang dipakai `yarn prebuild`).
+/backend/media_storage
+/tests
+/memory
+/scripts
+/docs
+/.emergent
+/test_result.md
 **/__pycache__
 *.pyc
-tests
-frontend/build
-frontend/node_modules
-memory
-scripts
-docs
-.emergent
-test_result.md
+/frontend/build
+/frontend/node_modules
