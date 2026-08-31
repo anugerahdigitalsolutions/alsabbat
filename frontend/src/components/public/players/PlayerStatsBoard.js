@@ -109,7 +109,7 @@ export const PlayerStatsBoard = ({ players: playersProp = null }) => {
     };
   }, [playersProp]);
 
-  const players = playersProp || payload?.items || [];
+  const players = useMemo(() => playersProp || payload?.items || [], [playersProp, payload]);
   const seasonName = payload?.season?.name || null;
 
   const cards = useMemo(
