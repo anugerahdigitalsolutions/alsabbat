@@ -1400,3 +1400,17 @@ CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan pe
   dibuat; guard DB & CORS terbukti; sign ditolak 422 saat LOCAL dan frontend fallback sukses (bukti jaringan:
   422 sign → 201 /media/upload → foto tampil); signature Cloudinary valid (dummy creds, folder staging/baraya);
   `yarn build` sukses 318.97 kB. Data uji dibersihkan; probe DB di-drop. Tidak ada deploy/migrasi.
+
+## Fase 3 — Kesiapan MongoDB Atlas (31 Agu 2026)
+- `backend/app/core/config.py`: guard isolasi environment ditambahkan pada `unsafe_db_config_reason()` —
+  production menolak `MONGODB_DB_NAME` yang mengandung "staging"; staging menolak nama database production
+  (`alsabbat_platform`). Guard Fase 2 (URI kosong/localhost/127.0.0.1/DB_NAME kosong) tetap berlaku.
+- `backend/app/core/database.py`: `_client_kwargs()` menambahkan `tlsCAFile=certifi.where()` otomatis untuk URI
+  `mongodb+srv://` (Atlas) agar TLS handshake aman di runtime serverless; connection pool Fase 2 tidak diubah.
+- `backend/requirements.txt`: `dnspython>=2.6.1` (WAJIB untuk `mongodb+srv://`) dan `certifi>=2024.7.4`.
+- Audit: 38 collection terdaftar, 35 punya index eksplisit di `ensure_indexes()`; `clubs`, `counters`,
+  `site_settings` tanpa index tambahan (dibuat otomatis saat write pertama, hanya `_id`).
+- Verifikasi pada database KOSONG (probe, lalu di-drop): `ensure_indexes()` membuat 36 collection + index,
+  bootstrap membuat 1 SUPER_ADMIN dari `BOOTSTRAP_ADMIN_EMAIL/PASSWORD/NAME` (hash bcrypt, password tidak
+  pernah masuk log). Guard diuji: production+DB staging GAGAL, staging+DB production GAGAL (Vercel), 
+  production+localhost GAGAL. Tidak ada dump/restore/migrasi/data dummy. Tidak ada deploy.

@@ -165,6 +165,20 @@ class Settings:
             return "MONGODB_URI menunjuk ke localhost/127.0.0.1 (database lokal/VPS)"
         if not (os.environ.get("MONGODB_DB_NAME") or os.environ.get("DB_NAME")):
             return "MONGODB_DB_NAME belum diset (aplikasi akan memakai nama database default)"
+        # Isolasi environment: staging & production tidak boleh memakai nama
+        # database yang sama / tertukar.
+        db_name = (self.DB_NAME or "").strip().lower()
+        if self.is_production and "staging" in db_name:
+            return (
+                "MONGODB_DB_NAME mengandung 'staging' padahal ENVIRONMENT=production "
+                "(risiko production memakai database staging)"
+            )
+        if self.is_staging and db_name == "alsabbat_platform":
+            return (
+                "MONGODB_DB_NAME sama dengan nama database production ('alsabbat_platform') "
+                "padahal ENVIRONMENT=staging — pakai database terpisah, misalnya "
+                "alsabbat_platform_staging"
+            )
         return None
 
     @property

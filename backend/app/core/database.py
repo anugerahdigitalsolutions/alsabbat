@@ -77,6 +77,20 @@ def _assert_safe_db_config() -> None:
     logger.warning("DB CONFIG GUARD (peringatan, bukan Vercel): %s", message)
 
 
+def _client_kwargs() -> dict:
+    """Opsi koneksi. Untuk MongoDB Atlas (`mongodb+srv://`) sertakan CA bundle
+    certifi agar TLS handshake tetap berhasil di runtime serverless."""
+    kwargs: dict = {}
+    if (settings.MONGODB_URI or "").startswith("mongodb+srv://"):
+        try:
+            import certifi
+
+            kwargs["tlsCAFile"] = certifi.where()
+        except Exception:  # pragma: no cover - certifi tidak tersedia
+            logger.warning("certifi tidak tersedia — memakai CA bundle sistem untuk Atlas")
+    return kwargs
+
+
 def get_client() -> AsyncIOMotorClient:
     """Client Mongo tunggal per proses.
 
@@ -100,6 +114,7 @@ def get_client() -> AsyncIOMotorClient:
             socketTimeoutMS=settings.MONGODB_SOCKET_TIMEOUT_MS,
             retryWrites=True,
             retryReads=True,
+            **_client_kwargs(),
         )
         logger.info(
             "MongoDB client initialised (db=%s, maxPool=%s, serverless=%s)",
