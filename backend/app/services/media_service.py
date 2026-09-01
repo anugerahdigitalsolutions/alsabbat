@@ -191,15 +191,25 @@ class LocalStorageBackend(StorageBackend):
     def __init__(self, base_dir: str, public_path: str):
         self.base_dir = Path(base_dir)
         self.public_path = public_path.rstrip("/")
-        self.base_dir.mkdir(parents=True, exist_ok=True)
+        # Direktori TIDAK dibuat saat import: pada deployment serverless
+        # (Vercel) filesystem bersifat read-only sehingga mkdir di sini membuat
+        # seluruh aplikasi gagal di-import (OSError: Read-only file system).
+        # Direktori dibuat saat penyimpanan pertama (lihat `save`).
 
     def is_configured(self) -> bool:
         return True
 
     async def save(self, key: str, content: bytes, mime_type: str) -> StoredFile:
         target = self.base_dir / key
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(content)
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+        except OSError as exc:
+            raise ValidationFailedError(
+                "Penyimpanan media lokal tidak dapat ditulis pada environment ini "
+                "(filesystem read-only). Set MEDIA_STORAGE_PROVIDER=CLOUDINARY beserta "
+                "kredensial Cloudinary agar media tersimpan di CDN."
+            ) from exc
         base = settings.MEDIA_CDN_BASE_URL.rstrip("/") if settings.MEDIA_CDN_BASE_URL else ""
         url = f"{base}{self.public_path}/{key}" if base else f"{self.public_path}/{key}"
         return StoredFile(url=url, storage_key=key, provider=self.provider, size=len(content))
@@ -478,7 +488,26 @@ class CloudinaryStorageBackend(StorageBackend):
 
 class MediaService:
     def __init__(self) -> None:
-        provider = settings.MEDIA_STORAGE_PROVIDER
+        # Normalisasi aman: nilai environment bisa datang sebagai "cloudinary",
+        # " Cloudinary " atau dengan tanda kutip.
+        provider = (settings.MEDIA_STORAGE_PROVIDER or "").strip().strip("'\"").upper()
+        if provider != StorageProvider.CLOUDINARY.value and settings.is_serverless:
+            # Serverless (Vercel): filesystem deployment read-only, jadi LOCAL
+            # bukan opsi yang valid. Bila kredensial Cloudinary tersedia, media
+            # WAJIB memakai Cloudinary; bila tidak, dicatat eksplisit di log.
+            if settings.cloudinary_configured:
+                logger.warning(
+                    "MEDIA_STORAGE_PROVIDER=%s tidak didukung pada runtime serverless; "
+                    "memakai CLOUDINARY karena kredensial Cloudinary tersedia.",
+                    provider or "(kosong)",
+                )
+                provider = StorageProvider.CLOUDINARY.value
+            elif provider in {"", StorageProvider.LOCAL.value}:
+                logger.error(
+                    "Runtime serverless tanpa kredensial Cloudinary: media TIDAK dapat "
+                    "disimpan. Set MEDIA_STORAGE_PROVIDER=CLOUDINARY dan variable "
+                    "CLOUDINARY_* pada environment deployment."
+                )
         if provider == StorageProvider.S3.value:
             self.backend: StorageBackend = S3StorageBackend()
         elif provider == StorageProvider.EMERGENT.value:

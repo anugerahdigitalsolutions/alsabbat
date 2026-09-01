@@ -300,10 +300,58 @@ frontend:
           third-party (YouTube/Drive/WhatsApp) and are legitimate.
           Homepage renders and /admin/login -> dashboard works (auth 200).
 
+  - task: "Vercel serverless crash: LocalStorageBackend mkdir on read-only /var/task (media storage must use Cloudinary)"
+    implemented: true
+    working: true
+    file: "backend/app/services/media_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          BUG: on Vercel, importing app.main crashed with
+          OSError [Errno 30] Read-only file system: '/var/task/media_storage'
+          because LocalStorageBackend.__init__ did base_dir.mkdir() at module
+          import (media_service = MediaService() is module level), and the
+          provider comparison used the raw env value so 'cloudinary' with
+          spaces/quotes fell through to LOCAL.
+          FIX (media_service.py only): (1) LocalStorageBackend no longer mkdir on
+          init — directory is created lazily in save(), and OSError is converted
+          to ValidationFailedError with a clear message; (2) MediaService.__init__
+          normalises the provider ((...).strip().strip("'\"").upper()) and, when
+          settings.is_serverless, uses CloudinaryStorageBackend if Cloudinary
+          credentials exist (logged as WARNING) or logs an explicit ERROR when
+          they don't (no silent local fallback, no /tmp workaround).
+          Cloudinary backend/behaviour untouched. Local verification: app.main
+          imports OK in simulated Vercel env -> provider=CLOUDINARY and
+          /var/task/media_storage NOT created; dev (non-serverless) stays LOCAL
+          and save() still writes. Needs testing agent confirmation for
+          GET /api/media/status + provider selection only.
+        -working: true
+        -agent: "testing"
+        -comment: |
+          VERIFIED (read-only testing, no code changes per user constraint).
+          A. Local dev environment: GET /api/media/storage/status → 200, provider=LOCAL,
+          configured=true. Backend supervisor running, no errors in logs.
+          B. Serverless simulation (subprocess with isolated env, no permanent config changes):
+             Case 1 (VERCEL=1, MEDIA_STORAGE_PROVIDER=cloudinary lowercase, Cloudinary creds):
+             → exit 0, provider=CLOUDINARY, /var/task/media_storage NOT created, no OSError ✓
+             Case 2 (VERCEL=1, MEDIA_STORAGE_PROVIDER=LOCAL, Cloudinary creds available):
+             → exit 0, provider=CLOUDINARY (with WARNING log as expected), no directory created, no OSError ✓
+             Case 3 (VERCEL=1, no Cloudinary creds, MEDIA_LOCAL_DIR=/var/task/media_storage):
+             → exit 0 (no crash), provider=LOCAL, explicit ERROR log, no OSError ✓
+          C. LocalStorageBackend.save() in dev: lazy directory creation + file write verified
+          (test file written to /tmp/agent_lazy_test, content matched, cleanup successful).
+          D. Backend logs: no "Read-only file system" errors found.
+          Bug fix confirmed working. Provider normalization, serverless detection, lazy mkdir,
+          and explicit error logging all functioning as designed.
+
 metadata:
   created_by: "main_agent"
   version: "1.2"
-  test_sequence: 2
+  test_sequence: 4
   run_ui: false
 
 test_plan:
@@ -466,3 +514,53 @@ agent_communication:
       tetap VS tanpa pencetak gol; skor/logo/sponsor/footer tidak tertutup; Unduh PNG
       & Bagikan tetap ada; tidak ada error console/API. yarn build sukses
       (main.c46b0d22.js, +561 B). Fixture uji dihapus.
+
+    -agent: "testing"
+    -message: |
+      MEDIA STORAGE VERCEL SERVERLESS BUG FIX — VERIFIED (read-only testing only).
+      Scope: media/storage provider selection + lazy directory creation only.
+      Did NOT test: auth flows, OTP, Admin Panel features, merchandise, or other features.
+      Did NOT modify code (read/test only), no deploy, no git operations.
+      
+      Test Results:
+      A. Local dev environment (no VERCEL env): ✓ PASS
+         - Backend supervisor running, no errors
+         - GET /api/media/storage/status → 200 OK
+         - Provider: LOCAL, configured: true
+         - No "Read-only file system" errors in logs
+      
+      B. Serverless simulation (subprocess with isolated env): ✓ ALL PASS
+         Case 1 (VERCEL=1, MEDIA_STORAGE_PROVIDER=cloudinary lowercase, Cloudinary creds):
+         - Exit code: 0 (no crash)
+         - Provider selected: CLOUDINARY ✓
+         - /var/task/media_storage NOT created ✓
+         - No OSError "Read-only file system" ✓
+         
+         Case 2 (VERCEL=1, MEDIA_STORAGE_PROVIDER=LOCAL, Cloudinary creds available):
+         - Exit code: 0 (no crash)
+         - Provider selected: CLOUDINARY (with WARNING log as designed) ✓
+         - /var/task/media_storage NOT created ✓
+         - No OSError "Read-only file system" ✓
+         
+         Case 3 (VERCEL=1, no Cloudinary creds, MEDIA_LOCAL_DIR=/var/task/media_storage):
+         - Exit code: 0 (no crash) ✓
+         - Provider selected: LOCAL (fallback)
+         - Explicit ERROR log present (as designed) ✓
+         - No OSError "Read-only file system" ✓
+         - /var/task/media_storage NOT created ✓
+      
+      C. LocalStorageBackend.save() lazy directory creation: ✓ PASS
+         - Directory created on first save() call (not on init)
+         - File write successful
+         - Content verification passed
+         - No regression in local upload functionality
+      
+      D. Backend logs check: ✓ PASS
+         - No "Read-only file system" errors found
+      
+      Bug fix confirmed working. All requirements met:
+      - Provider normalization (strips quotes/spaces, uppercases)
+      - Serverless detection (VERCEL/VERCEL_ENV env vars)
+      - Lazy directory creation (mkdir in save(), not __init__)
+      - Explicit error logging (no silent fallbacks)
+      - No OSError crashes on read-only filesystems
