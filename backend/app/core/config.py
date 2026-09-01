@@ -31,6 +31,20 @@ def _bool(value: str | None, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _clean(value: str | None, default: str = "") -> str:
+    """Nilai environment yang dibersihkan (tanpa pernah menampilkan isinya).
+
+    Kredensial yang ditempel lewat dashboard (Vercel/Railway) sering membawa
+    spasi, newline, atau tanda kutip pembungkus yang tak terlihat. Pada
+    Cloudinary hal ini membuat signature upload menjadi tidak valid meskipun
+    nilainya "terlihat" benar.
+    """
+    if value is None:
+        return default
+    cleaned = value.strip().strip("'\"").strip()
+    return cleaned or default
+
+
 class Settings:
     """Application settings resolved from environment variables."""
 
@@ -138,13 +152,18 @@ class Settings:
     # environment. Staging & production memakai folder berbeda lewat
     # CLOUDINARY_FOLDER (fallback: MEDIA_STORAGE_PREFIX) sehingga media tidak
     # pernah tercampur antar environment.
-    CLOUDINARY_CLOUD_NAME: str = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
-    CLOUDINARY_API_KEY: str = os.environ.get("CLOUDINARY_API_KEY", "")
-    CLOUDINARY_API_SECRET: str = os.environ.get("CLOUDINARY_API_SECRET", "")
+    CLOUDINARY_CLOUD_NAME: str = _clean(os.environ.get("CLOUDINARY_CLOUD_NAME"))
+    CLOUDINARY_API_KEY: str = _clean(os.environ.get("CLOUDINARY_API_KEY"))
+    CLOUDINARY_API_SECRET: str = _clean(os.environ.get("CLOUDINARY_API_SECRET"))
     # Opsional: hanya dipakai bila memang preset dibutuhkan oleh akun Cloudinary.
-    CLOUDINARY_UPLOAD_PRESET: str = os.environ.get("CLOUDINARY_UPLOAD_PRESET", "")
-    CLOUDINARY_FOLDER: str = os.environ.get("CLOUDINARY_FOLDER", "")
-    CLOUDINARY_URL: str = os.environ.get("CLOUDINARY_URL", "")
+    CLOUDINARY_UPLOAD_PRESET: str = _clean(os.environ.get("CLOUDINARY_UPLOAD_PRESET"))
+    CLOUDINARY_FOLDER: str = _clean(os.environ.get("CLOUDINARY_FOLDER"))
+    CLOUDINARY_URL: str = _clean(os.environ.get("CLOUDINARY_URL"))
+    # Algoritma signature akun Cloudinary (Settings -> Security). Default sha1;
+    # set ke "sha256" bila akun memakai SHA-256.
+    CLOUDINARY_SIGNATURE_ALGORITHM: str = (
+        _clean(os.environ.get("CLOUDINARY_SIGNATURE_ALGORITHM"), "sha1").lower() or "sha1"
+    )
 
     # ------------------------------------------------ serverless / Vercel
     # Vercel menyetel VERCEL=1 di runtime function.

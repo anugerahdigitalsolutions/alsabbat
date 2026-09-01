@@ -387,15 +387,27 @@ class CloudinaryStorageBackend(StorageBackend):
                 f"Cloudinary belum dikonfigurasi. Variable yang belum diisi: {missing}."
             )
         if not CloudinaryStorageBackend._configured_sdk:
-            if settings.CLOUDINARY_URL.strip():
-                cloudinary.config(secure=True)
-            else:
+            # Presedensi eksplisit: bila trio CLOUDINARY_CLOUD_NAME/API_KEY/
+            # API_SECRET tersedia, ITU yang dipakai. CLOUDINARY_URL hanya
+            # fallback, sehingga api_key & api_secret yang dipakai untuk
+            # menandatangani upload SELALU berasal dari sumber yang sama
+            # (penyebab umum "Invalid Signature" adalah campuran dua sumber).
+            algorithm = settings.CLOUDINARY_SIGNATURE_ALGORITHM or "sha1"
+            if (
+                settings.CLOUDINARY_CLOUD_NAME
+                and settings.CLOUDINARY_API_KEY
+                and settings.CLOUDINARY_API_SECRET
+            ):
                 cloudinary.config(
                     cloud_name=settings.CLOUDINARY_CLOUD_NAME,
                     api_key=settings.CLOUDINARY_API_KEY,
                     api_secret=settings.CLOUDINARY_API_SECRET,
                     secure=True,
+                    signature_algorithm=algorithm,
                 )
+            else:
+                # Dari CLOUDINARY_URL (dibaca SDK dari environment).
+                cloudinary.config(secure=True, signature_algorithm=algorithm)
             CloudinaryStorageBackend._configured_sdk = True
         return cloudinary
 
@@ -620,10 +632,21 @@ class MediaService:
             )
         resource_type = CloudinaryStorageBackend._resource_type(mime_type)
         timestamp = int(time.time())
+        # PENTING: parameter yang ditandatangani harus PERSIS sama dengan yang
+        # dikirim browser ke Cloudinary (selain file, api_key, dan signature).
+        # api_sign_request mengurutkan & meng-canonicalize sendiri sesuai aturan
+        # Cloudinary (k=v digabung '&', urut abjad) — tidak ada signature manual.
         params = {"public_id": base_public_id, "timestamp": timestamp}
         if settings.CLOUDINARY_UPLOAD_PRESET:
             params["upload_preset"] = settings.CLOUDINARY_UPLOAD_PRESET
-        signature = api_sign_request(params, cloudinary.config().api_secret)
+        api_secret = cloudinary.config().api_secret
+        if not api_secret:
+            raise ValidationFailedError(
+                "CLOUDINARY_API_SECRET tidak terbaca di server. Periksa variable "
+                "Cloudinary di environment deployment."
+            )
+        algorithm = settings.CLOUDINARY_SIGNATURE_ALGORITHM or "sha1"
+        signature = api_sign_request(params, api_secret, algorithm=algorithm)
         return {
             "provider": StorageProvider.CLOUDINARY.value,
             "cloud_name": cloudinary.config().cloud_name,
@@ -641,6 +664,128 @@ class MediaService:
             "max_bytes": MAX_SIZE_MB.get(media_type, 10) * 1024 * 1024,
             "media_type": media_type.value,
         }
+
+    async def direct_upload_self_test(self) -> dict:
+        """Uji signature direct-upload terhadap Cloudinary yang sebenarnya.
+
+        Memakai JALUR TANDA TANGAN YANG SAMA dengan browser (params identik:
+        public_id + timestamp [+ upload_preset]) lalu mengunggah 1 berkas PNG
+        1x1 dari server ke endpoint upload Cloudinary. Berkas uji langsung
+        dihapus kembali. Tidak pernah menampilkan/mencatat CLOUDINARY_API_SECRET
+        (hanya 4 digit terakhir api_key sebagai penanda).
+        """
+        import asyncio
+        import base64
+
+        import requests
+
+        signed = await self.direct_upload_signature(
+            "signature-self-test.png", "image/png", subfolder="_selftest"
+        )
+        cloudinary = self.backend._sdk()  # noqa: SLF001 - pastikan SDK terkonfigurasi
+        assert cloudinary is not None
+        api_key = str(signed.get("api_key") or "")
+        diagnostics = {
+            "cloud_name": signed.get("cloud_name"),
+            "api_key_last4": api_key[-4:] if api_key else None,
+            "signature_algorithm": settings.CLOUDINARY_SIGNATURE_ALGORITHM or "sha1",
+            "credential_source": (
+                "CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET"
+                if (
+                    settings.CLOUDINARY_CLOUD_NAME
+                    and settings.CLOUDINARY_API_KEY
+                    and settings.CLOUDINARY_API_SECRET
+                )
+                else "CLOUDINARY_URL"
+            ),
+            "folder": settings.cloudinary_folder,
+            "signed_params": ["public_id", "timestamp"]
+            + (["upload_preset"] if signed.get("upload_preset") else []),
+            "public_id": signed.get("public_id"),
+            "timestamp": signed.get("timestamp"),
+        }
+        png_1x1 = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8AAAwAB/AF/9YvJAAAAAElFTkSuQmCC"
+        )
+        data = {
+            "api_key": signed["api_key"],
+            "timestamp": str(signed["timestamp"]),
+            "signature": signed["signature"],
+            "public_id": signed["public_id"],
+        }
+        if signed.get("upload_preset"):
+            data["upload_preset"] = signed["upload_preset"]
+
+        def _upload() -> requests.Response:
+            return requests.post(
+                signed["upload_url"],
+                data=data,
+                files={"file": ("self-test.png", png_1x1, "image/png")},
+                timeout=30,
+            )
+
+        try:
+            response = await asyncio.to_thread(_upload)
+        except Exception as exc:  # pragma: no cover - jaringan
+            logger.warning("cloudinary.self_test.network_error type=%s", type(exc).__name__)
+            return {
+                "success": False,
+                "stage": "network",
+                "message": "Tidak dapat menghubungi Cloudinary dari server.",
+                "diagnostics": diagnostics,
+            }
+
+        if response.status_code >= 400:
+            try:
+                error_message = response.json().get("error", {}).get("message", "")
+            except Exception:
+                error_message = response.text[:300]
+            logger.warning(
+                "cloudinary.self_test.rejected status=%s (secret tidak pernah dicatat)",
+                response.status_code,
+            )
+            return {
+                "success": False,
+                "stage": "cloudinary",
+                "http_status": response.status_code,
+                "cloudinary_error": error_message,
+                "message": (
+                    "Cloudinary menolak signature. Bila pesan berisi 'Invalid Signature', "
+                    "parameter sudah benar tetapi CLOUDINARY_API_SECRET (atau algoritma "
+                    "signature akun) tidak cocok dengan CLOUDINARY_API_KEY yang dipakai. "
+                    "Periksa ulang nilai CLOUDINARY_API_SECRET di environment deployment "
+                    "(pastikan tanpa spasi/newline dan berasal dari cloud yang sama), atau "
+                    "set CLOUDINARY_SIGNATURE_ALGORITHM=sha256 bila akun memakai SHA-256."
+                ),
+                "diagnostics": diagnostics,
+            }
+
+        body = response.json()
+        public_id = body.get("public_id")
+        result = {
+            "success": True,
+            "http_status": response.status_code,
+            "public_id": public_id,
+            "secure_url": body.get("secure_url"),
+            "resource_type": body.get("resource_type"),
+            "bytes": body.get("bytes"),
+            "message": "Signature valid — upload langsung ke Cloudinary berhasil.",
+            "diagnostics": diagnostics,
+        }
+        # Bersihkan berkas uji (best-effort, tidak mengubah hasil verifikasi).
+        try:
+            from cloudinary import uploader
+
+            await asyncio.to_thread(
+                uploader.destroy, public_id, resource_type=body.get("resource_type", "image"),
+                invalidate=True,
+            )
+            result["cleanup"] = "deleted"
+        except Exception:  # pragma: no cover
+            result["cleanup"] = "manual"
+        logger.info("cloudinary.self_test.ok public_id=%s", public_id)
+        return result
+
 
     def status(self) -> dict:
         is_local = self.backend.provider == StorageProvider.LOCAL

@@ -85,6 +85,18 @@ async def sign_direct_upload(
 
 
 @router.post(
+    "/direct-upload/self-test",
+    summary="Uji signature direct-upload terhadap Cloudinary (admin, tanpa menampilkan secret)",
+)
+async def self_test_direct_upload(
+    request: Request,
+    user: AuthContext = Depends(require_permission("media:write")),
+):
+    write_rate_limit(request)
+    return await media_service.direct_upload_self_test()
+
+
+@router.post(
     "/direct-upload/complete",
     status_code=201,
     summary="Catat media hasil upload langsung ke Cloudinary",
