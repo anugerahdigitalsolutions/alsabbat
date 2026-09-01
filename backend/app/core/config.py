@@ -81,6 +81,11 @@ class Settings:
     BOOTSTRAP_ADMIN_EMAIL: str = os.environ.get("BOOTSTRAP_ADMIN_EMAIL", "admin@alsabbat.com")
     BOOTSTRAP_ADMIN_PASSWORD: str = os.environ.get("BOOTSTRAP_ADMIN_PASSWORD", "")
     BOOTSTRAP_ADMIN_NAME: str = os.environ.get("BOOTSTRAP_ADMIN_NAME", "ALSABBAT Super Admin")
+    # Reset password bootstrap admin (hash bcrypt) memakai BOOTSTRAP_ADMIN_PASSWORD
+    # yang aktif. HANYA berlaku pada staging/preview — production selalu diabaikan.
+    BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET: bool = _bool(
+        os.environ.get("BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET"), False
+    )
 
     # --------------------------------------------------------------- cors
     CORS_ORIGINS: List[str] = _csv(os.environ.get("CORS_ORIGINS"), ["*"])
@@ -282,6 +287,21 @@ class Settings:
     @property
     def is_staging(self) -> bool:
         return self.ENVIRONMENT.lower() in {"staging", "stage"}
+
+    @property
+    def bootstrap_admin_password_reset_enabled(self) -> bool:
+        """Boleh menyelaraskan password bootstrap admin dengan env?
+
+        Aktif HANYA bila: flag env dinyalakan, BOOTSTRAP_ADMIN_PASSWORD terisi,
+        environment BUKAN production, dan environment adalah staging/preview.
+        Production TIDAK pernah terpengaruh.
+        """
+        if not (self.BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET and self.BOOTSTRAP_ADMIN_PASSWORD):
+            return False
+        if self.is_production:
+            return False
+        vercel_env = (os.environ.get("VERCEL_ENV") or "").strip().lower()
+        return self.is_staging or vercel_env in {"preview", "development"}
 
     def resolved_jwt_secret(self) -> str:
         """Return the JWT secret; generate an ephemeral one in development."""

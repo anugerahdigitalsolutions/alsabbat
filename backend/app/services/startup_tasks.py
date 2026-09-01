@@ -100,7 +100,10 @@ async def run_startup_tasks_once(force: bool = False) -> Dict[str, Any]:
 
     try:
         # Database baru/kosong -> selalu jalankan (index + admin bootstrap) tanpa throttle.
-        claimed = True if (force or needs_bootstrap) else await _claim_run()
+        # Sinkronisasi password admin staging juga tidak boleh terkena throttle,
+        # agar berlaku pada cold start pertama setelah redeploy.
+        run_now = force or needs_bootstrap or settings.bootstrap_admin_password_reset_enabled
+        claimed = True if run_now else await _claim_run()
     except Exception as exc:
         logger.warning("startup.claim_failed: %s", type(exc).__name__)
         claimed = True  # aman: kedua operasi idempotent

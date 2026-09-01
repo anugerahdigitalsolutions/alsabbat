@@ -348,10 +348,136 @@ frontend:
           Bug fix confirmed working. Provider normalization, serverless detection, lazy mkdir,
           and explicit error logging all functioning as designed.
 
+  - task: "Staging admin login 401 (wrong endpoint) + bootstrap admin password never re-synced for existing user"
+    implemented: true
+    working: true
+    file: "backend/app/services/bootstrap.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          USER REPORT (staging): POST /api/baraya/login with developer@alsabbat.com
+          (users collection, SUPER_ADMIN, is_active true, bcrypt hash) returns 401
+          "Email atau kata sandi tidak sesuai." even though BOOTSTRAP_ADMIN_* env is set.
+          ROOT CAUSE 1 (the 401 itself): /api/baraya/login is the BARAYA (customer)
+          endpoint — it queries Collections.CUSTOMERS. Admin login endpoint is
+          POST /api/auth/login (users collection). An admin account can never
+          authenticate on /baraya/login by design.
+          ROOT CAUSE 2 (why changing BOOTSTRAP_ADMIN_PASSWORD had no effect):
+          seed_super_admin() returns early when the email already exists, so it only
+          ever CREATES a user and never re-hashes/updates the password of an existing one.
+          FIX (3 backend files, additive, no schema/API change):
+          - config.py: new env flag BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET (+ property
+            settings.bootstrap_admin_password_reset_enabled) — true only when the flag is on,
+            BOOTSTRAP_ADMIN_PASSWORD is set, ENVIRONMENT is NOT production, and env is
+            staging/stage or VERCEL_ENV in {preview, development}.
+          - bootstrap.py: _sync_bootstrap_admin_password() updates ONLY password_hash +
+            updated_at (bcrypt hash_password) for the BOOTSTRAP_ADMIN_EMAIL user when the
+            configured password does not verify; role/is_active/email untouched, no user
+            deleted, no plaintext stored, idempotent (no write when hash already matches).
+          - startup_tasks.py: reset-enabled runs bypass the 360-minute startup throttle so
+            the sync applies on the first cold start after redeploy.
+          No public password-reset endpoint added. Production behaviour unchanged.
+          Local verification: staging+flag ON → new password works, old fails, hash $2b$,
+          role SUPER_ADMIN/is_active/id unchanged, second run does not rewrite;
+          preview (VERCEL_ENV=preview)+flag ON → same; staging flag OFF → no change;
+          ENVIRONMENT=production+flag ON → reset_enabled False (never resets).
+        -working: true
+        -agent: "testing"
+        -comment: |
+          VERIFIED (limited scope: admin login + bootstrap password sync only).
+          Scope: Backend authentication endpoints + password sync mechanism.
+          Did NOT test: Baraya/OTP/merchandise/media/Admin UI features.
+          Did NOT modify: application code, .env permanently, MONGODB_URI, Cloudinary, CORS, JWT, frontend.
+          
+          A. Backend start & MongoDB connection: ✅ PASS
+             - Backend supervisor: RUNNING (pid 2223, uptime 0:01:44)
+             - GET /api/health → 200 OK
+             - Status: ok, environment: staging, database: connected
+          
+          B. Admin login endpoint correct: ✅ PASS
+             - POST /api/auth/login with admin@alsabbat.com / Alsabbat2026! → 200 OK
+             - Response: access_token (JWT), token_type: bearer, user.role: SUPER_ADMIN
+             - GET /api/auth/me with Bearer token → 200 OK
+             - User data: id, email, name, role SUPER_ADMIN, is_active: true, permissions: ["*"]
+          
+          C. ROOT CAUSE 1 proof (admin credentials on customer endpoint): ✅ PASS
+             - POST /api/baraya/login with admin@alsabbat.com / Alsabbat2026! → 401 Unauthorized
+             - Response message (Indonesian): "Email atau kata sandi tidak sesuai."
+             - This is BY DESIGN: admin accounts cannot authenticate on customer endpoint
+          
+          D. Password synchronization (isolated database testing): ✅ ALL PASS (4/4 scenarios)
+             Test database: alsabbat_agent_auth_test (separate from dev database)
+             Test user: developer@alsabbat.com with old password → new password sync
+             
+             Scenario 1 - Staging + flag ON → password SHOULD sync: ✅ PASS
+             - ENVIRONMENT=staging, BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET=true
+             - bootstrap_admin_password_reset_enabled: True
+             - OLD password: INVALID after sync ✓
+             - NEW password: VALID after sync ✓
+             - Hash changed: True, starts with $2b$ (bcrypt) ✓
+             - Role: SUPER_ADMIN (unchanged) ✓
+             - is_active: True (unchanged) ✓
+             - User ID: unchanged ✓
+             - Email: unchanged ✓
+             - Idempotency: updated_at unchanged on second run ✓
+             
+             Scenario 2 - Development + VERCEL_ENV=preview + flag ON → password SHOULD sync: ✅ PASS
+             - ENVIRONMENT=development, VERCEL_ENV=preview, flag=true
+             - bootstrap_admin_password_reset_enabled: True
+             - OLD password: INVALID after sync ✓
+             - NEW password: VALID after sync ✓
+             - Hash changed: True, starts with $2b$ (bcrypt) ✓
+             - Role: SUPER_ADMIN (unchanged) ✓
+             - is_active: True (unchanged) ✓
+             - User ID: unchanged ✓
+             - Email: unchanged ✓
+             - Idempotency: updated_at unchanged on second run ✓
+             
+             Scenario 3 - Staging WITHOUT flag → password should NOT sync: ✅ PASS
+             - ENVIRONMENT=staging, BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET not set
+             - bootstrap_admin_password_reset_enabled: False
+             - OLD password: VALID (no sync occurred) ✓
+             - NEW password: INVALID (no sync occurred) ✓
+             - Hash: unchanged ✓
+             
+             Scenario 4 - Production guard (property check only): ✅ PASS
+             - ENVIRONMENT=production, BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET=true
+             - bootstrap_admin_password_reset_enabled: False (production guard working) ✓
+             - Production NEVER enables password reset regardless of flag ✓
+             
+             Test database dropped after completion (no data left behind).
+          
+          E. No new public password reset endpoints: ✅ PASS
+             - Verified auth routes in backend/app/api/routes/auth.py
+             - Routes found: /login, /logout, /me, /change-password, /roles
+             - No new public password reset endpoints added
+             - Changes only in bootstrap/config/startup layers (internal)
+          
+          F. Backend logs clean: ✅ PASS
+             - No ERROR or CRITICAL messages in backend logs
+             - No tracebacks found
+             - No plaintext passwords in logs
+             - Password sync logs correctly show: "nilai password tidak pernah dicatat"
+               (password value never logged)
+          
+          Bug fix confirmed working. All verification requirements met:
+          - Admin login works on correct endpoint (/api/auth/login)
+          - Customer endpoint correctly rejects admin credentials (by design)
+          - Password sync mechanism works correctly in staging/preview
+          - Production is protected (never enables reset)
+          - Idempotent (no duplicate writes)
+          - No user deletion, role/email/is_active preserved
+          - No new public endpoints
+          - Logs clean and secure
+
 metadata:
   created_by: "main_agent"
   version: "1.2"
-  test_sequence: 4
+  test_sequence: 6
   run_ui: false
 
 test_plan:
@@ -497,6 +623,27 @@ agent_communication:
       per-match kosong; match tanpa skor → notice Kartu Hasil belum aktif; unduh &
       bagikan ada; sponsor tetap di bawah kartu; tidak ada error console/API.
       yarn build sukses (main.560cb5fd.js, +789 B). Fixture uji dihapus semua.
+
+    -agent: "testing"
+    -message: |
+      BOOTSTRAP ADMIN PASSWORD SYNC — VERIFIED (limited scope testing only).
+      Tested: admin login endpoints + password sync mechanism in isolated database.
+      Did NOT test: Baraya/OTP/merchandise/media/Admin UI (as instructed).
+      Did NOT modify: application code, .env permanently, database config, integrations.
+      
+      All verification requirements (A-F) PASSED:
+      ✅ A. Backend running, MongoDB connected, /api/health returns 200
+      ✅ B. Admin login on /api/auth/login works (200, JWT token, SUPER_ADMIN role)
+      ✅ C. ROOT CAUSE 1 confirmed: /api/baraya/login with admin credentials → 401 (by design)
+      ✅ D. Password sync tested in isolated DB (4/4 scenarios passed):
+          - Staging + flag ON → password synced, idempotent
+          - Development + VERCEL_ENV=preview + flag ON → password synced, idempotent
+          - Staging WITHOUT flag → password NOT synced (correct)
+          - Production + flag ON → reset_enabled = False (production guard working)
+      ✅ E. No new public password reset endpoints (changes only in bootstrap/config/startup)
+      ✅ F. Backend logs clean (no errors, no plaintext passwords)
+      
+      Fix working as designed. Safe for staging deployment.
 
     -agent: "main"
     -message: |
