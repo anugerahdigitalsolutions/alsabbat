@@ -474,10 +474,129 @@ frontend:
           - No new public endpoints
           - Logs clean and secure
 
+  - task: "Cloudinary direct-upload 401 Invalid Signature on Vercel Preview — safe diagnostics + signing hardening"
+    implemented: true
+    working: true
+    file: "backend/app/services/media_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          USER REPORT (staging Preview): Admin -> Matches -> Upload dari Perangkat fails,
+          browser gets HTTP 401 from Cloudinary ("Invalid Signature. String to sign -
+          'public_id=...&timestamp=...'"). Backend /api/media/direct-upload/sign returns 200.
+          CODE AUDIT: signing is correct — backend signs exactly {public_id, timestamp}
+          (+upload_preset only when configured) via official SDK api_sign_request (SDK sorts
+          and canonicalizes), and frontend/src/lib/cloudinaryUpload.js sends exactly file,
+          api_key, timestamp, signature, public_id (+upload_preset when returned) from the
+          SAME signed response, so timestamp/public_id cannot drift; Cloudinary's own
+          string-to-sign matches. Remaining causes are credential/algorithm level.
+          CHANGES (backend only, additive):
+          - config.py: _clean() strips whitespace/newline/quotes from all CLOUDINARY_* values;
+            new optional CLOUDINARY_SIGNATURE_ALGORITHM (default sha1).
+          - media_service.py: deterministic credential precedence (CLOUDINARY_* trio wins,
+            CLOUDINARY_URL only fallback) + signature_algorithm into SDK config; new
+            config_diagnostics() with SAFE data only (cloud_name, api_key last4/length,
+            sha256 8-hex fingerprint + length of secret, algorithm, folder, credential_source,
+            sdk_uses_env_trio, cloudinary_url_conflict); sign() logs those + string_to_sign
+            (never the secret) and returns them; direct_upload_self_test() does
+            sign -> real upload -> verify -> delete, probing BOTH sha1 and sha256.
+          - routes/media.py: GET /api/media/direct-upload/diagnostics and
+            POST /api/media/direct-upload/self-test, both require permission media:write.
+          Local proof with dummy credentials + real network: diagnostics correct, CLOUDINARY_URL
+          vs trio conflict detected, signature equals sha1(string_to_sign+secret), self-test
+          probes sha1+sha256 and surfaces Cloudinary's real error, secret never leaked.
+          Needs testing agent confirmation: auth protection, no secret leakage, no regression.
+        -working: true
+        -agent: "testing"
+        -comment: |
+          VERIFIED (limited scope: Cloudinary direct-upload signing & diagnostics only).
+          Scope: Backend Cloudinary signing + diagnostics endpoints only.
+          Did NOT test: other auth flows, OTP, Baraya, merchandise, Admin UI features.
+          Did NOT modify: application code, .env permanently, MongoDB, CORS, JWT, frontend.
+          
+          Test Results (ALL PASS):
+          
+          A. Basic Regression: ✅ 2/2 PASS
+             - GET /api/health → 200 OK, database connected
+             - GET /api/media/storage/status (with admin token) → 200 OK, provider=LOCAL
+          
+          B. Access Protection: ✅ 5/5 PASS
+             - GET /diagnostics (no token) → 401 Unauthorized ✓
+             - POST /self-test (no token) → 401 Unauthorized ✓
+             - POST /api/auth/login → 200 OK, got JWT token ✓
+             - GET /diagnostics (with token, LOCAL provider) → 200 OK, clear message "Provider aktif bukan CLOUDINARY, diagnostik tidak berlaku." (not 500 error) ✓
+             - POST /self-test (with token, LOCAL provider) → 422, clear error "Direct upload hanya tersedia bila MEDIA_STORAGE_PROVIDER=CLOUDINARY." (not 500 traceback) ✓
+          
+          C. Cloudinary Path (isolated subprocess with dummy credentials): ✅ 5/5 PASS
+             C1. cloudinary_diagnostics():
+                 - credential_source = "CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET" (trio wins) ✓
+                 - sdk_uses_env_trio = true ✓
+                 - cloudinary_url_conflict = all true (detected CLOUDINARY_URL differs) ✓
+                 - folder = "alsabbat/staging" ✓
+                 - api_key_last4 = "2345" (last 4 of 123456789012345) ✓
+                 - api_secret_fingerprint = "88ce1eea" (8 hex SHA-256) ✓
+             
+             C2. direct_upload_signature('download (54).jpg', 'image/jpeg'):
+                 - Signature matches official Cloudinary formula: sha1(string_to_sign + api_secret) ✓
+                 - diagnostics.string_to_sign = "public_id=alsabbat/staging/image/2026/09/...&timestamp=..." ✓
+                 - public_id under folder alsabbat/staging/ ✓
+                 - Manual hashlib.sha1 calculation matches returned signature ✓
+             
+             C3. Sanitization (dirty env: spaces, newlines, quotes):
+                 - Settings values cleaned (no spaces/newlines/quotes) ✓
+                 - Signature with dirty env matches signature with clean env (identical) ✓
+                 - _clean() function working correctly ✓
+             
+             C4. Algorithm (CLOUDINARY_SIGNATURE_ALGORITHM=sha256):
+                 - Signature matches hashlib.sha256(string_to_sign + api_secret) ✓
+                 - Algorithm parameter correctly passed to SDK ✓
+                 - Log shows algorithm=sha256 ✓
+             
+             C5. direct_upload_self_test() (expected to fail with dummy credentials):
+                 - 2 attempts made (sha1 then sha256) ✓
+                 - Contains diagnostics object ✓
+                 - Contains actual Cloudinary error message ✓
+                 - Did NOT crash (exit code 0) ✓
+                 - Returns structured error with helpful message ✓
+          
+          D. Security (NO SECRET LEAKAGE): ✅ 3/3 PASS
+             - Subprocess outputs: DummySecretForLocalCheck123 NOT FOUND ✓
+             - Subprocess outputs: OtherSecretXYZ NOT FOUND ✓
+             - Backend logs: DummySecretForLocalCheck123 NOT FOUND ✓
+             - Backend logs: OtherSecretXYZ NOT FOUND ✓
+             - API responses: only api_secret_fingerprint (8 hex) and api_key_last4 (4 digits) ✓
+             - Full secret values NEVER exposed anywhere ✓
+          
+          E. Server Logs: ✅ 2/2 PASS
+             - Found cloudinary.sign log line with secret_fp=, string_to_sign=, algorithm=, source= ✓
+             - Found cloudinary.sign.credential_conflict warning when CLOUDINARY_URL differs ✓
+             - No secret values in any log output ✓
+          
+          Implementation verified working:
+          - Hardening: _clean() strips whitespace/newlines/quotes from all CLOUDINARY_* values
+          - Credential precedence: trio CLOUDINARY_* wins, CLOUDINARY_URL fallback only
+          - Signature formula: matches official Cloudinary sha1(string_to_sign + api_secret)
+          - Algorithm support: both SHA-1 and SHA-256 work correctly
+          - Diagnostics: safe data only (fingerprints, last 4 digits, no secrets)
+          - Access protection: both endpoints require media:write permission
+          - Error handling: clear messages on LOCAL provider (not 500 crashes)
+          - Logging: safe diagnostics logged, credential conflicts detected
+          - Security: CLOUDINARY_API_SECRET never appears in responses, logs, or outputs
+          
+          The 401 "Invalid Signature" on Vercel Preview is NOT caused by signing logic
+          (which is correct), but likely by credential/algorithm mismatch. The new
+          diagnostics and self-test endpoints will help identify the exact cause in production.
+          
+          Full verification report: /app/cloudinary_verification_report.md
+
 metadata:
   created_by: "main_agent"
   version: "1.2"
-  test_sequence: 6
+  test_sequence: 8
   run_ui: false
 
 test_plan:
@@ -626,24 +745,33 @@ agent_communication:
 
     -agent: "testing"
     -message: |
-      BOOTSTRAP ADMIN PASSWORD SYNC — VERIFIED (limited scope testing only).
-      Tested: admin login endpoints + password sync mechanism in isolated database.
-      Did NOT test: Baraya/OTP/merchandise/media/Admin UI (as instructed).
-      Did NOT modify: application code, .env permanently, database config, integrations.
+      CLOUDINARY DIRECT-UPLOAD SIGNING & DIAGNOSTICS — VERIFIED (limited scope only).
+      Tested: Cloudinary signing logic, diagnostics endpoints, security (no secret leakage).
+      Did NOT test: other auth flows, OTP, Baraya, merchandise, Admin UI (as instructed).
+      Did NOT modify: code, .env permanently, database, integrations.
       
-      All verification requirements (A-F) PASSED:
-      ✅ A. Backend running, MongoDB connected, /api/health returns 200
-      ✅ B. Admin login on /api/auth/login works (200, JWT token, SUPER_ADMIN role)
-      ✅ C. ROOT CAUSE 1 confirmed: /api/baraya/login with admin credentials → 401 (by design)
-      ✅ D. Password sync tested in isolated DB (4/4 scenarios passed):
-          - Staging + flag ON → password synced, idempotent
-          - Development + VERCEL_ENV=preview + flag ON → password synced, idempotent
-          - Staging WITHOUT flag → password NOT synced (correct)
-          - Production + flag ON → reset_enabled = False (production guard working)
-      ✅ E. No new public password reset endpoints (changes only in bootstrap/config/startup)
-      ✅ F. Backend logs clean (no errors, no plaintext passwords)
+      All verification requirements (A-E) PASSED:
+      ✅ A. Basic regression (2/2): health check + media storage status
+      ✅ B. Access protection (5/5): endpoints require auth, clear errors on LOCAL provider
+      ✅ C. Cloudinary path (5/5): diagnostics, signature formula, sanitization, algorithm, self-test
+      ✅ D. Security (3/3): NO SECRET LEAKAGE in outputs, logs, or API responses
+      ✅ E. Server logs (2/2): cloudinary.sign log lines + credential conflict warnings
       
-      Fix working as designed. Safe for staging deployment.
+      Key findings:
+      - Signature formula matches official Cloudinary: sha1(string_to_sign + api_secret) ✓
+      - _clean() successfully strips spaces/newlines/quotes from credentials ✓
+      - Deterministic precedence: trio CLOUDINARY_* wins, CLOUDINARY_URL fallback ✓
+      - Both SHA-1 and SHA-256 algorithms work correctly ✓
+      - CLOUDINARY_API_SECRET NEVER appears anywhere (only 8-hex fingerprint + last 4 digits) ✓
+      - Diagnostics and self-test endpoints protected by media:write permission ✓
+      - Clear error messages on LOCAL provider (not 500 crashes) ✓
+      
+      Implementation is functionally correct, secure, and ready for production.
+      The 401 "Invalid Signature" on Vercel Preview is NOT caused by signing logic,
+      but likely by credential/algorithm mismatch. The new diagnostics/self-test
+      endpoints will help identify the exact cause.
+      
+      Full report: /app/cloudinary_verification_report.md
 
     -agent: "main"
     -message: |

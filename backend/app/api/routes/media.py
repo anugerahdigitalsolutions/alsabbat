@@ -84,6 +84,16 @@ async def sign_direct_upload(
     )
 
 
+@router.get(
+    "/direct-upload/diagnostics",
+    summary="Diagnostik konfigurasi Cloudinary (admin, tanpa menampilkan secret)",
+)
+async def cloudinary_diagnostics(
+    user: AuthContext = Depends(require_permission("media:write")),
+):
+    return media_service.cloudinary_diagnostics()
+
+
 @router.post(
     "/direct-upload/self-test",
     summary="Uji signature direct-upload terhadap Cloudinary (admin, tanpa menampilkan secret)",
