@@ -7,7 +7,7 @@ import requests
 from pathlib import Path
 
 # Base URL from frontend/.env
-BASE_URL = "https://exhaustive-deps-fix.preview.emergentagent.com"
+BASE_URL = "https://alsabbat-resend-otp.preview.emergentagent.com"
 API_URL = f"{BASE_URL}/api"
 
 # Admin credentials from test_credentials.md

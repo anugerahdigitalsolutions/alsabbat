@@ -1,7 +1,7 @@
 # Cloudinary Direct-Upload Signing & Diagnostics Verification Report
 
 **Date**: 2026-09-01
-**Environment**: Staging Preview (https://exhaustive-deps-fix.preview.emergentagent.com)
+**Environment**: Staging Preview (https://alsabbat-resend-otp.preview.emergentagent.com)
 **Scope**: Limited to Cloudinary direct-upload signing & diagnostics only
 
 ## A. BASIC REGRESSION TESTS
