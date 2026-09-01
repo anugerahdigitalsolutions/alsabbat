@@ -258,10 +258,11 @@ class Settings:
     PUBLIC_SITE_URL: str = os.environ.get("PUBLIC_SITE_URL", "")
 
     # ------------------------------------------------- mail (Phase 14)
-    # MAIL_PROVIDER: SMTP (real delivery) | LOG (no delivery, audit log only)
-    # | MEMORY (in-memory, tests only). Empty/unset => LOG.
-    MAIL_PROVIDER: str = os.environ.get("MAIL_PROVIDER", "LOG")
-    MAIL_FROM: str = os.environ.get("MAIL_FROM", "")
+    # MAIL_PROVIDER: RESEND (real delivery, REST API) | SMTP (real delivery)
+    # | LOG (no delivery, audit log only) | MEMORY (in-memory, tests only).
+    # Empty/unset => LOG. SMTP2GO tetap terdeteksi otomatis dari kredensialnya.
+    MAIL_PROVIDER: str = _clean(os.environ.get("MAIL_PROVIDER"), "LOG")
+    MAIL_FROM: str = _clean(os.environ.get("MAIL_FROM"))
     MAIL_FROM_NAME: str = os.environ.get("MAIL_FROM_NAME", "ALSABBAT Football Club")
     SMTP_HOST: str = os.environ.get("SMTP_HOST", "")
     SMTP_PORT: int = int(os.environ.get("SMTP_PORT", "587"))
@@ -278,6 +279,11 @@ class Settings:
     SMTP2GO_API_KEY: str = os.environ.get("SMTP2GO_API_KEY", "")
     SMTP2GO_SENDER_EMAIL: str = os.environ.get("SMTP2GO_SENDER_EMAIL", "")
     SMTP2GO_SENDER_NAME: str = os.environ.get("SMTP2GO_SENDER_NAME", "AL SABBAT Football Club")
+
+    # ------------------------------- Resend API (OTP & reset email, REST/httpx)
+    # Kosong => provider tidak pernah dipilih (fallback jujur ke LOG). Pengirim
+    # diambil dari MAIL_FROM / MAIL_FROM_NAME, tidak pernah di-hardcode.
+    RESEND_API_KEY: str = _clean(os.environ.get("RESEND_API_KEY"))
 
     # --------------------------------- Google OAuth (Fase 3 — Login Google)
     GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")

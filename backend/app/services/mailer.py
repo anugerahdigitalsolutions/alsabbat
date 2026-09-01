@@ -92,6 +92,68 @@ class MemoryMailer(Mailer):
         return True
 
 
+class ResendMailer(Mailer):
+    """Resend REST API (https://api.resend.com/emails) via httpx.
+
+    API key HANYA dari environment (`RESEND_API_KEY`) dan pengirim HANYA dari
+    `MAIL_FROM`/`MAIL_FROM_NAME` — tidak ada nilai yang di-hardcode. API key,
+    isi email, dan kode OTP tidak pernah masuk log.
+    """
+
+    ENDPOINT = "https://api.resend.com/emails"
+
+    async def send(self, message: MailMessage) -> bool:
+        import httpx
+
+        sender = (
+            f"{settings.MAIL_FROM_NAME} <{settings.MAIL_FROM}>"
+            if settings.MAIL_FROM_NAME
+            else settings.MAIL_FROM
+        )
+        payload = {
+            "from": sender,
+            "to": [message.to],
+            "subject": message.subject,
+            "text": message.text,
+        }
+        if message.html:
+            payload["html"] = message.html
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                response = await client.post(
+                    self.ENDPOINT,
+                    headers={
+                        "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
+        except Exception as exc:  # jaringan/timeout — konten tidak pernah bocor
+            logger.error("mail.failed provider=RESEND to=%s error=%s", message.to, type(exc).__name__)
+            return False
+
+        try:
+            body = response.json()
+        except ValueError:
+            body = {}
+        if not isinstance(body, dict):
+            body = {}
+        # Resend membalas 200/201 dengan {"id": "..."}; kegagalan memakai
+        # {"statusCode": ..., "message"/"name": ...} atau HTTP >= 400.
+        if response.status_code >= 400 or body.get("error") or not body.get("id"):
+            logger.error(
+                "mail.rejected provider=RESEND to=%s http=%s reason=%s",
+                message.to,
+                response.status_code,
+                (body.get("name") or body.get("message") or "unknown")
+                if response.status_code >= 400
+                else "missing_id",
+            )
+            return False
+        logger.info("mail.sent provider=RESEND to=%s subject=%s", message.to, message.subject)
+        return True
+
+
 class Smtp2GoMailer(Mailer):
     """Fase 3 — SMTP2GO REST API v3. API key hanya dari environment."""
 
@@ -152,6 +214,10 @@ def smtp2go_configured() -> bool:
     return bool(settings.SMTP2GO_API_KEY and settings.SMTP2GO_SENDER_EMAIL)
 
 
+def resend_configured() -> bool:
+    return bool(settings.RESEND_API_KEY and settings.MAIL_FROM)
+
+
 def get_mailer() -> Mailer:
     global _mailer
     if _mailer is not None:
@@ -159,6 +225,11 @@ def get_mailer() -> Mailer:
     provider = (settings.MAIL_PROVIDER or "LOG").upper()
     if provider == "MEMORY":
         _mailer = MemoryMailer()
+    elif provider == "RESEND" and resend_configured():
+        # Pilihan eksplisit MAIL_PROVIDER=RESEND hanya berlaku bila
+        # RESEND_API_KEY dan MAIL_FROM benar-benar terisi; kalau tidak, jatuh ke
+        # provider lain / LOG (tidak pernah mengklaim email terkirim).
+        _mailer = ResendMailer()
     elif smtp2go_configured():
         _mailer = Smtp2GoMailer()
     elif provider == "SMTP" and settings.SMTP_HOST and settings.MAIL_FROM:
@@ -179,21 +250,31 @@ def mail_status() -> dict:
     """Honest report for the Admin panel — never exposes the API key."""
     mailer = get_mailer()
     name = type(mailer).__name__
-    configured = isinstance(mailer, (Smtp2GoMailer, SmtpMailer))
+    configured = isinstance(mailer, (Smtp2GoMailer, SmtpMailer, ResendMailer))
+    if isinstance(mailer, ResendMailer):
+        sender = settings.MAIL_FROM
+        sender_name = settings.MAIL_FROM_NAME
+    else:
+        sender = settings.SMTP2GO_SENDER_EMAIL or settings.MAIL_FROM or ""
+        sender_name = settings.SMTP2GO_SENDER_NAME or settings.MAIL_FROM_NAME
     return {
         "provider": {
+            "ResendMailer": "RESEND",
             "Smtp2GoMailer": "SMTP2GO",
             "SmtpMailer": "SMTP",
             "MemoryMailer": "MEMORY",
             "LogMailer": "NOT_CONFIGURED",
         }.get(name, "NOT_CONFIGURED"),
         "configured": configured,
-        "sender": settings.SMTP2GO_SENDER_EMAIL or settings.MAIL_FROM or "",
-        "sender_name": settings.SMTP2GO_SENDER_NAME or settings.MAIL_FROM_NAME,
+        "sender": sender,
+        "sender_name": sender_name,
         "note": (
             "Email OTP & reset aktif."
             if configured
-            else "Isi SMTP2GO_API_KEY dan SMTP2GO_SENDER_EMAIL di environment server agar email benar-benar terkirim."
+            else (
+                "Isi RESEND_API_KEY + MAIL_FROM (MAIL_PROVIDER=RESEND) atau SMTP2GO_API_KEY "
+                "+ SMTP2GO_SENDER_EMAIL di environment server agar email benar-benar terkirim."
+            )
         ),
     }
 

@@ -593,10 +593,42 @@ frontend:
           
           Full verification report: /app/cloudinary_verification_report.md
 
+  - task: "Add Resend as a new mail provider for OTP & password-reset emails (staging)"
+    implemented: true
+    working: "NA"
+    file: "backend/app/services/mailer.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          FEATURE (2 files only, additive — OTP generation/hashing/expiry/verification/
+          attempt limits/DB logic/endpoints untouched):
+          - config.py: new RESEND_API_KEY (sanitised via _clean); MAIL_PROVIDER/MAIL_FROM
+            sanitised too; MAIL_PROVIDER doc mentions RESEND.
+          - mailer.py: new ResendMailer using existing httpx (POST https://api.resend.com/emails,
+            Bearer RESEND_API_KEY, payload from="NAME <MAIL_FROM>", to=[..], subject, text,
+            html when present). Returns True only when HTTP<400 AND body has an id; False on
+            HTTP/API/network errors. Never logs API key, body, or OTP code.
+            get_mailer(): MEMORY -> RESEND (only when RESEND_API_KEY and MAIL_FROM set) ->
+            SMTP2GO auto-detect -> SMTP -> LogMailer fallback (no silent "delivered").
+            mail_status(): ResendMailer -> "RESEND", configured true, sender/sender_name from
+            MAIL_FROM/MAIL_FROM_NAME. No sender hardcoded.
+          Local verification (stub HTTP server + isolated env): provider matrix 9/9 PASS
+          (RESEND without key -> LogMailer; RESEND wins over SMTP2GO when explicit; lowercase
+          "resend" accepted), mail_status correct, send() True on 200+id and False on
+          200-without-id / 422 / connection error, Authorization + Content-Type + payload shape
+          correct, neither API key nor OTP code in logs. ruff clean, backend restarted,
+          /api/health 200, /api/baraya/auth/config honest (NOT_CONFIGURED in dev).
+          Needs testing agent: SKIPPED per user request — verified locally only
+          (provider matrix, send() semantics, log safety, ruff, backend restart).
+
 metadata:
   created_by: "main_agent"
   version: "1.2"
-  test_sequence: 8
+  test_sequence: 9
   run_ui: false
 
 test_plan:
