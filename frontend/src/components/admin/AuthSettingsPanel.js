@@ -52,7 +52,10 @@ export const AuthSettingsPanel = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      {/* Grid kini 2 kolom: kartu status Firebase sengaja tidak ditampilkan di
+          Admin Panel. Kemampuan FCM di backend tetap ada sebagai skeleton
+          (untuk aplikasi mobile ke depan) tanpa muncul sebagai kartu status. */}
+      <div className="grid gap-4 lg:grid-cols-2">
         <Row
           icon={Mail}
           title="Email OTP (RESEND)"
@@ -63,17 +66,6 @@ export const AuthSettingsPanel = () => {
             'Set RESEND_API_KEY dan MAIL_FROM di environment server (.env backend), lalu restart layanan.'
           }
           testId="admin-auth-email"
-        />
-        <Row
-          icon={BellRing}
-          title="Notifikasi Firebase (review admin)"
-          configured={!!data?.firebase?.configured}
-          detail={data?.firebase?.project_id ? `Project: ${data.firebase.project_id}` : null}
-          note={
-            data?.firebase?.note ||
-            'Set FIREBASE_PROJECT_ID dan FIREBASE_SERVICE_ACCOUNT_JSON di environment server; pengajuan baru tetap terlihat sebagai PENDING di daftar bawah.'
-          }
-          testId="admin-auth-firebase"
         />
         <Row
           icon={KeyRound}
