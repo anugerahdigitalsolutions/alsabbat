@@ -32,7 +32,7 @@ const Row = ({ icon: Icon, title, configured, detail, note, testId }) => (
   </div>
 );
 
-/** Fase 3 — status konfigurasi OTP (SMTP2GO) & Login Google. Tidak pernah menampilkan secret. */
+/** Fase 3 — status konfigurasi OTP (RESEND) & Login Google. Tidak pernah menampilkan secret. */
 export const AuthSettingsPanel = () => {
   const [data, setData] = useState(null);
 
@@ -55,12 +55,12 @@ export const AuthSettingsPanel = () => {
       <div className="grid gap-4 lg:grid-cols-3">
         <Row
           icon={Mail}
-          title="Email OTP (SMTP2GO)"
+          title="Email OTP (RESEND)"
           configured={!!data?.email?.configured}
           detail={data?.email?.sender ? `Pengirim: ${data.email.sender}` : null}
           note={
             data?.email?.note ||
-            'Set SMTP2GO_API_KEY dan SMTP2GO_SENDER_EMAIL di environment server (.env backend), lalu restart layanan.'
+            'Set RESEND_API_KEY dan MAIL_FROM di environment server (.env backend), lalu restart layanan.'
           }
           testId="admin-auth-email"
         />

@@ -272,8 +272,8 @@ def mail_status() -> dict:
             "Email OTP & reset aktif."
             if configured
             else (
-                "Isi RESEND_API_KEY + MAIL_FROM (MAIL_PROVIDER=RESEND) atau SMTP2GO_API_KEY "
-                "+ SMTP2GO_SENDER_EMAIL di environment server agar email benar-benar terkirim."
+                "Isi RESEND_API_KEY + MAIL_FROM (MAIL_PROVIDER=RESEND) di environment server "
+                "agar email benar-benar terkirim."
             )
         ),
     }
