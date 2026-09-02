@@ -69,6 +69,23 @@ customer_write = Depends(require_permission("member:write"))
 
 INVALID_CREDENTIALS = "Email atau kata sandi tidak sesuai."
 
+# Fase 3.1 — pendaftaran yang belum lolos OTP disimpan sebagai record sementara
+# berstatus PENDING pada collection `customers` (tanpa collection baru).
+STATUS_PENDING = "PENDING"
+
+
+def _verified_only(query: Dict[str, Any], *, keep_status: bool = False) -> Dict[str, Any]:
+    """Batasi query ke akun Baraya RESMI saja.
+
+    `email_verified` memakai `$ne: False` supaya akun lama (dibuat sebelum
+    Fase 3, field-nya belum ada) tetap terhitung sebagai terverifikasi —
+    backward compatible. Record PENDING selalu tersaring.
+    """
+    query["email_verified"] = {"$ne": False}
+    if not keep_status:
+        query["status"] = {"$ne": STATUS_PENDING}
+    return query
+
 
 def _public_customer(doc: Dict[str, Any]) -> Dict[str, Any]:
     doc = dict(doc)
@@ -139,16 +156,20 @@ async def register(payload: CustomerRegisterRequest, request: Request) -> Dict[s
             "full_name": payload.full_name,
             "phone": payload.phone,
             "password_hash": hash_password(payload.password),
-            "status": "ACTIVE",
+            # Pendaftaran hanya menjadi record SEMENTARA sampai OTP diverifikasi:
+            # status PENDING + email_verified False. Akun resmi (status ACTIVE)
+            # dan identitas member baru dibuat di endpoint verifikasi OTP.
+            "status": STATUS_PENDING,
             "role": "MEMBER",
             "email_verified": False,
             "auth_provider": "PASSWORD",
             "last_login_at": None,
         }
     )
-    created = await ensure_member_identity(created)
+    # ensure_member_identity() TIDAK dipanggil di sini: member_number/member_code
+    # hanya boleh dialokasikan setelah OTP terverifikasi.
     otp = await issue_otp(email=email, full_name=payload.full_name, purpose=PURPOSE_REGISTER)
-    logger.info("baraya.register email=%s member=%s", email, created.get("member_number"))
+    logger.info("baraya.register.pending email=%s", email)
     return {
         "success": True,
         "verification_required": True,
@@ -167,10 +188,9 @@ async def login(payload: CustomerLoginRequest, request: Request) -> Dict[str, An
     if not customer or not verify_password(payload.password, customer.get("password_hash", "")):
         logger.warning("baraya.login.failed email=%s ip=%s", email, request_ip(request))
         raise UnauthorizedError(INVALID_CREDENTIALS)
-    if customer.get("status") != "ACTIVE":
-        raise UnauthorizedError("Akun Baraya ini tidak aktif. Hubungi klub untuk bantuan.")
-    # Akun lama (sebelum Fase 3) tidak punya field ini → dianggap terverifikasi.
-    if not customer.get("email_verified", True):
+    if customer.get("status") == STATUS_PENDING or not customer.get("email_verified", True):
+        # Record PENDING / belum terverifikasi tidak pernah boleh login.
+        # Akun lama (sebelum Fase 3) tidak punya field ini → dianggap terverifikasi.
         otp = await issue_otp(
             email=email, full_name=customer.get("full_name", ""), purpose=PURPOSE_REGISTER
         )
@@ -180,6 +200,8 @@ async def login(payload: CustomerLoginRequest, request: Request) -> Dict[str, An
             else "Email Anda belum diverifikasi. Kode verifikasi baru sudah dibuat, "
             "namun pengiriman email belum dikonfigurasi di server."
         )
+    if customer.get("status") != "ACTIVE":
+        raise UnauthorizedError("Akun Baraya ini tidak aktif. Hubungi klub untuk bantuan.")
     return await _issue_session(customer, request)
 
 
@@ -460,11 +482,20 @@ async def admin_member_stats(user: AuthContext = customer_read) -> Dict[str, Any
     coll = customers.coll
     now = datetime.now(timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    # Hanya akun RESMI (sudah verifikasi OTP) yang dihitung sebagai Baraya.
     return {
-        "total": await coll.count_documents({}),
-        "active": await coll.count_documents({"status": "ACTIVE"}),
-        "inactive": await coll.count_documents({"status": "INACTIVE"}),
-        "new_this_month": await coll.count_documents({"created_at": {"$gte": month_start}}),
+        "total": await coll.count_documents(_verified_only({})),
+        "active": await coll.count_documents(_verified_only({"status": "ACTIVE"}, keep_status=True)),
+        "inactive": await coll.count_documents(
+            _verified_only({"status": "INACTIVE"}, keep_status=True)
+        ),
+        "new_this_month": await coll.count_documents(
+            _verified_only({"created_at": {"$gte": month_start}})
+        ),
+        # Informasional: pendaftaran yang masih menunggu verifikasi OTP.
+        "pending_verification": await coll.count_documents(
+            {"$or": [{"status": STATUS_PENDING}, {"email_verified": False}]}
+        ),
     }
 
 
@@ -472,6 +503,10 @@ async def admin_member_stats(user: AuthContext = customer_read) -> Dict[str, Any
 async def admin_list(
     q: Optional[str] = None,
     status: Optional[str] = None,
+    include_unverified: bool = Query(
+        default=False,
+        description="Tampilkan juga pendaftaran PENDING yang belum lolos verifikasi OTP.",
+    ),
     limit: int = Query(default=50, ge=1, le=200),
     skip: int = Query(default=0, ge=0),
     user: AuthContext = customer_read,
@@ -484,6 +519,9 @@ async def admin_list(
             {"email": {"$regex": q, "$options": "i"}},
             {"full_name": {"$regex": q, "$options": "i"}},
         ]
+    if not include_unverified:
+        # Default: hanya Baraya resmi (email terverifikasi, bukan PENDING).
+        _verified_only(query, keep_status=bool(status))
     items, total = await customers.list(query, limit=limit, skip=skip, sort=(("created_at", -1),))
     return {
         "items": [_public_customer(item) for item in items],
