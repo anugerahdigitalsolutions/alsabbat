@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Button } from '../ui/button';
 
@@ -37,6 +38,8 @@ export const NotificationBell = ({
   // Fase 1 — polling adaptif (opsional; tanpa prop ini perilaku lama dipertahankan).
   activePollMs = 0,
   countPath = '',
+  // Opt-in: tombol "Hapus semua yang terbaca" (dipakai Admin Panel saja).
+  allowClearRead = false,
   onLoad,
   refreshSignal = 0,
 }) => {
@@ -44,6 +47,7 @@ export const NotificationBell = ({
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [open, setOpen] = useState(false);
   const mounted = useRef(true);
   const onLoadRef = useRef(onLoad);
@@ -171,6 +175,31 @@ export const NotificationBell = ({
 
   if (!enabled) return null;
 
+  const readCount = items.filter((it) => it.read).length;
+
+  /** Cleanup riwayat: hanya notifikasi yang SUDAH dibaca. Unread tidak disentuh. */
+  const clearRead = async () => {
+    if (!readCount || clearing) return;
+    if (typeof window !== 'undefined' && window.confirm) {
+      if (!window.confirm('Hapus semua notifikasi yang sudah dibaca?')) return;
+    }
+    setClearing(true);
+    try {
+      const { data } = await client.delete(`${basePath}/read`);
+      await load();
+      const deleted = data?.deleted ?? 0;
+      if (deleted) {
+        toast.success(`${deleted} notifikasi yang sudah dibaca dihapus.`);
+      } else {
+        toast.info('Tidak ada notifikasi terbaca untuk dihapus.');
+      }
+    } catch (e) {
+      toast.error('Gagal menghapus notifikasi terbaca. Coba lagi.');
+    } finally {
+      if (mounted.current) setClearing(false);
+    }
+  };
+
   return (
     <Popover
       open={open}
@@ -255,6 +284,21 @@ export const NotificationBell = ({
             </ul>
           )}
         </div>
+        {allowClearRead ? (
+          <div className="border-t px-3 py-2" style={{ borderColor: 'var(--border-soft)' }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-center text-xs"
+              onClick={clearRead}
+              disabled={!readCount || clearing}
+              data-testid={`${testId}-clear-read`}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              {clearing ? 'Menghapus…' : 'Hapus semua yang terbaca'}
+            </Button>
+          </div>
+        ) : null}
       </PopoverContent>
     </Popover>
   );

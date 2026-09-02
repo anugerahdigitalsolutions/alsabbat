@@ -45,3 +45,19 @@ async def read_notification(
 async def read_all_notifications(user: AuthContext = Depends(get_current_user)) -> Dict[str, Any]:
     updated = await center.mark_admin_read_all(user.email)
     return {"success": True, "updated": updated, "unread": 0}
+
+
+@router.delete("/read", summary="Hapus semua notifikasi admin yang SUDAH dibaca")
+async def delete_read_notifications(
+    user: AuthContext = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Bulk cleanup riwayat lonceng admin.
+
+    Identitas admin diambil dari token (`user.email`), bukan dari body/query,
+    sehingga admin tidak bisa menghapus riwayat admin lain. Filter hanya
+    menyasar notifikasi yang sudah dibaca oleh admin ini; notifikasi yang belum
+    dibaca tidak pernah ikut terhapus.
+    """
+    deleted = await center.clear_admin_read(user.email)
+    _, _, unread = await center.list_admin(user.email, limit=1)
+    return {"success": True, "deleted": deleted, "unread": unread}

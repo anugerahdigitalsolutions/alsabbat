@@ -127,6 +127,7 @@ export const AdminShell = () => {
               countPath="/notifications/unread-count"
               activePollMs={12000}
               pollMs={60000}
+              allowClearRead
               onLoad={handleNotifications}
               refreshSignal={refreshSignal}
               testId="admin-notification-bell"

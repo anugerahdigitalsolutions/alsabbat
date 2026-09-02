@@ -1425,3 +1425,23 @@ CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan pe
   `UserNotificationAlert` (tring), collection/service/API notifikasi MongoDB — tanpa perubahan.
 - Verifikasi: ESLint bersih, `craco build` sukses (Compiled successfully), dan pemeriksaan UI
   `/admin/baraya` tidak lagi memuat teks "Firebase" sama sekali.
+
+## Notification Cleanup — "Hapus semua yang terbaca" di lonceng Admin (2 Sep 2026)
+- Backend `app/services/notification_center.py`: tambah `clear_admin_read(admin_email)`. Notifikasi ADMIN
+  bersifat broadcast (1 dokumen, `read_by` per akun), jadi penghapusan bersifat PER AKUN via field baru
+  `cleared_by` (array email). Filter update_many WAJIB: `audience=ADMIN` + `read_by: admin_email`
+  (sudah dibaca) + `cleared_by $ne admin_email`. Notifikasi UNREAD tidak pernah tersentuh.
+  `list_admin()` & `count_admin_unread()` menyaring `cleared_by $ne admin_email`; `_shape_for_admin()`
+  menghapus `cleared_by` dari response. Tidak ada collection baru.
+- Backend `app/api/routes/notifications.py`: `DELETE /api/notifications/read` (auth `get_current_user`,
+  identitas dari token — bukan body/query), response `{success, deleted, unread}`.
+- Frontend `components/shared/NotificationBell.js`: prop opt-in `allowClearRead` (default false, jadi
+  lonceng Baraya/User TIDAK berubah). Tombol footer "Hapus semua yang terbaca" + `window.confirm`
+  ("Hapus semua notifikasi yang sudah dibaca?"), toast sonner, lalu `load()` (tanpa reload halaman).
+  Disabled bila tidak ada item read atau saat proses berjalan.
+- Frontend `components/admin/AdminShell.js`: menambahkan prop `allowClearRead` pada NotificationBell admin.
+- Verifikasi: `scripts/notif_cleanup_verify.py` (sandbox DB, di-drop di akhir) 23/23 PASS —
+  terhapus tepat 2 yang read, 1 unread tetap ada di DB, badge/unread-count tetap 1, tanpa token → 401,
+  riwayat admin lain tetap 3 item/2 unread (isolasi antar admin), read-all & endpoint publik tidak regresi.
+  UI diverifikasi lokal dengan mock API: cancel → tidak ada request DELETE, konfirmasi → 1 request,
+  daftar auto-refresh, popup AdminNotificationAlert + badge + polling tetap berjalan.
