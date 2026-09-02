@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CheckCircle2, ClipboardList, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
@@ -97,6 +98,9 @@ export const MemberApplications = ({ onDecided }) => {
   const [pendingCount, setPendingCount] = useState(0);
   const [options, setOptions] = useState({ players: [], staff: [] });
   const [busy, setBusy] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkRef = useRef('');
+  const openDialogRef = useRef(() => {});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -136,6 +140,44 @@ export const MemberApplications = ({ onDecided }) => {
     setPlayerData({ ...(application.player_data || {}) });
     setStaffData({ ...(application.staff_data || {}) });
   };
+  openDialogRef.current = openDialog;
+
+  // Fase 3 — deep-link dari notifikasi: /admin/baraya?application=<id>
+  // membuka dialog review pengajuan yang benar (Pemain maupun Staff).
+  useEffect(() => {
+    const target = searchParams.get('application');
+    if (!target || deepLinkRef.current === target) return undefined;
+    deepLinkRef.current = target;
+    let cancelled = false;
+    let finished = false;
+    (async () => {
+      try {
+        // Tanpa filter status agar pengajuan tetap ditemukan meski sudah
+        // diputuskan atau berada di luar halaman pertama daftar.
+        const { data } = await api.get('/baraya/admin/applications', { params: { limit: 200 } });
+        if (cancelled) return;
+        const found = (data.items || []).find((item) => item.id === target);
+        if (found) openDialogRef.current(found);
+        else toast.info('Pengajuan tidak ditemukan pada daftar terbaru.');
+      } catch (e) {
+        if (!cancelled) toast.error(apiErrorMessage(e, 'Gagal membuka pengajuan dari notifikasi.'));
+      } finally {
+        if (!cancelled) {
+          finished = true;
+          // Query dibersihkan agar menutup dialog / refresh tidak membukanya lagi.
+          const next = new URLSearchParams(searchParams);
+          next.delete('application');
+          setSearchParams(next, { replace: true });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+      // Remount (StrictMode dev / navigasi cepat) sebelum selesai → beri
+      // kesempatan effect berikutnya membuka dialog yang sama.
+      if (!finished) deepLinkRef.current = '';
+    };
+  }, [searchParams, setSearchParams]);
 
   const saveData = async () => {
     if (!dialog) return;
@@ -441,44 +483,38 @@ export const MemberApplications = ({ onDecided }) => {
                 </div>
               ) : null}
 
-              <div>
-                <Label className="mb-1.5 block">
-                  {dialog.type === 'STAFF'
-                    ? 'Tautkan ke Staff Entry yang sudah ada (opsional)'
-                    : `Tautkan ke record ${TYPE_LABEL[dialog.type]} yang sudah ada (opsional)`}
-                </Label>
-                <select
-                  value={linkId}
-                  onChange={(e) => setLinkId(e.target.value)}
-                  className="h-11 w-full rounded-[var(--radius-sm)] border px-3 text-sm"
-                  style={{ borderColor: 'var(--border-soft)' }}
-                  data-testid="admin-application-link"
-                >
-                  <option value="">
-                    {dialog.type === 'STAFF' ? '— buat Staff Entry baru —' : '— buat Pemain baru —'}
-                  </option>
-                  {linkOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.full_name || option.display_name || option.name}
-                      {option.jersey_number ? ` · #${option.jersey_number}` : ''}
-                      {option.position_title || option.role_label || option.position
-                        ? ` · ${option.position_title || option.role_label || option.position}`
-                        : ''}
-                    </option>
-                  ))}
-                </select>
-                {dialog.type === 'STAFF' ? (
-                  <p className="mt-2 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="admin-application-staff-hint">
-                    Dibiarkan kosong → sistem otomatis membuat Staff Entry baru dari data pengajuan
-                    (Bagian, Jabatan, Foto, pemain & tim). Akun dan profil Pemain tidak diubah.
-                  </p>
-                ) : (
+              {/* Pengajuan STAFF selalu membuat Staff Entry baru dari data
+                  pengajuan, sehingga field penautan tidak lagi ditampilkan.
+                  Untuk PEMAIN, opsi penautan tetap tersedia seperti semula. */}
+              {dialog.type !== 'STAFF' ? (
+                <div>
+                  <Label className="mb-1.5 block">
+                    {`Tautkan ke record ${TYPE_LABEL[dialog.type]} yang sudah ada (opsional)`}
+                  </Label>
+                  <select
+                    value={linkId}
+                    onChange={(e) => setLinkId(e.target.value)}
+                    className="h-11 w-full rounded-[var(--radius-sm)] border px-3 text-sm"
+                    style={{ borderColor: 'var(--border-soft)' }}
+                    data-testid="admin-application-link"
+                  >
+                    <option value="">— buat Pemain baru —</option>
+                    {linkOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.full_name || option.display_name || option.name}
+                        {option.jersey_number ? ` · #${option.jersey_number}` : ''}
+                        {option.position_title || option.role_label || option.position
+                          ? ` · ${option.position_title || option.role_label || option.position}`
+                          : ''}
+                      </option>
+                    ))}
+                  </select>
                   <p className="mt-2 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="admin-application-player-hint">
                     Dibiarkan kosong → sistem otomatis membuat Pemain baru dari data pengajuan
                     (nama, posisi, nomor punggung, foto). Tidak perlu memilih pemain yang sudah ada.
                   </p>
-                )}
-              </div>
+                </div>
+              ) : null}
 
               <div>
                 <Label className="mb-1.5 block">Catatan untuk pemohon (opsional)</Label>

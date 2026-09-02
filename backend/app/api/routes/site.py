@@ -85,8 +85,11 @@ build_crud_router(
 
 @site_content_router.get("/public", summary="Public site content map")
 async def public_site_content():
-    items, _ = await site_content_repo.list({}, limit=200, sort=[("key", 1)])
-    values = {item["key"]: item.get("value") for item in items if item.get("value")}
+    # Dibaca langsung dari collection: helper repository membatasi 200 dokumen,
+    # sehingga kunci seperti `site.background` bisa terpotong (dan background
+    # website diam-diam kembali ke default) begitu konten situs bertambah.
+    cursor = site_content_repo.coll.find({}, {"_id": 0, "key": 1, "value": 1})
+    values = {doc["key"]: doc.get("value") async for doc in cursor if doc.get("value")}
     return {"items": values, "total": len(values)}
 
 

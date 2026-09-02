@@ -21,7 +21,9 @@ export const hasRole = (customer, role) => rolesOf(customer).includes(role);
 
 export const roleLabel = (customer) => {
   const roles = rolesOf(customer);
-  if (roles.includes('PEMAIN') && roles.includes('STAFF')) return 'Pemain & Staf';
+  // Peran STAFF hanya diberikan backend setelah Admin menyetujui pengajuan,
+  // sehingga label ini otomatis mengikuti status approval.
+  if (roles.includes('STAFF')) return 'Staf & Pemain';
   return ROLE_LABELS[roles[0]] || 'Member';
 };
 
@@ -37,3 +39,13 @@ export const canApplyPlayer = (customer) => {
 
 /** Pemain boleh mengajukan Staf berkali-kali (bagian & jabatan berbeda). */
 export const canApplyStaff = (customer) => hasRole(customer, 'PEMAIN');
+
+/**
+ * Tombol "Daftar Staff" di Member Area.
+ * Hanya untuk akun yang berperan PEMAIN dan BELUM berstatus STAFF.
+ * Peran STAFF baru diberikan backend setelah Admin menyetujui pengajuan,
+ * jadi tombol otomatis hilang begitu pendaftaran Staff APPROVED
+ * (termasuk untuk akun PEMAIN + STAFF).
+ */
+export const canRegisterStaff = (customer) =>
+  hasRole(customer, 'PEMAIN') && !hasRole(customer, 'STAFF');

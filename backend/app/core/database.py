@@ -56,16 +56,72 @@ class Collections:
     NOTIFICATIONS = "notifications"
 
 
+def _assert_safe_db_config() -> None:
+    """Guard: staging/production tidak boleh memakai database lokal/fallback dev.
+
+    Gagal keras (RuntimeError) untuk production dan untuk runtime serverless
+    (Vercel). Di lingkungan pengembangan/preview terkelola yang menandai dirinya
+    `staging` tetapi berjalan pada Mongo lokal, hanya peringatan yang dicatat agar
+    lingkungan kerja tidak mati — deployment Vercel tetap dilindungi.
+    """
+    reason = settings.unsafe_db_config_reason()
+    if not reason:
+        return
+    message = (
+        f"Konfigurasi database tidak aman untuk ENVIRONMENT={settings.ENVIRONMENT}: "
+        f"{reason}. Set MONGODB_URI (MongoDB Atlas) dan MONGODB_DB_NAME di environment "
+        "server. Nilai kredensial tidak pernah ditampilkan pada log ini."
+    )
+    if settings.is_production or settings.is_serverless:
+        raise RuntimeError(message)
+    logger.warning("DB CONFIG GUARD (peringatan, bukan Vercel): %s", message)
+
+
+def _client_kwargs() -> dict:
+    """Opsi koneksi. Untuk MongoDB Atlas (`mongodb+srv://`) sertakan CA bundle
+    certifi agar TLS handshake tetap berhasil di runtime serverless."""
+    kwargs: dict = {}
+    if (settings.MONGODB_URI or "").startswith("mongodb+srv://"):
+        try:
+            import certifi
+
+            kwargs["tlsCAFile"] = certifi.where()
+        except Exception:  # pragma: no cover - certifi tidak tersedia
+            logger.warning("certifi tidak tersedia — memakai CA bundle sistem untuk Atlas")
+    return kwargs
+
+
 def get_client() -> AsyncIOMotorClient:
+    """Client Mongo tunggal per proses.
+
+    Di serverless (Vercel Functions) modul tetap hidup antar invocation selama
+    instance masih hangat, sehingga client & connection pool ini dipakai ulang
+    (tidak membuat koneksi baru setiap request).
+    """
     global _client
     if _client is None:
+        _assert_safe_db_config()
         _client = AsyncIOMotorClient(
             settings.MONGODB_URI,
             uuidRepresentation="standard",
-            serverSelectionTimeoutMS=8000,
             tz_aware=True,
+            appname=f"{settings.APP_NAME}/{settings.ENVIRONMENT}",
+            maxPoolSize=settings.MONGODB_MAX_POOL_SIZE,
+            minPoolSize=settings.MONGODB_MIN_POOL_SIZE,
+            maxIdleTimeMS=settings.MONGODB_MAX_IDLE_TIME_MS,
+            serverSelectionTimeoutMS=settings.MONGODB_SERVER_SELECTION_TIMEOUT_MS,
+            connectTimeoutMS=settings.MONGODB_CONNECT_TIMEOUT_MS,
+            socketTimeoutMS=settings.MONGODB_SOCKET_TIMEOUT_MS,
+            retryWrites=True,
+            retryReads=True,
+            **_client_kwargs(),
         )
-        logger.info("MongoDB client initialised (db=%s)", settings.DB_NAME)
+        logger.info(
+            "MongoDB client initialised (db=%s, maxPool=%s, serverless=%s)",
+            settings.DB_NAME,
+            settings.MONGODB_MAX_POOL_SIZE,
+            settings.is_serverless,
+        )
     return _client
 
 

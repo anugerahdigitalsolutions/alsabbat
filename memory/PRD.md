@@ -296,7 +296,7 @@ dibangun dengan mode **NOT_CONFIGURED yang jujur** (tanpa dummy/hard-code).
 ### BLOCKER (menunggu user)
 - `SMTP2GO_API_KEY` + `SMTP2GO_SENDER_EMAIL` → tanpa ini email OTP TIDAK terkirim (sistem melaporkan jujur).
 - `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` → tombol "Masuk dengan Google" disembunyikan sampai diisi.
-  Redirect URI wajib: `https://achievement-bug-fix.preview.emergentagent.com/auth/google`).
+  Redirect URI wajib: `https://hide-firebase-status.preview.emergentagent.com/auth/google`).
 - Kunci hanya ditulis ke `backend/.env` (sudah ada placeholder kosong) + `backend/.env.example` terdokumentasi.
 
 
@@ -1354,3 +1354,94 @@ Validasi (tanpa Testing Agent): skrip API 30/30 PASS (notifikasi admin saat peng
   Semua data uji dihapus (notifications/applications/players/staff/teams/customers = 0).
 CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan penuh. Untuk push HP perlu
   `FIREBASE_PROJECT_ID` + `FIREBASE_SERVICE_ACCOUNT_JSON` di environment server (plus token device/topik).
+
+## Cloudinary sebagai provider media (31 Agu 2026)
+- `models/enums.py`: `StorageProvider.CLOUDINARY`.
+- `core/config.py`: `CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET/UPLOAD_PRESET/FOLDER/URL` + helper
+  `cloudinary_folder` (fallback `MEDIA_STORAGE_PREFIX`), `cloudinary_configured`, `missing_cloudinary_vars()`
+  (hanya NAMA variable, tidak pernah nilainya).
+- `services/media_service.py`: `CloudinaryStorageBackend` (save → secure_url + `storage_key` =
+  `"<resource_type>:<public_id>"`, `replace()` overwrite in-place + invalidate CDN, `delete()` destroy),
+  factory provider CLOUDINARY dengan **validasi fail-fast**: ENVIRONMENT staging/production + provider
+  CLOUDINARY tanpa kredensial → RuntimeError dengan daftar variable yang kurang. `status()` melaporkan
+  Cloudinary (folder, persisten, cdn) alih-alih disk lokal. `MediaService.replace()` baru (fallback aman
+  ke upload biasa untuk backend lain).
+- `api/routes/media.py`: `GET /api/media/files/{path}` **tidak pernah membaca filesystem** saat provider
+  CLOUDINARY (404 + penjelasan); hard delete kini juga menghapus berkas di Cloudinary.
+- `requirements.txt`: `cloudinary>=1.40.0`.
+- Semua jalur upload (Admin Media, foto profil Baraya, foto pengajuan Pemain/Staf) memakai `media_service`
+  sehingga otomatis ikut Cloudinary; frontend tidak diubah (`resolveMediaUrl` meneruskan URL https apa adanya).
+- Verifikasi (tanpa Testing Agent, tanpa kredensial nyata): provider LOCAL tetap normal (upload & status),
+  validasi staging tanpa kredensial → RuntimeError, status Cloudinary benar (folder `alsabbat/staging`),
+  public_id/resource_type/storage_key benar, upload/replace/delete tervalidasi dengan uploader palsu,
+  `serve_file` tidak menyentuh disk. Preview tetap LOCAL karena kredensial belum ada. Tidak ada migrasi data.
+
+## Fase 2 — Backend FastAPI siap Vercel Serverless (31 Agu 2026)
+- `vercel.json` (ROOT, baru): Vercel **Services** (beta) — service `web` (root `frontend/`, CRA, build `yarn build`,
+  output `build`, SPA rewrite) + service `api` (root `backend/`, framework `fastapi`, entrypoint `app.main:app`).
+  Top-level rewrites: `/api/(.*)` → service api (path asli DIPERTAHANKAN, jadi prefix `/api` FastAPI tetap dipakai),
+  `/(.*)` → service web. Header cache/security dipindahkan ke root. WAJIB: set Framework project = **Services**.
+  `frontend/vercel.json` dibiarkan (diabaikan saat deploy Services). `.vercelignore` baru untuk CLI.
+- `app/main.py`: docstring Railway→Vercel, lifespan memanggil `run_startup_tasks_once()` (ensure_indexes + bootstrap
+  TIDAK dihapus), `close_db()` dilewati saat serverless agar client dipakai ulang; CORS wildcard kini juga
+  ditolak untuk staging **di Vercel** (di preview terkelola hanya warning agar dev tidak mati).
+- `app/services/startup_tasks.py` (baru): flag per proses + klaim `system_startup` di Mongo
+  (`STARTUP_TASKS_MIN_INTERVAL_MINUTES`, default 360) + force otomatis bila koleksi `users` kosong (deploy pertama
+  DB kosong) + klaim dilepas bila task gagal. Tidak pernah jalan per request.
+- `app/core/database.py`: pool serverless (`MONGODB_MAX_POOL_SIZE=10`, `MIN=0`, `maxIdleTimeMS`, timeouts,
+  retryWrites/retryReads, appname) + `_assert_safe_db_config()` (staging/production dilarang URI kosong/localhost/
+  fallback DB; keras di production & serverless, warning di preview lokal; tanpa menampilkan kredensial).
+- `app/core/config.py`: `is_serverless`, `mongodb_uri_is_local`, `unsafe_db_config_reason()`, env pool & interval.
+- Direct/signed upload Cloudinary: `media_service.direct_upload_signature()`, endpoint
+  `POST /api/media/direct-upload/sign` + `/complete` (media:write) dan `POST /api/baraya/me/upload-signature`;
+  model `app/models/media_direct.py`. Frontend `src/lib/cloudinaryUpload.js` + MediaPicker & barayaAuth mencoba
+  direct upload lalu **fallback otomatis** ke multipart lama bila provider bukan Cloudinary (cache per sesi).
+- Validasi (tanpa Testing Agent): /api/health ok; startup task jalan sekali lalu skip; DB kosong → indexes+admin
+  dibuat; guard DB & CORS terbukti; sign ditolak 422 saat LOCAL dan frontend fallback sukses (bukti jaringan:
+  422 sign → 201 /media/upload → foto tampil); signature Cloudinary valid (dummy creds, folder staging/baraya);
+  `yarn build` sukses 318.97 kB. Data uji dibersihkan; probe DB di-drop. Tidak ada deploy/migrasi.
+
+## Fase 3 — Kesiapan MongoDB Atlas (31 Agu 2026)
+- `backend/app/core/config.py`: guard isolasi environment ditambahkan pada `unsafe_db_config_reason()` —
+  production menolak `MONGODB_DB_NAME` yang mengandung "staging"; staging menolak nama database production
+  (`alsabbat_platform`). Guard Fase 2 (URI kosong/localhost/127.0.0.1/DB_NAME kosong) tetap berlaku.
+- `backend/app/core/database.py`: `_client_kwargs()` menambahkan `tlsCAFile=certifi.where()` otomatis untuk URI
+  `mongodb+srv://` (Atlas) agar TLS handshake aman di runtime serverless; connection pool Fase 2 tidak diubah.
+- `backend/requirements.txt`: `dnspython>=2.6.1` (WAJIB untuk `mongodb+srv://`) dan `certifi>=2024.7.4`.
+- Audit: 38 collection terdaftar, 35 punya index eksplisit di `ensure_indexes()`; `clubs`, `counters`,
+  `site_settings` tanpa index tambahan (dibuat otomatis saat write pertama, hanya `_id`).
+- Verifikasi pada database KOSONG (probe, lalu di-drop): `ensure_indexes()` membuat 36 collection + index,
+  bootstrap membuat 1 SUPER_ADMIN dari `BOOTSTRAP_ADMIN_EMAIL/PASSWORD/NAME` (hash bcrypt, password tidak
+  pernah masuk log). Guard diuji: production+DB staging GAGAL, staging+DB production GAGAL (Vercel), 
+  production+localhost GAGAL. Tidak ada dump/restore/migrasi/data dummy. Tidak ada deploy.
+
+## Admin Panel — kartu status Firebase dihapus dari UI (2 Sep 2026)
+- `frontend/src/components/admin/AuthSettingsPanel.js`: grid status tinggal 2 kolom
+  (Email OTP RESEND + Login Google). Kartu "Notifikasi Firebase (review admin)" TIDAK dirender
+  dan tidak diganti kartu lain; import ikon `BellRing` yang tak terpakai dibersihkan.
+- Backend TIDAK diubah: `firebase_status()` tetap ada di `GET /api/baraya/admin/auth-settings`
+  sebagai skeleton/kapabilitas FCM untuk kemungkinan aplikasi mobile, hanya tidak ditampilkan di UI.
+- Sistem notifikasi in-app tetap utuh: `NotificationBell`, `AdminNotificationAlert` (kring kring kring),
+  `UserNotificationAlert` (tring), collection/service/API notifikasi MongoDB — tanpa perubahan.
+- Verifikasi: ESLint bersih, `craco build` sukses (Compiled successfully), dan pemeriksaan UI
+  `/admin/baraya` tidak lagi memuat teks "Firebase" sama sekali.
+
+## Notification Cleanup — "Hapus semua yang terbaca" di lonceng Admin (2 Sep 2026)
+- Backend `app/services/notification_center.py`: tambah `clear_admin_read(admin_email)`. Notifikasi ADMIN
+  bersifat broadcast (1 dokumen, `read_by` per akun), jadi penghapusan bersifat PER AKUN via field baru
+  `cleared_by` (array email). Filter update_many WAJIB: `audience=ADMIN` + `read_by: admin_email`
+  (sudah dibaca) + `cleared_by $ne admin_email`. Notifikasi UNREAD tidak pernah tersentuh.
+  `list_admin()` & `count_admin_unread()` menyaring `cleared_by $ne admin_email`; `_shape_for_admin()`
+  menghapus `cleared_by` dari response. Tidak ada collection baru.
+- Backend `app/api/routes/notifications.py`: `DELETE /api/notifications/read` (auth `get_current_user`,
+  identitas dari token — bukan body/query), response `{success, deleted, unread}`.
+- Frontend `components/shared/NotificationBell.js`: prop opt-in `allowClearRead` (default false, jadi
+  lonceng Baraya/User TIDAK berubah). Tombol footer "Hapus semua yang terbaca" + `window.confirm`
+  ("Hapus semua notifikasi yang sudah dibaca?"), toast sonner, lalu `load()` (tanpa reload halaman).
+  Disabled bila tidak ada item read atau saat proses berjalan.
+- Frontend `components/admin/AdminShell.js`: menambahkan prop `allowClearRead` pada NotificationBell admin.
+- Verifikasi: `scripts/notif_cleanup_verify.py` (sandbox DB, di-drop di akhir) 23/23 PASS —
+  terhapus tepat 2 yang read, 1 unread tetap ada di DB, badge/unread-count tetap 1, tanpa token → 401,
+  riwayat admin lain tetap 3 item/2 unread (isolasi antar admin), read-all & endpoint publik tidak regresi.
+  UI diverifikasi lokal dengan mock API: cancel → tidak ada request DELETE, konfirmasi → 1 request,
+  daftar auto-refresh, popup AdminNotificationAlert + badge + polling tetap berjalan.

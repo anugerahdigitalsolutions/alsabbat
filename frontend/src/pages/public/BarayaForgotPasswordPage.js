@@ -10,7 +10,7 @@ import { apiErrorMessage } from '../../lib/api';
 import { barayaRequestOtp, barayaResetPasswordOtp } from '../../services/barayaAuth';
 import { OtpVerifyForm } from '../../components/public/OtpVerifyForm';
 
-/** Fase 3 — lupa kata sandi memakai kode OTP (SMTP2GO). */
+/** Fase 3 — lupa kata sandi memakai kode OTP (RESEND). */
 export default function BarayaForgotPasswordPage() {
   usePageSeo({
     title: 'Lupa Kata Sandi',

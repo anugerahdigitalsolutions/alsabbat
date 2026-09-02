@@ -77,3 +77,15 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
 - Akun uji `uji.notif@sandbox-alsabbat.dev` / `Sandbox123` SUDAH DIHAPUS beserta notifikasi, pengajuan,
   Player/Staff uji, tim uji, dan sesi. Database preview bersih (notifications/applications/players/staff/teams/customers = 0).
 - Admin tetap `admin@alsabbat.com` / `Alsabbat2026!`.
+
+## Update — login Admin STAGING & sinkronisasi password bootstrap (1 Sep 2026)
+- **Endpoint login Admin = `POST /api/auth/login`** (collection `users`). `POST /api/baraya/login` adalah
+  endpoint Baraya/customer (collection `customers`) → akun admin SELALU 401 di sana
+  ("Email atau kata sandi tidak sesuai."). Ini penyebab 401 yang dilaporkan di staging.
+- Dev/preview lokal: `admin@alsabbat.com` / `Alsabbat2026!` (SUPER_ADMIN) — tidak berubah.
+- Staging (Vercel Preview): akun `developer@alsabbat.com` (SUPER_ADMIN). Password mengikuti
+  `BOOTSTRAP_ADMIN_PASSWORD` di environment staging **hanya jika** flag
+  `BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET=true` diset (dan `BOOTSTRAP_ADMIN_EMAIL=developer@alsabbat.com`).
+  Sinkronisasi berjalan saat startup/cold start, menyimpan bcrypt hash, tidak mengubah role/is_active,
+  tidak menghapus user, idempotent, dan TIDAK PERNAH aktif di production.
+  Setelah berhasil login, disarankan hapus/matikan flag tersebut di Vercel.

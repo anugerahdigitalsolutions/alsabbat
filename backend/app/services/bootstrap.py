@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.database import Collections, get_db
 from app.core.logging_config import get_logger
 from app.core.rbac import Role
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.models.base import new_id, utcnow
 from fastapi.encoders import jsonable_encoder
 
@@ -44,6 +44,38 @@ DEFAULT_CLUB = {
 }
 
 
+async def _sync_bootstrap_admin_password(existing: dict) -> None:
+    """Selaraskan password admin bootstrap dengan BOOTSTRAP_ADMIN_PASSWORD.
+
+    HANYA berjalan di staging/preview (lihat
+    `settings.bootstrap_admin_password_reset_enabled`) — production tidak
+    pernah tersentuh. Hanya field `password_hash` + `updated_at` yang diubah:
+    email, role (SUPER_ADMIN) dan is_active TIDAK diubah, dan tidak ada user
+    yang dihapus. Password selalu disimpan sebagai hash bcrypt.
+    Idempotent: bila password di database sudah cocok, tidak ada penulisan.
+    """
+    if not settings.bootstrap_admin_password_reset_enabled:
+        return
+    current_hash = existing.get("password_hash") or ""
+    if verify_password(settings.BOOTSTRAP_ADMIN_PASSWORD, current_hash):
+        return
+    await get_db()[Collections.USERS].update_one(
+        {"id": existing["id"]},
+        {
+            "$set": {
+                "password_hash": hash_password(settings.BOOTSTRAP_ADMIN_PASSWORD),
+                "updated_at": jsonable_encoder(utcnow()),
+            }
+        },
+    )
+    logger.warning(
+        "bootstrap.admin_password_synced email=%s environment=%s "
+        "(hanya staging/preview; nilai password tidak pernah dicatat)",
+        existing.get("email"),
+        settings.ENVIRONMENT,
+    )
+
+
 async def seed_super_admin() -> None:
     """Create the bootstrap super admin only if it does not exist yet."""
     if not settings.BOOTSTRAP_ADMIN_PASSWORD:
@@ -55,6 +87,9 @@ async def seed_super_admin() -> None:
     email = settings.BOOTSTRAP_ADMIN_EMAIL.lower().strip()
     existing = await db[Collections.USERS].find_one({"email": email})
     if existing:
+        # User sudah ada: seeding TIDAK menimpa apa pun kecuali (opsional, khusus
+        # staging/preview) menyelaraskan password bcrypt dengan environment.
+        await _sync_bootstrap_admin_password(existing)
         return
     now = jsonable_encoder(utcnow())
     await db[Collections.USERS].insert_one(

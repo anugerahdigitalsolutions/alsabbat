@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BellRing, CheckCircle2, KeyRound, Mail, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, KeyRound, Mail, ShieldAlert } from 'lucide-react';
 import api from '../../lib/api';
 
 const Row = ({ icon: Icon, title, configured, detail, note, testId }) => (
@@ -32,7 +32,7 @@ const Row = ({ icon: Icon, title, configured, detail, note, testId }) => (
   </div>
 );
 
-/** Fase 3 — status konfigurasi OTP (SMTP2GO) & Login Google. Tidak pernah menampilkan secret. */
+/** Fase 3 — status konfigurasi OTP (RESEND) & Login Google. Tidak pernah menampilkan secret. */
 export const AuthSettingsPanel = () => {
   const [data, setData] = useState(null);
 
@@ -52,28 +52,20 @@ export const AuthSettingsPanel = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      {/* Grid kini 2 kolom: kartu status Firebase sengaja tidak ditampilkan di
+          Admin Panel. Kemampuan FCM di backend tetap ada sebagai skeleton
+          (untuk aplikasi mobile ke depan) tanpa muncul sebagai kartu status. */}
+      <div className="grid gap-4 lg:grid-cols-2">
         <Row
           icon={Mail}
-          title="Email OTP (SMTP2GO)"
+          title="Email OTP (RESEND)"
           configured={!!data?.email?.configured}
           detail={data?.email?.sender ? `Pengirim: ${data.email.sender}` : null}
           note={
             data?.email?.note ||
-            'Set SMTP2GO_API_KEY dan SMTP2GO_SENDER_EMAIL di environment server (.env backend), lalu restart layanan.'
+            'Set RESEND_API_KEY dan MAIL_FROM di environment server (.env backend), lalu restart layanan.'
           }
           testId="admin-auth-email"
-        />
-        <Row
-          icon={BellRing}
-          title="Notifikasi Firebase (review admin)"
-          configured={!!data?.firebase?.configured}
-          detail={data?.firebase?.project_id ? `Project: ${data.firebase.project_id}` : null}
-          note={
-            data?.firebase?.note ||
-            'Set FIREBASE_PROJECT_ID dan FIREBASE_SERVICE_ACCOUNT_JSON di environment server; pengajuan baru tetap terlihat sebagai PENDING di daftar bawah.'
-          }
-          testId="admin-auth-firebase"
         />
         <Row
           icon={KeyRound}

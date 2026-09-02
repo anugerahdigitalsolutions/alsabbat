@@ -58,7 +58,7 @@ export const OtpVerifyForm = ({
         <MailCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         {delivered
           ? `Kode 6 digit telah dikirim ke ${email}. Kode berlaku 10 menit.`
-          : `Kode 6 digit sudah dibuat untuk ${email}, tetapi pengiriman email belum dikonfigurasi di server (SMTP2GO). Hubungi pengurus klub untuk mendapatkan kode Anda.`}
+          : `Kode 6 digit sudah dibuat untuk ${email}, tetapi pengiriman email belum dikonfigurasi di server (RESEND). Hubungi pengurus klub untuk mendapatkan kode Anda.`}
       </p>
 
       {children}

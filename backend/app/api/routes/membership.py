@@ -64,6 +64,11 @@ member_write = Depends(require_permission("member:write"))
 GENERIC_OTP_RESPONSE = "Jika email terdaftar, kode verifikasi telah dikirim."
 INVALID_OTP = "Kode verifikasi salah atau sudah kedaluwarsa."
 
+# Fase 3.1 — pendaftaran yang belum terverifikasi berstatus PENDING dan HARUS
+# tetap bisa menyelesaikan alur OTP (request/verify/reset).
+STATUS_PENDING = "PENDING"
+ALLOWED_OTP_STATUSES = {"ACTIVE", STATUS_PENDING}
+
 
 # ----------------------------------------------------------- konfigurasi auth
 @router.get("/auth/config", summary="Konfigurasi login publik (tanpa secret)")
@@ -87,7 +92,9 @@ async def request_otp(payload: OtpRequestPayload, request: Request) -> Dict[str,
     customer = await customers.get_by({"email": email})
 
     delivered = False
-    if customer and customer.get("status") == "ACTIVE":
+    # Record PENDING (belum lolos OTP) tetap boleh menerima kode: inilah jalur
+    # resend untuk menyelesaikan pendaftaran.
+    if customer and customer.get("status") in ALLOWED_OTP_STATUSES:
         if purpose == PURPOSE_REGISTER and customer.get("email_verified", False):
             raise ConflictError("Email ini sudah terverifikasi. Silakan langsung login.")
         result = await issue_otp(
@@ -105,14 +112,22 @@ async def verify_registration_otp(payload: OtpVerifyPayload, request: Request) -
     if not await verify_otp(email=email, purpose=PURPOSE_REGISTER, code=payload.code):
         raise UnauthorizedError(INVALID_OTP)
     customer = await customers.get_by({"email": email})
-    if not customer or customer.get("status") != "ACTIVE":
+    if not customer or customer.get("status") not in ALLOWED_OTP_STATUSES:
         raise UnauthorizedError(INVALID_OTP)
+    # OTP terbukti benar → akun resmi diaktifkan di sini (bukan saat register).
     await customers.coll.update_one(
         {"id": customer["id"]},
-        {"$set": {"email_verified": True, "updated_at": jsonable_encoder(utcnow())}},
+        {
+            "$set": {
+                "email_verified": True,
+                "status": "ACTIVE",
+                "updated_at": jsonable_encoder(utcnow()),
+            }
+        },
     )
+    # Nomor & kode member baru dialokasikan setelah verifikasi (idempoten).
     fresh = await ensure_member_identity(await customers.get(customer["id"]))
-    logger.info("baraya.otp.verified customer=%s", customer["id"])
+    logger.info("baraya.otp.verified customer=%s member=%s", customer["id"], fresh.get("member_number"))
     return await _issue_session(fresh, request)
 
 
@@ -125,7 +140,7 @@ async def reset_password_with_otp(
     if not await verify_otp(email=email, purpose=PURPOSE_RESET, code=payload.code):
         raise UnauthorizedError(INVALID_OTP)
     customer = await customers.get_by({"email": email})
-    if not customer or customer.get("status") != "ACTIVE":
+    if not customer or customer.get("status") not in ALLOWED_OTP_STATUSES:
         raise UnauthorizedError(INVALID_OTP)
     now = jsonable_encoder(utcnow())
     await customers.coll.update_one(
@@ -134,10 +149,14 @@ async def reset_password_with_otp(
             "$set": {
                 "password_hash": hash_password(payload.password),
                 "email_verified": True,
+                # Kepemilikan email sudah terbukti lewat OTP: record PENDING
+                # dipromosikan menjadi akun resmi agar tidak berhenti separuh jalan.
+                "status": "ACTIVE",
                 "updated_at": now,
             }
         },
     )
+    await ensure_member_identity(await customers.get(customer["id"]))
     await get_db()[Collections.CUSTOMER_SESSIONS].update_many(
         {"customer_id": customer["id"]}, {"$set": {"revoked": True, "revoked_at": now}}
     )
@@ -325,7 +344,8 @@ async def create_application(
         title=f"Pengajuan {'Pemain' if payload.type.value == 'PEMAIN' else 'Staff'} Baru",
         message=f"{payload.full_name} mengajukan diri sebagai "
         f"{'Pemain' if payload.type.value == 'PEMAIN' else 'Staff'}. Perlu ditinjau.",
-        link="/admin/baraya",
+        # Deep-link: Admin Panel membuka dialog review pengajuan ini langsung.
+        link=f"/admin/baraya?application={created['id']}",
         reference_type="member_application",
         reference_id=created["id"],
     )
@@ -664,6 +684,14 @@ async def my_notifications(
 ) -> Dict[str, Any]:
     items, total, unread = await center.list_customer(auth.customer_id, limit=limit)
     return {"items": items, "total": total, "unread": unread}
+
+
+@router.get("/notifications/unread-count", summary="Jumlah notifikasi Baraya belum dibaca (ringan)")
+async def my_notifications_unread_count(
+    auth: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    """Endpoint hemat untuk polling badge akun Baraya."""
+    return {"unread": await center.count_customer_unread(auth.customer_id)}
 
 
 @router.patch("/notifications/{notification_id}/read", summary="Tandai notifikasi sudah dibaca")

@@ -66,16 +66,38 @@ def _shape_for_admin(doc: Dict[str, Any], admin_email: str) -> Dict[str, Any]:
     item = dict(doc)
     item["read"] = admin_email in (doc.get("read_by") or [])
     item.pop("read_by", None)
+    item.pop("cleared_by", None)
     return item
+
+
+def _admin_query(admin_email: str) -> Dict[str, Any]:
+    """Notifikasi admin bersifat broadcast, jadi "hapus" bersifat per akun admin:
+    dokumen yang sudah dibersihkan oleh admin ini disaring lewat `cleared_by`
+    sehingga admin lain sama sekali tidak terpengaruh."""
+    return {"audience": AUDIENCE_ADMIN, "cleared_by": {"$ne": admin_email}}
 
 
 async def list_admin(admin_email: str, limit: int = 30) -> Tuple[List[Dict[str, Any]], int, int]:
     """Notifikasi untuk semua admin (broadcast); status read per akun admin."""
-    query = {"audience": AUDIENCE_ADMIN}
+    query = _admin_query(admin_email)
     items, total = await repo.list(query, limit=limit, sort=(("created_at", -1),))
     shaped = [_shape_for_admin(item, admin_email) for item in items]
     unread = await repo.coll.count_documents({**query, "read_by": {"$ne": admin_email}})
     return shaped, total, unread
+
+
+async def count_customer_unread(customer_id: str) -> int:
+    """Hitungan ringan untuk polling badge akun Baraya."""
+    return await repo.coll.count_documents(
+        {"audience": AUDIENCE_CUSTOMER, "recipient_id": customer_id, "read": False}
+    )
+
+
+async def count_admin_unread(admin_email: str) -> int:
+    """Hitungan ringan untuk polling badge (tanpa menarik daftar dokumen)."""
+    return await repo.coll.count_documents(
+        {**_admin_query(admin_email), "read_by": {"$ne": admin_email}}
+    )
 
 
 async def list_customer(customer_id: str, limit: int = 30) -> Tuple[List[Dict[str, Any]], int, int]:
@@ -110,6 +132,29 @@ async def mark_admin_read_all(admin_email: str) -> int:
             "$set": {"updated_at": jsonable_encoder(utcnow())},
         },
     )
+    return result.modified_count
+
+
+async def clear_admin_read(admin_email: str) -> int:
+    """Hapus (bersihkan) semua notifikasi ADMIN yang SUDAH DIBACA oleh admin ini.
+
+    Filter wajib: dokumen harus sudah ada `admin_email` di `read_by` (read = true
+    untuk admin tersebut). Notifikasi yang belum dibaca TIDAK PERNAH tersentuh.
+    Karena notifikasi admin adalah broadcast, penghapusan dilakukan per akun
+    (`cleared_by`) agar riwayat admin lain tetap utuh.
+    """
+    result = await repo.coll.update_many(
+        {
+            "audience": AUDIENCE_ADMIN,
+            "read_by": admin_email,
+            "cleared_by": {"$ne": admin_email},
+        },
+        {
+            "$addToSet": {"cleared_by": admin_email},
+            "$set": {"updated_at": jsonable_encoder(utcnow())},
+        },
+    )
+    logger.info("notification.admin_cleared_read admin=%s count=%s", admin_email, result.modified_count)
     return result.modified_count
 
 

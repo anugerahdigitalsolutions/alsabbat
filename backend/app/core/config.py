@@ -10,7 +10,7 @@ import os
 import secrets
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from dotenv import load_dotenv
 
@@ -29,6 +29,20 @@ def _bool(value: str | None, default: bool = False) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _clean(value: str | None, default: str = "") -> str:
+    """Nilai environment yang dibersihkan (tanpa pernah menampilkan isinya).
+
+    Kredensial yang ditempel lewat dashboard (Vercel/Railway) sering membawa
+    spasi, newline, atau tanda kutip pembungkus yang tak terlihat. Pada
+    Cloudinary hal ini membuat signature upload menjadi tidak valid meskipun
+    nilainya "terlihat" benar.
+    """
+    if value is None:
+        return default
+    cleaned = value.strip().strip("'\"").strip()
+    return cleaned or default
 
 
 class Settings:
@@ -55,6 +69,21 @@ class Settings:
         or os.environ.get("DB_NAME")
         or "alsabbat_platform"
     )
+    # Connection pool — nilai default disetel untuk serverless (Vercel Functions):
+    # pool kecil per instance + minPoolSize 0 agar koneksi Atlas tidak habis.
+    MONGODB_MAX_POOL_SIZE: int = int(os.environ.get("MONGODB_MAX_POOL_SIZE", "10"))
+    MONGODB_MIN_POOL_SIZE: int = int(os.environ.get("MONGODB_MIN_POOL_SIZE", "0"))
+    MONGODB_MAX_IDLE_TIME_MS: int = int(os.environ.get("MONGODB_MAX_IDLE_TIME_MS", "30000"))
+    MONGODB_SERVER_SELECTION_TIMEOUT_MS: int = int(
+        os.environ.get("MONGODB_SERVER_SELECTION_TIMEOUT_MS", "8000")
+    )
+    MONGODB_CONNECT_TIMEOUT_MS: int = int(os.environ.get("MONGODB_CONNECT_TIMEOUT_MS", "8000"))
+    MONGODB_SOCKET_TIMEOUT_MS: int = int(os.environ.get("MONGODB_SOCKET_TIMEOUT_MS", "20000"))
+    # Interval minimum antar eksekusi startup task (index + bootstrap admin) agar
+    # cold start berulang di serverless tidak menjalankan operasi berat tiap kali.
+    STARTUP_TASKS_MIN_INTERVAL_MINUTES: int = int(
+        os.environ.get("STARTUP_TASKS_MIN_INTERVAL_MINUTES", "360")
+    )
 
     # --------------------------------------------------------------- auth
     JWT_SECRET: str = os.environ.get("JWT_SECRET") or os.environ.get("SECRET_KEY") or ""
@@ -66,6 +95,11 @@ class Settings:
     BOOTSTRAP_ADMIN_EMAIL: str = os.environ.get("BOOTSTRAP_ADMIN_EMAIL", "admin@alsabbat.com")
     BOOTSTRAP_ADMIN_PASSWORD: str = os.environ.get("BOOTSTRAP_ADMIN_PASSWORD", "")
     BOOTSTRAP_ADMIN_NAME: str = os.environ.get("BOOTSTRAP_ADMIN_NAME", "ALSABBAT Super Admin")
+    # Reset password bootstrap admin (hash bcrypt) memakai BOOTSTRAP_ADMIN_PASSWORD
+    # yang aktif. HANYA berlaku pada staging/preview — production selalu diabaikan.
+    BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET: bool = _bool(
+        os.environ.get("BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET"), False
+    )
 
     # --------------------------------------------------------------- cors
     CORS_ORIGINS: List[str] = _csv(os.environ.get("CORS_ORIGINS"), ["*"])
@@ -113,6 +147,91 @@ class Settings:
     S3_ACCESS_KEY_ID: str = os.environ.get("S3_ACCESS_KEY_ID", "")
     S3_SECRET_ACCESS_KEY: str = os.environ.get("S3_SECRET_ACCESS_KEY", "")
 
+    # ------------------------------------------------ Cloudinary (media CDN)
+    # Dipakai bila MEDIA_STORAGE_PROVIDER=CLOUDINARY. Kredensial HANYA dari
+    # environment. Staging & production memakai folder berbeda lewat
+    # CLOUDINARY_FOLDER (fallback: MEDIA_STORAGE_PREFIX) sehingga media tidak
+    # pernah tercampur antar environment.
+    CLOUDINARY_CLOUD_NAME: str = _clean(os.environ.get("CLOUDINARY_CLOUD_NAME"))
+    CLOUDINARY_API_KEY: str = _clean(os.environ.get("CLOUDINARY_API_KEY"))
+    CLOUDINARY_API_SECRET: str = _clean(os.environ.get("CLOUDINARY_API_SECRET"))
+    # Opsional: hanya dipakai bila memang preset dibutuhkan oleh akun Cloudinary.
+    CLOUDINARY_UPLOAD_PRESET: str = _clean(os.environ.get("CLOUDINARY_UPLOAD_PRESET"))
+    CLOUDINARY_FOLDER: str = _clean(os.environ.get("CLOUDINARY_FOLDER"))
+    CLOUDINARY_URL: str = _clean(os.environ.get("CLOUDINARY_URL"))
+    # Algoritma signature akun Cloudinary (Settings -> Security). Default sha1;
+    # set ke "sha256" bila akun memakai SHA-256.
+    CLOUDINARY_SIGNATURE_ALGORITHM: str = (
+        _clean(os.environ.get("CLOUDINARY_SIGNATURE_ALGORITHM"), "sha1").lower() or "sha1"
+    )
+
+    # ------------------------------------------------ serverless / Vercel
+    # Vercel menyetel VERCEL=1 di runtime function.
+    @property
+    def is_serverless(self) -> bool:
+        return bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+
+    @property
+    def mongodb_uri_is_local(self) -> bool:
+        uri = (self.MONGODB_URI or "").lower()
+        return ("localhost" in uri) or ("127.0.0.1" in uri) or ("@mongo:" in uri)
+
+    def unsafe_db_config_reason(self) -> Optional[str]:
+        """Alasan konfigurasi database TIDAK aman untuk staging/production.
+
+        Tidak pernah menampilkan connection string / kredensial apa pun.
+        """
+        if not (self.is_production or self.is_staging):
+            return None
+        if not (os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URL")):
+            return "MONGODB_URI belum diset (aplikasi akan memakai fallback development)"
+        if self.mongodb_uri_is_local:
+            return "MONGODB_URI menunjuk ke localhost/127.0.0.1 (database lokal/VPS)"
+        if not (os.environ.get("MONGODB_DB_NAME") or os.environ.get("DB_NAME")):
+            return "MONGODB_DB_NAME belum diset (aplikasi akan memakai nama database default)"
+        # Isolasi environment: staging & production tidak boleh memakai nama
+        # database yang sama / tertukar.
+        db_name = (self.DB_NAME or "").strip().lower()
+        if self.is_production and "staging" in db_name:
+            return (
+                "MONGODB_DB_NAME mengandung 'staging' padahal ENVIRONMENT=production "
+                "(risiko production memakai database staging)"
+            )
+        if self.is_staging and db_name == "alsabbat_platform":
+            return (
+                "MONGODB_DB_NAME sama dengan nama database production ('alsabbat_platform') "
+                "padahal ENVIRONMENT=staging — pakai database terpisah, misalnya "
+                "alsabbat_platform_staging"
+            )
+        return None
+
+    @property
+    def cloudinary_folder(self) -> str:
+        """Folder/prefix Cloudinary aktif (env-driven, terpisah per environment)."""
+        folder = (self.CLOUDINARY_FOLDER or self.MEDIA_STORAGE_PREFIX or "alsabbat").strip("/")
+        return folder
+
+    @property
+    def cloudinary_configured(self) -> bool:
+        if self.CLOUDINARY_URL.strip():
+            return True
+        return bool(
+            self.CLOUDINARY_CLOUD_NAME and self.CLOUDINARY_API_KEY and self.CLOUDINARY_API_SECRET
+        )
+
+    def missing_cloudinary_vars(self) -> List[str]:
+        """Nama variable yang belum diisi (tanpa pernah menampilkan nilainya)."""
+        if self.CLOUDINARY_URL.strip():
+            return []
+        missing = []
+        if not self.CLOUDINARY_CLOUD_NAME:
+            missing.append("CLOUDINARY_CLOUD_NAME")
+        if not self.CLOUDINARY_API_KEY:
+            missing.append("CLOUDINARY_API_KEY")
+        if not self.CLOUDINARY_API_SECRET:
+            missing.append("CLOUDINARY_API_SECRET")
+        return missing
+
     # ------------------------------------- social publishing (Phase 8)
     # Values are read from the environment/secret manager ONLY. Empty value =>
     # the platform reports NOT_CONFIGURED (never a fake publish).
@@ -139,10 +258,11 @@ class Settings:
     PUBLIC_SITE_URL: str = os.environ.get("PUBLIC_SITE_URL", "")
 
     # ------------------------------------------------- mail (Phase 14)
-    # MAIL_PROVIDER: SMTP (real delivery) | LOG (no delivery, audit log only)
-    # | MEMORY (in-memory, tests only). Empty/unset => LOG.
-    MAIL_PROVIDER: str = os.environ.get("MAIL_PROVIDER", "LOG")
-    MAIL_FROM: str = os.environ.get("MAIL_FROM", "")
+    # MAIL_PROVIDER: RESEND (real delivery, REST API) | SMTP (real delivery)
+    # | LOG (no delivery, audit log only) | MEMORY (in-memory, tests only).
+    # Empty/unset => LOG. SMTP2GO tetap terdeteksi otomatis dari kredensialnya.
+    MAIL_PROVIDER: str = _clean(os.environ.get("MAIL_PROVIDER"), "LOG")
+    MAIL_FROM: str = _clean(os.environ.get("MAIL_FROM"))
     MAIL_FROM_NAME: str = os.environ.get("MAIL_FROM_NAME", "ALSABBAT Football Club")
     SMTP_HOST: str = os.environ.get("SMTP_HOST", "")
     SMTP_PORT: int = int(os.environ.get("SMTP_PORT", "587"))
@@ -159,6 +279,11 @@ class Settings:
     SMTP2GO_API_KEY: str = os.environ.get("SMTP2GO_API_KEY", "")
     SMTP2GO_SENDER_EMAIL: str = os.environ.get("SMTP2GO_SENDER_EMAIL", "")
     SMTP2GO_SENDER_NAME: str = os.environ.get("SMTP2GO_SENDER_NAME", "AL SABBAT Football Club")
+
+    # ------------------------------- Resend API (OTP & reset email, REST/httpx)
+    # Kosong => provider tidak pernah dipilih (fallback jujur ke LOG). Pengirim
+    # diambil dari MAIL_FROM / MAIL_FROM_NAME, tidak pernah di-hardcode.
+    RESEND_API_KEY: str = _clean(os.environ.get("RESEND_API_KEY"))
 
     # --------------------------------- Google OAuth (Fase 3 — Login Google)
     GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
@@ -187,6 +312,21 @@ class Settings:
     @property
     def is_staging(self) -> bool:
         return self.ENVIRONMENT.lower() in {"staging", "stage"}
+
+    @property
+    def bootstrap_admin_password_reset_enabled(self) -> bool:
+        """Boleh menyelaraskan password bootstrap admin dengan env?
+
+        Aktif HANYA bila: flag env dinyalakan, BOOTSTRAP_ADMIN_PASSWORD terisi,
+        environment BUKAN production, dan environment adalah staging/preview.
+        Production TIDAK pernah terpengaruh.
+        """
+        if not (self.BOOTSTRAP_ADMIN_ALLOW_PASSWORD_RESET and self.BOOTSTRAP_ADMIN_PASSWORD):
+            return False
+        if self.is_production:
+            return False
+        vercel_env = (os.environ.get("VERCEL_ENV") or "").strip().lower()
+        return self.is_staging or vercel_env in {"preview", "development"}
 
     def resolved_jwt_secret(self) -> str:
         """Return the JWT secret; generate an ephemeral one in development."""

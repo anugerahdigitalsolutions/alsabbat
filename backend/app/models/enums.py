@@ -131,6 +131,7 @@ class StorageProvider(str, Enum):
     LOCAL = "LOCAL"
     EMERGENT = "EMERGENT"
     S3 = "S3"
+    CLOUDINARY = "CLOUDINARY"
     EXTERNAL = "EXTERNAL"
 
 

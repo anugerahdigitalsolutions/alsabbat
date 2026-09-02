@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Button } from '../ui/button';
 
@@ -34,13 +35,27 @@ export const NotificationBell = ({
   iconClassName = 'h-[18px] w-[18px]',
   iconStyle,
   pollMs = 60000,
+  // Fase 1 — polling adaptif (opsional; tanpa prop ini perilaku lama dipertahankan).
+  activePollMs = 0,
+  countPath = '',
+  // Opt-in: tombol "Hapus semua yang terbaca" (dipakai Admin Panel saja).
+  allowClearRead = false,
+  onLoad,
+  refreshSignal = 0,
 }) => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [open, setOpen] = useState(false);
   const mounted = useRef(true);
+  const onLoadRef = useRef(onLoad);
+  const lastUnreadRef = useRef(null);
+
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+  }, [onLoad]);
 
   useEffect(() => {
     mounted.current = true;
@@ -57,6 +72,8 @@ export const NotificationBell = ({
       if (!mounted.current) return;
       setItems(data?.items || []);
       setUnread(data?.unread || 0);
+      lastUnreadRef.current = data?.unread || 0;
+      if (onLoadRef.current) onLoadRef.current(data || { items: [], unread: 0 });
     } catch (e) {
       if (mounted.current) {
         setItems([]);
@@ -67,19 +84,69 @@ export const NotificationBell = ({
     }
   }, [client, basePath, enabled]);
 
+  /** Polling hemat: cek jumlah unread saja, tarik daftar hanya bila berubah. */
+  const poll = useCallback(async () => {
+    if (!enabled) return;
+    if (!countPath) {
+      await load();
+      return;
+    }
+    try {
+      const { data } = await client.get(countPath);
+      if (!mounted.current) return;
+      const next = data?.unread ?? 0;
+      if (next !== lastUnreadRef.current) {
+        await load();
+      } else {
+        setUnread(next);
+      }
+    } catch (e) {
+      /* diabaikan: percobaan berikutnya menyinkronkan */
+    }
+  }, [client, countPath, enabled, load]);
+
   useEffect(() => {
     load();
-    if (!enabled || !pollMs) return undefined;
-    const timer = setInterval(load, pollMs);
-    return () => clearInterval(timer);
-  }, [load, enabled, pollMs]);
+    if (!enabled) return undefined;
+
+    let timer = null;
+    const intervalFor = () => {
+      const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+      if (hidden || !activePollMs) return pollMs;
+      return activePollMs;
+    };
+    const schedule = () => {
+      if (timer) clearInterval(timer);
+      const ms = intervalFor();
+      timer = ms ? setInterval(poll, ms) : null;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') poll();
+      schedule();
+    };
+
+    schedule();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      if (timer) clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [load, poll, enabled, pollMs, activePollMs]);
+
+  useEffect(() => {
+    if (refreshSignal) load();
+  }, [refreshSignal, load]);
 
   const markRead = async (item) => {
     if (item.read) return;
     try {
       const { data } = await client.patch(`${basePath}/${item.id}/read`);
-      setItems((list) => list.map((it) => (it.id === item.id ? { ...it, read: true } : it)));
-      setUnread(data?.unread ?? Math.max(0, unread - 1));
+      const nextItems = items.map((it) => (it.id === item.id ? { ...it, read: true } : it));
+      const nextUnread = data?.unread ?? Math.max(0, unread - 1);
+      setItems(nextItems);
+      setUnread(nextUnread);
+      lastUnreadRef.current = nextUnread;
+      if (onLoadRef.current) onLoadRef.current({ items: nextItems, unread: nextUnread });
     } catch (e) {
       /* biarkan status lama; polling berikutnya menyinkronkan */
     }
@@ -96,14 +163,42 @@ export const NotificationBell = ({
   const markAll = async () => {
     try {
       await client.post(`${basePath}/read-all`);
-      setItems((list) => list.map((it) => ({ ...it, read: true })));
+      const nextItems = items.map((it) => ({ ...it, read: true }));
+      setItems(nextItems);
       setUnread(0);
+      lastUnreadRef.current = 0;
+      if (onLoadRef.current) onLoadRef.current({ items: nextItems, unread: 0 });
     } catch (e) {
       /* diabaikan; polling menyinkronkan */
     }
   };
 
   if (!enabled) return null;
+
+  const readCount = items.filter((it) => it.read).length;
+
+  /** Cleanup riwayat: hanya notifikasi yang SUDAH dibaca. Unread tidak disentuh. */
+  const clearRead = async () => {
+    if (!readCount || clearing) return;
+    if (typeof window !== 'undefined' && window.confirm) {
+      if (!window.confirm('Hapus semua notifikasi yang sudah dibaca?')) return;
+    }
+    setClearing(true);
+    try {
+      const { data } = await client.delete(`${basePath}/read`);
+      await load();
+      const deleted = data?.deleted ?? 0;
+      if (deleted) {
+        toast.success(`${deleted} notifikasi yang sudah dibaca dihapus.`);
+      } else {
+        toast.info('Tidak ada notifikasi terbaca untuk dihapus.');
+      }
+    } catch (e) {
+      toast.error('Gagal menghapus notifikasi terbaca. Coba lagi.');
+    } finally {
+      if (mounted.current) setClearing(false);
+    }
+  };
 
   return (
     <Popover
@@ -189,6 +284,21 @@ export const NotificationBell = ({
             </ul>
           )}
         </div>
+        {allowClearRead ? (
+          <div className="border-t px-3 py-2" style={{ borderColor: 'var(--border-soft)' }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-center text-xs"
+              onClick={clearRead}
+              disabled={!readCount || clearing}
+              data-testid={`${testId}-clear-read`}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              {clearing ? 'Menghapus…' : 'Hapus semua yang terbaca'}
+            </Button>
+          </div>
+        ) : null}
       </PopoverContent>
     </Popover>
   );

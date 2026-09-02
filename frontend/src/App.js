@@ -30,6 +30,7 @@ import BarayaForgotPasswordPage from './pages/public/BarayaForgotPasswordPage';
 import BarayaResetPasswordPage from './pages/public/BarayaResetPasswordPage';
 import GoogleAuthCallbackPage from './pages/public/GoogleAuthCallbackPage';
 import BarayaApplicationPage from './pages/public/BarayaApplicationPage';
+import BarayaStaffApplicationStatusPage from './pages/public/BarayaStaffApplicationStatusPage';
 import BarayaAccountPage from './pages/public/BarayaAccountPage';
 import BarayaOrdersPage from './pages/public/BarayaOrdersPage';
 import BarayaMemberCardPage from './pages/public/BarayaMemberCardPage';
@@ -115,6 +116,14 @@ function App() {
                 element={
                   <BarayaRoute>
                     <BarayaApplicationPage />
+                  </BarayaRoute>
+                }
+              />
+              <Route
+                path="/akun/pengajuan/staff/status"
+                element={
+                  <BarayaRoute>
+                    <BarayaStaffApplicationStatusPage />
                   </BarayaRoute>
                 }
               />
