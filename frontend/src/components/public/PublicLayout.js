@@ -9,6 +9,10 @@ import { trackPageView } from '../../lib/analytics';
 export const PublicLayout = () => {
   const { pathname } = useLocation();
   const background = useSiteBackground();
+  // Saat background kustom aktif, paint default `.als-shell-bg` (warna abu +
+  // radial-gradient) dimatikan agar pilihan Admin tidak tertimpa. Bila OFF,
+  // background default AL SABBAT tetap dipakai sebagai fallback.
+  const customBackground = !!background?.enabled;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
@@ -16,7 +20,12 @@ export const PublicLayout = () => {
   }, [pathname]);
 
   return (
-    <div className="als-shell-bg" data-testid="public-layout">
+    <div
+      className="als-shell-bg"
+      data-testid="public-layout"
+      data-background={customBackground ? 'custom' : 'default'}
+      style={customBackground ? { backgroundColor: 'transparent', backgroundImage: 'none' } : undefined}
+    >
       <SiteBackgroundLayers config={background} />
       <div className="als-frame als-app relative" data-testid="public-frame">
         <PublicHeader />

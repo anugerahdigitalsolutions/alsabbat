@@ -10,6 +10,7 @@ import {
   IMAGE_SIZES,
   SITE_BACKGROUND_KEY,
   parseBackgroundConfig,
+  publishBackgroundConfig,
 } from '../../lib/siteBackground';
 import { SiteBackgroundLayers } from '../public/SiteBackgroundLayers';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
@@ -132,7 +133,7 @@ export const BackgroundManager = () => {
 
   useEffect(() => {
     api
-      .get('/site-content/public')
+      .get('/site-content/public', { params: { t: Date.now() } })
       .then(({ data }) => setConfig(parseBackgroundConfig(data?.items?.[SITE_BACKGROUND_KEY])))
       .catch((e) => toast.error(apiErrorMessage(e, 'Gagal memuat konfigurasi background')))
       .finally(() => setLoading(false));
@@ -153,6 +154,7 @@ export const BackgroundManager = () => {
           },
         ],
       });
+      publishBackgroundConfig(next);
       toast.success(message);
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Gagal menyimpan background'));
