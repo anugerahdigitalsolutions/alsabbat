@@ -296,7 +296,7 @@ dibangun dengan mode **NOT_CONFIGURED yang jujur** (tanpa dummy/hard-code).
 ### BLOCKER (menunggu user)
 - `SMTP2GO_API_KEY` + `SMTP2GO_SENDER_EMAIL` → tanpa ini email OTP TIDAK terkirim (sistem melaporkan jujur).
 - `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` → tombol "Masuk dengan Google" disembunyikan sampai diisi.
-  Redirect URI wajib: `https://alsabbat-resend-otp.preview.emergentagent.com/auth/google`).
+  Redirect URI wajib: `https://hide-firebase-status.preview.emergentagent.com/auth/google`).
 - Kunci hanya ditulis ke `backend/.env` (sudah ada placeholder kosong) + `backend/.env.example` terdokumentasi.
 
 
@@ -1414,3 +1414,14 @@ CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan pe
   bootstrap membuat 1 SUPER_ADMIN dari `BOOTSTRAP_ADMIN_EMAIL/PASSWORD/NAME` (hash bcrypt, password tidak
   pernah masuk log). Guard diuji: production+DB staging GAGAL, staging+DB production GAGAL (Vercel), 
   production+localhost GAGAL. Tidak ada dump/restore/migrasi/data dummy. Tidak ada deploy.
+
+## Admin Panel — kartu status Firebase dihapus dari UI (2 Sep 2026)
+- `frontend/src/components/admin/AuthSettingsPanel.js`: grid status tinggal 2 kolom
+  (Email OTP RESEND + Login Google). Kartu "Notifikasi Firebase (review admin)" TIDAK dirender
+  dan tidak diganti kartu lain; import ikon `BellRing` yang tak terpakai dibersihkan.
+- Backend TIDAK diubah: `firebase_status()` tetap ada di `GET /api/baraya/admin/auth-settings`
+  sebagai skeleton/kapabilitas FCM untuk kemungkinan aplikasi mobile, hanya tidak ditampilkan di UI.
+- Sistem notifikasi in-app tetap utuh: `NotificationBell`, `AdminNotificationAlert` (kring kring kring),
+  `UserNotificationAlert` (tring), collection/service/API notifikasi MongoDB — tanpa perubahan.
+- Verifikasi: ESLint bersih, `craco build` sukses (Compiled successfully), dan pemeriksaan UI
+  `/admin/baraya` tidak lagi memuat teks "Firebase" sama sekali.

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BellRing, CheckCircle2, KeyRound, Mail, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, KeyRound, Mail, ShieldAlert } from 'lucide-react';
 import api from '../../lib/api';
 
 const Row = ({ icon: Icon, title, configured, detail, note, testId }) => (
