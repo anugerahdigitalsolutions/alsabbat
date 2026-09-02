@@ -441,44 +441,38 @@ export const MemberApplications = ({ onDecided }) => {
                 </div>
               ) : null}
 
-              <div>
-                <Label className="mb-1.5 block">
-                  {dialog.type === 'STAFF'
-                    ? 'Tautkan ke Staff Entry yang sudah ada (opsional)'
-                    : `Tautkan ke record ${TYPE_LABEL[dialog.type]} yang sudah ada (opsional)`}
-                </Label>
-                <select
-                  value={linkId}
-                  onChange={(e) => setLinkId(e.target.value)}
-                  className="h-11 w-full rounded-[var(--radius-sm)] border px-3 text-sm"
-                  style={{ borderColor: 'var(--border-soft)' }}
-                  data-testid="admin-application-link"
-                >
-                  <option value="">
-                    {dialog.type === 'STAFF' ? '— buat Staff Entry baru —' : '— buat Pemain baru —'}
-                  </option>
-                  {linkOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.full_name || option.display_name || option.name}
-                      {option.jersey_number ? ` · #${option.jersey_number}` : ''}
-                      {option.position_title || option.role_label || option.position
-                        ? ` · ${option.position_title || option.role_label || option.position}`
-                        : ''}
-                    </option>
-                  ))}
-                </select>
-                {dialog.type === 'STAFF' ? (
-                  <p className="mt-2 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="admin-application-staff-hint">
-                    Dibiarkan kosong → sistem otomatis membuat Staff Entry baru dari data pengajuan
-                    (Bagian, Jabatan, Foto, pemain & tim). Akun dan profil Pemain tidak diubah.
-                  </p>
-                ) : (
+              {/* Pengajuan STAFF selalu membuat Staff Entry baru dari data
+                  pengajuan, sehingga field penautan tidak lagi ditampilkan.
+                  Untuk PEMAIN, opsi penautan tetap tersedia seperti semula. */}
+              {dialog.type !== 'STAFF' ? (
+                <div>
+                  <Label className="mb-1.5 block">
+                    {`Tautkan ke record ${TYPE_LABEL[dialog.type]} yang sudah ada (opsional)`}
+                  </Label>
+                  <select
+                    value={linkId}
+                    onChange={(e) => setLinkId(e.target.value)}
+                    className="h-11 w-full rounded-[var(--radius-sm)] border px-3 text-sm"
+                    style={{ borderColor: 'var(--border-soft)' }}
+                    data-testid="admin-application-link"
+                  >
+                    <option value="">— buat Pemain baru —</option>
+                    {linkOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.full_name || option.display_name || option.name}
+                        {option.jersey_number ? ` · #${option.jersey_number}` : ''}
+                        {option.position_title || option.role_label || option.position
+                          ? ` · ${option.position_title || option.role_label || option.position}`
+                          : ''}
+                      </option>
+                    ))}
+                  </select>
                   <p className="mt-2 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="admin-application-player-hint">
                     Dibiarkan kosong → sistem otomatis membuat Pemain baru dari data pengajuan
                     (nama, posisi, nomor punggung, foto). Tidak perlu memilih pemain yang sudah ada.
                   </p>
-                )}
-              </div>
+                </div>
+              ) : null}
 
               <div>
                 <Label className="mb-1.5 block">Catatan untuk pemohon (opsional)</Label>

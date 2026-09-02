@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ClipboardList, Send, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
@@ -58,6 +58,7 @@ export default function BarayaApplicationPage() {
     robots: 'noindex,follow',
   });
   const { customer, reload } = useBaraya();
+  const navigate = useNavigate();
   const { meta } = useClub();
   const playerAllowed = canApplyPlayer(customer);
   const staffAllowed = canApplyStaff(customer);
@@ -166,6 +167,11 @@ export default function BarayaApplicationPage() {
       }));
       await load();
       await reload();
+      if (!isPlayer) {
+        // Pendaftaran Staff berhasil tersimpan → arahkan ke halaman status
+        // (replace: tombol back tidak mengulang pengiriman formulir).
+        navigate('/akun/pengajuan/staff/status', { replace: true });
+      }
     } catch (e) {
       toast.error(apiErrorMessage(e, 'Pengajuan gagal dikirim.'));
     } finally {

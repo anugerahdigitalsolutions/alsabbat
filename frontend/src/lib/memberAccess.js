@@ -21,7 +21,9 @@ export const hasRole = (customer, role) => rolesOf(customer).includes(role);
 
 export const roleLabel = (customer) => {
   const roles = rolesOf(customer);
-  if (roles.includes('PEMAIN') && roles.includes('STAFF')) return 'Pemain & Staf';
+  // Peran STAFF hanya diberikan backend setelah Admin menyetujui pengajuan,
+  // sehingga label ini otomatis mengikuti status approval.
+  if (roles.includes('STAFF')) return 'Staf & Pemain';
   return ROLE_LABELS[roles[0]] || 'Member';
 };
 
