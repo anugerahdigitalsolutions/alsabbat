@@ -7,7 +7,7 @@ const ALERT_TYPE = 'APPLICATION_SUBMITTED';
 const SOUND_SRC = '/notification-alert.wav';
 /** Batas aman: bunyi berhenti sendiri bila Admin tidak melakukan apa pun. */
 const SOUND_MAX_MS = 45000;
-/** Notifikasi yang sudah pernah memicu alert di tab ini (agar polling tidak
+/** Notifikasi yang sudah ditangani di tab ini (agar polling tidak
  *  menampilkan popup yang sama berulang kali). */
 const SEEN_KEY = 'alsabbat.admin.alerted';
 
@@ -37,36 +37,38 @@ const reviewTarget = (item) => {
 };
 
 /**
- * Fase 2 & 3 — popup + bunyi untuk pengajuan Pemain/Staff baru.
- * Sumber data tetap MongoDB (dikirim lewat prop `items` dari NotificationBell),
- * komponen ini hanya menampilkan alert & memutar suara.
+ * Fase 2 & 3 — popup + bunyi "kring kring kring" untuk pengajuan Pemain/Staff baru.
+ *
+ * Sumber data tetap MongoDB (dikirim lewat prop `items` dari NotificationBell).
+ * Alert aktif DITURUNKAN langsung dari data + daftar `handled` yang berupa state,
+ * sehingga satu klik REVIEW/Nanti langsung mengeluarkan notifikasi dari daftar
+ * pending dan menghentikan audio (tidak ada alert yang "hidup kembali").
  */
 export const AdminNotificationAlert = ({ items = [], onRead, onHandled }) => {
   const navigate = useNavigate();
   const audioRef = useRef(null);
   const stopTimerRef = useRef(null);
-  const seenRef = useRef(readSeen());
-  const [activeId, setActiveId] = useState(null);
+  const playingIdRef = useRef(null);
+  const [handled, setHandled] = useState(() => readSeen());
   const [soundBlocked, setSoundBlocked] = useState(false);
 
-  // Kandidat alert: pengajuan baru yang belum dibaca dan belum pernah dialert.
+  // Kandidat alert: pengajuan baru yang belum dibaca dan belum ditangani.
   const pending = useMemo(
     () =>
       (items || []).filter(
-        (item) => item && item.type === ALERT_TYPE && !item.read && !seenRef.current.has(item.id)
+        (item) => item && item.type === ALERT_TYPE && !item.read && !handled.has(item.id)
       ),
-    [items]
+    [items, handled]
   );
-  const active = useMemo(
-    () => (items || []).find((item) => item.id === activeId) || null,
-    [items, activeId]
-  );
+  const active = pending[0] || null;
+  const activeId = active ? active.id : null;
 
   const stopSound = useCallback(() => {
     if (stopTimerRef.current) {
       clearTimeout(stopTimerRef.current);
       stopTimerRef.current = null;
     }
+    playingIdRef.current = null;
     const audio = audioRef.current;
     if (audio) {
       try {
@@ -78,87 +80,90 @@ export const AdminNotificationAlert = ({ items = [], onRead, onHandled }) => {
     }
   }, []);
 
-  const startSound = useCallback(() => {
-    // Satu instance audio untuk seluruh sesi — tidak pernah bertumpuk.
-    if (!audioRef.current) {
-      const audio = new Audio(SOUND_SRC);
-      audio.loop = true;
-      audio.preload = 'auto';
-      audioRef.current = audio;
-    }
-    const audio = audioRef.current;
-    try {
-      audio.currentTime = 0;
-    } catch (e) {
-      /* diabaikan */
-    }
-    const played = audio.play();
-    if (played && typeof played.then === 'function') {
-      // Autoplay policy: jangan sampai menjadi runtime error.
-      played.then(() => setSoundBlocked(false)).catch(() => setSoundBlocked(true));
-    }
-    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
-    stopTimerRef.current = setTimeout(() => {
-      stopSound();
-    }, SOUND_MAX_MS);
-  }, [stopSound]);
+  const playSound = useCallback(
+    (id) => {
+      // Satu instance audio untuk seluruh sesi — tidak pernah bertumpuk,
+      // dan tidak pernah di-restart oleh polling/re-render untuk id yang sama.
+      if (!id || playingIdRef.current === id) return;
+      if (!audioRef.current) {
+        const audio = new Audio(SOUND_SRC);
+        audio.loop = true;
+        audio.preload = 'auto';
+        audioRef.current = audio;
+      }
+      const audio = audioRef.current;
+      playingIdRef.current = id;
+      try {
+        audio.currentTime = 0;
+      } catch (e) {
+        /* diabaikan */
+      }
+      const played = audio.play();
+      if (played && typeof played.then === 'function') {
+        // Autoplay policy: jangan sampai menjadi runtime error.
+        played
+          .then(() => setSoundBlocked(false))
+          .catch(() => {
+            playingIdRef.current = null;
+            setSoundBlocked(true);
+          });
+      }
+      if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
+      stopTimerRef.current = setTimeout(stopSound, SOUND_MAX_MS);
+    },
+    [stopSound]
+  );
 
-  // Satu alert aktif pada satu waktu; berikutnya tampil setelah yang ini ditangani.
+  // Satu alert aktif pada satu waktu. Bunyi mengikuti alert aktif: berhenti
+  // otomatis saat notifikasi ditangani, dibaca dari lonceng, atau read-all.
   useEffect(() => {
-    if (activeId || pending.length === 0) return;
-    const next = pending[0];
-    setActiveId(next.id);
-    startSound();
-  }, [activeId, pending, startSound]);
-
-  // Notifikasi aktif sudah dibaca dari tempat lain (lonceng / read-all) → alert selesai.
-  useEffect(() => {
-    if (!activeId) return;
-    const stillUnread = (items || []).some((item) => item.id === activeId && !item.read);
-    const stillExists = (items || []).some((item) => item.id === activeId);
-    if (stillExists && !stillUnread) {
+    if (!activeId) {
       stopSound();
-      setActiveId(null);
+      return;
     }
-  }, [items, activeId, stopSound]);
+    playSound(activeId);
+  }, [activeId, playSound, stopSound]);
 
   useEffect(() => () => stopSound(), [stopSound]);
 
-  const markSeen = useCallback((id) => {
-    seenRef.current.add(id);
-    persistSeen(seenRef.current);
-  }, []);
+  /** Satu klik = audio berhenti (sinkron) + notifikasi keluar dari daftar pending. */
+  const handle = useCallback(
+    (id) => {
+      stopSound();
+      setHandled((prev) => {
+        if (prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.add(id);
+        persistSeen(next);
+        return next;
+      });
+    },
+    [stopSound]
+  );
 
   const dismiss = () => {
-    if (activeId) markSeen(activeId);
-    stopSound();
-    setActiveId(null);
+    if (!active) return;
+    handle(active.id);
     if (onHandled) onHandled();
   };
 
-  const review = async () => {
+  const review = () => {
+    if (!active) return;
     const item = active;
-    stopSound();
-    if (item) {
-      markSeen(item.id);
-      setActiveId(null);
-      if (onRead) {
-        try {
-          await onRead(item);
-        } catch (e) {
-          /* status read disinkronkan polling berikutnya */
-        }
-      }
-      navigate(reviewTarget(item));
-    } else {
-      setActiveId(null);
-    }
-    if (onHandled) onHandled();
+    handle(item.id);
+    navigate(reviewTarget(item));
+    Promise.resolve(onRead ? onRead(item) : null)
+      .catch(() => {
+        /* status read disinkronkan polling berikutnya */
+      })
+      .finally(() => {
+        if (onHandled) onHandled();
+      });
   };
 
   if (!active) return null;
 
-  const remaining = pending.filter((item) => item.id !== active.id).length;
+  const remaining = pending.length - 1;
 
   return (
     <div
@@ -211,7 +216,7 @@ export const AdminNotificationAlert = ({ items = [], onRead, onHandled }) => {
         {soundBlocked ? (
           <button
             type="button"
-            onClick={startSound}
+            onClick={() => playSound(activeId)}
             className="als-focus flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border py-2 text-[11px] font-semibold"
             style={{ borderColor: 'var(--border-soft)', color: 'var(--muted-fg)' }}
             data-testid="admin-notification-alert-enable-sound"
@@ -241,7 +246,7 @@ export const AdminNotificationAlert = ({ items = [], onRead, onHandled }) => {
           </Button>
         </div>
 
-        {remaining ? (
+        {remaining > 0 ? (
           <p className="text-[11px]" style={{ color: 'var(--muted-fg)' }} data-testid="admin-notification-alert-queue">
             {remaining} pengajuan baru lainnya menunggu.
           </p>

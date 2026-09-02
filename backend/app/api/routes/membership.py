@@ -686,6 +686,14 @@ async def my_notifications(
     return {"items": items, "total": total, "unread": unread}
 
 
+@router.get("/notifications/unread-count", summary="Jumlah notifikasi Baraya belum dibaca (ringan)")
+async def my_notifications_unread_count(
+    auth: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    """Endpoint hemat untuk polling badge akun Baraya."""
+    return {"unread": await center.count_customer_unread(auth.customer_id)}
+
+
 @router.patch("/notifications/{notification_id}/read", summary="Tandai notifikasi sudah dibaca")
 async def read_my_notification(
     notification_id: str, auth: CustomerAuthContext = Depends(get_current_customer)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Search, UserRound, LogOut, Receipt, ChevronDown } from 'lucide-react';
 import {
@@ -14,6 +14,7 @@ import { ClubCrestMark } from '../shared/ClubCrestMark';
 import { NotificationBell } from '../shared/NotificationBell';
 import { barayaApi } from '../../lib/api';
 import { SearchDialog } from './SearchDialog';
+import { UserNotificationAlert } from './UserNotificationAlert';
 import { useClub } from '../../context/ClubContext';
 
 export const PUBLIC_NAV = [
@@ -69,6 +70,23 @@ export const PublicHeader = () => {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Notifikasi in-app Baraya: data dibagi dari NotificationBell (satu sumber fetch).
+  const [notifications, setNotifications] = useState([]);
+  const [notifRefresh, setNotifRefresh] = useState(0);
+  const [notifSeq, setNotifSeq] = useState(0);
+
+  const handleNotifications = useCallback((data) => {
+    setNotifications(data?.items || []);
+    // Penanda bahwa data sudah datang dari server (dipakai untuk baseline
+    // notifikasi in-app agar riwayat lama tidak berbunyi).
+    setNotifSeq((value) => value + 1);
+  }, []);
+
+  const markNotificationRead = useCallback(async (item) => {
+    if (!item || item.read) return;
+    await barayaApi.patch(`/baraya/notifications/${item.id}/read`);
+    setNotifRefresh((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -178,6 +196,11 @@ export const PublicHeader = () => {
               <NotificationBell
                 client={barayaApi}
                 basePath="/baraya/notifications"
+                countPath="/baraya/notifications/unread-count"
+                activePollMs={15000}
+                pollMs={60000}
+                onLoad={handleNotifications}
+                refreshSignal={notifRefresh}
                 testId="baraya-notification-bell"
               />
               <DropdownMenu>
@@ -293,6 +316,9 @@ export const PublicHeader = () => {
       </div>
 
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+      {customer ? (
+        <UserNotificationAlert items={notifications} loadSeq={notifSeq} onRead={markNotificationRead} />
+      ) : null}
     </header>
   );
 };
