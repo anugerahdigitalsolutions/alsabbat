@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CheckCircle2, ClipboardList, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
@@ -97,6 +98,9 @@ export const MemberApplications = ({ onDecided }) => {
   const [pendingCount, setPendingCount] = useState(0);
   const [options, setOptions] = useState({ players: [], staff: [] });
   const [busy, setBusy] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkRef = useRef('');
+  const openDialogRef = useRef(() => {});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -136,6 +140,44 @@ export const MemberApplications = ({ onDecided }) => {
     setPlayerData({ ...(application.player_data || {}) });
     setStaffData({ ...(application.staff_data || {}) });
   };
+  openDialogRef.current = openDialog;
+
+  // Fase 3 — deep-link dari notifikasi: /admin/baraya?application=<id>
+  // membuka dialog review pengajuan yang benar (Pemain maupun Staff).
+  useEffect(() => {
+    const target = searchParams.get('application');
+    if (!target || deepLinkRef.current === target) return undefined;
+    deepLinkRef.current = target;
+    let cancelled = false;
+    let finished = false;
+    (async () => {
+      try {
+        // Tanpa filter status agar pengajuan tetap ditemukan meski sudah
+        // diputuskan atau berada di luar halaman pertama daftar.
+        const { data } = await api.get('/baraya/admin/applications', { params: { limit: 200 } });
+        if (cancelled) return;
+        const found = (data.items || []).find((item) => item.id === target);
+        if (found) openDialogRef.current(found);
+        else toast.info('Pengajuan tidak ditemukan pada daftar terbaru.');
+      } catch (e) {
+        if (!cancelled) toast.error(apiErrorMessage(e, 'Gagal membuka pengajuan dari notifikasi.'));
+      } finally {
+        if (!cancelled) {
+          finished = true;
+          // Query dibersihkan agar menutup dialog / refresh tidak membukanya lagi.
+          const next = new URLSearchParams(searchParams);
+          next.delete('application');
+          setSearchParams(next, { replace: true });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+      // Remount (StrictMode dev / navigasi cepat) sebelum selesai → beri
+      // kesempatan effect berikutnya membuka dialog yang sama.
+      if (!finished) deepLinkRef.current = '';
+    };
+  }, [searchParams, setSearchParams]);
 
   const saveData = async () => {
     if (!dialog) return;

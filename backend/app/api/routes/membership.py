@@ -344,7 +344,8 @@ async def create_application(
         title=f"Pengajuan {'Pemain' if payload.type.value == 'PEMAIN' else 'Staff'} Baru",
         message=f"{payload.full_name} mengajukan diri sebagai "
         f"{'Pemain' if payload.type.value == 'PEMAIN' else 'Staff'}. Perlu ditinjau.",
-        link="/admin/baraya",
+        # Deep-link: Admin Panel membuka dialog review pengajuan ini langsung.
+        link=f"/admin/baraya?application={created['id']}",
         reference_type="member_application",
         reference_id=created["id"],
     )

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ExternalLink, LogOut, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { AdminSidebar, ADMIN_NAV, ADMIN_ROUTE_PERMISSIONS } from './AdminSidebar';
+import { AdminNotificationAlert } from './AdminNotificationAlert';
 import { NotificationBell } from '../shared/NotificationBell';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
@@ -48,6 +49,21 @@ export const AdminShell = () => {
   const { user, logout, hasPermission } = useAuth();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  // Fase 2 — data notifikasi dibagi dari NotificationBell ke popup alert
+  // (satu sumber fetch, tidak ada polling ganda).
+  const [notifications, setNotifications] = useState([]);
+  const [refreshSignal, setRefreshSignal] = useState(0);
+
+  const handleNotifications = useCallback((data) => {
+    setNotifications(data?.items || []);
+  }, []);
+
+  const markNotificationRead = useCallback(async (item) => {
+    if (!item || item.read) return;
+    await api.patch(`/notifications/${item.id}/read`);
+  }, []);
+
+  const refreshNotifications = useCallback(() => setRefreshSignal((value) => value + 1), []);
 
   const current = ADMIN_NAV.flatMap((s) => s.items).find((i) =>
     i.end ? pathname === i.to : pathname.startsWith(i.to)
@@ -108,6 +124,11 @@ export const AdminShell = () => {
             <NotificationBell
               client={api}
               basePath="/notifications"
+              countPath="/notifications/unread-count"
+              activePollMs={12000}
+              pollMs={60000}
+              onLoad={handleNotifications}
+              refreshSignal={refreshSignal}
               testId="admin-notification-bell"
               iconStyle={{ color: 'var(--club-secondary)' }}
             />
@@ -158,6 +179,12 @@ export const AdminShell = () => {
         <main className="als-admin-container py-6 sm:py-8">
           {blocked ? <AccessDenied permission={blocked.permission} /> : <Outlet />}
         </main>
+
+        <AdminNotificationAlert
+          items={notifications}
+          onRead={markNotificationRead}
+          onHandled={refreshNotifications}
+        />
       </div>
     </div>
   );

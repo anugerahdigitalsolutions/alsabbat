@@ -34,6 +34,11 @@ export const NotificationBell = ({
   iconClassName = 'h-[18px] w-[18px]',
   iconStyle,
   pollMs = 60000,
+  // Fase 1 — polling adaptif (opsional; tanpa prop ini perilaku lama dipertahankan).
+  activePollMs = 0,
+  countPath = '',
+  onLoad,
+  refreshSignal = 0,
 }) => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
@@ -41,6 +46,12 @@ export const NotificationBell = ({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const mounted = useRef(true);
+  const onLoadRef = useRef(onLoad);
+  const lastUnreadRef = useRef(null);
+
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+  }, [onLoad]);
 
   useEffect(() => {
     mounted.current = true;
@@ -57,6 +68,8 @@ export const NotificationBell = ({
       if (!mounted.current) return;
       setItems(data?.items || []);
       setUnread(data?.unread || 0);
+      lastUnreadRef.current = data?.unread || 0;
+      if (onLoadRef.current) onLoadRef.current(data || { items: [], unread: 0 });
     } catch (e) {
       if (mounted.current) {
         setItems([]);
@@ -67,19 +80,69 @@ export const NotificationBell = ({
     }
   }, [client, basePath, enabled]);
 
+  /** Polling hemat: cek jumlah unread saja, tarik daftar hanya bila berubah. */
+  const poll = useCallback(async () => {
+    if (!enabled) return;
+    if (!countPath) {
+      await load();
+      return;
+    }
+    try {
+      const { data } = await client.get(countPath);
+      if (!mounted.current) return;
+      const next = data?.unread ?? 0;
+      if (next !== lastUnreadRef.current) {
+        await load();
+      } else {
+        setUnread(next);
+      }
+    } catch (e) {
+      /* diabaikan: percobaan berikutnya menyinkronkan */
+    }
+  }, [client, countPath, enabled, load]);
+
   useEffect(() => {
     load();
-    if (!enabled || !pollMs) return undefined;
-    const timer = setInterval(load, pollMs);
-    return () => clearInterval(timer);
-  }, [load, enabled, pollMs]);
+    if (!enabled) return undefined;
+
+    let timer = null;
+    const intervalFor = () => {
+      const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+      if (hidden || !activePollMs) return pollMs;
+      return activePollMs;
+    };
+    const schedule = () => {
+      if (timer) clearInterval(timer);
+      const ms = intervalFor();
+      timer = ms ? setInterval(poll, ms) : null;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') poll();
+      schedule();
+    };
+
+    schedule();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      if (timer) clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [load, poll, enabled, pollMs, activePollMs]);
+
+  useEffect(() => {
+    if (refreshSignal) load();
+  }, [refreshSignal, load]);
 
   const markRead = async (item) => {
     if (item.read) return;
     try {
       const { data } = await client.patch(`${basePath}/${item.id}/read`);
-      setItems((list) => list.map((it) => (it.id === item.id ? { ...it, read: true } : it)));
-      setUnread(data?.unread ?? Math.max(0, unread - 1));
+      const nextItems = items.map((it) => (it.id === item.id ? { ...it, read: true } : it));
+      const nextUnread = data?.unread ?? Math.max(0, unread - 1);
+      setItems(nextItems);
+      setUnread(nextUnread);
+      lastUnreadRef.current = nextUnread;
+      if (onLoadRef.current) onLoadRef.current({ items: nextItems, unread: nextUnread });
     } catch (e) {
       /* biarkan status lama; polling berikutnya menyinkronkan */
     }
@@ -96,8 +159,11 @@ export const NotificationBell = ({
   const markAll = async () => {
     try {
       await client.post(`${basePath}/read-all`);
-      setItems((list) => list.map((it) => ({ ...it, read: true })));
+      const nextItems = items.map((it) => ({ ...it, read: true }));
+      setItems(nextItems);
       setUnread(0);
+      lastUnreadRef.current = 0;
+      if (onLoadRef.current) onLoadRef.current({ items: nextItems, unread: 0 });
     } catch (e) {
       /* diabaikan; polling menyinkronkan */
     }

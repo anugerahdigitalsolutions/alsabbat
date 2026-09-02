@@ -24,6 +24,12 @@ async def list_notifications(
     return {"items": items, "total": total, "unread": unread}
 
 
+@router.get("/unread-count", summary="Jumlah notifikasi admin yang belum dibaca (ringan)")
+async def unread_count(user: AuthContext = Depends(get_current_user)) -> Dict[str, Any]:
+    """Endpoint hemat untuk polling badge; tidak menarik daftar notifikasi."""
+    return {"unread": await center.count_admin_unread(user.email)}
+
+
 @router.patch("/{notification_id}/read", summary="Tandai satu notifikasi sudah dibaca")
 async def read_notification(
     notification_id: str, user: AuthContext = Depends(get_current_user)

@@ -78,6 +78,13 @@ async def list_admin(admin_email: str, limit: int = 30) -> Tuple[List[Dict[str, 
     return shaped, total, unread
 
 
+async def count_admin_unread(admin_email: str) -> int:
+    """Hitungan ringan untuk polling badge (tanpa menarik daftar dokumen)."""
+    return await repo.coll.count_documents(
+        {"audience": AUDIENCE_ADMIN, "read_by": {"$ne": admin_email}}
+    )
+
+
 async def list_customer(customer_id: str, limit: int = 30) -> Tuple[List[Dict[str, Any]], int, int]:
     query = {"audience": AUDIENCE_CUSTOMER, "recipient_id": customer_id}
     items, total = await repo.list(query, limit=limit, sort=(("created_at", -1),))
