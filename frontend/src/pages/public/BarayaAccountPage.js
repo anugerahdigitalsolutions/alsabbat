@@ -23,7 +23,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { useResourceList } from '../../hooks/useResourceList';
 import { MediaPicker } from '../../components/shared/MediaPicker';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
-import { canAccessGallery, canApplyPlayer, canApplyStaff, hasRole, roleLabel } from '../../lib/memberAccess';
+import { canAccessGallery, canApplyPlayer, canRegisterStaff, hasRole, roleLabel } from '../../lib/memberAccess';
 import { UserPlus } from 'lucide-react';
 
 const formatDate = (value) => {
@@ -45,7 +45,9 @@ export default function BarayaAccountPage() {
   const { customer, reload, logout } = useBaraya();
   const hasClubAccess = canAccessGallery(customer);
   const showPlayerCta = canApplyPlayer(customer);
-  const showStaffCta = canApplyStaff(customer);
+  // PEMAIN saja → tombol "Daftar Staff" tampil.
+  // STAFF (sudah APPROVED) atau PEMAIN + STAFF → tombol tidak ditampilkan.
+  const showStaffCta = canRegisterStaff(customer);
   const [profile, setProfile] = useState({
     full_name: customer?.full_name || '',
     phone: customer?.phone || '',
