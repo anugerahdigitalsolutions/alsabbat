@@ -5,10 +5,19 @@ import { PublicFooter } from './PublicFooter';
 import { SiteBackgroundLayers } from './SiteBackgroundLayers';
 import { useSiteBackground } from '../../lib/siteBackground';
 import { trackPageView } from '../../lib/analytics';
+import { useIsMobileViewport } from '../../mobile/hooks/useIsMobileViewport';
+import { hasMobileScreen } from '../../mobile/shellPaths';
+import { BarayaMobileShell } from '../../mobile/components/BarayaMobileShell';
+import { BarayaAppBoot } from '../../mobile/onboarding/BarayaAppBoot';
 
 export const PublicLayout = () => {
   const { pathname } = useLocation();
   const background = useSiteBackground();
+  const isMobileViewport = useIsMobileViewport();
+  // BARAYA AL SABBAT mobile experience: only below 768px AND only on routes
+  // that already have a mobile screen. Everything else keeps the existing
+  // desktop layout untouched on every viewport.
+  const mobileMode = isMobileViewport && hasMobileScreen(pathname);
   // Saat background kustom aktif, paint default `.als-shell-bg` (warna abu +
   // radial-gradient) dimatikan agar pilihan Admin tidak tertimpa. Bila OFF,
   // background default AL SABBAT tetap dipakai sebagai fallback.
@@ -18,6 +27,17 @@ export const PublicLayout = () => {
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
     trackPageView(pathname);
   }, [pathname]);
+
+  if (mobileMode) {
+    return (
+      <BarayaMobileShell>
+        <div key={pathname} className="brz-enter">
+          <Outlet />
+        </div>
+        <BarayaAppBoot />
+      </BarayaMobileShell>
+    );
+  }
 
   return (
     <div
@@ -36,6 +56,9 @@ export const PublicLayout = () => {
         </main>
         <PublicFooter />
       </div>
+      {/* Splash/onboarding still applies to mobile visitors on routes that keep
+          the desktop layout. Never rendered from 768px upwards. */}
+      {isMobileViewport ? <BarayaAppBoot /> : null}
     </div>
   );
 };

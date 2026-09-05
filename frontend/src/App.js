@@ -74,6 +74,17 @@ import AdminAchievementsPage from './pages/admin/AdminAchievementsPage';
 
 import './App.css';
 import { SiteIcons } from './lib/siteIcons';
+import { DualView } from './mobile/components/DualView';
+import MobileHomeScreen from './mobile/screens/MobileHomeScreen';
+import MobileMatchesScreen from './mobile/screens/MobileMatchesScreen';
+import MobileMatchDetailScreen from './mobile/screens/MobileMatchDetailScreen';
+import MobileNewsScreen from './mobile/screens/MobileNewsScreen';
+import MobileNewsDetailScreen from './mobile/screens/MobileNewsDetailScreen';
+import MobileMediaScreen from './mobile/screens/MobileMediaScreen';
+import MobileAlbumDetailScreen from './mobile/screens/MobileAlbumDetailScreen';
+import MobileSquadScreen from './mobile/screens/MobileSquadScreen';
+import MobilePlayerDetailScreen from './mobile/screens/MobilePlayerDetailScreen';
+import MobileProfileScreen from './mobile/screens/MobileProfileScreen';
 
 function App() {
   return (
@@ -85,26 +96,38 @@ function App() {
           <BarayaAuthProvider>
           <Routes>
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/news" element={<NewsPage />} />
-              <Route path="/news/:slug" element={<NewsDetailPage />} />
-              <Route path="/teams" element={<TeamsPage />} />
+              <Route path="/" element={<DualView mobile={<MobileHomeScreen />} desktop={<HomePage />} />} />
+              <Route path="/news" element={<DualView mobile={<MobileNewsScreen />} desktop={<NewsPage />} />} />
+              <Route
+                path="/news/:slug"
+                element={<DualView mobile={<MobileNewsDetailScreen />} desktop={<NewsDetailPage />} />}
+              />
+              <Route path="/teams" element={<DualView mobile={<MobileSquadScreen />} desktop={<TeamsPage />} />} />
               <Route path="/teams/:teamId" element={<TeamDetailPage />} />
-              <Route path="/players/:playerId" element={<PlayerDetailPage />} />
+              <Route
+                path="/players/:playerId"
+                element={<DualView mobile={<MobilePlayerDetailScreen />} desktop={<PlayerDetailPage />} />}
+              />
               <Route path="/staff/:staffId" element={<StaffDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
               <Route path="/sponsors" element={<SponsorsPage />} />
               <Route path="/sponsors/:sponsorId" element={<SponsorDetailPage />} />
               <Route path="/contact" element={<ContactPage />} />
-              <Route path="/matches" element={<MatchesPage />} />
-              <Route path="/matches/:matchId" element={<MatchDetailPage />} />
-              <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/matches" element={<DualView mobile={<MobileMatchesScreen />} desktop={<MatchesPage />} />} />
+              <Route
+                path="/matches/:matchId"
+                element={<DualView mobile={<MobileMatchDetailScreen />} desktop={<MatchDetailPage />} />}
+              />
+              <Route path="/gallery" element={<DualView mobile={<MobileMediaScreen />} desktop={<GalleryPage />} />} />
               <Route path="/merchandise" element={<MerchandisePage />} />
               <Route path="/merchandise/:slug" element={<ProductDetailPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/order" element={<OrderTrackPage />} />
-              <Route path="/gallery/:albumId" element={<GalleryDetailPage />} />
+              <Route
+                path="/gallery/:albumId"
+                element={<DualView mobile={<MobileAlbumDetailScreen />} desktop={<GalleryDetailPage />} />}
+              />
               <Route path="/club" element={<ClubPage />} />
               <Route path="/login" element={<BarayaLoginPage />} />
               <Route path="/daftar" element={<BarayaRegisterPage />} />
@@ -131,7 +154,7 @@ function App() {
                 path="/akun"
                 element={
                   <BarayaRoute>
-                    <BarayaAccountPage />
+                    <DualView mobile={<MobileProfileScreen />} desktop={<BarayaAccountPage />} />
                   </BarayaRoute>
                 }
               />

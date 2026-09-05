@@ -89,3 +89,20 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
   Sinkronisasi berjalan saat startup/cold start, menyimpan bcrypt hash, tidak mengubah role/is_active,
   tidak menghapus user, idempotent, dan TIDAK PERNAH aktif di production.
   Setelah berhasil login, disarankan hapus/matikan flag tersebut di Vercel.
+
+## Update — BARAYA AL SABBAT mobile (Sep 2026)
+- Admin Panel tetap `admin@alsabbat.com` / `Alsabbat2026!` (SUPER_ADMIN) di `/admin/login`.
+  Diverifikasi ulang: `POST /api/auth/login` → 200 dan login UI masuk ke dashboard.
+- **PENTING**: `backend/.env` & `frontend/.env` gitignored dan TIDAK ikut saat impor GitHub.
+  Keduanya dibuat ulang untuk container preview (tetap gitignored). Tanpa
+  `BOOTSTRAP_ADMIN_PASSWORD` di `backend/.env`, akun admin TIDAK pernah dibuat → semua login 401.
+- Tidak ada akun Baraya di database preview (sengaja bersih). Untuk uji peran PEMAIN/STAFF
+  (mis. akses Galeri/Media), pakai database sekali-pakai:
+      python3 scripts/baraya_visual_sandbox.py seed     # DB `alsabbat_visual_sandbox`
+      # set DB_NAME=alsabbat_visual_sandbox di backend/.env, restart backend
+      # akun: visual.pemain@sandbox-alsabbat.dev / Sandbox123  (role PEMAIN)
+      # kembalikan DB_NAME=alsabbat_platform, restart backend, lalu:
+      python3 scripts/baraya_visual_sandbox.py drop
+  Sandbox terakhir SUDAH DI-DROP; database asli utuh (clubs 1, users 1, sisanya 0).
+- Reset splash/onboarding saat pengujian mobile: `window.__barayaResetOnboarding()`
+  atau hapus `localStorage['baraya.onboarding.v1']` + `sessionStorage['baraya.splash.session.v1']`.

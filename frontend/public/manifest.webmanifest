@@ -1,20 +1,54 @@
 {
-  "name": "AL SABBAT Football Club",
-  "short_name": "AL SABBAT FC",
-  "description": "Situs resmi AL SABBAT Football Club — Match Center, skuad, berita, galeri, dan merchandise.",
-  "start_url": "/",
+  "name": "BARAYA AL SABBAT",
+  "short_name": "BARAYA",
+  "description": "Baraya AL SABBAT — aplikasi resmi komunitas AL SABBAT Football Club: pertandingan, berita, media, skuad, dan profil member.",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "lang": "id",
+  "dir": "ltr",
   "orientation": "portrait-primary",
-  "background_color": "#000000",
-  "theme_color": "#012891",
+  "background_color": "#04091a",
+  "theme_color": "#04091a",
+  "categories": ["sports", "news", "lifestyle"],
   "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
     {
       "src": "/favicon.svg",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any"
     }
+  ],
+  "shortcuts": [
+    { "name": "Pertandingan", "url": "/matches" },
+    { "name": "Berita", "url": "/news" },
+    { "name": "Media", "url": "/gallery" },
+    { "name": "Profil", "url": "/akun" }
   ]
 }

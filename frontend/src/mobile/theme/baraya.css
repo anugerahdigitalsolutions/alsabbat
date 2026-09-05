@@ -1,0 +1,971 @@
+/* =====================================================================
+   BARAYA AL SABBAT — mobile-first theme tokens
+   ---------------------------------------------------------------------
+   Visual direction follows the attached UI reference: dark premium
+   surfaces, soft card system, pill CTA with a bright gradient, floating
+   docked bottom navigation with a gradient pill for the active tab.
+
+   Two palettes are provided and switched with ONE attribute on the
+   shell (`data-brz-palette`):
+     - "club"  (default) : reference structure mapped to the OFFICIAL
+                           AL SABBAT brand (navy #012891 / gold #FCCF2B)
+     - "pitch"           : the literal reference palette
+                           (dark green-teal + mint/cyan gradient)
+   Nothing else in the codebase hard-codes a colour, so switching the
+   palette is a one-line change.
+   ===================================================================== */
+
+.baraya-app {
+  /* ---------------- surfaces ---------------- */
+  --brz-bg: #04091a;
+  --brz-bg-grad: linear-gradient(180deg, #0a1740 0%, #060f2a 38%, #04091a 100%);
+  --brz-surface: rgba(255, 255, 255, 0.055);
+  --brz-surface-solid: #0c1533;
+  --brz-surface-2: rgba(255, 255, 255, 0.085);
+  --brz-surface-sunken: rgba(0, 0, 0, 0.28);
+  --brz-border: rgba(255, 255, 255, 0.09);
+  --brz-border-strong: rgba(255, 255, 255, 0.18);
+
+  /* ---------------- accent / CTA ---------------- */
+  --brz-accent: #fccf2b;
+  --brz-accent-from: #ffe370;
+  --brz-accent-to: #f5b916;
+  --brz-accent-grad: linear-gradient(103deg, var(--brz-accent-from) 0%, var(--brz-accent-to) 100%);
+  --brz-accent-soft: rgba(252, 207, 43, 0.14);
+  --brz-on-accent: #08122e;
+  --brz-accent-glow: rgba(252, 207, 43, 0.34);
+
+  /* ---------------- text ---------------- */
+  --brz-text: #eef3ff;
+  --brz-text-muted: #93a2c9;
+  --brz-text-dim: #6a7aa4;
+
+  /* ---------------- status ---------------- */
+  --brz-live: #ef4444;
+  --brz-live-glow: rgba(239, 68, 68, 0.45);
+  --brz-win: #22c55e;
+  --brz-lose: #f87171;
+
+  /* ---------------- geometry ---------------- */
+  --brz-r-sm: 12px;
+  --brz-r-md: 16px;
+  --brz-r-card: 20px;
+  --brz-r-lg: 26px;
+  --brz-nav-h: 66px;
+  --brz-gutter: 16px;
+
+  /* ---------------- elevation ---------------- */
+  --brz-shadow-card: 0 12px 32px rgba(0, 0, 0, 0.34);
+  --brz-shadow-nav: 0 -6px 28px rgba(0, 0, 0, 0.45);
+}
+
+/* Literal reference palette (dark green-teal + mint gradient). */
+.baraya-app[data-brz-palette='pitch'] {
+  --brz-bg: #071310;
+  --brz-bg-grad: linear-gradient(180deg, #17322b 0%, #0c1f19 40%, #071310 100%);
+  --brz-surface: rgba(255, 255, 255, 0.06);
+  --brz-surface-solid: #12251f;
+  --brz-surface-2: rgba(255, 255, 255, 0.095);
+  --brz-border: rgba(255, 255, 255, 0.1);
+  --brz-border-strong: rgba(255, 255, 255, 0.2);
+
+  --brz-accent: #6ee7b7;
+  --brz-accent-from: #8df0b8;
+  --brz-accent-to: #2dd4bf;
+  --brz-accent-soft: rgba(110, 231, 183, 0.14);
+  --brz-on-accent: #04251b;
+  --brz-accent-glow: rgba(110, 231, 183, 0.34);
+
+  --brz-text: #e5f8ee;
+  --brz-text-muted: #b9d4c9;
+  --brz-text-dim: #86a49a;
+}
+
+/* =====================================================================
+   SHELL
+   ===================================================================== */
+
+.baraya-app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--brz-bg);
+  background-image: var(--brz-bg-grad);
+  background-attachment: fixed;
+  color: var(--brz-text);
+  font-family: 'Poppins', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+}
+
+/* Content wrapper: horizontal gutter + room for the floating bottom nav. */
+.brz-page {
+  padding-left: var(--brz-gutter);
+  padding-right: var(--brz-gutter);
+  padding-bottom: calc(var(--brz-nav-h) + 34px + env(safe-area-inset-bottom, 0px));
+}
+
+.brz-page--flush {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.brz-gutter {
+  padding-left: var(--brz-gutter);
+  padding-right: var(--brz-gutter);
+}
+
+/* =====================================================================
+   TYPOGRAPHY
+   ===================================================================== */
+
+.brz-h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--brz-text);
+}
+
+.brz-h2 {
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--brz-text);
+}
+
+.brz-body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--brz-text-muted);
+}
+
+.brz-meta {
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--brz-text-muted);
+}
+
+.brz-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brz-text-dim);
+}
+
+.brz-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.brz-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.brz-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* =====================================================================
+   SECTION HEADER  ("Top Event  ·  View all")
+   ===================================================================== */
+
+.brz-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.brz-viewall {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brz-accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* =====================================================================
+   CARDS
+   ===================================================================== */
+
+.brz-card {
+  position: relative;
+  border-radius: var(--brz-r-card);
+  background-color: var(--brz-surface);
+  border: 1px solid var(--brz-border);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--brz-shadow-card);
+  overflow: hidden;
+}
+
+.brz-card--pad {
+  padding: 16px;
+}
+
+.brz-card--flat {
+  box-shadow: none;
+}
+
+.brz-card--accent {
+  background-image: var(--brz-accent-grad);
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--brz-on-accent);
+}
+
+.brz-tile {
+  border-radius: var(--brz-r-md);
+  background-color: var(--brz-surface-sunken);
+  border: 1px solid var(--brz-border);
+}
+
+/* =====================================================================
+   BUTTONS / PILLS
+   ===================================================================== */
+
+.brz-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), opacity 160ms;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.brz-btn:active {
+  transform: scale(0.97);
+}
+
+.brz-btn--accent {
+  background-image: var(--brz-accent-grad);
+  color: var(--brz-on-accent);
+  box-shadow: 0 10px 26px var(--brz-accent-glow);
+}
+
+.brz-btn--ghost {
+  background-color: var(--brz-surface-2);
+  color: var(--brz-text);
+  border: 1px solid var(--brz-border);
+}
+
+.brz-btn--block {
+  width: 100%;
+}
+
+.brz-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background-color: var(--brz-surface-2);
+  border: 1px solid var(--brz-border);
+  color: var(--brz-text);
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.brz-icon-btn:active {
+  transform: scale(0.94);
+}
+
+.brz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background-color: var(--brz-surface-2);
+  border: 1px solid var(--brz-border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--brz-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.brz-chip--active {
+  background-image: var(--brz-accent-grad);
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--brz-on-accent);
+  font-weight: 600;
+}
+
+/* Odds-style / stat pill from the reference score card. */
+.brz-stat-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background-color: var(--brz-surface-sunken);
+  border: 1px solid var(--brz-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brz-text);
+}
+
+/* =====================================================================
+   BADGES
+   ===================================================================== */
+
+.brz-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background-color: var(--brz-live);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 4px var(--brz-live-glow);
+}
+
+.brz-live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background-color: #fff;
+  animation: brz-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes brz-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.brz-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background-color: var(--brz-surface-2);
+  border: 1px solid var(--brz-border);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brz-text-muted);
+  white-space: nowrap;
+}
+
+.brz-badge--accent {
+  background-color: var(--brz-accent-soft);
+  border-color: transparent;
+  color: var(--brz-accent);
+}
+
+/* =====================================================================
+   AVATAR / CREST
+   ===================================================================== */
+
+.brz-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  overflow: hidden;
+  background-color: var(--brz-surface-2);
+  border: 1px solid var(--brz-border-strong);
+  flex: 0 0 auto;
+  object-fit: cover;
+}
+
+.brz-crest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background-color: var(--brz-surface-2);
+  border: 1px solid var(--brz-border);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+/* =====================================================================
+   TOP BAR
+   ===================================================================== */
+
+.brz-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) var(--brz-gutter) 12px;
+  background-color: color-mix(in srgb, var(--brz-bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+@supports not (background-color: color-mix(in srgb, red 50%, blue)) {
+  .brz-topbar {
+    background-color: rgba(4, 9, 26, 0.86);
+  }
+}
+
+.brz-topbar--plain {
+  background-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* =====================================================================
+   BOTTOM NAVIGATION — floating docked bar, gradient pill on active tab
+   ===================================================================== */
+
+.brz-nav {
+  position: fixed;
+  z-index: 60;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  height: var(--brz-nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 4px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background-color: rgba(8, 15, 38, 0.86);
+  border: 1px solid var(--brz-border);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--brz-shadow-nav);
+}
+
+.baraya-app[data-brz-palette='pitch'] .brz-nav {
+  background-color: rgba(12, 31, 25, 0.88);
+}
+
+.brz-nav-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 46px;
+  min-width: 46px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--brz-text-muted);
+  background: transparent;
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 180ms, background-color 180ms, padding 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.brz-nav-item:active {
+  transform: scale(0.95);
+}
+
+.brz-nav-item--active {
+  background-image: var(--brz-accent-grad);
+  color: var(--brz-on-accent);
+  padding: 0 16px;
+  box-shadow: 0 8px 20px var(--brz-accent-glow);
+}
+
+.brz-nav-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* =====================================================================
+   UTILITIES
+   ===================================================================== */
+
+.brz-hscroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--brz-gutter);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-left: var(--brz-gutter);
+  padding-right: var(--brz-gutter);
+}
+
+.brz-hscroll::-webkit-scrollbar {
+  display: none;
+}
+
+.brz-hscroll > * {
+  scroll-snap-align: start;
+}
+
+.brz-noscroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.brz-noscroll::-webkit-scrollbar {
+  display: none;
+}
+
+.brz-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.brz-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--brz-border-strong);
+  transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1), background-color 220ms;
+}
+
+.brz-dot--active {
+  width: 20px;
+  background-image: var(--brz-accent-grad);
+}
+
+.brz-divider {
+  height: 1px;
+  background-color: var(--brz-border);
+  border: 0;
+}
+
+.brz-skeleton {
+  border-radius: var(--brz-r-md);
+  background: linear-gradient(
+    100deg,
+    var(--brz-surface) 20%,
+    var(--brz-surface-2) 45%,
+    var(--brz-surface) 70%
+  );
+  background-size: 220% 100%;
+  animation: brz-shimmer 1.5s linear infinite;
+}
+
+@keyframes brz-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+.brz-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Bottom-up readability scrim used on hero/media imagery. */
+.brz-scrim {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    to top,
+    rgba(4, 9, 26, 0.94) 0%,
+    rgba(4, 9, 26, 0.72) 34%,
+    rgba(4, 9, 26, 0.12) 72%,
+    rgba(4, 9, 26, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.baraya-app[data-brz-palette='pitch'] .brz-scrim {
+  background-image: linear-gradient(
+    to top,
+    rgba(7, 19, 16, 0.94) 0%,
+    rgba(7, 19, 16, 0.72) 34%,
+    rgba(7, 19, 16, 0.12) 72%,
+    rgba(7, 19, 16, 0) 100%
+  );
+}
+
+.brz-enter {
+  animation: brz-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* =====================================================================
+   LIGHTBOX (full-screen media viewer)
+   ===================================================================== */
+
+.brz-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  background-color: rgba(2, 5, 16, 0.96);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: brz-fade-in 200ms ease-out both;
+}
+
+/* =====================================================================
+   BOTTOM SHEET (search / filters)
+   ===================================================================== */
+
+.brz-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.brz-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background-color: rgba(2, 6, 20, 0.66);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: brz-fade-in 200ms ease-out both;
+}
+
+.brz-sheet-panel {
+  position: relative;
+  padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--brz-r-lg) var(--brz-r-lg) 0 0;
+  background-color: var(--brz-surface-solid);
+  border-top: 1px solid var(--brz-border);
+  box-shadow: 0 -14px 44px rgba(0, 0, 0, 0.5);
+  animation: brz-sheet-up 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes brz-sheet-up {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* =====================================================================
+   OVERLAY ROOT (splash / onboarding)
+   ===================================================================== */
+
+.brz-overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  min-height: 0;
+  background: none;
+}
+
+/* ------------------------------ SPLASH ------------------------------ */
+
+.brz-splash {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+  overflow: hidden;
+  background-color: var(--brz-bg);
+  background-image: radial-gradient(120% 80% at 50% 8%, #0d1f52 0%, #071231 42%, #04091a 100%);
+  animation: brz-fade-in 260ms ease-out both;
+}
+
+.brz-splash--exit {
+  animation: brz-fade-out 400ms ease-in both;
+}
+
+.brz-splash-glow {
+  position: absolute;
+  top: -18%;
+  left: 50%;
+  width: 130%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  background-image: radial-gradient(circle, var(--brz-accent-soft) 0%, transparent 62%);
+  animation: brz-breathe 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.brz-splash-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 0 28px;
+  text-align: center;
+}
+
+.brz-splash-crest {
+  display: inline-flex;
+  padding: 14px;
+  border-radius: 28px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--brz-border);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+  animation: brz-pop 620ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+.brz-splash-word {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  animation: brz-rise 620ms 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.brz-splash-kicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  color: var(--brz-accent);
+}
+
+.brz-splash-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  color: var(--brz-text);
+}
+
+.brz-splash-sub {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  text-transform: uppercase;
+  color: var(--brz-text-dim);
+}
+
+.brz-splash-footer {
+  position: absolute;
+  bottom: calc(38px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: brz-rise 620ms 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.brz-splash-bar {
+  position: relative;
+  display: block;
+  width: 116px;
+  height: 3px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.brz-splash-bar-fill {
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  border-radius: 999px;
+  background-image: var(--brz-accent-grad);
+  animation: brz-slide 1.15s ease-in-out infinite;
+}
+
+.brz-splash-tag {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brz-text-dim);
+}
+
+/* ---------------------------- ONBOARDING ---------------------------- */
+
+.brz-onboard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  background-color: var(--brz-bg);
+  animation: brz-fade-in 300ms ease-out both;
+  touch-action: pan-y;
+}
+
+.brz-onboard-bg {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  transition: opacity 520ms ease;
+}
+
+.brz-onboard-card {
+  position: relative;
+  margin: 0 14px calc(20px + env(safe-area-inset-bottom, 0px));
+  padding: 22px 20px 20px;
+  border-radius: var(--brz-r-lg);
+  background-color: rgba(6, 13, 36, 0.62);
+  border: 1px solid var(--brz-border);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.5);
+  animation: brz-rise 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.baraya-app[data-brz-palette='pitch'] .brz-onboard-card {
+  background-color: rgba(11, 30, 24, 0.62);
+}
+
+/* ---------------------------- keyframes ----------------------------- */
+
+@keyframes brz-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes brz-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes brz-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes brz-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes brz-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.08);
+  }
+}
+
+@keyframes brz-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(230%);
+  }
+}
+
+@keyframes brz-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brz-enter,
+  .brz-skeleton,
+  .brz-live-dot,
+  .brz-splash,
+  .brz-splash-glow,
+  .brz-splash-crest,
+  .brz-splash-word,
+  .brz-splash-footer,
+  .brz-splash-bar-fill,
+  .brz-onboard,
+  .brz-onboard-card {
+    animation: none;
+  }
+}

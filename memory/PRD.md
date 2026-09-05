@@ -1445,3 +1445,81 @@ CATATAN: push Firebase masih NOT_CONFIGURED — riwayat in-app tetap berjalan pe
   riwayat admin lain tetap 3 item/2 unread (isolasi antar admin), read-all & endpoint publik tidak regresi.
   UI diverifikasi lokal dengan mock API: cancel → tidak ada request DELETE, konfirmasi → 1 request,
   daftar auto-refresh, popup AdminNotificationAlert + badge + polling tetap berjalan.
+
+
+## BARAYA AL SABBAT — PENGALAMAN MOBILE-FIRST (WEB APP) · Sep 2026 · SELESAI
+Additive terhadap aplikasi existing. Tidak ada backend baru, database baru, API baru, model baru,
+sistem autentikasi baru, atau sistem media kedua. Admin Panel & pengalaman desktop TIDAK diubah.
+
+### Prinsip arsitektur
+- SATU web app + SATU FastAPI + SATU MongoDB. Semua data dari API existing.
+- **Viewport-aware pada URL yang SAMA** (tanpa rute `/app/*` duplikat):
+  `useIsMobileViewport()` (matchMedia `max-width: 767px`) + `<DualView mobile= desktop= />`.
+  `<768px` → layar BARAYA; `>=768px` → halaman desktop existing apa adanya.
+- `PublicLayout` memuat `BarayaMobileShell` (tema gelap + bottom nav mengapung) HANYA bila
+  viewport mobile DAN `hasMobileScreen(pathname)` true. Rute lain tetap layout desktop.
+- `/admin/*` tidak pernah memuat shell, splash, maupun onboarding.
+
+### Berkas baru (semua di `frontend/src/mobile/`)
+- `theme/baraya.css` — token desain + kelas komponen (`.brz-*`). Dua palet lewat SATU atribut
+  `data-brz-palette`: `club` (default, brand resmi navy #012891 / gold #FCCF2B) dan `pitch`
+  (palet literal referensi UI, hijau-teal + mint). Ganti palet = 1 baris di `BarayaMobileShell`.
+- `hooks/useIsMobileViewport.js`, `shellPaths.js`, `components/DualView.js`
+- `components/`: `BarayaMobileShell`, `BarayaBottomNav`, `BarayaTopBar`, `BarayaGreetingHeader`,
+  `BarayaNotificationButton`, `BrzMatchCard`, `BrzMatchTimeline`, `BrzNewsCard`, `BrzPlayerCard`,
+  `BrzAlbumCard`, `BrzCrest`, `BrzSection`, `BrzQuickLinks`, `BrzStates`, `BrzRestricted`,
+  `BrzSearchSheet`, `BrzLightbox`
+- `lib/`: `matchUtils.js` (aturan "pertandingan berikutnya" existing dipakai ulang),
+  `useCompetitionName.js` (cache satu kali untuk `/competitions`)
+- `onboarding/`: `BarayaAppBoot`, `BarayaSplashScreen`, `BarayaOnboarding`, `onboardingStore`, `slides`
+- `screens/`: `MobileHomeScreen`, `MobileMatchesScreen`, `MobileMatchDetailScreen`,
+  `MobileNewsScreen`, `MobileNewsDetailScreen`, `MobileMediaScreen`, `MobileAlbumDetailScreen`,
+  `MobileSquadScreen`, `MobilePlayerDetailScreen`, `MobileProfileScreen`
+
+### Berkas existing yang disunting (minimal)
+- `src/App.js` — 10 rute dibungkus `DualView` (rute & path TIDAK berubah)
+- `src/components/public/PublicLayout.js` — cabang shell mobile + mount `BarayaAppBoot`
+- `public/index.html` — meta PWA (`viewport-fit=cover`, apple-mobile-web-app-*, apple-touch-icon)
+- `public/manifest.webmanifest` — nama **BARAYA AL SABBAT**, `standalone`, ikon 192/512 + maskable
+- `frontend/scripts/generate-app-icons.py` — ikon PNG dibuat dari geometri `favicon.svg` (PIL)
+
+### Splash & Onboarding (mobile saja)
+- Splash: `ClubCrestMark` (otomatis memakai `club.logo` begitu diunggah Admin) + wordmark
+  BARAYA / AL SABBAT; menunggu konfigurasi klub (min 1,2 s, maks 2,6 s).
+- Onboarding: 4 slide (Selamat datang / Pertandingan / Berita & Media / Profil), geser + tombol
+  Lewati & Lanjut & Mulai Sekarang.
+- Persistensi **browser saja**: `localStorage['baraya.onboarding.v1']`,
+  `sessionStorage['baraya.splash.session.v1']`. TANPA koleksi/API/backend onboarding.
+  Akun Baraya yang sudah login otomatis ditandai selesai (tidak dipaksa onboarding).
+- QA: `window.__barayaResetOnboarding()`.
+
+### Navigasi bawah (5 tab, sesuai permintaan)
+HOME `/` · MATCH `/matches` · NEWS `/news` · MEDIA `/gallery` · PROFILE `/akun`.
+Merchandise TIDAK jadi tab ke-6 — diakses dari chip cepat di Home (`/merchandise`).
+
+### Sumber data (semua existing, TANPA data palsu)
+`/club/active`, `/matches`, `/matches/{id}/relations`, `/competitions`, `/seasons`,
+`/content/posts` (+`/by-slug`, `/categories`, `/authors`), `/players` (+`/statistics`),
+`/staff`, `/teams`, `/merchandise/products`, `/gallery/public/albums` (+`/{id}`, `/drive-photos`),
+`/baraya/me`, `/baraya/notifications` (+`/unread-count`, `/read-all`), `/baraya/logout`.
+Aturan Fase 3 tetap berlaku: Galeri hanya untuk PEMAIN/STAFF (panel akses terkunci versi mobile).
+
+### Pemeriksaan (tanpa Testing Agent — dilarang user)
+- 320/390/430 px: semua layar tampil, overflow horizontal 0 px, tanpa error console/page.
+- Splash → onboarding → Home; status selesai bertahan setelah reload; tidak berulang.
+- Regresi desktop 1440 px: `/`, `/matches`, `/news`, `/gallery`, `/teams` tetap `public-layout`,
+  tanpa shell mobile, tanpa error.
+- Admin Panel: `/admin/login` → dashboard OK; di 390 px `/admin` TANPA splash/onboarding/shell.
+- `yarn build` sukses tanpa warning (main 341,38 kB gzip).
+
+### CATATAN LINGKUNGAN (penting untuk sesi berikutnya)
+- `frontend/.env` dan `backend/.env` ada di `.gitignore` sehingga TIDAK ikut saat impor dari
+  GitHub. Keduanya dibuat ulang untuk container preview saja (tetap gitignored):
+  `REACT_APP_BACKEND_URL` = domain preview, `DB_NAME=alsabbat_platform`, `JWT_SECRET`,
+  `BOOTSTRAP_ADMIN_*`. Nilai produksi/aaPanel tidak tersentuh.
+- `yarn install` perlu dijalankan (paket `craco` belum terpasang di container).
+- Database container preview memang hampir kosong (clubs 1, users 1 admin, sisanya 0). Data nyata
+  ada di deployment aaPanel/staging. TIDAK ada data dummy yang diseed.
+- Untuk validasi visual dipakai database sekali-pakai `alsabbat_visual_sandbox`
+  (`scripts/baraya_visual_sandbox.py seed|drop`) lalu **DI-DROP**. Database asli diverifikasi
+  utuh setelah dikembalikan (clubs 1, users 1, players/matches/posts/customers 0).

@@ -871,3 +871,206 @@ agent_communication:
       - Lazy directory creation (mkdir in save(), not __init__)
       - Explicit error logging (no silent fallbacks)
       - No OSError crashes on read-only filesystems
+
+#====================================================================================================
+# BARAYA AL SABBAT — mobile-first web experience (Sep 2026)
+#====================================================================================================
+
+baraya_mobile_problem_statement: |
+  Extend the EXISTING ALSABBAT web app with a professional mobile-first experience called
+  "BARAYA AL SABBAT". Web app only (no native/RN/Flutter). ONE app + ONE FastAPI backend +
+  ONE MongoDB, existing auth, existing APIs, NO mock data, Admin Panel preserved and excluded
+  from the mobile UX, desktop experience preserved. Splash screen + onboarding (mobile only,
+  localStorage), PWA installable (manifest + icons, NO service worker), bottom nav
+  HOME/MATCH/NEWS/MEDIA/PROFILE. Visual direction from an attached UI reference
+  (dark premium surfaces, rounded cards, gradient pill CTA, floating bottom nav with
+  gradient active pill) mapped onto the official AL SABBAT brand (navy #012891 / gold #FCCF2B).
+  Constraints: viewport-aware rendering on the SAME routes (<768px mobile, >=768px existing
+  desktop), no duplicate routes/APIs/models, no DB migration, TESTING AGENT FORBIDDEN.
+
+frontend:
+  - task: "P1 — Mobile shell, bottom navigation, viewport switch"
+    implemented: true
+    working: true
+    file: "src/mobile/components/BarayaMobileShell.js, BarayaBottomNav.js, DualView.js, hooks/useIsMobileViewport.js, shellPaths.js, theme/baraya.css, components/public/PublicLayout.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          `useIsMobileViewport` (matchMedia max-width:767px) + `DualView` pick the mobile screen
+          or the untouched desktop page on the SAME route — no /app/* duplicates. PublicLayout
+          renders BarayaMobileShell (dark theme + floating bottom nav) only when
+          `hasMobileScreen(pathname)` AND the viewport is mobile; every other route keeps the
+          existing PublicLayout on all viewports. Admin routes are excluded by `hasMobileScreen`.
+          Verified: shell + nav render at 320/390/430px, 0px horizontal overflow, desktop
+          `public-layout` still rendered at 1440px with no mobile shell.
+
+  - task: "P2 — Splash screen, onboarding, PWA manifest"
+    implemented: true
+    working: true
+    file: "src/mobile/onboarding/{BarayaAppBoot,BarayaSplashScreen,BarayaOnboarding,onboardingStore,slides}.js, public/manifest.webmanifest, public/index.html, public/icons/*, scripts/generate-app-icons.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Splash uses ClubCrestMark (auto-switches to the official logo once `club.logo` is set)
+          and holds until the club config resolves (min 1.2s / max 2.6s). Onboarding = 4 slides
+          (Welcome / Match / News+Media / Profile), swipe + keyboard + Skip. Persistence is
+          browser-only: localStorage `baraya.onboarding.v1`, sessionStorage
+          `baraya.splash.session.v1` — NO collection/API/backend. Authenticated Baraya accounts
+          are marked complete silently and never see onboarding. Never rendered on /admin or
+          /auth/* and never above 768px. PWA: manifest name "BARAYA AL SABBAT", standalone,
+          192/512 + maskable icons + apple-touch-icon generated from favicon.svg geometry.
+          NO service worker, no offline caching, no new dependency.
+          Verified: splash → onboarding → home, completion persists across reload, no repeat.
+
+  - task: "P3 — Mobile Home"
+    implemented: true
+    working: true
+    file: "src/mobile/screens/MobileHomeScreen.js, components/{BarayaGreetingHeader,BrzQuickLinks,BrzMatchCard,BrzNewsCard,BrzPlayerCard,BrzAlbumCard,BrzSearchSheet,BrzSection,BrzStates,BrzRestricted}.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Sections: greeting header (real profile photo/notification count), quick-link chips
+          (incl. Merchandise — deliberately NOT a 6th bottom-nav tab), next match (gradient
+          featured card), last result, other fixtures, news (hero + rail), media (gated by the
+          existing PEMAIN/STAFF rule), squad rail, merchandise rail, club card. Sources:
+          /matches, /content/posts, /players, /merchandise/products, /gallery/public/albums,
+          /club/active — no new endpoints, no mock data; optional sections hide when empty.
+          Search sheet queries /content/posts + /players with the existing `q` parameter.
+
+  - task: "P4 — Match list + Match detail (Match Center)"
+    implemented: true
+    working: true
+    file: "src/mobile/screens/{MobileMatchesScreen,MobileMatchDetailScreen}.js, components/BrzMatchTimeline.js, lib/{matchUtils,useCompetitionName}.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          List: Akan Datang / Hasil chips + season filter (/seasons), reusing the existing
+          "next match" rule (kick-off passed / has score / FINISHED is never upcoming).
+          Detail: single call to /matches/{id}/relations — score card with LIVE badge,
+          countdown (existing useCountdown), and tabs Jalannya Laga (match_events with real
+          player names) / Info / Rekor (head_to_head) / Berita. Competition names resolved once
+          per page load from /competitions via a shared cache (no duplicate requests).
+
+  - task: "P5 — News list + News detail"
+    implemented: true
+    working: true
+    file: "src/mobile/screens/{MobileNewsScreen,MobileNewsDetailScreen}.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          List: category chips (/content/categories), featured hero + list, paginated
+          "Muat berita lainnya" with status=PUBLISHED only. Detail: /content/posts/by-slug/{slug}
+          plus category/author lookups, native share, related posts, link to the related match.
+
+  - task: "P6 — Media / Gallery + album detail"
+    implemented: true
+    working: true
+    file: "src/mobile/screens/{MobileMediaScreen,MobileAlbumDetailScreen}.js, components/{BrzLightbox,BrzAlbumCard}.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Uses the existing gallery API and its Fase 3 access rule (PEMAIN/STAFF only, enforced
+          server-side) — guests/members get the mobile RestrictedAccessPanel equivalent. Album
+          detail renders the album `media` array and, for Drive-backed albums, the existing
+          /drive-photos endpoint; full-screen lightbox for photos and video. No second media
+          storage system was introduced.
+
+  - task: "P7 — Squad + Player detail"
+    implemented: true
+    working: true
+    file: "src/mobile/screens/{MobileSquadScreen,MobilePlayerDetailScreen}.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Squad groups real /players by position (Kiper/Bek/Gelandang/Penyerang) with a Staf tab
+          (/staff) and team chips (/teams). Player detail: photo hero with jersey number, stats
+          from /players/{id}/statistics (falls back to the stored player fields), info rows, bio,
+          and the player's own gallery images in the lightbox.
+
+  - task: "P8 — Profile + Notifications"
+    implemented: true
+    working: true
+    file: "src/mobile/screens/MobileProfileScreen.js, components/BarayaNotificationButton.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Reuses BarayaAuthContext + /api/baraya/* only (me, notifications, notifications/read-all,
+          logout). Identity card with role badge/member number, menu (Kartu Member, Pesanan,
+          Galeri, Daftar Pemain/Staff gated by the existing memberAccess rules), account info,
+          logout, and a Notifikasi tab with unread count and mark-all-read. No second user or
+          notification system. /akun stays behind the existing BarayaRoute guard.
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "BARAYA AL SABBAT mobile experience (P1–P8) — implemented and manually verified"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "none"
+
+agent_communication:
+    -agent: "main"
+    -message: |
+      BARAYA AL SABBAT mobile experience delivered (P1–P8). TESTING AGENT NOT USED (forbidden by
+      user); validation was manual via Playwright screenshots + curl.
+
+      ENVIRONMENT NOTE (important): `frontend/.env` and `backend/.env` are gitignored and did NOT
+      come across with the GitHub import, so the container had no REACT_APP_BACKEND_URL and no
+      JWT_SECRET/bootstrap admin. Both files were recreated for the PREVIEW container only
+      (still gitignored). `yarn install` was also required (craco was missing).
+
+      DATA NOTE: this container's `alsabbat_platform` database is essentially empty
+      (clubs 1, users 1 admin, everything else 0) — the real content lives on the aaPanel/staging
+      deployment. NO mock data was seeded. For visual validation a THROWAWAY database
+      (`alsabbat_visual_sandbox`, via scripts/baraya_visual_sandbox.py) was used and then DROPPED;
+      the real database is byte-for-byte unchanged (verified after revert).
+
+      VERIFIED MANUALLY:
+      - 320 / 390 / 430 px: all screens render, 0px horizontal overflow, no console/page errors
+      - splash → onboarding → home, completion persists, no repeat on revisit
+      - bottom nav routing across Home/Match/News/Media/Profile + detail screens
+      - real-data rendering (sandbox): fixtures, results, match events, news, albums, squad,
+        player detail, profile + notifications, restricted gallery panel for non-PEMAIN
+      - empty-DB behaviour: proper empty states, never fake content
+      - DESKTOP REGRESSION at 1440px: /, /matches, /news, /gallery, /teams all still render the
+        existing `public-layout` with no mobile shell and no errors
+      - ADMIN PANEL: /admin/login → dashboard OK (admin@alsabbat.com), and at 390px /admin shows
+        NO splash, NO onboarding, NO mobile shell
+      - `yarn build` succeeds with zero warnings (main 341.38 kB gzip)
