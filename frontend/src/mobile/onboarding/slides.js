@@ -1,5 +1,5 @@
 /**
- * Onboarding slides for BARAYA AL SABBAT.
+ * Onboarding slides for the AL SABBAT mobile experience.
  *
  * Copy describes the REAL features of the existing application (Match Center,
  * berita, galeri/media, skuad, profil member & notifikasi). The imagery is
@@ -14,7 +14,7 @@ export const ONBOARDING_SLIDES = [
   {
     id: 'welcome',
     image: PEXELS(38789376),
-    title: 'Selamat datang di Baraya AL SABBAT',
+    title: 'Selamat datang di AL SABBAT',
     description:
       'Satu klub, satu semangat. Semua tentang AL SABBAT Football Club kini ada dalam satu aplikasi.',
   },
@@ -35,7 +35,7 @@ export const ONBOARDING_SLIDES = [
   {
     id: 'profile',
     image: PEXELS(29811412),
-    title: 'Jadi bagian dari Baraya',
+    title: 'Jadi bagian dari AL SABBAT',
     description:
       'Kenali skuad, kelola profil dan kartu member, serta terima notifikasi penting dari klub.',
   },

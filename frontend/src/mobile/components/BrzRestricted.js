@@ -23,7 +23,7 @@ export const BrzRestricted = ({ feature = 'Konten ini', testId = 'brz-restricted
         <p className="brz-body mt-1.5">
           {isBaraya
             ? 'Ajukan diri sebagai Pemain, lalu pengurus klub akan meninjau pengajuan Anda.'
-            : 'Masuk sebagai Baraya AL SABBAT terlebih dahulu untuk mengajukan akses.'}
+            : 'Masuk terlebih dahulu untuk mengajukan akses.'}
         </p>
       </div>
       {isBaraya ? (

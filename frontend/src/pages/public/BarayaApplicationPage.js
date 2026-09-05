@@ -190,7 +190,7 @@ export default function BarayaApplicationPage() {
   return (
     <div data-testid="page-baraya-application">
       <PublicPageHeader
-        label="Baraya AL SABBAT"
+        label="AL SABBAT"
         title={staffAllowed && !playerAllowed ? 'Daftar Staff' : 'Daftar Pemain & Staf'}
         description="Isi data sesuai formulir resmi klub. Pengurus akan meninjau, melengkapi, lalu menyetujui pengajuan Anda."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Akun Saya', to: '/akun' }, { label: 'Pengajuan' }]}

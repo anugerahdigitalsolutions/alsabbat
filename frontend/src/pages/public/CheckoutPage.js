@@ -145,13 +145,13 @@ export default function CheckoutPage() {
                   data-testid="checkout-baraya-banner"
                 >
                   <UserRound className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  Checkout sebagai Baraya AL SABBAT ({customer.email}). Pesanan otomatis tersimpan di akun Anda.
+                  Checkout sebagai member AL SABBAT ({customer.email}). Pesanan otomatis tersimpan di akun Anda.
                 </p>
               ) : (
                 <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="checkout-baraya-login-cta">
                   Punya akun?{' '}
                   <Link to="/login" state={{ from: '/checkout' }} className="font-semibold underline" style={{ color: 'var(--club-secondary)' }}>
-                    Login sebagai Baraya AL SABBAT
+                    Login sebagai member AL SABBAT
                   </Link>{' '}
                   agar pesanan tersimpan di riwayat akun. Checkout tanpa akun tetap bisa dilanjutkan.
                 </p>

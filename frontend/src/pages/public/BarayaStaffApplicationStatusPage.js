@@ -92,7 +92,7 @@ export default function BarayaStaffApplicationStatusPage() {
   return (
     <div data-testid="page-baraya-staff-status">
       <PublicPageHeader
-        label="Baraya AL SABBAT"
+        label="AL SABBAT"
         title="Status Pendaftaran Staff"
         description="Pantau proses peninjauan pendaftaran Staff Anda oleh pengurus klub."
         breadcrumb={[

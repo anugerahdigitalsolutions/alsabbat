@@ -12,7 +12,7 @@ import { barayaResetPassword } from '../../services/barayaAuth';
 export default function BarayaResetPasswordPage() {
   usePageSeo({
     title: 'Reset Kata Sandi',
-    description: 'Buat kata sandi baru untuk akun Baraya AL SABBAT.',
+    description: 'Buat kata sandi baru untuk akun AL SABBAT.',
     path: '/reset-password',
     robots: 'noindex,nofollow',
   });
@@ -46,9 +46,9 @@ export default function BarayaResetPasswordPage() {
   return (
     <div data-testid="page-baraya-reset">
       <PublicPageHeader
-        label="Baraya AL SABBAT"
+        label="AL SABBAT"
         title="Reset Kata Sandi"
-        description="Buat kata sandi baru untuk akun Baraya AL SABBAT Anda."
+        description="Buat kata sandi baru untuk akun AL SABBAT Anda."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Login', to: '/login' }, { label: 'Reset Kata Sandi' }]}
       />
       <div className="als-container py-10 sm:py-14">

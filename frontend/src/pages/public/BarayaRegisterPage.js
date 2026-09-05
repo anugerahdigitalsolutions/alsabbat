@@ -20,8 +20,8 @@ const FIELDS = [
 
 export default function BarayaRegisterPage() {
   usePageSeo({
-    title: 'Daftar Baraya AL SABBAT',
-    description: 'Buat akun Baraya AL SABBAT untuk pembelian merchandise dan riwayat pesanan.',
+    title: 'Daftar AL SABBAT',
+    description: 'Buat akun AL SABBAT untuk pembelian merchandise dan riwayat pesanan.',
     path: '/daftar',
     robots: 'noindex,follow',
   });
@@ -68,7 +68,7 @@ export default function BarayaRegisterPage() {
     return (
       <div data-testid="page-baraya-register">
         <PublicPageHeader
-          label="Baraya AL SABBAT"
+          label="AL SABBAT"
           title="Verifikasi Email Anda"
           description="Masukkan kode 6 digit yang kami kirim ke email Anda untuk mengaktifkan akun."
           breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Daftar', to: '/daftar' }, { label: 'Verifikasi' }]}
@@ -104,8 +104,8 @@ export default function BarayaRegisterPage() {
   return (
     <div data-testid="page-baraya-register">
       <PublicPageHeader
-        label="Baraya AL SABBAT"
-        title="Daftar Baraya AL SABBAT"
+        label="AL SABBAT"
+        title="Daftar AL SABBAT"
         description="Satu akun untuk pembelian merchandise, riwayat pesanan, dan profil Baraya."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Daftar' }]}
       />
@@ -161,7 +161,7 @@ export default function BarayaRegisterPage() {
           <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>
             Sudah punya akun?{' '}
             <Link to="/login" className="font-semibold underline" style={{ color: 'var(--club-secondary)' }} data-testid="baraya-register-to-login">
-              Login untuk Baraya AL SABBAT
+              Login untuk AL SABBAT
             </Link>
           </p>
         </form>

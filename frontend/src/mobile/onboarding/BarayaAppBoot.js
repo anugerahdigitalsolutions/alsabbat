@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useClub } from '../../context/ClubContext';
 import { useBaraya } from '../../context/BarayaAuthContext';
 import { BarayaSplashScreen } from './BarayaSplashScreen';
@@ -29,7 +29,6 @@ const EXIT_MS = 420;
  */
 export const BarayaAppBoot = () => {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const { loading: clubLoading } = useClub();
   const { isBaraya, loading: authLoading } = useBaraya();
 
@@ -98,8 +97,9 @@ export const BarayaAppBoot = () => {
   const finishOnboarding = useCallback(() => {
     completeOnboarding();
     setPhase('done');
-    if (pathname !== '/') navigate('/');
-  }, [navigate, pathname]);
+    // Stay on the route the visitor actually asked for (e.g. a shared /news/... link
+    // or /login) — onboarding must never hijack navigation or authentication.
+  }, []);
 
   if (blocked || phase === 'done' || phase === 'gate') return null;
 

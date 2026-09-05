@@ -240,15 +240,15 @@ export const PublicHeader = () => {
                 style={{ color: 'var(--muted-fg)' }}
                 data-testid="public-header-baraya-caption"
               >
-                Login untuk Baraya AL SABBAT
+                Login untuk AL SABBAT
               </span>
 
               <Link
                 to="/login"
                 className="als-focus font-display inline-flex min-h-[40px] items-center gap-2 rounded-full px-3.5 text-xs font-bold tracking-[0.05em] transition-transform duration-200 hover:-translate-y-0.5 sm:px-4"
                 style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-                title="Login untuk Baraya AL SABBAT"
-                aria-label="Login untuk Baraya AL SABBAT"
+                title="Login untuk AL SABBAT"
+                aria-label="Login untuk AL SABBAT"
                 data-testid="public-header-baraya-login"
               >
                 <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
@@ -307,7 +307,7 @@ export const PublicHeader = () => {
                   {customer ? 'AKUN SAYA' : 'LOGIN'}
                 </Link>
                 <span className="mt-2 text-center text-[11px]" style={{ color: 'var(--muted-fg)' }}>
-                  Login untuk Baraya AL SABBAT
+                  Login untuk AL SABBAT
                 </span>
               </div>
             </SheetContent>

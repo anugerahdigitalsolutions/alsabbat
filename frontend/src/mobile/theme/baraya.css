@@ -783,9 +783,9 @@
 }
 
 .brz-splash-title {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   line-height: 1.1;
   color: var(--brz-text);
 }

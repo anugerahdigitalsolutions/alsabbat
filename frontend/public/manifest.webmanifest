@@ -1,7 +1,7 @@
 {
-  "name": "BARAYA AL SABBAT",
-  "short_name": "BARAYA",
-  "description": "Baraya AL SABBAT — aplikasi resmi komunitas AL SABBAT Football Club: pertandingan, berita, media, skuad, dan profil member.",
+  "name": "AL SABBAT",
+  "short_name": "AL SABBAT",
+  "description": "Aplikasi resmi AL SABBAT Football Club: pertandingan, berita, media, skuad, dan profil member.",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",
   "scope": "/",

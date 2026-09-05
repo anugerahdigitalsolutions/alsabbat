@@ -26,7 +26,7 @@ export const BarayaBottomNav = () => {
   const { pathname } = useLocation();
 
   return (
-    <nav className="brz-nav" aria-label="Navigasi utama Baraya AL SABBAT" data-testid="baraya-bottom-nav">
+    <nav className="brz-nav" aria-label="Navigasi utama AL SABBAT" data-testid="baraya-bottom-nav">
       {TABS.map(({ to, label, icon: Icon, testId }) => {
         const active = isTabActive(pathname, to);
         return (

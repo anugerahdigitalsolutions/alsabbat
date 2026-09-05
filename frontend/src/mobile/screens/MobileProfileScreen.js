@@ -48,7 +48,7 @@ export default function MobileProfileScreen() {
 
   usePageSeo({
     title: 'Profil',
-    description: 'Profil dan akun Baraya AL SABBAT.',
+    description: 'Profil dan akun AL SABBAT.',
     path: '/akun',
   });
 
@@ -113,7 +113,7 @@ export default function MobileProfileScreen() {
             </span>
           )}
           <span className="min-w-0 flex-1">
-            <span className="brz-clamp-1 block text-[16px] font-semibold">{customer?.full_name || 'Baraya'}</span>
+            <span className="brz-clamp-1 block text-[16px] font-semibold">{customer?.full_name || 'Member'}</span>
             <span className="brz-clamp-1 brz-meta block">{customer?.email}</span>
             <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <span className="brz-badge brz-badge--accent">{roleLabel(customer)}</span>

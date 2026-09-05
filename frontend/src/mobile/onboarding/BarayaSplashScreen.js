@@ -1,9 +1,10 @@
 import React from 'react';
 import { useClub } from '../../context/ClubContext';
+import { brandText } from '../../lib/brand';
 import { ClubCrestMark } from '../../components/shared/ClubCrestMark';
 
 /**
- * BARAYA AL SABBAT splash screen.
+ * AL SABBAT mobile splash screen.
  *
  * Pure frontend — no backend endpoint, no database. The crest comes from
  * `ClubCrestMark`, which automatically switches to the official uploaded logo
@@ -11,13 +12,14 @@ import { ClubCrestMark } from '../../components/shared/ClubCrestMark';
  */
 export const BarayaSplashScreen = ({ exiting = false }) => {
   const { shortName } = useClub();
+  const wordmark = brandText(shortName) || 'AL SABBAT';
 
   return (
     <div
       className={`brz-splash${exiting ? ' brz-splash--exit' : ''}`}
       role="status"
       aria-live="polite"
-      aria-label="Memuat Baraya AL SABBAT"
+      aria-label={`Memuat ${wordmark}`}
       data-testid="baraya-splash"
     >
       <span className="brz-splash-glow" aria-hidden="true" />
@@ -28,8 +30,9 @@ export const BarayaSplashScreen = ({ exiting = false }) => {
         </span>
 
         <div className="brz-splash-word">
-          <span className="brz-splash-kicker">BARAYA</span>
-          <span className="brz-splash-title">{shortName || 'AL SABBAT'}</span>
+          <span className="brz-splash-title" data-testid="baraya-splash-title">
+            {wordmark}
+          </span>
           <span className="brz-splash-sub">Football Club</span>
         </div>
       </div>

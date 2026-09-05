@@ -1523,3 +1523,35 @@ Aturan Fase 3 tetap berlaku: Galeri hanya untuk PEMAIN/STAFF (panel akses terkun
 - Untuk validasi visual dipakai database sekali-pakai `alsabbat_visual_sandbox`
   (`scripts/baraya_visual_sandbox.py seed|drop`) lalu **DI-DROP**. Database asli diverifikasi
   utuh setelah dikembalikan (clubs 1, users 1, players/matches/posts/customers 0).
+
+### PERUBAHAN NAMA APLIKASI (final) — "BARAYA AL SABBAT" → "AL SABBAT"
+Nama aplikasi yang tampil ke pengguna sekarang **AL SABBAT** (bukan "BARAYA AL SABBAT").
+Hanya STRING yang terlihat pengguna yang diubah — TIDAK ada identifier teknis yang disentuh.
+
+Diubah:
+- Splash: wordmark `brandText(shortName) || 'AL SABBAT'` + "FOOTBALL CLUB" (kicker "BARAYA" dihapus),
+  aria-label "Memuat AL SABBAT", testid baru `baraya-splash-title`.
+- Onboarding slide 1 "Selamat datang di AL SABBAT", slide 4 "Jadi bagian dari AL SABBAT".
+- Header mobile Home: label tamu → `brandText(shortName) || 'AL SABBAT'`; fallback nama → "Member".
+- Bottom nav `aria-label="Navigasi utama AL SABBAT"`.
+- Judul dokumen Home: `title: 'Beranda'` → "Beranda | AL SABBAT Football Club" (sama dgn desktop).
+- Profil: deskripsi SEO "Profil dan akun AL SABBAT."; fallback nama "Member".
+- Panel akses terkunci: "Masuk terlebih dahulu untuk mengajukan akses."
+- PWA `manifest.webmanifest`: `name` & `short_name` = **AL SABBAT**, deskripsi tanpa "Baraya".
+- `index.html`: `application-name` & `apple-mobile-web-app-title` = **AL SABBAT**.
+- Halaman auth existing (dipakai dari tab Profile mobile): `BarayaLoginPage`,
+  `BarayaRegisterPage`, `BarayaForgotPasswordPage`, `BarayaResetPasswordPage` — label/judul
+  "Baraya AL SABBAT" → "AL SABBAT" (istilah keanggotaan "akun Baraya" DIBIARKAN).
+
+TIDAK diubah (sengaja, sesuai instruksi):
+- Nama komponen/berkas (`BarayaMobileShell`, `BarayaAppBoot`, dll), `BarayaAuthContext`,
+  `barayaApi`, rute `/api/baraya/*`, `data-testid`, kunci storage
+  (`baraya.onboarding.v1`, `baraya.splash.session.v1`, `alsabbat.baraya.token`), nama database.
+- Admin Panel (`AdminSidebar`, `AdminBarayaPage`, `MemberCardDesign`).
+- Istilah PROGRAM KEANGGOTAAN "Baraya" pada halaman existing (Akun, Pesanan, Kartu Member,
+  Pengajuan, Checkout, Verifikasi Kartu) — ini penamaan program member, bukan nama aplikasi.
+  Bila ingin disapu bersih juga, minta konfirmasi terlebih dahulu.
+
+Verifikasi: teks yang terlihat di UI mobile TIDAK lagi memuat "BARAYA" (dicek via
+`body.textContent`), splash menampilkan "AL SABBAT", `document.title` =
+"Beranda | AL SABBAT Football Club", manifest `name`/`short_name` = "AL SABBAT".

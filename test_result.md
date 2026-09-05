@@ -1074,3 +1074,70 @@ agent_communication:
       - ADMIN PANEL: /admin/login → dashboard OK (admin@alsabbat.com), and at 390px /admin shows
         NO splash, NO onboarding, NO mobile shell
       - `yarn build` succeeds with zero warnings (main 341.38 kB gzip)
+
+  - task: "Final branding — user-facing app name changed from BARAYA AL SABBAT to AL SABBAT"
+    implemented: true
+    working: true
+    file: "src/mobile/onboarding/{BarayaSplashScreen,slides}.js, src/mobile/components/{BarayaGreetingHeader,BarayaBottomNav,BrzRestricted}.js, src/mobile/screens/{MobileHomeScreen,MobileProfileScreen}.js, public/manifest.webmanifest, public/index.html, src/pages/public/Baraya{Login,Register,ForgotPassword,ResetPassword}Page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          ONLY user-facing strings were changed. Splash wordmark is now
+          `brandText(shortName) || 'AL SABBAT'` + "FOOTBALL CLUB" (the "BARAYA" kicker was
+          removed); onboarding slides 1 & 4, the Home greeting header (guest label + name
+          fallback "Member"), the bottom-nav aria-label, the restricted panel copy, the Home
+          document title (now `title: 'Beranda'` → "Beranda | AL SABBAT Football Club", matching
+          desktop), and the Profile SEO description. PWA `manifest.webmanifest` `name` and
+          `short_name` are both "AL SABBAT"; `index.html` `application-name` and
+          `apple-mobile-web-app-title` are "AL SABBAT". The four existing auth pages reachable
+          from the mobile Profile tab (login/register/forgot/reset) had their "Baraya AL SABBAT"
+          brand labels and titles changed to "AL SABBAT".
+
+          DELIBERATELY UNCHANGED (per instruction): component/file names (BarayaMobileShell,
+          BarayaAppBoot, …), BarayaAuthContext, barayaApi, `/api/baraya/*` routes, all
+          `data-testid`s, storage keys (`baraya.onboarding.v1`, `baraya.splash.session.v1`,
+          `alsabbat.baraya.token`), database names, the Admin Panel, and the MEMBERSHIP-PROGRAM
+          term "Baraya" on pre-existing pages (Akun, Pesanan, Kartu Member, Pengajuan, Checkout,
+          MemberVerify) — that is the member-programme name, not the application name.
+
+          VERIFIED: splash title element reads "AL SABBAT"; `document.title` =
+          "Beranda | AL SABBAT Football Club"; bottom-nav aria-label = "Navigasi utama AL SABBAT";
+          manifest served as name/short_name "AL SABBAT"; `body.textContent.toUpperCase()` on the
+          mobile Home contains NO "BARAYA"; zero page errors; P1–P8 functionality unchanged;
+          lint clean; `yarn build` succeeds.
+
+  - task: "Branding sweep extended to shared chrome + member pages reachable from mobile Profile"
+    implemented: true
+    working: true
+    file: "src/components/public/{PublicHeader,RestrictedAccessPanel}.js, src/pages/public/{BarayaAccountPage,BarayaMemberCardPage,BarayaOrdersPage,BarayaOrderDetailPage,BarayaApplicationPage,BarayaStaffApplicationStatusPage,GoogleAuthCallbackPage,MemberVerifyPage,CheckoutPage}.js, src/mobile/onboarding/BarayaAppBoot.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          The shared PublicHeader ("Login untuk Baraya AL SABBAT") and RestrictedAccessPanel are
+          rendered on mobile for every route that has no dedicated mobile screen, and the mobile
+          Profile menu links straight to /akun/kartu, /akun/pesanan and /akun/pengajuan — so the
+          old app name was still visible there. All app-name occurrences in those pages were
+          changed to "AL SABBAT" (display strings only). Membership wording such as
+          "akun Baraya" / "Kenapa punya akun Baraya?" was intentionally LEFT AS IS because it is
+          the club's member-programme name, not the application name.
+
+          Also fixed: onboarding no longer redirects to "/" when finished — it dismisses in place,
+          so a first-time visitor who deep-links to /login (or a shared /news/... URL) stays on
+          the route they asked for. This removes any interference with authentication.
+
+          VERIFIED: 10 routes audited at 390px (/, /matches, /news, /gallery, /teams, /login,
+          /daftar, /lupa-password, /merchandise, /club) — "BARAYA AL SABBAT" appears in NONE of
+          them (checked via body.textContent). Admin Panel login + /admin/baraya, /admin/matches,
+          /admin/gallery all load; desktop /, /checkout render normally; /akun/kartu still
+          correctly redirects guests to /login (auth guard intact). Zero page errors.
+          `yarn build` clean (no warnings). Remaining "Baraya AL SABBAT" strings in the codebase
+          are ONLY: Admin Panel files (out of scope) and two source-code comments in
+          src/lib/api.js and src/services/barayaAuth.js (not user-facing).

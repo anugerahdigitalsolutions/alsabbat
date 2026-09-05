@@ -47,7 +47,7 @@ export default function GoogleAuthCallbackPage() {
   return (
     <div data-testid="page-google-callback">
       <PublicPageHeader
-        label="Baraya AL SABBAT"
+        label="AL SABBAT"
         title="Menyelesaikan Login Google"
         description="Mohon tunggu, kami sedang memverifikasi akun Google Anda."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Login Google' }]}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useClub } from '../../context/ClubContext';
+import { brandText } from '../../lib/brand';
 import { useBaraya } from '../../context/BarayaAuthContext';
 import { ClubCrestMark } from '../../components/shared/ClubCrestMark';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
@@ -23,13 +24,14 @@ const firstName = (customer) => {
 
 /**
  * Home greeting header (reference screen 2).
- * Avatar = the Baraya profile photo when logged in, otherwise the official
+ * Avatar = the member profile photo when logged in, otherwise the official
  * club crest (which automatically uses `club.logo` once configured).
  */
 export const BarayaGreetingHeader = ({ onSearch }) => {
   const { shortName } = useClub();
   const { customer, isBaraya } = useBaraya();
   const photo = resolveMediaUrl(customer?.photo_url);
+  const appName = brandText(shortName) || 'AL SABBAT';
 
   return (
     <BarayaTopBar
@@ -45,10 +47,10 @@ export const BarayaGreetingHeader = ({ onSearch }) => {
           )}
           <span className="min-w-0">
             <span className="brz-clamp-1 block text-[15px] font-semibold leading-tight">
-              {isBaraya ? greeting() : `Baraya ${shortName || 'AL SABBAT'}`}
+              {isBaraya ? greeting() : appName}
             </span>
             <span className="brz-clamp-1 block text-[12px] leading-tight" style={{ color: 'var(--brz-text-muted)' }}>
-              {isBaraya ? firstName(customer) || 'Baraya' : 'Masuk untuk pengalaman penuh'}
+              {isBaraya ? firstName(customer) || 'Member' : 'Masuk untuk pengalaman penuh'}
             </span>
           </span>
         </Link>

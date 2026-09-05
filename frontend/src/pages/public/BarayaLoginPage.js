@@ -13,13 +13,13 @@ import { GoogleLoginButton } from '../../components/public/GoogleLoginButton';
 const BENEFITS = [
   'Simpan data pembeli agar checkout merchandise lebih cepat',
   'Lihat riwayat dan status pesanan kapan saja',
-  'Kelola profil Baraya AL SABBAT dalam satu akun',
+  'Kelola profil member AL SABBAT dalam satu akun',
 ];
 
 export default function BarayaLoginPage() {
   usePageSeo({
-    title: 'Login Baraya AL SABBAT',
-    description: 'Login akun Baraya AL SABBAT untuk pembelian merchandise dan riwayat pesanan.',
+    title: 'Login AL SABBAT',
+    description: 'Login akun AL SABBAT untuk pembelian merchandise dan riwayat pesanan.',
     path: '/login',
     robots: 'noindex,follow',
   });
@@ -62,7 +62,7 @@ export default function BarayaLoginPage() {
     return (
       <div data-testid="page-baraya-login">
         <PublicPageHeader
-          label="Baraya AL SABBAT"
+          label="AL SABBAT"
           title="Verifikasi Email Anda"
           description="Akun Anda belum terverifikasi. Masukkan kode 6 digit yang kami kirim ke email Anda."
           breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Login', to: '/login' }, { label: 'Verifikasi' }]}
@@ -85,8 +85,8 @@ export default function BarayaLoginPage() {
   return (
     <div data-testid="page-baraya-login">
       <PublicPageHeader
-        label="Baraya AL SABBAT"
-        title="Login untuk Baraya AL SABBAT"
+        label="AL SABBAT"
+        title="Login untuk AL SABBAT"
         description="Akun pengunjung dan pelanggan resmi AL SABBAT. Bukan akses staf maupun admin klub."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Login' }]}
       />
@@ -106,7 +106,7 @@ export default function BarayaLoginPage() {
             <p className="mt-6 text-sm" style={{ color: 'var(--muted-fg)' }}>
               Belum punya akun?{' '}
               <Link to="/daftar" className="font-semibold underline" style={{ color: 'var(--club-secondary)' }} data-testid="baraya-login-to-register">
-                Daftar sebagai Baraya AL SABBAT
+                Daftar sebagai member AL SABBAT
               </Link>
             </p>
           </div>

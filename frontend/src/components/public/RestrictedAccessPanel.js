@@ -35,7 +35,7 @@ export const RestrictedAccessPanel = ({
           Galeri dan Sorotan Pemain AL SABBAT hanya dapat diakses oleh Pemain dan Staf klub.
           {isBaraya
             ? ' Ajukan diri sebagai Pemain, lalu pengurus klub akan meninjau pengajuan Anda.'
-            : ' Silakan login sebagai Baraya AL SABBAT terlebih dahulu.'}
+            : ' Silakan login terlebih dahulu.'}
         </p>
       </div>
       <div className="flex flex-wrap gap-3">

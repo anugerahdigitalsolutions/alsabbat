@@ -39,7 +39,7 @@ export default function MobileHomeScreen() {
   const [albums, setAlbums] = useState([]);
 
   usePageSeo({
-    title: 'Baraya AL SABBAT',
+    title: 'Beranda',
     description:
       'Aplikasi resmi komunitas AL SABBAT Football Club — pertandingan, berita, media, skuad, dan profil member.',
     path: '/',

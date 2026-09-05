@@ -14,7 +14,7 @@ import { OtpVerifyForm } from '../../components/public/OtpVerifyForm';
 export default function BarayaForgotPasswordPage() {
   usePageSeo({
     title: 'Lupa Kata Sandi',
-    description: 'Reset kata sandi akun Baraya AL SABBAT dengan kode verifikasi email.',
+    description: 'Reset kata sandi akun AL SABBAT dengan kode verifikasi email.',
     path: '/lupa-password',
     robots: 'noindex,follow',
   });
@@ -57,7 +57,7 @@ export default function BarayaForgotPasswordPage() {
   return (
     <div data-testid="page-baraya-forgot">
       <PublicPageHeader
-        label="Baraya AL SABBAT"
+        label="AL SABBAT"
         title="Lupa Kata Sandi"
         description="Masukkan email akun Baraya Anda. Kami akan mengirim kode verifikasi untuk membuat kata sandi baru."
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Login', to: '/login' }, { label: 'Lupa Kata Sandi' }]}
