@@ -40,7 +40,6 @@ export const BarayaOnboarding = ({ onFinish }) => {
     const img = new Image();
     img.src = upcoming.image;
   }, [index, slides]);
-
   const onTouchStart = (event) => {
     touchStart.current = event.touches?.[0]?.clientX ?? null;
   };
@@ -64,15 +63,27 @@ export const BarayaOnboarding = ({ onFinish }) => {
       data-index={index}
     >
       {slides.map((item, position) => (
-        <div
-          key={item.id}
-          className="brz-onboard-bg"
-          style={{
-            backgroundImage: `url(${item.image})`,
-            opacity: position === index ? 1 : 0,
-          }}
-          aria-hidden="true"
-        />
+        <React.Fragment key={item.id}>
+          {/* Soft blurred backdrop fills the screen without cropping the photo. */}
+          <img
+            className="brz-onboard-bg"
+            src={item.imageSmall}
+            alt=""
+            aria-hidden="true"
+            style={{ opacity: position === index ? 1 : 0 }}
+          />
+          {/* The photo itself is contained: full team visible, never stretched. */}
+          <img
+            className="brz-onboard-photo"
+            src={item.image}
+            srcSet={`${item.imageSmall} 480w, ${item.image} 900w`}
+            sizes="100vw"
+            alt={position === index ? item.alt || '' : ''}
+            loading={position === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+            style={{ opacity: position === index ? 1 : 0 }}
+          />
+        </React.Fragment>
       ))}
       <span className="brz-scrim" aria-hidden="true" />
 

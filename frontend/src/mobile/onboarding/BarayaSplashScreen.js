@@ -1,18 +1,22 @@
 import React from 'react';
 import { useClub } from '../../context/ClubContext';
 import { brandText } from '../../lib/brand';
-import { ClubCrestMark } from '../../components/shared/ClubCrestMark';
+import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
+
+/** Official AL SABBAT crest bundled with the app (transparent, for dark UI). */
+const OFFICIAL_LOGO = `${process.env.PUBLIC_URL || ''}/brand/alsabbat-logo-mark.png`;
 
 /**
  * AL SABBAT mobile splash screen.
  *
- * Pure frontend — no backend endpoint, no database. The crest comes from
- * `ClubCrestMark`, which automatically switches to the official uploaded logo
- * as soon as `club.logo` is configured in the Admin Panel.
+ * Pure frontend — no backend endpoint, no database. Shows the logo uploaded in
+ * the Admin Panel when `club.logo` is set, otherwise the official bundled crest.
+ * The logo keeps its natural proportions (`object-fit: contain`) and is centred.
  */
 export const BarayaSplashScreen = ({ exiting = false }) => {
-  const { shortName } = useClub();
+  const { club, shortName } = useClub();
   const wordmark = brandText(shortName) || 'AL SABBAT';
+  const logo = resolveMediaUrl(club?.logo) || OFFICIAL_LOGO;
 
   return (
     <div
@@ -26,7 +30,12 @@ export const BarayaSplashScreen = ({ exiting = false }) => {
 
       <div className="brz-splash-body">
         <span className="brz-splash-crest">
-          <ClubCrestMark size={92} onDark testId="baraya-splash-crest" />
+          <img
+            src={logo}
+            alt={`Logo ${wordmark}`}
+            className="brz-splash-logo"
+            data-testid="baraya-splash-crest"
+          />
         </span>
 
         <div className="brz-splash-word">
