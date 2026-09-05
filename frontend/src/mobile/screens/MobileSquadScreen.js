@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 const POSITION_ORDER = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
 /**
- * BARAYA AL SABBAT — Squad screen (`/teams`).
+ * AL SABBAT — Squad screen (`/teams`).
  * Real data from `/api/teams`, `/api/players`, `/api/staff`.
  */
 export default function MobileSquadScreen() {

@@ -11,7 +11,7 @@ import { BrzLightbox } from '../components/BrzLightbox';
 import { BrzEmpty, BrzError, BrzLoading } from '../components/BrzStates';
 
 /**
- * BARAYA AL SABBAT — album detail.
+ * AL SABBAT — album detail.
  * Media comes from `/api/gallery/public/albums/{id}`; albums backed by a
  * Google Drive folder additionally use the existing `/drive-photos` endpoint.
  */

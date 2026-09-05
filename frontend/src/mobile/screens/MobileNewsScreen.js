@@ -10,7 +10,7 @@ import { BrzEmpty, BrzError, BrzLoading } from '../components/BrzStates';
 
 const PAGE_SIZE = 10;
 
-/** BARAYA AL SABBAT — News screen (existing `/api/content/*` endpoints). */
+/** AL SABBAT — News screen (existing `/api/content/*` endpoints). */
 export default function MobileNewsScreen() {
   const [categoryId, setCategoryId] = useState('all');
   const [posts, setPosts] = useState([]);

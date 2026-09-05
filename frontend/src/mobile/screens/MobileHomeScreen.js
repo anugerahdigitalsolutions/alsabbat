@@ -26,7 +26,7 @@ const formatIDR = (value) =>
   );
 
 /**
- * BARAYA AL SABBAT — mobile Home.
+ * AL SABBAT — mobile Home.
  *
  * Every section is driven by the EXISTING public API. Optional sections are
  * hidden when the API returns nothing, so the screen never shows placeholder

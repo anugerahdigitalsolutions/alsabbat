@@ -1,7 +1,7 @@
 import { matchPath } from 'react-router-dom';
 
 /**
- * Routes that have a BARAYA AL SABBAT mobile screen.
+ * Routes that have a AL SABBAT mobile screen.
  *
  * Only these paths swap to the mobile shell (top bar + bottom nav) below
  * 768px. Every other public route keeps the existing desktop PublicLayout on

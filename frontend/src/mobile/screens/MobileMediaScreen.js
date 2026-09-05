@@ -12,7 +12,7 @@ import { BrzEmpty, BrzError, BrzLoading } from '../components/BrzStates';
 const PAGE_SIZE = 12;
 
 /**
- * BARAYA AL SABBAT — Media screen.
+ * AL SABBAT — Media screen.
  * Reuses the existing gallery API and its access rule (PEMAIN/STAFF only,
  * enforced by the backend). No second media storage system.
  */

@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Inbox, RotateCcw } from 'lucide-react';
 
-/** Loading / error / empty states styled for the BARAYA AL SABBAT mobile UI. */
+/** Loading / error / empty states styled for the AL SABBAT mobile UI. */
 
 export const BrzSkeletonCard = ({ height = 120 }) => (
   <div className="brz-skeleton" style={{ height }} aria-hidden="true" />

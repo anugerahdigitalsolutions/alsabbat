@@ -1,5 +1,5 @@
 /**
- * Onboarding / splash persistence for BARAYA AL SABBAT.
+ * Onboarding / splash persistence for AL SABBAT.
  *
  * Browser storage only — no collection, no API, no backend (as specified).
  * All access is wrapped because Safari private mode can throw on access.

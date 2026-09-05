@@ -3,7 +3,7 @@ import { BarayaBottomNav } from './BarayaBottomNav';
 import '../theme/baraya.css';
 
 /**
- * BARAYA AL SABBAT mobile shell.
+ * AL SABBAT mobile shell.
  *
  * Wraps the mobile screens with the dark themed surface and the floating
  * bottom navigation. The Admin Panel and the desktop site never mount this.

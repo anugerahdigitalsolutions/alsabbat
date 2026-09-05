@@ -1,7 +1,7 @@
 import { kickoffAt } from '../../components/public/MatchdayCountdown';
 import { resolveMediaUrl } from '../../components/public/gallery/mediaUtils';
 
-/** Shared match helpers for the BARAYA AL SABBAT mobile screens. */
+/** Shared match helpers for the AL SABBAT mobile screens. */
 
 export const UPCOMING_STATUS = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 

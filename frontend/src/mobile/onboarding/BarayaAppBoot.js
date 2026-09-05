@@ -18,7 +18,7 @@ const MAX_SPLASH_MS = 2600;
 const EXIT_MS = 420;
 
 /**
- * Boots the BARAYA AL SABBAT mobile experience: splash → onboarding → app.
+ * Boots the AL SABBAT mobile experience: splash → onboarding → app.
  *
  * Rules:
  *  - mobile viewports only (the caller mounts it only below 768px)

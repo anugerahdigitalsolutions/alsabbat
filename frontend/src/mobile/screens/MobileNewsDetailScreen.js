@@ -10,7 +10,7 @@ import { BrzNewsCard } from '../components/BrzNewsCard';
 import { BrzSection } from '../components/BrzSection';
 import { BrzError, BrzLoading } from '../components/BrzStates';
 
-/** BARAYA AL SABBAT — News detail (`/api/content/posts/by-slug/{slug}`). */
+/** AL SABBAT — News detail (`/api/content/posts/by-slug/{slug}`). */
 export default function MobileNewsDetailScreen() {
   const { slug } = useParams();
   const [post, setPost] = useState(null);

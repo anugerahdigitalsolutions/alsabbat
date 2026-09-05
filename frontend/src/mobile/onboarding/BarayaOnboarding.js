@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { ONBOARDING_SLIDES } from './slides';
 
 /**
- * BARAYA AL SABBAT onboarding — full-bleed photo, glass card at the bottom,
+ * AL SABBAT onboarding — full-bleed photo, glass card at the bottom,
  * "Skip" on the left and a gradient pill CTA on the right (UI reference).
  *
  * Frontend only: completion is persisted in localStorage by the caller.

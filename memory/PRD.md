@@ -1555,3 +1555,22 @@ TIDAK diubah (sengaja, sesuai instruksi):
 Verifikasi: teks yang terlihat di UI mobile TIDAK lagi memuat "BARAYA" (dicek via
 `body.textContent`), splash menampilkan "AL SABBAT", `document.title` =
 "Beranda | AL SABBAT Football Club", manifest `name`/`short_name` = "AL SABBAT".
+
+### MATCH = HANYA INFORMASI (tanpa susunan pemain) · Sep 2026
+Hasil audit: bagian Match mobile MEMANG tidak pernah punya fitur susunan pemain
+(tidak ada pemilihan pemain, starting XI, pemain cadangan, skuad laga, drag & drop,
+maupun pembuat formasi). Satu-satunya sisa adalah dua baris teks READ-ONLY di tab Info.
+
+Perubahan (mobile saja):
+- Baris "Formasi" & "Formasi Lawan" DIHAPUS dari tab Info Pusat Pertandingan; kata
+  "formasi" juga dihapus dari copy empty state. Diganti baris read-only "Tipe Laga"
+  (Kandang/Tandang) dari `venue_type` yang sudah ada.
+- Suffix venue pada kartu skor: "Home" → "Kandang"/"Tandang".
+- `SUBSTITUTION` ("Pergantian") pada timeline DIPERTAHANKAN karena itu KEJADIAN laga yang
+  sudah terjadi (match event existing), bukan pemilihan pemain cadangan.
+- Sisa komentar kode "BARAYA AL SABBAT" di `src/mobile` dinormalkan menjadi "AL SABBAT".
+  Tidak ada identifier/testid/storage key/rute/context yang di-rename.
+
+Tab Pusat Pertandingan tetap: Jalannya Laga · Info · Rekor · Berita — semuanya read-only.
+Kontrol interaktif di seluruh Pusat Pertandingan HANYA 4 tab tampilan; 0 elemen
+input/select/textarea. Tidak ada API/model/koleksi/database baru. Admin Panel tidak disentuh.

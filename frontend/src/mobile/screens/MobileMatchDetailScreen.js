@@ -54,8 +54,14 @@ const TABS = [
 ];
 
 /**
- * BARAYA AL SABBAT — Match detail (reference screen 3).
- * Single source: `GET /api/matches/{id}/relations` (Match Center payload).
+ * AL SABBAT — Match detail / Match Center (mobile).
+ *
+ * Single source: `GET /api/matches/{id}/relations` (existing Match Center payload).
+ *
+ * READ-ONLY BY DESIGN: this is an information screen. It never offers line-up
+ * management — no player selection, starting XI, substitutes, match squad,
+ * formation builder or drag-and-drop. `data.players` is used ONLY to resolve
+ * player names for existing match events.
  */
 export default function MobileMatchDetailScreen() {
   const { matchId } = useParams();
@@ -181,7 +187,7 @@ export default function MobileMatchDetailScreen() {
               <span className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--brz-text-muted)' }}>
                 <MapPin size={13} className="flex-none" aria-hidden="true" />
                 <span className="brz-clamp-1">
-                  {match.venue} · {match.venue_type === 'AWAY' ? 'Tandang' : 'Home'}
+                  {match.venue} · {match.venue_type === 'AWAY' ? 'Tandang' : 'Kandang'}
                 </span>
               </span>
             ) : null}
@@ -221,12 +227,13 @@ export default function MobileMatchDetailScreen() {
 
           {tab === 'info' ? (
             <div className="flex flex-col gap-2">
+              {/* Read-only match information only. The mobile app never shows a
+                  line-up, starting XI, substitutes, squad selection or formation. */}
               {[
                 { label: 'Kompetisi', value: data?.competition?.name },
                 { label: 'Musim', value: data?.season?.name },
                 { label: 'Tim', value: data?.team?.name },
-                { label: 'Formasi', value: match.formation },
-                { label: 'Formasi Lawan', value: match.opponent_formation },
+                { label: 'Tipe Laga', value: match.venue_type === 'AWAY' ? 'Tandang' : 'Kandang' },
                 { label: 'Wasit', value: match.referee },
                 { label: 'Penonton', value: match.attendance ? `${match.attendance}` : null },
                 { label: 'Ringkasan', value: match.result_summary || match.description },
@@ -241,7 +248,6 @@ export default function MobileMatchDetailScreen() {
               {!data?.competition?.name &&
               !data?.season?.name &&
               !data?.team?.name &&
-              !match.formation &&
               !match.referee &&
               !match.attendance &&
               !match.result_summary &&
@@ -249,7 +255,7 @@ export default function MobileMatchDetailScreen() {
                 <BrzEmpty
                   icon={UserCheck}
                   title="Belum ada informasi tambahan"
-                  description="Detail seperti kompetisi, musim, wasit, dan formasi dilengkapi lewat Admin Panel."
+                  description="Detail seperti kompetisi, musim, dan wasit dilengkapi lewat Admin Panel."
                   testId="brz-match-info-empty"
                 />
               ) : null}

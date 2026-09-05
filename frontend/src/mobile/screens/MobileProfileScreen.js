@@ -32,7 +32,7 @@ const formatDate = (value) => {
 };
 
 /**
- * BARAYA AL SABBAT — Profile screen.
+ * AL SABBAT — Profile screen.
  *
  * Uses the EXISTING Baraya account system only:
  *   /api/baraya/me (via context) · /api/baraya/notifications · logout

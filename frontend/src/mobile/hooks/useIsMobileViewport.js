@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 /**
- * BARAYA AL SABBAT — viewport switch.
+ * AL SABBAT — viewport switch.
  *
  * The mobile-first experience renders below 768px; from 768px upwards the
  * existing AL SABBAT desktop pages are used untouched. There are no

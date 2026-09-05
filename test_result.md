@@ -1141,3 +1141,53 @@ agent_communication:
           `yarn build` clean (no warnings). Remaining "Baraya AL SABBAT" strings in the codebase
           are ONLY: Admin Panel files (out of scope) and two source-code comments in
           src/lib/api.js and src/services/barayaAuth.js (not user-facing).
+
+  - task: "Match section is view-only — no player lineup / selection / formation in the mobile app"
+    implemented: true
+    working: true
+    file: "src/mobile/screens/{MobileMatchesScreen,MobileMatchDetailScreen}.js, src/mobile/components/BrzMatchTimeline.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          AUDIT FIRST: a full grep of `src/mobile` for lineup / formation / starting XI /
+          substitute-selection / squad-selection / drag-and-drop found NO such feature — the
+          mobile Match section never had a line-up builder. The only line-up-adjacent items were
+          two READ-ONLY text rows ("Formasi" and "Formasi Lawan") in the Match Center Info tab,
+          rendered from the existing `match.formation` / `match.opponent_formation` fields.
+
+          CHANGES (mobile only):
+          - Removed the "Formasi" and "Formasi Lawan" rows from the Match Center Info tab and
+            dropped `formation` from the empty-state guard + copy, so the word "Formasi" no
+            longer appears anywhere in the mobile Match experience.
+          - Replaced them with a read-only "Tipe Laga" row (Kandang / Tandang) derived from the
+            existing `venue_type`; score-card venue suffix now reads "Kandang"/"Tandang".
+          - Documented the read-only contract in both Match screen headers.
+          - `SUBSTITUTION` in BrzMatchTimeline was KEPT: it is an existing match EVENT
+            ("Pergantian") that already happened, i.e. allowed "existing match events" — it is
+            display-only and does not let users choose substitutes.
+          - Also normalised the remaining "BARAYA AL SABBAT" occurrences in `src/mobile`
+            (all of them were source-code comments) to "AL SABBAT". No identifier, testid,
+            storage key, route or context name was renamed.
+
+          NO backend/API/model/collection/database change. Nothing added, nothing deleted.
+          Admin Panel untouched in this task.
+
+          VERIFIED (manual, no Testing Agent):
+          - With real data (throwaway sandbox DB, seeded then DROPPED): Match Center Info tab
+            shows Kompetisi / Musim / Tim / Tipe Laga / Wasit / Penonton / Ringkasan and NO
+            "Formasi"; all four tabs (Jalannya Laga, Info, Rekor, Berita) contain no
+            FORMASI / SUSUNAN / PILIH text; the ONLY interactive controls on the whole Match
+            Center are the 4 view tabs and there are **0** input/select/textarea elements.
+          - Events timeline still renders real match events (Gol, Assist, Kartu Kuning,
+            Pergantian) read-only.
+          - Empty database: match list shows the proper empty state, no crash.
+          - Squad/Players remain a separate informational section (`/teams`) — unchanged.
+          - Desktop `/matches` still renders `page-matches` with no mobile shell at 1440px.
+          - Mobile UI contains no "BARAYA" text; 0px horizontal overflow; no page errors;
+            lint clean; `yarn build` succeeds with zero warnings.
+          - Real database verified untouched after the sandbox was dropped
+            (clubs 1, users 1, players/matches/posts/customers/albums/events 0).

@@ -9,8 +9,11 @@ import { BrzEmpty, BrzError, BrzLoading } from '../components/BrzStates';
 import { hasScore, isUpcomingStatus, kickoffAt } from '../lib/matchUtils';
 
 /**
- * BARAYA AL SABBAT — Match screen.
+ * AL SABBAT — Match screen (mobile).
+ *
  * Uses the existing `/api/matches` and `/api/seasons` endpoints.
+ * Viewing only: upcoming fixtures and results. No line-up, squad selection or
+ * formation features are exposed to users anywhere in this section.
  */
 export default function MobileMatchesScreen() {
   const [tab, setTab] = useState('upcoming');

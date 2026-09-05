@@ -17,7 +17,7 @@ const STAT_ROWS = [
   { key: 'red_cards', label: 'Merah' },
 ];
 
-/** BARAYA AL SABBAT — Player detail (`/api/players/{id}` + `/statistics`). */
+/** AL SABBAT — Player detail (`/api/players/{id}` + `/statistics`). */
 export default function MobilePlayerDetailScreen() {
   const { playerId } = useParams();
   const [player, setPlayer] = useState(null);

@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Images, Newspaper, Swords, User } from 'lucide-react';
 
 /**
- * BARAYA AL SABBAT bottom navigation.
+ * AL SABBAT bottom navigation.
  *
  * Floating docked pill bar; the active tab expands into a gradient pill with
  * its label, inactive tabs stay icon-only — matching the UI reference.
