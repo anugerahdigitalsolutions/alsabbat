@@ -13,3 +13,5 @@
 *.pyc
 /frontend/build
 /frontend/node_modules
+# Aplikasi mobile Expo (React Native) — dibangun lewat EAS, bukan Vercel.
+/mobile

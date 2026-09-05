@@ -1191,3 +1191,58 @@ agent_communication:
             lint clean; `yarn build` succeeds with zero warnings.
           - Real database verified untouched after the sandbox was dropped
             (clubs 1, users 1, players/matches/posts/customers/albums/events 0).
+
+    -agent: "main"
+    -message: |
+          FASE MOBILE NATIVE — APLIKASI EXPO / REACT NATIVE AL SABBAT (Sep 2026)
+
+          Dibuat aplikasi mobile NATIVE baru di `/app/mobile` (Expo SDK 57, React Native 0.86,
+          React 19). BUKAN PWA, BUKAN React web responsive, BUKAN WebView wrapper.
+
+          NOL perubahan pada `backend/` dan `frontend/` (Admin Panel, website publik, auth,
+          model, koleksi, database TIDAK disentuh). Satu-satunya perubahan di luar `/mobile`:
+          `.vercelignore` menambahkan `/mobile` agar deployment web tidak membawa folder Expo,
+          plus dokumentasi (`memory/PRD.md`, `memory/test_credentials.md`, file ini).
+
+          ISI APLIKASI
+          - Splash (logo resmi + animasi) → Onboarding 4 slide (first launch, skippable,
+            key AsyncStorage `alsabbat.onboarding.v1`).
+          - Bottom navigation native HOME / MATCH / NEWS / MEDIA / PROFILE (React Navigation
+            bottom-tabs dengan tab bar kustom) + stack: Login, Register, OTP Email,
+            Lupa Sandi (OTP), Detail Pertandingan, Detail Berita, Detail Album + image viewer
+            native (paging, double-tap zoom, pan), Skuad, Detail Pemain, Notifikasi,
+            Kartu Member, Profil Klub.
+          - Home: banner carousel dari `/api/banners/public`, Quick Links, Pertandingan
+            Terdekat, Hasil Terakhir, Jadwal Lainnya, Berita Terbaru, Skuad, Media Terbaru.
+          - MATCH READ-ONLY: tidak ada pemilihan pemain / lineup editor / starter-substitute
+            selector / formation editor / tampilan susunan pemain. `players` dari
+            `/matches/{id}/relations` hanya untuk resolusi nama pada event yang sudah dicatat.
+          - Auth memakai endpoint existing `/api/baraya/*` (login, register, OTP email,
+            Google authorization-code, forgot/reset OTP, me, member-card, notifications).
+            Token di expo-secure-store. Tombol Google hanya muncul bila backend melaporkan
+            `google_enabled` (masih false di preview karena GOOGLE_CLIENT_ID/SECRET belum diisi).
+          - 0 mock data: semua konten dari API; API kosong → empty state; galeri 403 → panel
+            "terbatas untuk Pemain & Staf"; `/baraya/me` 401 → CTA masuk.
+
+          KONFIGURASI BUILD
+          - `app.config.js` dinamis (app.json template dihapus): package/bundle id
+            `com.alsabbat.mobile`, versi 1.0.0, versionCode 1, scheme `alsabbat`, icon +
+            adaptive icon + splash dari artwork RESMI klub (script
+            `mobile/scripts/prepare-native-assets.py`), intentFilters App Link untuk
+            `https://‹domain›/auth/google` (redirect Google harus https menurut backend).
+          - `eas.json`: profil development / preview (APK) / production (AAB) / production-apk.
+            Base URL API dari `EXPO_PUBLIC_API_URL` per profil — tidak ada URL hardcoded di kode.
+
+          VERIFIKASI (tanpa Testing Agent, sesuai instruksi user)
+          - `npx expo-doctor` → 21/21 checks passed.
+          - `npx eslint .` → 0 error (15 warning gaya saja).
+          - `npx expo export --platform android --no-bytecode` → bundling Metro SUKSES
+            (1049 modul, 59 asset). Catatan: binary `hermesc` tidak dapat dijalankan di
+            container ini, jadi bytecode dilewati; EAS cloud menjalankan Hermes normal.
+          - Pemeriksaan read-only 12 endpoint: 10 publik → 200 (kosong di preview),
+            galeri → 403, `/baraya/me` → 401. Database tidak diubah sama sekali.
+
+          LANGKAH TERAKHIR (butuh akun Expo, tidak tersedia di container):
+            cd mobile && npm i -g eas-cli && eas login && eas init
+            eas build --platform android --profile preview      # APK
+            eas build --platform android --profile production   # AAB

@@ -296,7 +296,7 @@ dibangun dengan mode **NOT_CONFIGURED yang jujur** (tanpa dummy/hard-code).
 ### BLOCKER (menunggu user)
 - `SMTP2GO_API_KEY` + `SMTP2GO_SENDER_EMAIL` → tanpa ini email OTP TIDAK terkirim (sistem melaporkan jujur).
 - `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` → tombol "Masuk dengan Google" disembunyikan sampai diisi.
-  Redirect URI wajib: `https://sabbat-mobile.preview.emergentagent.com/auth/google`).
+  Redirect URI wajib: `https://mobile-alsabbat.preview.emergentagent.com/auth/google`).
 - Kunci hanya ditulis ke `backend/.env` (sudah ada placeholder kosong) + `backend/.env.example` terdokumentasi.
 
 
@@ -1574,3 +1574,85 @@ Perubahan (mobile saja):
 Tab Pusat Pertandingan tetap: Jalannya Laga · Info · Rekor · Berita — semuanya read-only.
 Kontrol interaktif di seluruh Pusat Pertandingan HANYA 4 tab tampilan; 0 elemen
 input/select/textarea. Tidak ada API/model/koleksi/database baru. Admin Panel tidak disentuh.
+
+---
+
+## FASE MOBILE NATIVE — APLIKASI EXPO / REACT NATIVE AL SABBAT · Sep 2026 · SELESAI (siap build APK/AAB)
+
+Aplikasi mobile AL SABBAT kini berupa **aplikasi native React Native (Expo SDK 57, RN 0.86)**
+di folder baru `/app/mobile` — BUKAN PWA, BUKAN React web responsive, BUKAN WebView wrapper.
+Website publik, Admin Panel, backend FastAPI, dan database MongoDB **tidak diubah sama sekali**
+(0 perubahan pada `backend/` dan `frontend/`; hanya `.vercelignore` menambahkan `/mobile`).
+
+### Arsitektur
+- Client native terpisah → memanggil backend ALSABBAT existing. Tidak ada backend/database kedua,
+  tidak ada migrasi, tidak ada business logic yang dipindah ke mobile.
+- Navigasi native: React Navigation (native-stack + bottom-tabs kustom). Tidak ada `react-router-dom`.
+- Base URL API dari environment (`EXPO_PUBLIC_API_URL` → `expo.extra.apiUrl`); profil
+  `development`/`preview` → `api-staging.alsabbat.com`, `production` → `api.alsabbat.com` (eas.json).
+- Token sesi di `expo-secure-store` (fallback AsyncStorage), key `alsabbat.baraya.token`.
+
+### Layar (17)
+Splash (logo resmi, animasi) → Onboarding 4 slide (first launch, dapat dilewati; key AsyncStorage
+`alsabbat.onboarding.v1`) → Bottom nav **HOME / MATCH / NEWS / MEDIA / PROFILE** + stack:
+Login, Register, OTP Email, Lupa Sandi (OTP), Detail Pertandingan, Detail Berita, Detail Album
+(+ image viewer native: paging, double-tap zoom, pan), Skuad, Detail Pemain, Notifikasi,
+Kartu Member, Profil Klub.
+
+Home: header sapaan + lonceng notifikasi, **carousel banner dari `/api/banners/public`**,
+Quick Links (8), Pertandingan Terdekat, Hasil Terakhir, Jadwal Lainnya, Berita Terbaru
+(hero + tile), Skuad, Media Terbaru (dengan status terbatas bila peran belum Pemain/Staf).
+
+### API yang dipakai (semua existing, tanpa mock)
+`/club/active`, `/site-content/public`, `/banners/public`, `/matches`, `/matches/{id}/relations`,
+`/content/posts`, `/content/posts/by-slug/{slug}`, `/content/categories`,
+`/gallery/public/albums(+/{id}, /drive-photos)`, `/players(+/{id}, /{id}/statistics)`, `/staff`,
+`/achievements`, `/sponsors`, `/baraya/auth/config`, `/baraya/login`, `/baraya/register`,
+`/baraya/otp/request`, `/baraya/otp/verify`, `/baraya/google/login`, `/baraya/forgot-password`,
+`/baraya/reset-password-otp`, `/baraya/logout`, `/baraya/me`, `/baraya/member-card`,
+`/baraya/notifications(+unread-count, read, read-all)`.
+API kosong → empty state jujur; galeri 403 (Pemain/Staf) → panel "terbatas". 0 data hardcoded.
+
+### MATCH tetap READ-ONLY
+Tidak ada pemilihan pemain, lineup editor, starter/substitute selector, formation editor,
+input/lihat susunan pemain. `players` dari relations HANYA untuk resolusi nama pada event.
+Tab: Jalannya Laga · Info (termasuk head-to-head bila tersedia) · Berita. Admin Panel match input
+tidak disentuh.
+
+### Desain & asset
+Navy `#012891`, Gold `#FCCF2B`, hitam/putih, Poppins (`@expo-google-fonts/poppins`),
+token warna diport dari `frontend/src/mobile/theme/baraya.css`. Asset native dihasilkan dari
+artwork RESMI klub oleh `mobile/scripts/prepare-native-assets.py`: `icon.png`, adaptive icon
+(foreground/background/monochrome), `splash-icon.png`, `logo.png`, 4 gambar onboarding
+(2 foto resmi + 2 komposisi crest resmi pada warna klub). Logo tidak diganti/didesain ulang.
+
+### Konfigurasi build
+`app.config.js` dinamis (app.json template dihapus). Android package & iOS bundle id
+`com.alsabbat.mobile`, versi 1.0.0, versionCode 1, scheme `alsabbat`, plugin `expo-splash-screen`,
+`expo-secure-store`, `expo-font`, `expo-image`, `expo-web-browser`. `eas.json` berisi profil
+development / preview (APK) / production (AAB) / production-apk.
+
+Login Google memakai authorization-code flow ke endpoint existing `/api/baraya/google/login`
+(backend hanya menerima redirect https) → redirect `https://‹domain›/auth/google` ditangkap
+native lewat Android App Link (`intentFilters` autoVerify di app.config.js). Tombol otomatis
+tersembunyi selama `GOOGLE_CLIENT_ID/SECRET` backend belum diisi (blocker existing).
+Langkah ops tambahan: daftarkan redirect URI di Google Console + publikasikan
+`/.well-known/assetlinks.json` (SHA-256 dari `eas credentials`).
+
+### Verifikasi (tanpa Testing Agent, sesuai permintaan user)
+- `npx expo-doctor` → **21/21 checks passed**.
+- `npx eslint .` → **0 error** (15 warning gaya: variabel error tak terpakai / named export axios).
+- `npx expo export --platform android --no-bytecode` → **bundling Metro sukses**
+  (1049 modul, 59 asset, bundle 2 MB). Kompilasi Hermes tidak bisa jalan di container ini
+  (`hermesc` binary tidak kompatibel) → dipakai `--no-bytecode`; EAS cloud menjalankan Hermes normal.
+- Pemeriksaan API read-only: 10 endpoint publik 200 (semua kosong di preview), galeri 403,
+  `/baraya/me` 401 → semua ditangani sebagai empty/restricted/login state.
+- `grep` memastikan 0 `react-router`, 0 `localStorage/window/document`, 0 mock/dummy data.
+
+### LANGKAH TERAKHIR UNTUK MENGHASILKAN APK/AAB (butuh akun Expo, tidak tersedia di container)
+```bash
+cd mobile && npm i -g eas-cli && eas login && eas init
+eas build --platform android --profile preview      # APK
+eas build --platform android --profile production   # AAB (Play Store)
+```
+Build lokal butuh JDK + Android SDK (tidak ada di container ini).

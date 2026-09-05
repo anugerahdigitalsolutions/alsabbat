@@ -106,3 +106,13 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
   Sandbox terakhir SUDAH DI-DROP; database asli utuh (clubs 1, users 1, sisanya 0).
 - Reset splash/onboarding saat pengujian mobile: `window.__barayaResetOnboarding()`
   atau hapus `localStorage['baraya.onboarding.v1']` + `sessionStorage['baraya.splash.session.v1']`.
+
+## Update — aplikasi mobile NATIVE (Expo) Sep 2026
+- Aplikasi native ada di `/app/mobile` (Expo SDK 57). Tidak ada akun/kredensial baru: mobile
+  memakai auth Baraya/customer existing (`/api/baraya/*`). Admin tetap `admin@alsabbat.com` /
+  `Alsabbat2026!` di web `/admin/login` (Admin Panel TIDAK ada di mobile).
+- Reset onboarding mobile saat pengujian: hapus key AsyncStorage `alsabbat.onboarding.v1`
+  (uninstall/clear data aplikasi juga cukup). Token sesi mobile: SecureStore
+  `alsabbat.baraya.token`.
+- Base URL API mobile diatur lewat `mobile/.env` (`EXPO_PUBLIC_API_URL`) dan `mobile/eas.json`.
+  Nilai preview container saat ini mengarah ke domain preview backend.
