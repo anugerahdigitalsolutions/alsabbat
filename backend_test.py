@@ -7,7 +7,7 @@ import requests
 from pathlib import Path
 
 # Base URL from frontend/.env
-BASE_URL = "https://hide-firebase-status.preview.emergentagent.com"
+BASE_URL = "https://sabbat-mobile.preview.emergentagent.com"
 API_URL = f"{BASE_URL}/api"
 
 # Admin credentials from test_credentials.md
