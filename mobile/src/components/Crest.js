@@ -9,6 +9,9 @@ import { initials } from '../lib/format';
 /**
  * Club / opponent crest. Falls back to the initials badge when the API has no
  * logo for the entity — never a placeholder logo of another club.
+ *
+ * `onLight` dipakai saat crest berada di atas kartu emas: latarnya memakai
+ * navy resmi klub, BUKAN kotak putih (logo resmi selalu transparan).
  */
 export function Crest({ name, logo, size = 46, onLight = false }) {
   const dimension = { width: size, height: size, borderRadius: size / 2 };
@@ -26,7 +29,7 @@ export function Crest({ name, logo, size = 46, onLight = false }) {
   }
   return (
     <View style={[styles.wrap, dimension, onLight ? styles.onLight : styles.onDark]}>
-      <Txt style={[styles.initials, { fontSize: size * 0.32 }]} tone={onLight ? 'onAccent' : 'accent'}>
+      <Txt style={[styles.initials, { fontSize: size * 0.32 }]} tone="accent">
         {initials(name)}
       </Txt>
     </View>
@@ -51,7 +54,8 @@ export function Avatar({ name, photo, size = 44 }) {
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   onDark: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border },
-  onLight: { backgroundColor: colors.white },
+  // Chip navy klub untuk crest di atas kartu emas — tidak ada kotak putih.
+  onLight: { backgroundColor: colors.navy, borderWidth: 1, borderColor: 'rgba(252,207,43,0.45)' },
   initials: { fontFamily: font.bold },
   avatar: { backgroundColor: colors.surface2, borderRadius: radii.pill },
 });

@@ -150,10 +150,19 @@ yang punya Android SDK.
 ```bash
 python3 scripts/prepare-native-assets.py
 ```
-Mengambil artwork resmi dari `frontend/public/brand` + `frontend/public/onboarding`
-lalu menghasilkan `icon.png`, adaptive icon (foreground/background/monochrome),
-`splash-icon.png`, logo, dan 4 gambar onboarding. Logo klub tidak pernah diganti
-atau didesain ulang.
+Sumber tunggal ada di `assets/source/`:
+
+| File sumber | Dipakai untuk |
+| --- | --- |
+| `alsabbat-logo.png` | logo resmi klub, **background transparan** → app icon, adaptive icon, splash, logo in-app, favicon |
+| `onboarding-1.png` | slide onboarding 1 (foto tim) |
+| `onboarding-2.png` | slide onboarding 2 |
+| `onboarding-3.png` | slide onboarding 3 |
+
+Script menolak berjalan bila logo sumber tidak transparan (alpha penuh), sehingga
+kotak putih di belakang logo tidak mungkin terbawa lagi. App icon memakai latar
+navy resmi `#012891` (icon iOS/Android tidak boleh transparan) — bukan putih.
+Logo klub tidak pernah diganti, dibuat ulang, atau diubah bentuk/warnanya.
 
 ---
 

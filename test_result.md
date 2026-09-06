@@ -1246,3 +1246,144 @@ agent_communication:
             cd mobile && npm i -g eas-cli && eas login && eas init
             eas build --platform android --profile preview      # APK
             eas build --platform android --profile production   # AAB
+
+    -agent: "main"
+    -message: |
+          PERBAIKAN MOBILE (Sep 2026) — logo transparan, onboarding baru, alur Member→Pemain→Staf.
+
+          1) LOGO: root cause = `frontend/public/brand/alsabbat-logo.png` OPAQUE (alpha semua 255,
+             background putih) sehingga asset mobile turunannya membawa kotak putih. Sumber baru
+             `mobile/assets/source/alsabbat-logo.png` (logo resmi, alpha 0..255) + script
+             `mobile/scripts/prepare-native-assets.py` regenerate icon (navy solid, bukan putih),
+             adaptive foreground/monochrome transparan, splash-icon transparan, logo in-app
+             transparan. Kode: `Crest.js` varian onLight tidak lagi putih (navy klub) dan wrapper
+             putih `crestOnLight` di `MatchCard.js` dihapus. Website TIDAK diubah.
+          2) ONBOARDING: 3 slide (dari 4), teks/slogan resmi, tombol terakhir "MULAI SEKARANG",
+             3 foto resmi baru di `mobile/assets/onboarding-1..3.jpg`.
+          3) KEANGGOTAAN: layar baru `MembershipScreen` + `ApplicationFormScreen` memakai HANYA
+             endpoint existing: GET `/api/meta` (bagian & jabatan staf), GET `/api/baraya/access`
+             (can_apply_player / can_apply_staff), GET `/api/baraya/applications/mine`,
+             POST `/api/baraya/applications` (payload identik dengan `BarayaApplicationPage` web).
+             Tidak ada endpoint/status/aturan baru, tidak ada perubahan backend/DB/Admin Panel.
+
+          PERMINTAAN TEST (WAJIB READ-ONLY):
+          Verifikasi kontrak endpoint di atas TANPA menulis data apa pun — tidak boleh POST/PATCH/
+          DELETE, tidak boleh membuat akun uji, tidak boleh mengubah/menghapus data.
+          Cukup: GET /api/meta (ada `staff_departments` + `positions`), GET /api/baraya/access
+          sebagai guest, GET /api/baraya/applications/mine tanpa token (harus 401), lalu review kode
+          `/app/mobile/src/lib/membership.js` + `ApplicationFormScreen.js` vs
+          `/app/backend/app/api/routes/membership.py` & `/app/frontend/src/pages/public/BarayaApplicationPage.js`
+          untuk memastikan gating dan payload identik dengan website. Verifikasi juga transparansi
+          asset `/app/mobile/assets/*.png` (alpha) dan teks onboarding.
+
+    -agent: "testing"
+    -message: |
+          READ-ONLY VERIFICATION COMPLETE — MOBILE NATIVE AL SABBAT (Expo /app/mobile).
+          
+          ✅ A. BACKEND ENDPOINT CONTRACTS (GET only, no data written):
+          
+          A1. GET /api/meta → 200 OK ✓
+              - Has `staff_departments` key: YES ✓
+              - Count: 6 departments ✓
+              - Each item has `value`, `label`, and `positions` array ✓
+              - Sample: "Manajemen & Direksi" with 7 positions ✓
+              - Mobile uses this as single source for Bagian & Jabatan (same as website) ✓
+          
+          A2. GET /api/baraya/access (guest, no token) → 200 OK ✓
+              - Response: {"role": "GUEST", "roles": [], "can_view_gallery": false,
+                "can_view_spotlight": false, "can_apply_player": false, "can_apply_staff": false} ✓
+              - Mobile uses `can_apply_player` and `can_apply_staff` for button gating ✓
+          
+          A3. GET /api/baraya/applications/mine (no token) → 401 Unauthorized ✓
+              - Response: {"success": false, "error": {"code": "unauthorized",
+                "message": "Silakan login sebagai Baraya ALSABBAT."}} ✓
+              - Mobile shows CTA to login when 401 (correct behavior) ✓
+          
+          A4. GET /api/baraya/me (no token) → 401 Unauthorized ✓
+              - Response: {"success": false, "error": {"code": "unauthorized",
+                "message": "Silakan login sebagai Baraya ALSABBAT."}} ✓
+          
+          ✅ B. CODE INSPECTION — GATING & PAYLOAD COMPATIBILITY:
+          
+          B1. Mobile button gating (membership.js line 70-71): ✓
+              - "Daftar Pemain" button: `canApplyPlayer = access.can_apply_player && !playerPending` ✓
+              - "Daftar Staf" button: `canApplyStaff = access.can_apply_staff && !staffPending` ✓
+              - Matches requirement: buttons only appear when backend allows AND no PENDING application ✓
+          
+          B2. Backend access rules (membership.py line 242-244): ✓
+              - `can_apply_player: roles == ["MEMBER"]` (PEMAIN only for pure MEMBER accounts) ✓
+              - `can_apply_staff: "PEMAIN" in roles` (STAFF only if PEMAIN role exists) ✓
+              - Stage sequence: Member → Pemain → Staf enforced server-side ✓
+          
+          B3. Mobile payload structure (ApplicationFormScreen.js line 93-128): ✓
+              - Root fields: type, full_name, phone, position, birth_date, address, experience, motivation ✓
+              - PEMAIN: includes `player_data` object with all PlayerApplicationData fields ✓
+              - STAFF: includes `staff_data` object with all StaffApplicationData fields ✓
+              - Field mapping IDENTICAL to website (BarayaApplicationPage.js) ✓
+              - Payload valid against Pydantic models (ApplicationCreate, PlayerApplicationData, StaffApplicationData) ✓
+          
+          B4. Department & Position selection (membership.js line 32-45): ✓
+              - `departmentOptions(meta)` extracts from `/api/meta.staff_departments` ✓
+              - `positionOptions(meta, department)` filters positions by selected department ✓
+              - Logic IDENTICAL to website utility functions ✓
+              - Dependent dropdown: position disabled until department selected ✓
+          
+          B5. No new endpoints, statuses, or hardcoded data: ✓
+              - Mobile uses ONLY existing `/api/baraya/*` and `/api/meta` endpoints ✓
+              - No new ApplicationStatus values (PENDING/APPROVED/REJECTED only) ✓
+              - No mock data: empty states shown when API returns no data ✓
+              - No hardcoded department/position lists (all from API) ✓
+          
+          ✅ C. ASSET VERIFICATION (transparency & resolution):
+          
+          C1. Transparent assets (alpha channel 0-255, corners transparent): ✓
+              - logo.png: alpha [0, 255], corners [0,0,0,0] ✓
+              - splash-icon.png: alpha [0, 255], corners [0,0,0,0] ✓
+              - android-icon-foreground.png: alpha [0, 255], corners [0,0,0,0] ✓
+              - android-icon-monochrome.png: alpha [0, 255], corners [0,0,0,0] ✓
+              - favicon.png: alpha [0, 255], corners [0,0,0,0] ✓
+              - NO white background boxes on any transparent asset ✓
+          
+          C2. App icon (icon.png): ✓
+              - Size: 1024x1024, mode RGB (opaque, as expected for app icon) ✓
+              - Background color: RGB(1, 40, 145) = navy #012891 (official club color) ✓
+              - All corners: navy #012891 (NOT white) ✓
+          
+          C3. Onboarding images: ✓
+              - onboarding-1.jpg: 1080x1920 ✓
+              - onboarding-2.jpg: 1080x1920 ✓
+              - onboarding-3.jpg: 1080x1920 ✓
+              - onboarding-4.jpg: DOES NOT EXIST (correctly removed) ✓
+          
+          C4. Onboarding content (OnboardingScreen.js): ✓
+              - Slide count: 3 (not 4) ✓
+              - Slide 1 title: "Selamat Datang di\nALSABBAT Football Club" ✓
+              - Slide 2 title: "Ikuti Perjalanan\nTim Kesayanganmu" ✓
+              - Slide 3 title: "Bersama Membangun\nMasa Depan ALSABBAT" ✓
+              - Slogan on all slides: "Melesaat Bersama ALSABBAT" (line 18) ✓
+              - Last slide button: "MULAI SEKARANG" (line 125) ✓
+              - Skip button: "Lewati" present (line 100) ✓
+          
+          C5. No white background in code (Crest.js & MatchCard.js): ✓
+              - Crest.js line 58: `onLight` uses `colors.navy` (NOT white) ✓
+              - MatchCard.js: NO `backgroundColor: colors.white` or `#fff` found ✓
+              - Logo rendering: transparent logo on navy chip (no white box) ✓
+          
+          ✅ D. NO REGRESSION ON BACKEND/FRONTEND:
+          
+          - `git status --short -- backend/ frontend/` → NO CHANGES ✓
+          - Backend files: UNCHANGED ✓
+          - Frontend files: UNCHANGED ✓
+          - Admin Panel: UNCHANGED ✓
+          - Website: UNCHANGED ✓
+          - Only /app/mobile modified (as expected) ✓
+          
+          SUMMARY: ALL VERIFICATION REQUIREMENTS MET (100% PASS).
+          - Backend endpoints: 4/4 correct responses ✓
+          - Gating logic: mobile matches backend rules exactly ✓
+          - Payload structure: identical to website, valid against Pydantic models ✓
+          - Assets: all transparent assets correct, icon navy (not white), onboarding 3 slides 1080x1920 ✓
+          - Code: no white backgrounds, correct text/slogan ✓
+          - Regression: zero changes to backend/frontend ✓
+          
+          Mobile native app ready for deployment. No issues found.

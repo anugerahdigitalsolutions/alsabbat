@@ -79,7 +79,12 @@ export default function HomeScreen({ navigation }) {
         icon: 'notifications-outline',
         onPress: () => navigation.navigate(isAuthenticated ? 'Notifications' : 'Login'),
       },
-      { key: 'profile', label: 'Profil', icon: 'person-outline', onPress: () => navigation.navigate('Profile') },
+      {
+        key: 'membership',
+        label: 'Keanggotaan',
+        icon: 'ribbon-outline',
+        onPress: () => navigation.navigate(isAuthenticated ? 'Membership' : 'Login'),
+      },
     ],
     [navigation, isAuthenticated]
   );

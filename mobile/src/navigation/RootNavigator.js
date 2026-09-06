@@ -18,6 +18,8 @@ import PlayerDetailScreen from '../screens/PlayerDetailScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import MemberCardScreen from '../screens/MemberCardScreen';
 import ClubInfoScreen from '../screens/ClubInfoScreen';
+import MembershipScreen from '../screens/MembershipScreen';
+import ApplicationFormScreen from '../screens/ApplicationFormScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -77,6 +79,10 @@ export default function RootNavigator({ onReady }) {
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="MemberCard" component={MemberCardScreen} />
         <Stack.Screen name="ClubInfo" component={ClubInfoScreen} />
+
+        {/* keanggotaan: Member -> Pemain -> Staf (alur & endpoint website) */}
+        <Stack.Screen name="Membership" component={MembershipScreen} />
+        <Stack.Screen name="ApplicationForm" component={ApplicationFormScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

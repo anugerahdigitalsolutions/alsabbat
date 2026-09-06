@@ -132,6 +132,11 @@ export default function ProfileScreen({ navigation }) {
             onPress: () => navigation.navigate('Notifications'),
           },
           {
+            icon: 'ribbon-outline',
+            label: 'Keanggotaan (Member → Pemain → Staf)',
+            onPress: () => navigation.navigate('Membership'),
+          },
+          {
             icon: 'shield-outline',
             label: 'Info Klub',
             onPress: () => navigation.navigate('ClubInfo'),

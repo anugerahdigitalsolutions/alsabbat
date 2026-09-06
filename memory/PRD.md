@@ -1656,3 +1656,57 @@ eas build --platform android --profile preview      # APK
 eas build --platform android --profile production   # AAB (Play Store)
 ```
 Build lokal butuh JDK + Android SDK (tidak ada di container ini).
+
+
+---
+
+## PERBAIKAN MOBILE NATIVE — LOGO TRANSPARAN, ONBOARDING BARU, ALUR KEANGGOTAAN · Sep 2026 · SELESAI
+
+Scope: HANYA folder `/app/mobile` (+ dokumentasi). `git status` memastikan **0 perubahan**
+pada `backend/` dan `frontend/` — website, Admin Panel, auth, API, database tidak disentuh.
+
+### 1. Logo tanpa background putih (root cause + fix)
+`frontend/public/brand/alsabbat-logo.png` ternyata **opaque** (alpha semua 255, latar putih),
+sehingga seluruh asset mobile turunannya membawa kotak putih. Sumber baru yang benar:
+`mobile/assets/source/alsabbat-logo.png` (logo resmi berlatar transparan, alpha 0..255).
+`mobile/scripts/prepare-native-assets.py` ditulis ulang: satu sumber logo → `icon.png`
+(latar navy #012891, karena app icon tidak boleh transparan — bukan putih),
+`android-icon-foreground/monochrome.png` (transparan), `android-icon-background.png` (navy),
+`splash-icon.png`, `logo.png`, `favicon.png` (semua transparan). Script GAGAL sengaja bila logo
+sumber tidak transparan. Kode: `Crest.js` varian `onLight` memakai navy klub + border emas
+(bukan putih) dan wrapper putih `crestOnLight` di `MatchCard.js` dihapus. Seluruh pemakaian logo
+(app icon, splash, onboarding, header Home, Login, Profile, Kartu Member, Info Klub) memakai satu
+asset `assets/logo.png` transparan.
+
+### 2. Onboarding baru (3 slide)
+Slide 4 dihapus. Teks resmi: (1) "Selamat Datang di ALSABBAT Football Club",
+(2) "Ikuti Perjalanan Tim Kesayanganmu", (3) "Bersama Membangun Masa Depan ALSABBAT",
+masing-masing dengan deskripsi resmi + slogan **"Melesaat Bersama ALSABBAT"**; tombol slide
+terakhir **"MULAI SEKARANG"**, tombol "Lewati" tetap ada, layout adaptif (mode `compact` untuk
+layar < 700px). Foto: 3 asset resmi baru 1080x1920 (`assets/onboarding-1..3.jpg`) dipakai penuh
+tanpa cropping objek utama (`contentFit="cover"`, `contentPosition="top center"`).
+
+### 3. Alur keanggotaan Member → Pemain → Staf (mengikuti website, bukan alur baru)
+Layar baru `MembershipScreen` (status 3 tahap + riwayat pengajuan) dan `ApplicationFormScreen`
+(form Pemain/Staf), plus komponen `Selector` (bottom-sheet native) dan util `src/lib/membership.js`.
+Semua memakai endpoint EXISTING:
+- `GET /api/baraya/me` → tahap 1 Member (aktif bila `email_verified`, tampil nomor member)
+- `GET /api/baraya/access` → `can_apply_player` (backend: roles === ['MEMBER']), `can_apply_staff`
+  (backend: role PEMAIN dimiliki) → tombol pengajuan HANYA muncul bila backend mengizinkan
+- `GET /api/baraya/applications/mine` → status aktual PENDING/APPROVED/REJECTED + catatan penolakan
+- `POST /api/baraya/applications` → payload IDENTIK dengan `BarayaApplicationPage` web
+  (root: type, full_name, phone, position, birth_date, address, experience, motivation +
+  `player_data` atau `staff_data`)
+- `GET /api/meta` → `staff_departments` sebagai sumber Bagian & Jabatan staf (sama seperti web)
+Tidak ada endpoint/status/aturan/approval baru; approval tetap di Admin Panel. Foto pengajuan
+dikirim `null` dari mobile (opsional di model) — upload foto tetap lewat web/Admin Panel.
+Entry point: menu Profile "Keanggotaan (Member → Pemain → Staf)" dan Quick Link Home "Keanggotaan"
+(guest diarahkan ke Login).
+
+### Verifikasi
+`npx eslint .` 0 error · `npx expo export --platform android --no-bytecode` bundling sukses ·
+Testing agent (READ-ONLY, tanpa menulis data) melaporkan **semua poin PASS**: kontrak endpoint
+(meta 200 dengan 6 bagian staf, access guest 200, applications/mine & me 401), gating & payload
+identik website, transparansi asset (alpha 0..255, sudut transparan, icon navy #012891),
+onboarding 3 slide + naskah + tombol, dan `git status` backend/frontend tanpa perubahan.
+Build APK masih menunggu kredensial akun Expo (EXPO_TOKEN) dari pemilik project.

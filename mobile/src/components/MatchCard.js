@@ -51,9 +51,7 @@ export function MatchCard({ match, variant = 'row', onPress, testID }) {
           </View>
           <View style={styles.featuredRow}>
             <View style={styles.side}>
-              <View style={styles.crestOnLight}>
-                <Crest name={home.name} logo={home.logo} size={44} onLight />
-              </View>
+              <Crest name={home.name} logo={home.logo} size={46} onLight />
               <Txt variant="smallStrong" tone="onAccent" numberOfLines={1} style={styles.sideName}>
                 {home.name}
               </Txt>
@@ -67,9 +65,7 @@ export function MatchCard({ match, variant = 'row', onPress, testID }) {
               </Txt>
             </View>
             <View style={styles.side}>
-              <View style={styles.crestOnLight}>
-                <Crest name={away.name} logo={away.logo} size={44} onLight />
-              </View>
+              <Crest name={away.name} logo={away.logo} size={46} onLight />
               <Txt variant="smallStrong" tone="onAccent" numberOfLines={1} style={styles.sideName}>
                 {away.name}
               </Txt>
@@ -168,11 +164,6 @@ const styles = StyleSheet.create({
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.live },
   featuredRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   side: { flex: 1, alignItems: 'center', gap: 6, minWidth: 0 },
-  crestOnLight: {
-    backgroundColor: colors.white,
-    borderRadius: radii.pill,
-    padding: 3,
-  },
   sideName: { textAlign: 'center', width: '100%' },
   middle: { width: 100, alignItems: 'center', gap: 2 },
   middleMeta: { color: 'rgba(8,18,46,0.68)', textAlign: 'center' },
