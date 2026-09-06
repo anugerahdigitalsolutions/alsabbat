@@ -1,9 +1,8 @@
 /**
  * Axios client for the EXISTING ALSABBAT FastAPI backend.
  *
- * - Base URL always comes from configuration (`expo.extra.apiUrl` /
- *   `EXPO_PUBLIC_API_URL`) — never hard-coded, so the same binary source can
- *   target development, staging and production.
+ * - Base URL berasal dari konfigurasi (`expo.extra.apiUrl` /
+ *   `EXPO_PUBLIC_API_URL`) dengan fallback ke API produksi AL SABBAT.
  * - Auth uses the existing customer endpoints (`/api/baraya/*`); the app never
  *   implements its own auth or business logic.
  */
@@ -14,10 +13,12 @@ import tokenStore from './tokenStore';
 
 const extra = Constants.expoConfig?.extra || Constants.manifest?.extra || {};
 
-export const BACKEND_URL = String(extra.apiUrl || process.env.EXPO_PUBLIC_API_URL || '').replace(
-  /\/$/,
-  ''
-);
+/** Production API AL SABBAT — fallback terakhir agar base URL tidak pernah kosong. */
+const DEFAULT_API_URL = 'https://api.alsabbat.com';
+
+export const BACKEND_URL = String(
+  extra.apiUrl || process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_URL
+).replace(/\/$/, '');
 export const APP_ENV = extra.appEnv || process.env.EXPO_PUBLIC_APP_ENV || 'development';
 export const WEB_URL = String(extra.webUrl || process.env.EXPO_PUBLIC_WEB_URL || '').replace(/\/$/, '');
 export const GOOGLE_REDIRECT_URI = extra.googleRedirectUri || `${WEB_URL}/auth/google`;

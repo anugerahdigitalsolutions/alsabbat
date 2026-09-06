@@ -1,12 +1,13 @@
 /**
  * AL SABBAT — native Expo (React Native) application config.
  *
- * The API base URL is NEVER hard-coded in the app source: it comes from
- * `EXPO_PUBLIC_API_URL` (see `.env.example` for local dev and `eas.json` for
- * the staging / production build profiles) and is exposed to the runtime via
- * `expo.extra.apiUrl`.
+ * The API base URL comes from `EXPO_PUBLIC_API_URL` (lihat `.env.example`
+ * untuk dev dan `eas.json` untuk semua profil build) dan diexpose ke runtime
+ * via `expo.extra.apiUrl`. Fallback = API produksi https://api.alsabbat.com.
  */
-const API_URL = process.env.EXPO_PUBLIC_API_URL || '';
+/** Production API AL SABBAT — dipakai sebagai fallback bila env tidak di-set. */
+const DEFAULT_API_URL = 'https://api.alsabbat.com';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_URL;
 const APP_ENV = process.env.EXPO_PUBLIC_APP_ENV || 'development';
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://alsabbat.com';
 
@@ -44,6 +45,7 @@ module.exports = () => ({
     android: {
       package: 'com.alsabbat.mobile',
       versionCode: 1,
+      icon: './assets/icon.png',
       adaptiveIcon: {
         backgroundColor: NAVY,
         foregroundImage: './assets/android-icon-foreground.png',
@@ -62,6 +64,7 @@ module.exports = () => ({
       ],
     },
     ios: {
+      icon: './assets/icon.png',
       bundleIdentifier: 'com.alsabbat.mobile',
       buildNumber: '1',
       supportsTablet: false,

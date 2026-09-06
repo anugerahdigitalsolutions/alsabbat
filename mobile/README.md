@@ -85,7 +85,7 @@ cp .env.example .env       # lalu sesuaikan
 | Variabel | Fungsi |
 | --- | --- |
 | `EXPO_PUBLIC_API_URL` | Base URL backend FastAPI (tanpa `/api`) |
-| `EXPO_PUBLIC_APP_ENV` | `development` / `staging` / `production` |
+| `EXPO_PUBLIC_APP_ENV` | `development` / `preview` / `production` |
 | `EXPO_PUBLIC_WEB_URL` | Domain website resmi (untuk redirect Google) |
 | `EXPO_PUBLIC_GOOGLE_REDIRECT_URI` | Opsional, default `‹web url›/auth/google` |
 | `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | Opsional; default memakai `google_client_id` dari `/api/baraya/auth/config` |
@@ -94,8 +94,10 @@ Profil build EAS sudah membawa nilainya masing-masing (`eas.json`):
 
 | Profil | API |
 | --- | --- |
-| `development`, `preview` | `https://api-staging.alsabbat.com` |
+| `development`, `preview` | `https://api.alsabbat.com` |
 | `production`, `production-apk` | `https://api.alsabbat.com` |
+
+Fallback runtime (bila env kosong) juga `https://api.alsabbat.com`.
 
 ---
 

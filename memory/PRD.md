@@ -1755,3 +1755,48 @@ dengan foto tersimpan; push register/unregister idempoten & multi-device; token 
 keputusan REJECTED → notifikasi "Pengajuan Pemain Ditolak" + laporan `push` jujur, PATCH kedua 409;
 QR verify VALID/INVALID tanpa data sensitif; regresi endpoint publik/admin/website: aman.
 `eslint` 0 error · `expo export android` bundling sukses · `expo-doctor` 21/21.
+
+---
+
+## [Jun 2026] AUDIT & FIX NATIVE MOBILE: API PRODUCTION + LOGO + ONBOARDING (Android & iOS)
+
+Keluhan user: hampir semua menu di APK Android menampilkan "Gagal Memuat / Tidak ada koneksi ke
+server AL SABBAT", dan logo/onboarding masih versi lama.
+
+### Root cause API
+`mobile/eas.json` profil `development` dan `preview` memakai
+`EXPO_PUBLIC_API_URL=https://api-staging.alsabbat.com`. Domain itu TIDAK ADA (DNS gagal, HTTP 000),
+sedangkan APK internal dibangun dari profil preview → semua request axios gagal Network Error →
+pesan `apiErrorMessage()` "Tidak ada koneksi ke server AL SABBAT". `mobile/.env` juga masih
+mengarah ke URL preview Emergent. `https://api.alsabbat.com` sendiri sehat (health 200).
+
+### Perbaikan (hanya folder /app/mobile; backend/DB/website/Admin/auth/OTP/OAuth TIDAK disentuh)
+- `eas.json` — SEMUA profil (development, preview, production, production-apk via extends)
+  memakai `https://api.alsabbat.com`; label `APP_ENV` preview diganti dari `staging` → `preview`.
+  Nol referensi `api-staging`.
+- `app.config.js` — `DEFAULT_API_URL = https://api.alsabbat.com` sebagai fallback (sebelumnya string
+  kosong); tambah `ios.icon` dan `android.icon` eksplisit → `./assets/icon.png` (logo baru).
+- `src/api/client.js` — `BACKEND_URL` fallback ke API produksi bila extra/env kosong.
+- `.env` & `.env.example` — `https://api.alsabbat.com`.
+- `README.md` — tabel profil/env diselaraskan.
+- `scripts/prepare-native-assets.py` dijalankan ulang: semua asset native diregenerasi dari
+  `assets/source/alsabbat-logo.png` + `onboarding-1..3.png`.
+
+### Validasi (TANPA EAS build, sesuai permintaan user)
+- `expo config --type public` (APP_ENV=production): `extra.apiUrl=https://api.alsabbat.com`,
+  `ios.icon` & `android.icon` = assets/icon.png, adaptiveIcon fg/bg/mono, splash `splash-icon.png`.
+  Tanpa env pun fallback tetap api.alsabbat.com.
+- `expo export --platform android --platform ios --no-bytecode` → sukses (bundle Android & iOS);
+  metadata membuktikan onboarding-1/2/3.jpg + logo.png ikut ke bundle native.
+- `expo prebuild --platform all` (lokal, lalu folder android/ios DIHAPUS agar workflow tetap managed):
+  `mipmap-*/ic_launcher*.webp`, `ios/.../AppIcon.appiconset/App-Icon-1024x1024@1x.png`,
+  `drawable-*/splashscreen_logo.png`, `SplashScreenLogo.imageset` → SEMUA logo baru (verifikasi visual).
+- `expo lint`: 0 error (18 warning lama, non-blocking).
+- Onboarding: tepat 3 slide (`SLIDES.length === 3`), teks & tagline sesuai naskah, button terakhir
+  "MULAI SEKARANG"; tidak ada slide 4 / referensi asset onboarding lama.
+- Smoke API produksi: /api/health, /api/matches, /api/players, /api/content/posts, /api/club/active,
+  /api/baraya/auth/config → 200. /api/gallery/public/albums → 403 (by design: hanya Pemain/Staf).
+
+### Status
+Siap untuk build Android (AAB/APK) dan iOS. BUILD BELUM DIJALANKAN (diminta user). Build produksi
+tetap butuh `EXPO_TOKEN` user untuk EAS.
