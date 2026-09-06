@@ -1854,3 +1854,19 @@ tetap butuh `EXPO_TOKEN` user untuk EAS.
 - Frontend: `/hapus-akun`, `/syarat-ketentuan`, `/kebijakan-privasi` render OK (screenshot).
 - Mobile: `expo lint` 0 error; `expo export` Android+iOS sukses dan string fitur baru ada di kedua
   bundle. Tidak ada perubahan pada auth/OTP/Google OAuth/Admin Panel/QR/push.
+
+### [7 Sep 2026] Koreksi: checkbox S&K di website + terms_version
+- `frontend/src/pages/public/BarayaRegisterPage.js` — checkbox persetujuan (default TIDAK tercentang)
+  tepat sebelum tombol "Buat Akun Baraya"; tanpa centang request register TIDAK dikirim (pesan
+  validasi); link `/syarat-ketentuan` & `/kebijakan-privasi`; payload mengirim `accepted_terms: true`.
+  Desain, OTP, Google, dan login tidak diubah.
+- `backend/app/api/routes/customers.py` — `TERMS_VERSION` 2026-06-08 → **2026-09-07** (dipakai
+  registrasi mobile & website; tanpa migration, akun lama tidak dipaksa setuju ulang).
+- `LEGAL_UPDATED_AT` disamakan menjadi "7 September 2026" di `mobile/src/lib/legal.js` dan
+  `frontend/src/lib/legalContent.js`.
+- Validasi: daftar web tanpa centang → ditolak di klien (tetap di form, pesan muncul); dengan centang
+  → lanjut step OTP dan `terms_accepted_at` + `terms_version=2026-09-07` tercatat; OTP verify 200;
+  login 200; `DELETE /api/baraya/me/account` tetap bekerja (sessions:2, otps:1, customer:1 dihapus,
+  `/me` → 401); register mobile-style tetap mencatat versi 2026-09-07; `/hapus-akun`,
+  `/syarat-ketentuan`, `/kebijakan-privasi`, `/daftar` → 200; `expo lint` 0 error. Semua akun uji
+  dibersihkan (customers/sessions/applications/push = 0).

@@ -3,7 +3,7 @@
  * Privasi, penghapusan akun). Isi identik dengan dokumen di aplikasi mobile
  * (`mobile/src/lib/legal.js`).
  */
-export const LEGAL_UPDATED_AT = '8 Juni 2026';
+export const LEGAL_UPDATED_AT = '7 September 2026';
 
 export const TERMS = {
   key: 'terms',

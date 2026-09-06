@@ -75,7 +75,7 @@ INVALID_CREDENTIALS = "Email atau kata sandi tidak sesuai."
 STATUS_PENDING = "PENDING"
 
 # Versi dokumen Syarat & Ketentuan yang berlaku (tanggal publikasi).
-TERMS_VERSION = "2026-06-08"
+TERMS_VERSION = "2026-09-07"
 
 
 def _terms_fields(accepted: Optional[bool]) -> Dict[str, Any]:

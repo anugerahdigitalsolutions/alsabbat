@@ -2,7 +2,7 @@
  * Dokumen legal aplikasi AL SABBAT (Syarat & Ketentuan, Kebijakan Privasi).
  * Teks yang sama tersedia di website resmi: /syarat-ketentuan & /kebijakan-privasi.
  */
-export const LEGAL_UPDATED_AT = '8 Juni 2026';
+export const LEGAL_UPDATED_AT = '7 September 2026';
 export const LEGAL_WEB_TERMS = 'https://alsabbat.com/syarat-ketentuan';
 export const LEGAL_WEB_PRIVACY = 'https://alsabbat.com/kebijakan-privasi';
 export const LEGAL_WEB_DELETE = 'https://alsabbat.com/hapus-akun';

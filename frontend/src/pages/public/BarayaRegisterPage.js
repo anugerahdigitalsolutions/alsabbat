@@ -37,6 +37,8 @@ export default function BarayaRegisterPage() {
   const [error, setError] = useState(null);
   const [verification, setVerification] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  // Persetujuan Syarat & Ketentuan — wajib, default TIDAK tercentang.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -45,8 +47,13 @@ export default function BarayaRegisterPage() {
       setError('Konfirmasi kata sandi tidak sama.');
       return;
     }
+    if (!acceptedTerms) {
+      // Tanpa persetujuan, request pembuatan akun TIDAK dikirim.
+      setError('Anda harus menyetujui Syarat & Ketentuan AL SABBAT sebelum mendaftar.');
+      return;
+    }
     setSubmitting(true);
-    const result = await register(form);
+    const result = await register({ ...form, accepted_terms: true });
     setSubmitting(false);
     if (result.ok) {
       setVerification({ email: result.email || form.email, delivered: !!result.otp_delivered });
@@ -128,6 +135,37 @@ export default function BarayaRegisterPage() {
           <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>
             Kata sandi minimal 8 karakter dan memuat huruf serta angka.
           </p>
+
+          <label className="flex items-start gap-2.5 text-xs" data-testid="baraya-register-terms">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0"
+              data-testid="baraya-register-terms-checkbox"
+            />
+            <span>
+              Saya menyetujui{' '}
+              <Link
+                to="/syarat-ketentuan"
+                className="font-semibold underline"
+                style={{ color: 'var(--club-secondary)' }}
+                data-testid="baraya-register-terms-link"
+              >
+                Syarat &amp; Ketentuan
+              </Link>{' '}
+              AL SABBAT. Baca juga{' '}
+              <Link
+                to="/kebijakan-privasi"
+                className="font-semibold underline"
+                style={{ color: 'var(--club-secondary)' }}
+                data-testid="baraya-register-privacy-link"
+              >
+                Kebijakan Privasi
+              </Link>
+              .
+            </span>
+          </label>
 
           <Button
             type="submit"
