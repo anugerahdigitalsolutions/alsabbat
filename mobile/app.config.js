@@ -10,6 +10,9 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || '';
 const APP_ENV = process.env.EXPO_PUBLIC_APP_ENV || 'development';
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://alsabbat.com';
 
+/** EAS project id (dapat dioverride lewat env untuk CI). */
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID || '151bea75-ec66-45b0-848f-26d4cd0f13f0';
+
 const NAVY = '#012891';
 const GOLD = '#FCCF2B';
 
@@ -87,7 +90,7 @@ module.exports = () => ({
       webUrl: WEB_URL,
       googleRedirectUri: process.env.EXPO_PUBLIC_GOOGLE_REDIRECT_URI || `${WEB_URL}/auth/google`,
       googleAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '',
-      eas: process.env.EAS_PROJECT_ID ? { projectId: process.env.EAS_PROJECT_ID } : undefined,
+      eas: { projectId: EAS_PROJECT_ID },
     },
   },
 });

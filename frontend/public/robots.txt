@@ -4,4 +4,4 @@ Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /cart
-Sitemap: https://api.alsabbat.com/api/seo/sitemap.xml
+Sitemap: https://mobile-alsabbat.preview.emergentagent.com/api/seo/sitemap.xml
