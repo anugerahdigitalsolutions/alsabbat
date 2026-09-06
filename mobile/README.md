@@ -166,7 +166,19 @@ Logo klub tidak pernah diganti, dibuat ulang, atau diubah bentuk/warnanya.
 
 ---
 
-## 6. Login Google (langkah operasional)
+## 6. Foto pengajuan, push notification & QR member
+
+| Fitur | Mobile | Backend existing/tambahan |
+| --- | --- | --- |
+| Foto pengajuan Pemain/Staf | `PhotoPicker` (kamera/galeri, preview, ganti, resize 1080px + kompres 0.75) | `POST /api/baraya/uploads/photo` → Media Service + koleksi `media` (tampil di Media Library Admin) |
+| Push status pengajuan | `usePushNotifications` (token Expo saat login, dihapus saat logout, channel Android) | `POST /api/baraya/push/register` / `/unregister`, dikirim otomatis saat Admin menyetujui/menolak |
+| QR kartu member | QR pada Member Card (isi: `‹web›/member/verifikasi/{member_code}`) | `GET /api/member/verify/{member_code}` (endpoint verifikasi yang sudah ada) |
+| Scanner QR | `MemberScannerScreen` (expo-camera), hanya untuk akun peran **STAFF** | endpoint verifikasi yang sama |
+
+Push memakai Expo Push Service. Untuk build produksi Android, kredensial FCM v1 perlu diunggah
+sekali lewat `eas credentials`; iOS memerlukan APNs key pada akun Apple Developer.
+
+## 7. Login Google (langkah operasional)
 
 Backend melakukan pertukaran authorization code (`POST /api/baraya/google/login`)
 dan hanya menerima `redirect_uri` berskema **https**. Karena itu aplikasi memakai

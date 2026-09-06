@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import QRCode from 'react-native-qrcode-svg';
 
 import { colors, radii, shadow } from '../theme';
 import Screen from '../components/Screen';
@@ -14,12 +15,21 @@ import { useResource } from '../hooks/useResource';
 import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
 import { useClub } from '../context/ClubContext';
-import { resolveMediaUrl } from '../api/client';
+import { WEB_URL, resolveMediaUrl } from '../api/client';
 import { formatDateMedium } from '../lib/format';
 
 const LOGO = require('../../assets/logo.png');
 
 const ROLE_LABELS = { MEMBER: 'Member', PEMAIN: 'Pemain', STAFF: 'Staf' };
+
+/**
+ * Isi QR = URL verifikasi RESMI existing `‹web›/member/verifikasi/{member_code}`
+ * yang dilayani `GET /api/member/verify/{member_code}`.
+ * QR TIDAK pernah memuat password, OTP, access token, JWT, atau data pribadi
+ * berlebihan — hanya kode member yang memang identifier publik terverifikasi.
+ */
+const qrValue = (memberCode) =>
+  memberCode ? (WEB_URL ? `${WEB_URL}/member/verifikasi/${encodeURIComponent(memberCode)}` : memberCode) : null;
 
 /** Digital member card — `/api/baraya/member-card` (existing endpoint). */
 export default function MemberCardScreen({ navigation }) {
@@ -100,6 +110,30 @@ export default function MemberCardScreen({ navigation }) {
             </View>
           </LinearGradient>
 
+          {qrValue(data.member_code) ? (
+            <View style={styles.qrCard} testID="member-card-qr">
+              <View style={styles.qrFrame}>
+                <QRCode
+                  value={qrValue(data.member_code)}
+                  size={168}
+                  color={colors.navyDeep}
+                  backgroundColor="#FFFFFF"
+                  quietZone={8}
+                />
+              </View>
+              <Txt variant="label" tone="accent" style={styles.qrLabel}>
+                QR VERIFIKASI MEMBER
+              </Txt>
+              <Txt variant="small" tone="muted" style={styles.qrHint}>
+                Tunjukkan QR ini kepada pengurus klub saat masuk pertandingan. Pengurus memindai lewat menu
+                Verifikasi Member; hasilnya dibaca langsung dari data klub.
+              </Txt>
+              <Txt variant="meta" tone="dim" style={styles.qrCode} numberOfLines={1}>
+                {data.member_code}
+              </Txt>
+            </View>
+          ) : null}
+
           <Card style={styles.detail}>
             {[
               { label: 'Kode member', value: data.member_code },
@@ -152,6 +186,19 @@ const styles = StyleSheet.create({
   cardBody: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   cardFooter: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   detail: { marginTop: 18 },
+  qrCard: {
+    marginTop: 18,
+    alignItems: 'center',
+    padding: 18,
+    borderRadius: radii.card,
+    backgroundColor: colors.surfaceSolid,
+    borderWidth: 1,
+    borderColor: 'rgba(252,207,43,0.28)',
+  },
+  qrFrame: { padding: 10, borderRadius: radii.md, backgroundColor: '#FFFFFF' },
+  qrLabel: { marginTop: 12, letterSpacing: 1.2 },
+  qrHint: { marginTop: 6, textAlign: 'center' },
+  qrCode: { marginTop: 8, letterSpacing: 1.4 },
   infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   infoValue: { flex: 1, textAlign: 'right' },
   divider: { marginVertical: 10 },

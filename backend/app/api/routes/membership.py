@@ -8,7 +8,7 @@ from __future__ import annotations
 import secrets
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 
 from app.api.crud_factory import Repository
@@ -29,6 +29,7 @@ from app.models.auth import AuthContext
 from app.models.base import utcnow
 from app.models.customer import CustomerAuthContext
 from app.models.membership import (
+    PushDevicePayload,
     GALLERY_ROLES,
     ApplicationCreate,
     ApplicationDataUpdate,
@@ -47,6 +48,8 @@ from app.services.mailer import mail_status
 from app.services import notification_center as center
 from app.services.notifications import firebase_status, notify_admin_review
 from app.services.membership import ensure_member_identity
+from app.services import push as push_service
+from app.services.media_service import detect_media_type, media_service
 from app.services.otp import PURPOSE_REGISTER, PURPOSE_RESET, issue_otp, verify_otp
 
 logger = get_logger(__name__)
@@ -57,6 +60,7 @@ applications = Repository(Collections.MEMBER_APPLICATIONS)
 players = Repository(Collections.PLAYERS)
 staff = Repository(Collections.STAFF)
 teams = Repository(Collections.TEAMS)
+media = Repository(Collections.MEDIA)
 
 member_read = Depends(require_permission("member:read"))
 member_write = Depends(require_permission("member:write"))
@@ -659,6 +663,25 @@ async def admin_decide_application(
         reference_type="member_application",
         reference_id=application_id,
     )
+    # Push ke HP pemilik akun memakai judul & isi yang SAMA dengan notifikasi
+    # in-app (hanya saat status benar-benar berubah dari PENDING di atas).
+    push_result = await push_service.send_to_customer(
+        customer_id=existing["customer_id"],
+        title=user_title,
+        body=user_message,
+        data={
+            "type": notif_type,
+            "application_type": existing["type"],
+            "application_id": application_id,
+            "link": "/akun",
+        },
+    )
+    logger.info(
+        "baraya.application_push type=%s status=%s delivered=%s",
+        existing["type"],
+        payload.decision.value,
+        push_result.get("delivered"),
+    )
     await center.create_notification(
         audience=center.AUDIENCE_ADMIN,
         type=notif_type,
@@ -673,6 +696,7 @@ async def admin_decide_application(
     return {
         **_public_application(updated or existing),
         "customer": _public_customer(customer) if customer else None,
+        "push": push_result,
     }
 
 
@@ -750,3 +774,86 @@ async def admin_set_role(
         updated = await customers.get(customer_id)
     logger.info("baraya.admin.role admin=%s customer=%s role=%s", user.email, customer_id, payload.role.value)
     return _public_customer(updated or existing)
+
+# ------------------------------------------------- push device (mobile native)
+@router.post("/push/register", summary="Daftarkan token push device (mobile)")
+async def register_push_device(
+    payload: PushDevicePayload,
+    request: Request,
+    auth: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    await enforce(request, "baraya-push-register", 30, 3600)
+    token = payload.token.strip()
+    if not push_service.is_expo_token(token):
+        raise ValidationFailedError("Token push tidak valid (harus ExponentPushToken).")
+    device = await push_service.register_device(
+        customer_id=auth.customer_id,
+        token=token,
+        platform=payload.platform,
+        device_id=payload.device_id,
+        app_version=payload.app_version,
+    )
+    return {"success": True, "device_id": device.get("id"), "platform": device.get("platform")}
+
+
+@router.post("/push/unregister", summary="Hapus token push device (mobile)")
+async def unregister_push_device(
+    payload: PushDevicePayload,
+    auth: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    removed = await push_service.unregister_device(
+        customer_id=auth.customer_id, token=payload.token.strip()
+    )
+    return {"success": True, "removed": removed}
+
+
+# ------------------------------------ foto pengajuan Pemain/Staf dari mobile
+PHOTO_MAX_BYTES = 6 * 1024 * 1024
+PHOTO_MIME = {"image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"}
+
+
+@router.post("/uploads/photo", status_code=201, summary="Upload foto pengajuan (Pemain/Staf)")
+async def upload_application_photo(
+    request: Request,
+    file: UploadFile = File(...),
+    auth: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    """Simpan foto ke Media Service existing (provider sesuai konfigurasi server).
+
+    Additive: memakai `media_service` + koleksi `media` yang sudah dipakai
+    Admin Panel, sehingga foto pengajuan tetap terlihat di Media Library dan
+    URL-nya bisa dipakai pada `player_data.photo` / `staff_data.photo`.
+    """
+    await enforce(request, "baraya-photo-upload", 12, 3600)
+    content = await file.read()
+    if not content:
+        raise ValidationFailedError("Berkas foto kosong.")
+    if len(content) > PHOTO_MAX_BYTES:
+        raise ValidationFailedError("Ukuran foto maksimal 6 MB.")
+    mime = (file.content_type or "").lower()
+    if mime not in PHOTO_MIME or detect_media_type(mime).value != "IMAGE":
+        raise ValidationFailedError("Format foto harus JPG, PNG, WEBP, atau HEIC.")
+
+    stored, media_type = await media_service.store(
+        file.filename or "member-photo.jpg", content, mime
+    )
+    doc = await media.create(
+        jsonable_encoder(
+            {
+                "file_name": file.filename or "member-photo.jpg",
+                "file_type": media_type.value,
+                "mime_type": mime,
+                "file_size": stored.size,
+                "url": stored.url,
+                "storage_provider": stored.provider.value,
+                "storage_key": stored.storage_key,
+                "thumbnail_url": stored.url,
+                "alt_text": "Foto pengajuan member",
+                "caption": None,
+                "status": "ACTIVE",
+                "uploaded_by": f"baraya:{auth.customer_id}",
+            }
+        )
+    )
+    logger.info("baraya.photo_uploaded provider=%s size=%s", stored.provider.value, stored.size)
+    return {"id": doc.get("id"), "url": doc.get("url"), "provider": stored.provider.value}

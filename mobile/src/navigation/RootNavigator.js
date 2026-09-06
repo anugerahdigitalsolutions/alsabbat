@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { colors } from '../theme';
 import { hasSeenOnboarding } from '../lib/onboardingStore';
+import { useAuth } from '../context/AuthContext';
+import { usePushRegistration } from '../hooks/usePushNotifications';
 import TabNavigator from './TabNavigator';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -20,6 +22,7 @@ import MemberCardScreen from '../screens/MemberCardScreen';
 import ClubInfoScreen from '../screens/ClubInfoScreen';
 import MembershipScreen from '../screens/MembershipScreen';
 import ApplicationFormScreen from '../screens/ApplicationFormScreen';
+import MemberScannerScreen from '../screens/MemberScannerScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -37,6 +40,10 @@ const navTheme = {
 
 export default function RootNavigator({ onReady }) {
   const [initialRoute, setInitialRoute] = useState(null);
+  const { isAuthenticated, refreshUnread } = useAuth();
+
+  // Daftarkan token push Expo saat user login (multi-device didukung backend).
+  usePushRegistration({ isAuthenticated, onNotification: refreshUnread });
 
   useEffect(() => {
     let alive = true;
@@ -83,6 +90,9 @@ export default function RootNavigator({ onReady }) {
         {/* keanggotaan: Member -> Pemain -> Staf (alur & endpoint website) */}
         <Stack.Screen name="Membership" component={MembershipScreen} />
         <Stack.Screen name="ApplicationForm" component={ApplicationFormScreen} />
+
+        {/* verifikasi kartu member (khusus akun berperan STAF) */}
+        <Stack.Screen name="MemberScanner" component={MemberScannerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

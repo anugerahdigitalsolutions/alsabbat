@@ -203,3 +203,12 @@ class MemberApplication(DBModel):
     player_id: Optional[str] = None
     staff_id: Optional[str] = None
     player_data: Optional[PlayerApplicationData] = None
+
+
+class PushDevicePayload(AppBaseModel):
+    """Registrasi/penghapusan token push satu device (mobile native Expo)."""
+
+    token: str = Field(min_length=10, max_length=200)
+    platform: Optional[str] = Field(default=None, max_length=20)
+    device_id: Optional[str] = Field(default=None, max_length=120)
+    app_version: Optional[str] = Field(default=None, max_length=40)

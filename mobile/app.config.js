@@ -50,7 +50,7 @@ module.exports = () => ({
         backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',
       },
-      permissions: ['INTERNET'],
+      permissions: ['INTERNET', 'CAMERA'],
       softwareKeyboardLayoutMode: 'pan',
       intentFilters: [
         {
@@ -80,6 +80,30 @@ module.exports = () => ({
         },
       ],
       'expo-secure-store',
+      [
+        'expo-image-picker',
+        {
+          photosPermission:
+            'AL SABBAT memerlukan akses galeri untuk memilih foto pengajuan Pemain/Staf.',
+          cameraPermission:
+            'AL SABBAT memerlukan akses kamera untuk mengambil foto pengajuan Pemain/Staf.',
+        },
+      ],
+      [
+        'expo-camera',
+        {
+          cameraPermission:
+            'AL SABBAT memerlukan akses kamera untuk memindai QR kartu member saat verifikasi.',
+          recordAudioAndroid: false,
+        },
+      ],
+      [
+        'expo-notifications',
+        {
+          icon: './assets/android-icon-monochrome.png',
+          color: NAVY,
+        },
+      ],
       'expo-font',
       'expo-image',
       'expo-web-browser',

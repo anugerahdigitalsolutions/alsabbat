@@ -54,6 +54,8 @@ class Collections:
     BANNERS = "banners"
     SITE_CONTENT = "site_content"
     NOTIFICATIONS = "notifications"
+    # Additive: token push per device milik akun Baraya/member (mobile native).
+    PUSH_DEVICES = "customer_push_devices"
 
 
 def _assert_safe_db_config() -> None:
@@ -311,6 +313,10 @@ async def ensure_indexes() -> None:
             [("audience", ASCENDING), ("recipient_id", ASCENDING), ("created_at", DESCENDING)]
         )
         await db[Collections.NOTIFICATIONS].create_index([("read", ASCENDING)])
+        # Push device token mobile (additive) — satu dokumen per device.
+        await db[Collections.PUSH_DEVICES].create_index([("id", ASCENDING)], unique=True)
+        await db[Collections.PUSH_DEVICES].create_index([("token", ASCENDING)], unique=True)
+        await db[Collections.PUSH_DEVICES].create_index([("customer_id", ASCENDING)])
         logger.info("MongoDB indexes ensured")
     except Exception as exc:  # pragma: no cover
         logger.warning("Index creation skipped/failed: %s", exc)

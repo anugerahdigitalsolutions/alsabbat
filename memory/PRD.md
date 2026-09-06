@@ -1710,3 +1710,48 @@ Testing agent (READ-ONLY, tanpa menulis data) melaporkan **semua poin PASS**: ko
 identik website, transparansi asset (alpha 0..255, sudut transparan, icon navy #012891),
 onboarding 3 slide + naskah + tombol, dan `git status` backend/frontend tanpa perubahan.
 Build APK masih menunggu kredensial akun Expo (EXPO_TOKEN) dari pemilik project.
+
+
+---
+
+## 3 FITUR MOBILE TAMBAHAN — FOTO PENGAJUAN, PUSH NOTIFICATION, QR KARTU MEMBER · Sep 2026 · SELESAI
+
+### Backend (ADDITIVE, backward-compatible, TANPA migration destruktif)
+- BARU `app/services/push.py` — Expo Push Service (`https://exp.host/--/api/v2/push/send`),
+  koleksi BARU `customer_push_devices` (1 dokumen/device, index unik `token`, index `customer_id`);
+  token `DeviceNotRegistered` otomatis dihapus. Push Firebase topik Admin existing TIDAK diubah.
+- `app/core/database.py` — tambah `Collections.PUSH_DEVICES` + 3 index (additive saja).
+- `app/models/membership.py` — tambah `PushDevicePayload`.
+- `app/api/routes/membership.py` — 3 endpoint BARU (auth customer existing):
+  `POST /api/baraya/push/register`, `POST /api/baraya/push/unregister`,
+  `POST /api/baraya/uploads/photo` (multipart, maks 6 MB, hanya JPG/PNG/WEBP/HEIC, memakai
+  `media_service` + koleksi `media` EXISTING → foto tetap tampil di Media Library Admin Panel);
+  plus hook push di `PATCH /api/baraya/admin/applications/{id}` yang memakai judul & isi
+  notifikasi in-app yang SAMA dan hanya berjalan pada transisi dari PENDING (PATCH kedua → 409,
+  jadi tidak ada push berulang). Response keputusan menambah field `push` (field lain tidak diubah).
+- Bug yang ditemukan & diperbaiki saat pengujian: `detect_media_type()` dipanggil dengan 2 argumen
+  (signature hanya 1) → upload 500. Sudah dibetulkan dan diverifikasi ulang.
+
+### Mobile
+- `src/lib/photoUpload.js` + `src/components/PhotoPicker.js` — kamera/galeri (expo-image-picker,
+  permission diminta eksplisit), resize maks 1080px + kompres JPEG 0.75 (expo-image-manipulator),
+  preview, ganti, hapus, upload ke endpoint di atas; URL hasil masuk ke `player_data.photo` /
+  `staff_data.photo` (field existing).
+- `src/hooks/usePushNotifications.js` — expo-notifications: channel Android `default`, izin,
+  token Expo (projectId dari `expo.extra.eas.projectId`) didaftarkan saat login, dihapus saat
+  logout, listener menyegarkan badge notifikasi in-app existing.
+- `src/screens/MemberCardScreen.js` — QR (react-native-qrcode-svg) berisi URL verifikasi RESMI
+  `‹web›/member/verifikasi/{member_code}`; tanpa password/OTP/token/JWT/data pribadi berlebih.
+- BARU `src/screens/MemberScannerScreen.js` — scanner expo-camera → endpoint verifikasi EXISTING
+  `GET /api/member/verify/{member_code}` → hasil VALID / TIDAK VALID / status (mis. tidak aktif).
+  Hanya dapat dibuka akun berperan **STAFF** (peran existing, tanpa role baru); entry di menu Profile.
+- `app.config.js` — plugin `expo-image-picker`, `expo-camera`, `expo-notifications` (icon monokrom
+  + warna navy) dan permission Android CAMERA. iOS permission string di-inject plugin saat prebuild.
+
+### Verifikasi
+Testing agent (sandbox account, dibersihkan 100%): upload PNG/JPEG 201 + tercatat di `media`
+(`uploaded_by=baraya:{id}`), >6 MB → 422, text/plain → 422, tanpa token → 401; pengajuan PEMAIN
+dengan foto tersimpan; push register/unregister idempoten & multi-device; token invalid → 422;
+keputusan REJECTED → notifikasi "Pengajuan Pemain Ditolak" + laporan `push` jujur, PATCH kedua 409;
+QR verify VALID/INVALID tanpa data sensitif; regresi endpoint publik/admin/website: aman.
+`eslint` 0 error · `expo export android` bundling sukses · `expo-doctor` 21/21.

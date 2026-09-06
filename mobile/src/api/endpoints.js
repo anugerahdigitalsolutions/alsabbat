@@ -72,6 +72,14 @@ export const changePassword = (payload) =>
   api.post('/baraya/change-password', payload).then(({ data }) => data);
 export const logoutRequest = () => api.post('/baraya/logout').then(({ data }) => data);
 
+/* ---------------------------------------------- push device & verifikasi */
+export const registerPushDevice = (payload) =>
+  api.post('/baraya/push/register', payload).then(({ data }) => data);
+export const unregisterPushDevice = (payload) =>
+  api.post('/baraya/push/unregister', payload).then(({ data }) => data);
+export const verifyMemberCode = (code) =>
+  api.get(`/member/verify/${encodeURIComponent(code)}`).then(({ data }) => data);
+
 /* ------------------------------------------------- meta & keanggotaan */
 export const getMeta = () => api.get('/meta').then(({ data }) => data);
 export const getMyApplications = () =>

@@ -20,8 +20,17 @@ const LOGO = require('../../assets/logo.png');
 
 /** Profile / account — `/api/baraya/me` (+ update) and session actions. */
 export default function ProfileScreen({ navigation }) {
-  const { customer, isAuthenticated, roleLabel, unreadCount, logout, updateProfile, refreshProfile, loading } =
-    useAuth();
+  const {
+    customer,
+    isAuthenticated,
+    roleLabel,
+    roles,
+    unreadCount,
+    logout,
+    updateProfile,
+    refreshProfile,
+    loading,
+  } = useAuth();
   const { clubName } = useClub();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: '', phone: '' });
@@ -146,6 +155,16 @@ export default function ProfileScreen({ navigation }) {
             label: 'Ubah Profil',
             onPress: startEdit,
           },
+          // Scanner memakai peran EXISTING: hanya akun Staf klub.
+          ...(roles.includes('STAFF')
+            ? [
+                {
+                  icon: 'qr-code-outline',
+                  label: 'Verifikasi Member (Scan QR)',
+                  onPress: () => navigation.navigate('MemberScanner'),
+                },
+              ]
+            : []),
         ].map((item, index, rows) => (
           <View key={item.label}>
             <Pressable onPress={item.onPress} style={styles.menuRow} testID={`profile-menu-${index}`}>

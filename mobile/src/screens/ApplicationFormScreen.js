@@ -8,6 +8,7 @@ import TopBar from '../components/TopBar';
 import Txt from '../components/Txt';
 import Field from '../components/Field';
 import Selector from '../components/Selector';
+import PhotoPicker from '../components/PhotoPicker';
 import { PrimaryButton } from '../components/Buttons';
 import { useResource } from '../hooks/useResource';
 import * as endpoints from '../api/endpoints';
@@ -38,6 +39,7 @@ export default function ApplicationFormScreen({ navigation, route }) {
       position: 'MIDFIELDER',
       date_of_birth: '',
       nationality: 'Indonesia',
+      photo: null,
       height_cm: '',
       weight_kg: '',
       bio: '',
@@ -49,6 +51,7 @@ export default function ApplicationFormScreen({ navigation, route }) {
       position_title: '',
       bio: '',
       instagram: '',
+      photo: null,
     },
   });
   const [error, setError] = useState(null);
@@ -113,7 +116,7 @@ export default function ApplicationFormScreen({ navigation, route }) {
         height_cm: p.height_cm === '' ? null : Number(p.height_cm),
         weight_kg: p.weight_kg === '' ? null : Number(p.weight_kg),
         bio: p.bio.trim() || null,
-        photo: null,
+        photo: p.photo || null,
         instagram: p.instagram.trim() || null,
       };
     } else {
@@ -122,7 +125,7 @@ export default function ApplicationFormScreen({ navigation, route }) {
         department: form.staff.department || null,
         position_title: form.staff.position_title || null,
         bio: form.staff.bio.trim() || null,
-        photo: null,
+        photo: form.staff.photo || null,
         instagram: form.staff.instagram.trim() || null,
       };
     }
@@ -174,6 +177,13 @@ export default function ApplicationFormScreen({ navigation, route }) {
                 placeholder="Nama sesuai identitas"
                 autoCapitalize="words"
                 testID="apply-player-name"
+              />
+              <PhotoPicker
+                label="FOTO PEMAIN"
+                value={form.player.photo}
+                onChange={setPlayer('photo')}
+                hint="Ambil foto dengan kamera atau pilih dari galeri. Foto tampil pada data pengajuan di Admin Panel."
+                testID="apply-player-photo"
               />
               <Field
                 label="NAMA PUNGGUNG (OPSIONAL)"
@@ -258,6 +268,13 @@ export default function ApplicationFormScreen({ navigation, route }) {
                 placeholder="Nama sesuai identitas"
                 autoCapitalize="words"
                 testID="apply-staff-name"
+              />
+              <PhotoPicker
+                label="FOTO STAF"
+                value={form.staff.photo}
+                onChange={(url) => setStaff({ photo: url })}
+                hint="Ambil foto dengan kamera atau pilih dari galeri. Foto tampil pada data pengajuan di Admin Panel."
+                testID="apply-staff-photo"
               />
               <Selector
                 label="BAGIAN"

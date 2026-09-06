@@ -11,6 +11,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import * as endpoints from '../api/endpoints';
 import { setUnauthorizedHandler } from '../api/client';
 import tokenStore from '../api/tokenStore';
+import { unregisterCurrentDevice } from '../hooks/usePushNotifications';
 
 const GALLERY_ROLES = ['PEMAIN', 'STAFF'];
 
@@ -152,6 +153,8 @@ export function AuthProvider({ children }) {
   );
 
   const logout = useCallback(async () => {
+    // Hentikan push ke device ini sebelum sesi dihapus.
+    await unregisterCurrentDevice();
     try {
       await endpoints.logoutRequest();
     } catch (e) {
