@@ -211,14 +211,31 @@ export const PublicFooter = () => {
           <span style={{ color: 'var(--muted-fg)' }}>
             &copy; {new Date().getFullYear()} {clubName}. Seluruh hak cipta dilindungi.
           </span>
-          <Link
-            to="/admin/login"
-            className="transition-colors duration-200 hover:text-[color:var(--club-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            style={{ color: 'rgba(0,0,0,0.38)', '--tw-ring-color': 'var(--focus-ring)' }}
-            data-testid="footer-staff-access"
-          >
-            Staff Access
-          </Link>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {[
+              { to: '/syarat-ketentuan', label: 'Syarat & Ketentuan', id: 'terms' },
+              { to: '/kebijakan-privasi', label: 'Kebijakan Privasi', id: 'privacy' },
+              { to: '/hapus-akun', label: 'Hapus Akun', id: 'delete-account' },
+            ].map((item) => (
+              <Link
+                key={item.id}
+                to={item.to}
+                className="transition-colors duration-200 hover:text-[color:var(--club-secondary)]"
+                style={{ color: 'var(--muted-fg)' }}
+                data-testid={`footer-legal-${item.id}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Link
+              to="/admin/login"
+              className="transition-colors duration-200 hover:text-[color:var(--club-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ color: 'rgba(0,0,0,0.38)', '--tw-ring-color': 'var(--focus-ring)' }}
+              data-testid="footer-staff-access"
+            >
+              Staff Access
+            </Link>
+          </div>
         </div>
       </div>
 

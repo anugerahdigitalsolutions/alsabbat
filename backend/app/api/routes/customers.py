@@ -49,6 +49,7 @@ from app.models.base import new_id, utcnow
 from app.models.enums import MediaType
 from app.models.media_direct import DirectUploadSignRequest
 from app.services.mailer import send_customer_password_reset_email
+from app.services.account_deletion import delete_customer_account
 from app.services.otp import PURPOSE_REGISTER, issue_otp
 from app.services.media_service import media_service
 from app.services.membership import (
@@ -72,6 +73,19 @@ INVALID_CREDENTIALS = "Email atau kata sandi tidak sesuai."
 # Fase 3.1 — pendaftaran yang belum lolos OTP disimpan sebagai record sementara
 # berstatus PENDING pada collection `customers` (tanpa collection baru).
 STATUS_PENDING = "PENDING"
+
+# Versi dokumen Syarat & Ketentuan yang berlaku (tanggal publikasi).
+TERMS_VERSION = "2026-06-08"
+
+
+def _terms_fields(accepted: Optional[bool]) -> Dict[str, Any]:
+    """Catat persetujuan Syarat & Ketentuan saat pembuatan akun baru."""
+    if not accepted:
+        return {}
+    return {
+        "terms_accepted_at": jsonable_encoder(utcnow()),
+        "terms_version": TERMS_VERSION,
+    }
 
 
 def _verified_only(query: Dict[str, Any], *, keep_status: bool = False) -> Dict[str, Any]:
@@ -140,6 +154,8 @@ async def register(payload: CustomerRegisterRequest, request: Request) -> Dict[s
         # mengirim ulang OTP (tidak membuat akun ganda).
         if existing.get("email_verified", True):
             raise ConflictError("Email ini sudah terdaftar sebagai Baraya AL SABBAT.")
+        if payload.accepted_terms:
+            await customers.update(existing["id"], _terms_fields(True))
         otp = await issue_otp(
             email=email, full_name=existing.get("full_name", ""), purpose=PURPOSE_REGISTER
         )
@@ -164,6 +180,7 @@ async def register(payload: CustomerRegisterRequest, request: Request) -> Dict[s
             "email_verified": False,
             "auth_provider": "PASSWORD",
             "last_login_at": None,
+            **_terms_fields(payload.accepted_terms),
         }
     )
     # ensure_member_identity() TIDAK dipanggil di sini: member_number/member_code
@@ -413,6 +430,24 @@ async def delete_my_photo(
 ) -> Dict[str, Any]:
     await customers.update(customer.customer_id, {"photo_url": ""})
     return {"success": True, "photo_url": ""}
+
+
+@router.delete("/me/account", summary="Hapus akun AL SABBAT milik sendiri (permanen)")
+async def delete_my_account(
+    request: Request, customer: CustomerAuthContext = Depends(get_current_customer)
+) -> Dict[str, Any]:
+    """Penghapusan akun permanen yang diminta pemilik akun sendiri.
+
+    Target akun SELALU diambil dari sesi terautentikasi (`customer_id` dari
+    token) — id dari client tidak pernah diterima. Setelah selesai, seluruh
+    sesi akun dihapus sehingga token lama tidak lagi valid.
+    """
+    await enforce(request, "baraya-account-delete", 5, 3600)
+    result = await delete_customer_account(customer.customer_id)
+    return {
+        **result,
+        "message": "Akun AL SABBAT Anda beserta data pribadi terkait telah dihapus.",
+    }
 
 
 # -------------------------------------------------------------- member card

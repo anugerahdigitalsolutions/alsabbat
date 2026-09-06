@@ -163,6 +163,14 @@ export function AuthProvider({ children }) {
     await clearSession();
   }, [clearSession]);
 
+  /** Hapus akun permanen (endpoint DELETE /api/baraya/me/account) lalu bersihkan sesi lokal. */
+  const deleteAccount = useCallback(async () => {
+    await unregisterCurrentDevice();
+    const result = await endpoints.deleteMyAccount();
+    await clearSession();
+    return result;
+  }, [clearSession]);
+
   const updateProfile = useCallback(async (payload) => {
     const me = await endpoints.updateMe(payload);
     setCustomer(me);
@@ -185,6 +193,7 @@ export function AuthProvider({ children }) {
       verifyOtp,
       googleLogin,
       logout,
+      deleteAccount,
       updateProfile,
       refreshProfile,
       refreshUnread,
@@ -201,6 +210,7 @@ export function AuthProvider({ children }) {
       verifyOtp,
       googleLogin,
       logout,
+      deleteAccount,
       updateProfile,
       refreshProfile,
       refreshUnread,

@@ -8,6 +8,7 @@ import TopBar from '../components/TopBar';
 import Txt from '../components/Txt';
 import Field from '../components/Field';
 import { LinkButton, PrimaryButton } from '../components/Buttons';
+import TermsCheckbox from '../components/TermsCheckbox';
 import { useAuth } from '../context/AuthContext';
 import { apiErrorMessage } from '../api/client';
 
@@ -23,6 +24,8 @@ export default function RegisterScreen({ navigation }) {
   });
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Persetujuan Syarat & Ketentuan — WAJIB, default tidak tercentang.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const update = (key) => (value) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -40,6 +43,11 @@ export default function RegisterScreen({ navigation }) {
       setError('Konfirmasi kata sandi tidak sama.');
       return;
     }
+    if (!acceptedTerms) {
+      // Tanpa persetujuan, request pembuatan akun TIDAK dikirim.
+      setError('Anda harus menyetujui Syarat & Ketentuan AL SABBAT sebelum mendaftar.');
+      return;
+    }
     setBusy(true);
     try {
       const result = await register({
@@ -48,6 +56,7 @@ export default function RegisterScreen({ navigation }) {
         phone: form.phone.trim(),
         password: form.password,
         password_confirmation: form.password_confirmation,
+        accepted_terms: true,
       });
       navigation.replace('Otp', {
         email: form.email.trim().toLowerCase(),
@@ -59,7 +68,7 @@ export default function RegisterScreen({ navigation }) {
     } finally {
       setBusy(false);
     }
-  }, [form, register, navigation]);
+  }, [form, acceptedTerms, register, navigation]);
 
   return (
     <Screen scroll={false} testID="register-screen" bottomInset={0}>
@@ -130,6 +139,14 @@ export default function RegisterScreen({ navigation }) {
               </Txt>
             </View>
           ) : null}
+
+          <TermsCheckbox
+            value={acceptedTerms}
+            onChange={setAcceptedTerms}
+            onOpenTerms={() => navigation.navigate('Legal', { doc: 'terms' })}
+            onOpenPrivacy={() => navigation.navigate('Legal', { doc: 'privacy' })}
+            testID="register-terms-checkbox"
+          />
 
           <PrimaryButton label="Daftar" onPress={submit} loading={busy} testID="register-submit" />
 

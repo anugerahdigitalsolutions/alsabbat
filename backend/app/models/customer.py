@@ -29,6 +29,9 @@ class CustomerRegisterRequest(AppBaseModel):
     phone: str = Field(min_length=8, max_length=25)
     password: str = Field(min_length=8, max_length=128)
     password_confirmation: str = Field(min_length=8, max_length=128)
+    # Persetujuan Syarat & Ketentuan. Opsional agar klien lama tetap kompatibel;
+    # aplikasi mobile mengirim True dan waktu persetujuan dicatat pada akun.
+    accepted_terms: Optional[bool] = None
 
     @field_validator("phone")
     @classmethod
@@ -128,6 +131,9 @@ class Customer(DBModel):
     google_id: Optional[str] = None
     player_id: Optional[str] = None
     staff_id: Optional[str] = None
+    # Persetujuan Syarat & Ketentuan saat pendaftaran (akun lama: None).
+    terms_accepted_at: Optional[str] = None
+    terms_version: Optional[str] = None
 
 
 class CustomerAuthContext(AppBaseModel):

@@ -116,3 +116,10 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
   `alsabbat.baraya.token`.
 - Base URL API mobile diatur lewat `mobile/.env` (`EXPO_PUBLIC_API_URL`) dan `mobile/eas.json`.
   Nilai preview container saat ini mengarah ke domain preview backend.
+
+## Akun uji fitur Hapus Akun (8 Jun 2026)
+- `hapusakun.e2e@sandbox-alsabbat.dev` / `Sandbox2026!` — dipakai untuk uji E2E
+  `DELETE /api/baraya/me/account` lalu TERHAPUS PERMANEN oleh fitur itu sendiri (tidak lagi ada).
+- Alur uji ulang: register (`accepted_terms: true`) → ambil kode dari
+  `grep "otp.debug_code" /var/log/supervisor/backend.out.log | tail -1` → `/api/baraya/otp/verify`
+  → `DELETE /api/baraya/me/account` dengan Bearer token akun tersebut.

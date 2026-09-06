@@ -142,6 +142,28 @@ export default function LoginScreen({ navigation, route }) {
                   {google.error}
                 </Txt>
               ) : null}
+              {/* Akun baru juga dapat terbentuk lewat Google — akses ke S&K wajib jelas. */}
+              <Txt variant="meta" tone="muted" style={styles.consent}>
+                Dengan melanjutkan pembuatan akun, Anda menyetujui{' '}
+                <Txt
+                  variant="meta"
+                  tone="accent"
+                  onPress={() => navigation.navigate('Legal', { doc: 'terms' })}
+                  testID="login-terms-link"
+                >
+                  Syarat &amp; Ketentuan
+                </Txt>{' '}
+                dan{' '}
+                <Txt
+                  variant="meta"
+                  tone="accent"
+                  onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
+                  testID="login-privacy-link"
+                >
+                  Kebijakan Privasi
+                </Txt>{' '}
+                AL SABBAT.
+              </Txt>
             </>
           ) : null}
 
@@ -179,5 +201,6 @@ const styles = StyleSheet.create({
   divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 16 },
   line: { flex: 1, height: 1, backgroundColor: colors.border },
   googleError: { marginTop: 8, textAlign: 'center' },
+  consent: { marginTop: 12, textAlign: 'center' },
   registerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 22 },
 });

@@ -23,6 +23,8 @@ import ClubInfoScreen from '../screens/ClubInfoScreen';
 import MembershipScreen from '../screens/MembershipScreen';
 import ApplicationFormScreen from '../screens/ApplicationFormScreen';
 import MemberScannerScreen from '../screens/MemberScannerScreen';
+import LegalScreen from '../screens/LegalScreen';
+import DeleteAccountScreen from '../screens/DeleteAccountScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -90,6 +92,10 @@ export default function RootNavigator({ onReady }) {
         {/* keanggotaan: Member -> Pemain -> Staf (alur & endpoint website) */}
         <Stack.Screen name="Membership" component={MembershipScreen} />
         <Stack.Screen name="ApplicationForm" component={ApplicationFormScreen} />
+
+        {/* pengaturan akun: syarat & ketentuan, kebijakan privasi, hapus akun */}
+        <Stack.Screen name="Legal" component={LegalScreen} />
+        <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
 
         {/* verifikasi kartu member (khusus akun berperan STAF) */}
         <Stack.Screen name="MemberScanner" component={MemberScannerScreen} />

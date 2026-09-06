@@ -62,6 +62,12 @@ export const barayaMemberCard = async () => {
 
 export const barayaChangePassword = (payload) => barayaApi.post('/baraya/change-password', payload);
 
+/** Hapus akun sendiri secara permanen (DELETE /api/baraya/me/account). */
+export const barayaDeleteAccount = async () => {
+  const { data } = await barayaApi.delete('/baraya/me/account');
+  barayaTokenStore.clear();
+  return data;
+};
 export const barayaForgotPassword = (email) => barayaApi.post('/baraya/forgot-password', { email });
 
 export const barayaResetPassword = (payload) => barayaApi.post('/baraya/reset-password', payload);

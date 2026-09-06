@@ -236,6 +236,46 @@ export default function ProfileScreen({ navigation }) {
           ))}
       </Card>
 
+      <SectionHeader title="Pengaturan Akun" />
+      <Card>
+        {[
+          {
+            icon: 'document-text-outline',
+            label: 'Syarat & Ketentuan',
+            onPress: () => navigation.navigate('Legal', { doc: 'terms' }),
+            testID: 'profile-terms',
+          },
+          {
+            icon: 'shield-checkmark-outline',
+            label: 'Kebijakan Privasi',
+            onPress: () => navigation.navigate('Legal', { doc: 'privacy' }),
+            testID: 'profile-privacy',
+          },
+          {
+            icon: 'trash-outline',
+            label: 'Hapus Akun',
+            danger: true,
+            onPress: () => navigation.navigate('DeleteAccount'),
+            testID: 'profile-delete-account',
+          },
+        ].map((item, index, rows) => (
+          <View key={item.label}>
+            <Pressable onPress={item.onPress} style={styles.menuRow} testID={item.testID}>
+              <Ionicons
+                name={item.icon}
+                size={18}
+                color={item.danger ? colors.lose : colors.accent}
+              />
+              <Txt variant="smallStrong" tone={item.danger ? 'lose' : 'default'} style={styles.flex}>
+                {item.label}
+              </Txt>
+              <Ionicons name="chevron-forward" size={16} color={colors.textDim} />
+            </Pressable>
+            {index < rows.length - 1 ? <Divider style={styles.divider} /> : null}
+          </View>
+        ))}
+      </Card>
+
       <GhostButton
         label="Keluar"
         icon="log-out-outline"
@@ -243,8 +283,7 @@ export default function ProfileScreen({ navigation }) {
         onPress={logout}
         style={styles.logout}
         testID="profile-logout"
-      />
-    </Screen>
+      />    </Screen>
   );
 }
 

@@ -35,6 +35,9 @@ import BarayaAccountPage from './pages/public/BarayaAccountPage';
 import BarayaOrdersPage from './pages/public/BarayaOrdersPage';
 import BarayaMemberCardPage from './pages/public/BarayaMemberCardPage';
 import MemberVerifyPage from './pages/public/MemberVerifyPage';
+import TermsPage from './pages/public/TermsPage';
+import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
+import DeleteAccountPage from './pages/public/DeleteAccountPage';
 import BarayaOrderDetailPage from './pages/public/BarayaOrderDetailPage';
 import { BarayaAuthProvider } from './context/BarayaAuthContext';
 import { BarayaRoute } from './components/public/BarayaRoute';
@@ -167,6 +170,9 @@ function App() {
                 }
               />
               <Route path="/member/verifikasi/:code" element={<MemberVerifyPage />} />
+              <Route path="/syarat-ketentuan" element={<TermsPage />} />
+              <Route path="/kebijakan-privasi" element={<PrivacyPolicyPage />} />
+              <Route path="/hapus-akun" element={<DeleteAccountPage />} />
               <Route
                 path="/akun/pesanan"
                 element={

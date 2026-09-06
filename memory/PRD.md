@@ -1800,3 +1800,57 @@ mengarah ke URL preview Emergent. `https://api.alsabbat.com` sendiri sehat (heal
 ### Status
 Siap untuk build Android (AAB/APK) dan iOS. BUILD BELUM DIJALANKAN (diminta user). Build produksi
 tetap butuh `EXPO_TOKEN` user untuk EAS.
+
+---
+
+## [Jun 2026] SYARAT & KETENTUAN + HAPUS AKUN (mobile + backend + web compliance)
+
+### Backend (ADDITIVE, tanpa collection/DB baru)
+- BARU `app/services/account_deletion.py` — `delete_customer_account(customer_id)`, idempoten.
+  HAPUS PERMANEN: `customers`, `customer_sessions` (semua sesi akun), `customer_otps` (by email),
+  `customer_password_resets`, `customer_push_devices`, `notifications` (audience CUSTOMER),
+  `member_applications` milik akun, `media` dengan `uploaded_by=baraya:{id}` + berkas storage
+  (dikecualikan bila URL masih dipakai `players.photo/gallery_images` atau `staff.photo/gallery_images`).
+  DIPERTAHANKAN: profil Pemain/Staf klub (roster resmi Admin Panel) — tautan `staff.customer_id`
+  di-unset; `orders` dipertahankan sebagai catatan transaksi dengan data pribadi DIANONIMKAN
+  (customer.name/email/phone, shipping.recipient/address/notes) + `customer_id` dilepas.
+  Data global (klub, pertandingan, berita, galeri, admin) tidak disentuh.
+- `app/api/routes/customers.py` — endpoint BARU `DELETE /api/baraya/me/account`
+  (auth customer existing, target selalu dari token, rate limit 5/jam) + helper `_terms_fields()`
+  dan `TERMS_VERSION = "2026-06-08"` yang mencatat `terms_accepted_at`/`terms_version` saat register.
+- `app/models/customer.py` — `CustomerRegisterRequest.accepted_terms` (OPSIONAL agar website lama
+  tetap 201) + field `terms_accepted_at`/`terms_version` pada model Customer.
+
+### Mobile
+- BARU `src/lib/legal.js` (S&K + Kebijakan Privasi + rincian data hapus/dipertahankan),
+  `src/screens/LegalScreen.js`, `src/screens/DeleteAccountScreen.js`,
+  `src/components/TermsCheckbox.js`.
+- `RegisterScreen.js` — checkbox WAJIB (default unchecked) tepat sebelum tombol DAFTAR; tanpa
+  centang request register TIDAK dikirim; link S&K & Kebijakan Privasi membuka LegalScreen;
+  payload mengirim `accepted_terms: true`.
+- `LoginScreen.js` — catatan persetujuan + link S&K/Privasi di area Google Sign-In (akun baru).
+- `ProfileScreen.js` — section BARU "Pengaturan Akun": Syarat & Ketentuan, Kebijakan Privasi,
+  Hapus Akun (merah). Layout & fitur lain tidak diubah.
+- `AuthContext.js` — `deleteAccount()`: unregister push device → DELETE endpoint → bersihkan
+  token/SecureStore + reset state. `endpoints.js` — `deleteMyAccount()`.
+- `RootNavigator.js` — route `Legal` & `DeleteAccount`.
+
+### Website (hanya penambahan halaman legal/hapus akun)
+- BARU `src/lib/legalContent.js`, `pages/public/LegalDocumentPage.js`, `TermsPage.js`,
+  `PrivacyPolicyPage.js`, `DeleteAccountPage.js`; route `/syarat-ketentuan`, `/kebijakan-privasi`,
+  `/hapus-akun`; link legal di footer. `services/barayaAuth.js` — `barayaDeleteAccount()`.
+- `/hapus-akun` publik tanpa login: 3 jalur permintaan (halaman ini setelah login, di dalam aplikasi,
+  atau email terdaftar ke kontak resmi), rincian data dihapus/dipertahankan, tanpa meminta password
+  via email.
+
+### Validasi (8 Jun 2026 — TANPA EAS build, tanpa commit)
+- E2E backend (akun sandbox `hapusakun.e2e@sandbox-alsabbat.dev`, sudah dihapus 100%):
+  register dengan `accepted_terms` → `terms_accepted_at` tercatat; push device + pengajuan PEMAIN
+  dibuat; `DELETE /api/baraya/me/account` → `{push_devices:1, sessions:1, otps:1,
+  member_applications:1, customer:1}`; verifikasi pymongo semua koleksi = 0; `GET /me` 401,
+  DELETE ulang 401, login lama 401; DELETE tanpa token / token palsu → 401; endpoint tidak
+  menerima id dari client sehingga akun lain tidak dapat dihapus.
+- Register TANPA `accepted_terms` tetap 201 (website existing tidak rusak).
+- Frontend: `/hapus-akun`, `/syarat-ketentuan`, `/kebijakan-privasi` render OK (screenshot).
+- Mobile: `expo lint` 0 error; `expo export` Android+iOS sukses dan string fitur baru ada di kedua
+  bundle. Tidak ada perubahan pada auth/OTP/Google OAuth/Admin Panel/QR/push.

@@ -91,6 +91,7 @@ export const createApplication = (payload) =>
 export const getMe = () => api.get('/baraya/me').then(({ data }) => data);
 export const updateMe = (payload) => api.patch('/baraya/me', payload).then(({ data }) => data);
 export const getAccess = () => api.get('/baraya/access').then(({ data }) => data);
+export const deleteMyAccount = () => api.delete('/baraya/me/account').then(({ data }) => data);
 export const getMemberCard = () => api.get('/baraya/member-card').then(({ data }) => data);
 export const getNotifications = (params = { limit: 30 }) =>
   api.get('/baraya/notifications', { params }).then(unwrapList);
