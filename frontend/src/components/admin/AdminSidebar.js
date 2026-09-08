@@ -92,7 +92,7 @@ export const ADMIN_ROUTE_PERMISSIONS = ADMIN_NAV.flatMap((section) => section.it
   .filter((item) => item.permission)
   .map((item) => ({ to: item.to, permission: item.permission }));
 
-export const AdminSidebar = ({ onNavigate }) => {
+export const AdminSidebar = ({ onNavigate, collapsed = false }) => {
   const { hasPermission } = useAuth();
   const sections = ADMIN_NAV.map((section) => ({
     ...section,
@@ -100,59 +100,81 @@ export const AdminSidebar = ({ onNavigate }) => {
   })).filter((section) => section.items.length > 0);
 
   return (
-  <div className="flex h-full flex-col" style={{ backgroundColor: 'var(--club-tertiary)' }} data-testid="admin-sidebar">
-    <div className="flex h-16 items-center gap-3 px-5" style={{ borderBottom: '1px solid rgba(254,254,254,0.10)' }}>
-      <ClubCrestMark size={34} onDark testId="admin-sidebar-crest" />
-      <div className="flex flex-col leading-tight">
-        <span className="font-display text-sm font-bold" style={{ color: 'var(--club-light)' }}>
-          AL SABBAT
-        </span>
-        <span className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'var(--club-primary)' }}>
-          Admin Panel
-        </span>
+    <div
+      className="flex h-full flex-col"
+      style={{
+        backgroundColor: '#060B18',
+        backgroundImage:
+          'radial-gradient(520px circle at 0% 0%, rgba(1,40,145,0.55), transparent 60%), radial-gradient(420px circle at 100% 100%, rgba(252,207,43,0.14), transparent 58%)',
+      }}
+      data-testid="admin-sidebar"
+    >
+      <div
+        className={`flex h-[72px] items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-5'}`}
+        style={{ borderBottom: '1px solid rgba(254,254,254,0.08)' }}
+      >
+        <ClubCrestMark size={34} onDark testId="admin-sidebar-crest" />
+        {collapsed ? null : (
+          <div className="flex flex-col leading-tight">
+            <span className="font-display text-sm font-bold" style={{ color: 'var(--club-light)' }}>
+              AL SABBAT
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: 'var(--club-primary)' }}>
+              Admin Panel
+            </span>
+          </div>
+        )}
       </div>
-    </div>
 
-    <nav className="als-scroll-thin flex-1 overflow-y-auto py-4">
-      {sections.map((section) => (
-        <div key={section.group} className="mb-5">
-          <p
-            className="mb-2 px-5 text-[10px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: 'rgba(254,254,254,0.42)' }}
-          >
-            {section.group}
-          </p>
-          {section.items.map(({ id, to, label, Icon, end }) => (
-            <NavLink
-              key={id}
-              to={to}
-              end={end}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                [
-                  'flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors duration-200',
-                  isActive ? 'border-l-4' : 'border-l-4 border-transparent',
-                ].join(' ')
-              }
-              style={({ isActive }) => ({
-                color: isActive ? 'var(--club-light)' : 'rgba(254,254,254,0.68)',
-                backgroundColor: isActive ? 'rgba(254,254,254,0.08)' : 'transparent',
-                borderLeftColor: isActive ? 'var(--club-primary)' : 'transparent',
-              })}
-              data-testid={`admin-sidebar-nav-item-${id}`}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {label}
-            </NavLink>
-          ))}
+      <nav className="als-scroll-thin flex-1 overflow-y-auto pb-8 pt-5">
+        {sections.map((section) => (
+          <div key={section.group} className="mb-6">
+            {collapsed ? (
+              <div className="mx-4 mb-2 h-px" style={{ backgroundColor: 'rgba(254,254,254,0.08)' }} />
+            ) : (
+              <p
+                className="mb-2 px-6 text-[10px] font-semibold uppercase tracking-[0.2em]"
+                style={{ color: 'rgba(254,254,254,0.34)' }}
+              >
+                {section.group}
+              </p>
+            )}
+            <div className="space-y-1">
+              {section.items.map(({ id, to, label, Icon, end }) => (
+                <NavLink
+                  key={id}
+                  to={to}
+                  end={end}
+                  onClick={onNavigate}
+                  title={collapsed ? label : undefined}
+                  className={({ isActive }) =>
+                    [
+                      'als-admin-nav-item',
+                      collapsed ? 'justify-center' : '',
+                      isActive ? 'is-active' : '',
+                    ].join(' ')
+                  }
+                  style={collapsed ? { margin: '0 0.75rem', padding: '0.6rem' } : undefined}
+                  data-testid={`admin-sidebar-nav-item-${id}`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {collapsed ? null : <span className="truncate">{label}</span>}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {collapsed ? null : (
+        <div
+          className="px-6 py-4 text-[11px]"
+          style={{ borderTop: '1px solid rgba(254,254,254,0.08)', color: 'rgba(254,254,254,0.42)' }}
+        >
+          AL SABBAT Football Club · Admin
         </div>
-      ))}
-    </nav>
-
-    <div className="px-5 py-4 text-[11px]" style={{ borderTop: '1px solid rgba(254,254,254,0.10)', color: 'rgba(254,254,254,0.45)' }}>
-      AL SABBAT Football Club · Admin
+      )}
     </div>
-  </div>
   );
 };
 

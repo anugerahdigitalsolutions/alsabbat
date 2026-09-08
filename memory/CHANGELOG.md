@@ -120,3 +120,28 @@ refunds/customers/notifications = 0).
   toggle OFF dari UI → publik normal lagi tanpa redeploy. Desktop 1920px & mobile 390px tanpa
   overflow baru, console error kosong. Regresi Fase 2 `29/29`, Fase 3 `48/48`, Fase 4–7 `69/69`
   PASS; `yarn build` sukses; `ruff --select E9,F` bersih.
+
+## [8 Sep 2026] Redesign UI/UX Admin Panel (visual only)
+- **Tidak ada perubahan backend/API/database/RBAC/business logic.** Hanya file frontend + CSS.
+- Design system baru discope ke `[data-admin-ui]` di `src/index.css` (radius 20/12px, border navy 10%,
+  shadow berlapis, tabel header uppercase navy + hover row, input h-12 + focus ring navy, tombol
+  radius 12 + press feedback, dialog radius seragam, kanvas `als-admin-canvas` dengan wash brand).
+  Warna tetap brand AL SABBAT (gold #FCCF2B, navy #012891, hitam) — tidak memakai palet referensi.
+- `components/admin/AdminShell.js`: header jadi floating glass card (section + judul halaman),
+  konten pakai `.als-admin-main` (padding mengikuti `--adm-rail`), sidebar bisa di-collapse
+  (UI-only, preferensi di localStorage), semua kontrol lama tetap ada (Lihat Website,
+  NotificationBell, menu user, logout, sheet mobile) + `SheetTitle` sr-only agar warning a11y hilang.
+- `components/admin/AdminSidebar.js`: panel gelap dengan wash navy/gold, active state pill gold,
+  hover halus, mode collapsed (ikon + tooltip). Seluruh 27 item menu, permission, route, urutan,
+  dan `data-testid` TIDAK berubah.
+- `pages/admin/AdminLoginPage.js`: split two-panel (kiri branding crest + heading, kanan form putih),
+  input h-12, tombol pill gold. Logic login/redirect/error/testid persis sama.
+- `components/admin/StatCard.js` + `pages/admin/AdminDashboardPage.js`: hero navy dengan tanggal
+  hari ini, kartu statistik baru (kartu pertama accent navy), panel System Status & Cakupan tetap
+  memakai data `/api/system/status` existing — tanpa data/statistik palsu.
+- Halaman lain (Orders, Sales Report, Products, Club, System, Media, Content, dst.) otomatis ikut
+  design system baru karena memakai `.als-card`, tabel, input, dan dialog yang di-restyle global.
+- **Verifikasi**: login → dashboard → collapse sidebar → Orders (list + dialog) → Sales Report
+  (chart + tabel) → Products (dialog form) → Club → System; toggle Maintenance ON/OFF tetap bekerja;
+  logout kembali ke `/admin/login`. Sidebar mobile sheet tetap 27 item. Desktop 1920px & mobile 390px
+  tanpa horizontal overflow, console error kosong. `yarn build` sukses (hanya warning lama).

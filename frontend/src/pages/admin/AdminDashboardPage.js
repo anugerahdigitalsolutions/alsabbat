@@ -66,14 +66,29 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-7" data-testid="page-admin-dashboard">
-      <div>
-        <p className="als-section-label mb-2">Dashboard</p>
-        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl" data-testid="dashboard-greeting">
+    <div className="space-y-6 sm:space-y-8" data-testid="page-admin-dashboard">
+      <div
+        className="relative overflow-hidden p-6 sm:p-8"
+        style={{
+          backgroundColor: '#012891',
+          backgroundImage:
+            'radial-gradient(620px circle at 96% 0%, rgba(252,207,43,0.28), transparent 58%), radial-gradient(420px circle at 0% 100%, rgba(255,255,255,0.12), transparent 60%)',
+          borderRadius: 'var(--adm-radius, 20px)',
+        }}
+        data-testid="dashboard-hero"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--club-primary)' }}>
+          Dashboard
+        </p>
+        <h1 className="font-display mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl" data-testid="dashboard-greeting">
           Selamat datang, {user?.name}
         </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--muted-fg)' }}>
-          Ringkasan data {clubName}. Fase 1 fokus pada arsitektur, keamanan, dan kesiapan deployment.
+        <p className="mt-2 max-w-2xl text-sm text-white/70">
+          Ringkasan data {clubName} — angka di bawah diambil langsung dari database, bukan estimasi.
+        </p>
+        <p className="mt-5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold text-white/80" style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
+          <Calendar className="h-3.5 w-3.5" />
+          {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </div>
 
@@ -93,21 +108,22 @@ export default function AdminDashboardPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="dashboard-stat-cards">
-            {CARDS.map(({ key, label, Icon, to }) => (
+            {CARDS.map(({ key, label, Icon, to }, index) => (
               <StatCard
                 key={key}
                 label={label}
                 value={status?.counts?.[key] ?? 0}
                 Icon={Icon}
                 to={to}
+                accent={index === 0}
                 testId={`dashboard-stat-${key}`}
               />
             ))}
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <div className="als-card p-5" data-testid="dashboard-system-panel">
-              <div className="mb-4 flex items-center justify-between">
+            <div className="als-card p-6" data-testid="dashboard-system-panel">
+              <div className="mb-5 flex items-center justify-between">
                 <h2 className="font-display text-lg font-semibold">System Status</h2>
                 <Link to="/admin/system" className="text-xs font-semibold" style={{ color: 'var(--club-secondary)' }}>
                   Detail
@@ -157,7 +173,7 @@ export default function AdminDashboardPage() {
               </ul>
             </div>
 
-            <div className="als-card p-5" data-testid="dashboard-scope-panel">
+            <div className="als-card p-6" data-testid="dashboard-scope-panel">
               <h2 className="font-display mb-4 text-lg font-semibold">Cakupan Fase 1</h2>
               <p className="mb-3 text-sm" style={{ color: 'var(--muted-fg)' }}>
                 Modul yang dibangun sebagai fondasi:
