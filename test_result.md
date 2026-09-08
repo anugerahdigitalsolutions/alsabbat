@@ -1609,3 +1609,31 @@ agent_communication:
       plus screenshot Admin (form produk 4:5 + 6 slot galeri + berat/dimensi, panel Integrasi
       dengan input password & badge status) dan storefront (halaman merchandise & detail produk
       tetap render; utilitas Tailwind `aspect-[4/5]` terverifikasi = "4 / 5").
+
+agent_communication:
+    -agent: "main"
+    -message: |
+      MERCHANDISE FASE 1B — video katalog produk 4:5 (staging only, additive).
+
+      - Galeri produk existing (`media_ids`) sekarang campuran FOTO + VIDEO, urutan dipertahankan.
+        Tidak ada koleksi/uploader/galeri video baru; semua lewat Media Library + MediaPicker.
+      - Backend: `resolve_media_refs()` di media_service + `POST /api/media/resolve`
+        (permission existing `media:read`), dan galeri publik produk mengirim
+        file_type/mime_type/thumbnail_url. Tipe media dari MIME Media Library (bukan ekstensi);
+        ekstensi hanya cadangan untuk URL lama di luar library.
+      - Upload video memakai pipeline media existing (MP4/WEBM/MOV/MKV, limit MEDIA_MAX_VIDEO_MB
+        default 200MB, Cloudinary resource_type=video). Validasi keamanan tidak dilemahkan.
+      - Admin: slot galeri terima video, preview <video> + badge VIDEO, tanpa crop untuk video;
+        foto tetap lewat ImageCropper 4:5 (file ImageCropper.js TIDAK diubah). Cover tetap
+        image-only sehingga video tidak bisa menjadi cover katalog.
+      - Publik: frame aspect-[4/5] untuk foto & video, thumbnail 4:5 dapat diklik untuk ganti
+        media utama, video HTML5 controls+muted+playsInline+preload=metadata, object-contain
+        (tanpa distorsi), tanpa autoplay.
+
+      Verifikasi (Testing Agent DILARANG oleh user):
+      - `python /app/scripts/merch_phase1b_verify.py` → 23/23 PASS (DB sandbox + media /tmp,
+        dibersihkan di akhir).
+      - Regresi `python /app/scripts/merch_phase1_verify.py` → tetap 40/40 PASS.
+      - UI: stub jaringan Playwright (tanpa menulis data) — video 960x540 diputar di frame
+        644x805 (letterbox), urutan FOTO/VIDEO/FOTO/VIDEO utuh, slot admin video tanpa tombol
+        crop, staging DB tetap 0 produk / 0 media.

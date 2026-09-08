@@ -112,6 +112,81 @@ def validate_file(mime_type: str, size_bytes: int) -> MediaType:
     return media_type
 
 
+# --------------------------------------------------------------------------
+# Resolver tipe media (Merchandise Fase 1B — galeri produk foto + video)
+# --------------------------------------------------------------------------
+# Sumber kebenaran tipe media adalah metadata Media Library (`file_type` yang
+# dihasilkan `detect_media_type` dari MIME saat upload). Ekstensi URL hanya
+# dipakai sebagai cadangan untuk entri lama yang tidak ada di Media Library.
+VIDEO_URL_EXTENSIONS = {".mp4", ".mov", ".webm", ".m4v", ".mkv", ".ogv"}
+IMAGE_URL_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".svg"}
+
+
+def guess_media_type_from_url(url: str) -> Optional[MediaType]:
+    from urllib.parse import urlparse
+
+    path = urlparse(str(url or "")).path.lower()
+    ext = os.path.splitext(path)[1]
+    if ext in VIDEO_URL_EXTENSIONS:
+        return MediaType.VIDEO
+    if ext in IMAGE_URL_EXTENSIONS:
+        return MediaType.IMAGE
+    return None
+
+
+async def resolve_media_refs(refs) -> list:
+    """Resolve daftar referensi media (id Media Library ATAU URL) ke metadata.
+
+    Dipakai galeri produk (admin & halaman publik) agar foto dan video bisa
+    dibedakan dari MIME/`file_type` yang tersimpan, bukan hanya dari ekstensi.
+    """
+    from app.api.crud_factory import Repository
+    from app.core.database import Collections
+
+    repo = Repository(Collections.MEDIA)
+    items: list = []
+    for raw in refs or []:
+        ref = str(raw or "").strip()
+        if not ref:
+            continue
+        doc = await repo.get(ref)
+        if not doc and ref.startswith(("http", "/")):
+            doc = await repo.get_by({"url": ref})
+        if doc:
+            file_type = doc.get("file_type")
+            if not file_type:
+                file_type = detect_media_type(doc.get("mime_type") or "").value
+            items.append(
+                {
+                    "ref": ref,
+                    "id": doc.get("id"),
+                    "url": doc.get("url"),
+                    "thumbnail_url": doc.get("thumbnail_url"),
+                    "file_type": file_type,
+                    "mime_type": doc.get("mime_type"),
+                    "alt_text": doc.get("alt_text"),
+                    "duration": doc.get("duration"),
+                    "type_source": "MEDIA_LIBRARY",
+                }
+            )
+            continue
+        guessed = guess_media_type_from_url(ref)
+        items.append(
+            {
+                "ref": ref,
+                "id": ref,
+                "url": ref if ref.startswith(("http", "/")) else None,
+                "thumbnail_url": None,
+                "file_type": guessed.value if guessed else None,
+                "mime_type": None,
+                "alt_text": None,
+                "duration": None,
+                "type_source": "URL_EXTENSION" if guessed else "UNKNOWN",
+            }
+        )
+    return items
+
+
 IMAGE_SIGNATURES = {
     b"\xff\xd8\xff": "image/jpeg",
     b"\x89PNG\r\n\x1a\n": "image/png",

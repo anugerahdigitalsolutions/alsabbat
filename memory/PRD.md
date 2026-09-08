@@ -1918,3 +1918,29 @@ tetap butuh `EXPO_TOKEN` user untuk EAS.
 - Verifikasi: `python /app/scripts/merch_phase1_verify.py` → 40/40 PASS (DB sandbox, di-DROP di
   akhir; nol tulisan ke database bisnis) + pemeriksaan UI via screenshot. Tidak ada produk/order
   dummy; koleksi `integration_settings` di staging masih kosong (hanya index yang dibuat).
+
+### [8 Sep 2026] Merchandise Fase 1B — video katalog produk 4:5 (galeri campuran)
+- Galeri produk sekarang bisa berisi **foto + video bercampur dalam satu galeri existing**
+  (`media_ids`), urutan slot dipertahankan. Tidak ada koleksi/penyimpanan/galeri video terpisah:
+  semua memakai Media Library, MediaPicker, dan storage persisten yang sudah ada.
+- Backend hanya menambah resolver tipe media: `media_service.resolve_media_refs()` +
+  `POST /api/media/resolve` (permission existing `media:read`). Tipe diambil dari
+  `file_type`/MIME Media Library (terbukti benar walau URL tanpa ekstensi); ekstensi URL hanya
+  cadangan untuk entri lama di luar Media Library. Galeri publik produk kini mengirim
+  `file_type`, `mime_type`, `thumbnail_url` per item (default IMAGE bila tak dikenal).
+- Upload video memakai pipeline existing (`/api/media/upload` atau direct-upload Cloudinary
+  `resource_type=video`): MIME diizinkan MP4/WEBM/MOV/MKV, limit `MEDIA_MAX_VIDEO_MB` (default
+  200MB), validasi keamanan & magic-byte tidak dilemahkan. Tidak ada transcoding.
+- Admin (AdminProductsPage): slot galeri menerima `image/*,video/mp4,video/webm,video/quicktime`;
+  slot video menampilkan preview `<video>` + badge VIDEO dan **tidak** menawarkan crop; slot foto
+  tetap membuka **ImageCropper 4:5 (crop/zoom/pan)** yang TIDAK diubah. Cover produk
+  (`cover_media_id`) tetap khusus gambar (accept `image/*`) → video tidak bisa jadi cover.
+- Publik (ProductDetailPage): satu daftar media campuran (cover + galeri, dedupe URL) dalam frame
+  `aspect-[4/5]`; thumbnail 4:5 kini bisa diklik untuk mengganti media utama (bukan lightbox).
+  Video: HTML5 `controls muted playsInline preload="metadata"`, tanpa autoplay, `object-contain`
+  (tidak diregangkan); foto tetap `object-cover`. Hanya satu video aktif yang dimuat penuh.
+- Kartu katalog MerchandisePage tetap memakai `cover_url` (tidak berubah).
+- Verifikasi: `python /app/scripts/merch_phase1b_verify.py` → 23/23 PASS (DB sandbox + direktori
+  media /tmp, keduanya dibersihkan) dan `merch_phase1_verify.py` → tetap 40/40 PASS. UI diuji
+  dengan stub jaringan Playwright (tanpa menulis data): video 960x540 diputar di frame 644x805
+  (letterbox, tanpa distorsi), urutan FOTO/VIDEO/FOTO/VIDEO utuh.

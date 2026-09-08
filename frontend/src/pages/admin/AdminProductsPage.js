@@ -53,12 +53,16 @@ export default function AdminProductsPage() {
         },
         {
           name: 'media_ids',
-          label: 'Galeri Produk',
+          label: 'Galeri Produk (Foto & Video)',
           type: 'gallery',
           max: 6,
           full: true,
           spec: MEDIA_SPECS.productImage,
-          help: 'Foto tambahan (maks 6 slot) yang tampil sebagai thumbnail di halaman produk. Gambar utama tetap "Gambar Produk" di atas. Urutan slot = urutan tampil.',
+          // Fase 1B: satu galeri untuk foto + video, memakai MediaPicker & Media Library existing.
+          accept: 'image/*,video/mp4,video/webm,video/quicktime',
+          resolveTypes: true,
+          galleryHint: '6 slot terpisah untuk foto dan/atau video, boleh dicampur. Urutan slot = urutan tampil di halaman produk.',
+          help: 'Foto: editor crop/zoom 4:5 terbuka otomatis. Video: MP4/WEBM/MOV (maks 200MB) langsung masuk Media Library tanpa crop, lalu ditampilkan dalam frame 4:5 dan bisa diputar pembeli. Gambar utama produk tetap "Gambar Produk" di atas.',
         },
         { name: 'weight_grams', label: 'Berat (gram)', type: 'number', help: 'Berat kirim per item. Diperlukan untuk perhitungan ongkir pada fase berikutnya.' },
         { name: 'length_cm', label: 'Panjang (cm)', type: 'number' },

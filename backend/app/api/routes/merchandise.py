@@ -32,6 +32,7 @@ from app.models.commerce import (
     ProductVariantUpdate,
 )
 from app.services.payments import active_provider, provider_status
+from app.services.media_service import resolve_media_refs
 
 logger = get_logger(__name__)
 
@@ -49,24 +50,27 @@ SHIPPING_FLAT = 0  # real shipping tariffs are configured by the club, not inven
 
 # ------------------------------------------------------------------ helpers
 async def _resolve_media(ids: List[str]) -> List[Dict[str, Any]]:
-    """Resolve galeri produk.
+    """Resolve galeri produk (foto + video, urutan dipertahankan).
 
     `media_ids` menerima id Media Library ATAU URL media (konvensi galeri yang
-    sudah dipakai komponen galeri admin existing). Id dicoba lebih dulu supaya
-    dokumen produk lama yang menyimpan id tetap tampil sama seperti sebelumnya.
+    sudah dipakai komponen galeri admin existing). Tipe media diambil dari
+    metadata Media Library (`file_type`/MIME); ekstensi URL hanya cadangan.
     """
-    items = []
-    for value in ids:
-        if not value:
+    items: List[Dict[str, Any]] = []
+    for entry in await resolve_media_refs(ids):
+        if not entry.get("url"):
             continue
-        doc = await media.get(value)
-        if not doc and str(value).startswith(("http", "/")):
-            doc = await media.get_by({"url": value})
-            if not doc:
-                items.append({"id": value, "url": value, "alt_text": None})
-                continue
-        if doc:
-            items.append({"id": doc["id"], "url": doc.get("url"), "alt_text": doc.get("alt_text")})
+        items.append(
+            {
+                "id": entry.get("id"),
+                "url": entry.get("url"),
+                "alt_text": entry.get("alt_text"),
+                # Default IMAGE agar entri lama/tak dikenal tampil seperti sebelumnya.
+                "file_type": entry.get("file_type") or "IMAGE",
+                "mime_type": entry.get("mime_type"),
+                "thumbnail_url": entry.get("thumbnail_url"),
+            }
+        )
     return items
 
 

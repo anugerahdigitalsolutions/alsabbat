@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Minus, Plus, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { Minus, Play, Plus, ShoppingBag, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { PublicPageHeader } from '../../components/public/PublicPageHeader';
@@ -50,6 +50,29 @@ export default function ProductDetailPage() {
 
   const variants = product?.variants || [];
   const selected = variants.find((v) => v.id === variantId);
+
+  // Fase 1B: satu daftar media campuran (foto + video) dengan urutan apa adanya.
+  // Cover produk tetap media pertama dan tetap dipakai sebagai gambar katalog.
+  const mediaItems = useMemo(() => {
+    const list = [];
+    const seen = new Set();
+    const push = (item) => {
+      if (!item?.url || seen.has(item.url)) return;
+      seen.add(item.url);
+      list.push(item);
+    };
+    if (product?.cover_url) {
+      push({ id: 'cover', url: product.cover_url, file_type: 'IMAGE', alt_text: product?.name });
+    }
+    (product?.gallery || []).forEach((m) => push({ ...m, file_type: m.file_type || 'IMAGE' }));
+    return list;
+  }, [product]);
+
+  const [activeMedia, setActiveMedia] = useState(0);
+  useEffect(() => {
+    setActiveMedia(0);
+  }, [product?.id]);
+  const active = mediaItems[activeMedia] || mediaItems[0] || null;
   const price = selected?.price_override ?? product?.price ?? 0;
   const stock = selected ? selected.stock_quantity : product?.stock_quantity ?? 0;
   const outOfStock = !product?.in_stock || stock <= 0;
@@ -90,19 +113,74 @@ export default function ProductDetailPage() {
         ) : (
           <div className="grid gap-10 lg:grid-cols-2">
             <div className="space-y-4">
-              <div className="als-card als-zoom aspect-[4/5] w-full overflow-hidden" style={{ backgroundColor: 'var(--surface-3)' }}>
-                {product.cover_url ? (
-                  <img src={resolveMediaUrl(product.cover_url)} alt={product.name} className="h-full w-full object-cover" loading="eager" />
+              <div
+                className={`als-card aspect-[4/5] w-full overflow-hidden${active?.file_type === 'VIDEO' ? '' : ' als-zoom'}`}
+                style={{ backgroundColor: 'var(--surface-3)' }}
+                data-testid="product-media-main"
+              >
+                {active?.file_type === 'VIDEO' ? (
+                  <video
+                    key={active.url}
+                    src={resolveMediaUrl(active.url)}
+                    className="h-full w-full bg-black object-contain"
+                    controls
+                    muted
+                    playsInline
+                    preload="metadata"
+                    data-testid="product-media-video"
+                  />
+                ) : active?.url ? (
+                  <img
+                    src={resolveMediaUrl(active.url)}
+                    alt={active.alt_text || product.name}
+                    className="h-full w-full object-cover"
+                    loading="eager"
+                  />
                 ) : (
                   <div className="als-stadium-glow flex h-full items-center justify-center" style={{ backgroundColor: '#000000' }}>
                     <ShoppingBag className="h-12 w-12" style={{ color: 'rgba(252,207,43,0.5)' }} />
                   </div>
                 )}
               </div>
-              {(product.gallery || []).length ? (
-                <div className="grid grid-cols-4 gap-3">
-                  {product.gallery.map((m) => (
-                    <img key={m.id} src={resolveMediaUrl(m.url)} alt={m.alt_text || product.name} className="aspect-[4/5] w-full rounded-[8px] object-cover" loading="lazy" />
+              {mediaItems.length > 1 ? (
+                <div className="grid grid-cols-4 gap-3" data-testid="product-media-thumbs">
+                  {mediaItems.map((m, index) => (
+                    <button
+                      key={m.id || m.url}
+                      type="button"
+                      onClick={() => setActiveMedia(index)}
+                      className="als-focus relative aspect-[4/5] w-full overflow-hidden rounded-[8px]"
+                      style={{
+                        border: index === activeMedia ? '2px solid var(--club-primary)' : '1px solid var(--border-soft)',
+                      }}
+                      aria-label={`Tampilkan ${m.file_type === 'VIDEO' ? 'video' : 'foto'} ${index + 1}`}
+                      aria-current={index === activeMedia}
+                      data-testid={`product-media-thumb-${index}`}
+                    >
+                      {m.file_type === 'VIDEO' ? (
+                        <>
+                          <video
+                            src={resolveMediaUrl(m.url)}
+                            className="h-full w-full bg-black object-cover"
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            <span className="grid h-7 w-7 place-items-center rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                              <Play className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+                            </span>
+                          </span>
+                        </>
+                      ) : (
+                        <img
+                          src={resolveMediaUrl(m.url)}
+                          alt={m.alt_text || product.name}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      )}
+                    </button>
                   ))}
                 </div>
               ) : null}

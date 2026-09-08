@@ -237,6 +237,10 @@ const FieldControl = ({ field, value, onChange, optionMap, testPrefix, values = 
         spec={field.spec}
         label={field.label}
         testId={testId}
+        accept={field.accept}
+        videoMaxSizeMb={field.videoMaxSizeMb}
+        resolveTypes={field.resolveTypes}
+        hint={field.galleryHint}
       />
     );
   }

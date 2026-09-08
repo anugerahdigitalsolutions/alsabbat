@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Crop, ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
+import { Crop, Film, ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage } from '../../lib/api';
 import { resolveMediaUrl } from '../public/gallery/mediaUtils';
@@ -39,8 +39,22 @@ const defaultUploader = async (file, onProgress) => {
   }
 };
 
-const LibraryDialog = ({ open, onOpenChange, onPick, testId }) => {
-  const [items, setItems] = useState([]);
+const VIDEO_URL_PATTERN = /\.(mp4|mov|webm|m4v|mkv|ogv)(\?|#|$)/i;
+const IMAGE_URL_PATTERN = /\.(jpe?g|png|webp|gif|avif|svg)(\?|#|$)/i;
+
+/**
+ * Dugaan cepat tipe media dari URL — hanya untuk render awal supaya slot tidak
+ * berkedip. Acuan sebenarnya tetap MIME/`file_type` dari Media Library
+ * (upload, pilih dari library, atau POST /media/resolve).
+ */
+const guessKindFromUrl = (url) => {
+  const value = String(url || '');
+  if (VIDEO_URL_PATTERN.test(value)) return 'VIDEO';
+  if (IMAGE_URL_PATTERN.test(value)) return 'IMAGE';
+  return null;
+};
+
+const LibraryDialog = ({ open, onOpenChange, onPick, testId }) => {  const [items, setItems] = useState([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -88,6 +102,22 @@ const LibraryDialog = ({ open, onOpenChange, onPick, testId }) => {
               >
                 {item.file_type === 'IMAGE' ? (
                   <img src={resolveMediaUrl(item.thumbnail_url || item.url)} alt="" className="h-24 w-full object-cover" loading="lazy" />
+                ) : item.file_type === 'VIDEO' ? (
+                  <span className="relative block">
+                    <video
+                      src={resolveMediaUrl(item.url)}
+                      className="h-24 w-full bg-black object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                    <span
+                      className="absolute left-1 top-1 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+                    >
+                      Video
+                    </span>
+                  </span>
                 ) : (
                   <span className="grid h-24 w-full place-items-center" style={{ backgroundColor: 'var(--surface-2)' }}>
                     <ImageIcon className="h-6 w-6" style={{ color: 'var(--muted-fg)' }} />
@@ -110,6 +140,10 @@ const LibraryDialog = ({ open, onOpenChange, onPick, testId }) => {
 /**
  * Satu komponen media untuk seluruh aplikasi: upload dari perangkat (drag & drop / HP),
  * pilih ulang dari Media Library, ganti, dan hapus. Tidak ada uploader kedua.
+ *
+ * Fase 1B: `accept` boleh menyertakan video (mis. galeri produk). Bila media
+ * yang dipilih berupa VIDEO, ImageCropper TIDAK dijalankan dan preview memakai
+ * <video> (muted, dengan kontrol, tanpa autoplay).
  */
 export const MediaPicker = ({
   value,
@@ -122,6 +156,9 @@ export const MediaPicker = ({
   returns = 'url',
   hint,
   spec,
+  imageMaxSizeMb = 10,
+  videoMaxSizeMb = 200,
+  resolveTypes = false,
 }) => {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -133,21 +170,71 @@ export const MediaPicker = ({
   const [cropSource, setCropSource] = useState(null);
   const [cropping, setCropping] = useState(false);
 
+  const allowsVideo = String(accept || '').includes('video');
+  const kindByValueRef = useRef({});
+  const [kind, setKind] = useState(() =>
+    allowsVideo ? guessKindFromUrl(previewUrl || value) : 'IMAGE'
+  );
+  const isVideo = allowsVideo && kind === 'VIDEO';
+
   const preview = resolveMediaUrl(previewUrl || localPreview || (returns === 'url' ? value : null));
 
   useEffect(() => {
     if (!value) setLocalPreview(null);
   }, [value]);
 
+  // Tipe media untuk nilai yang sudah tersimpan (mis. form produk dibuka ulang).
+  useEffect(() => {
+    if (!allowsVideo) return;
+    if (!value) {
+      setKind(null);
+      return;
+    }
+    setKind(kindByValueRef.current[value] || guessKindFromUrl(previewUrl || value));
+  }, [value, previewUrl, allowsVideo]);
+
+  useEffect(() => {
+    if (!allowsVideo || !resolveTypes || !value) return;
+    if (kindByValueRef.current[value]) return;
+    let active = true;
+    api
+      .post('/media/resolve', { refs: [value] })
+      .then(({ data }) => {
+        const item = data?.items?.[0];
+        if (!active || !item?.file_type) return;
+        kindByValueRef.current[value] = item.file_type;
+        setKind(item.file_type);
+      })
+      .catch(() => {
+        /* dugaan dari URL tetap dipakai */
+      });
+    return () => {
+      active = false;
+    };
+  }, [value, allowsVideo, resolveTypes]);
+
+  const rememberKind = useCallback((nextValue, nextKind) => {
+    if (nextValue && nextKind) kindByValueRef.current[nextValue] = nextKind;
+    if (nextKind) setKind(nextKind);
+  }, []);
+
   const handleFile = useCallback(
     async (file) => {
       if (!file) return;
-      if (!file.type.startsWith('image/') && accept === 'image/*') {
+      const fileIsVideo = String(file.type || '').startsWith('video/');
+      const fileIsImage = String(file.type || '').startsWith('image/');
+      if (allowsVideo) {
+        if (!fileIsImage && !fileIsVideo) {
+          toast.error('Hanya berkas gambar (JPG, PNG, WEBP) atau video (MP4, WEBM, MOV) yang diizinkan.');
+          return;
+        }
+      } else if (!fileIsImage && accept === 'image/*') {
         toast.error('Hanya berkas gambar (JPG, PNG, WEBP) yang diizinkan.');
         return;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('Ukuran berkas maksimal 10MB.');
+      const limitMb = fileIsVideo ? videoMaxSizeMb : imageMaxSizeMb;
+      if (file.size > limitMb * 1024 * 1024) {
+        toast.error(`Ukuran berkas maksimal ${limitMb}MB.`);
         return;
       }
       setUploading(true);
@@ -156,20 +243,22 @@ export const MediaPicker = ({
         const media = await uploader(file, setProgress);
         const next = returns === 'id' ? media.id : media.url;
         setLocalPreview(media.url || null);
+        rememberKind(next, media.file_type || (fileIsVideo ? 'VIDEO' : 'IMAGE'));
         onChange(next);
-        toast.success('Gambar berhasil diunggah.');
-        if (spec?.aspect) {
+        toast.success(fileIsVideo ? 'Video berhasil diunggah.' : 'Gambar berhasil diunggah.');
+        // ImageCropper hanya untuk gambar — video tidak pernah dibuka di cropper.
+        if (spec?.aspect && fileIsImage) {
           setCropSource(file);
           setCropOpen(true);
         }
       } catch (e) {
-        toast.error(apiErrorMessage(e, 'Gagal mengunggah gambar.'));
+        toast.error(apiErrorMessage(e, fileIsVideo ? 'Gagal mengunggah video.' : 'Gagal mengunggah gambar.'));
       } finally {
         setUploading(false);
         setProgress(0);
       }
     },
-    [accept, onChange, returns, uploader, spec]
+    [accept, allowsVideo, imageMaxSizeMb, onChange, rememberKind, returns, uploader, spec, videoMaxSizeMb]
   );
 
   const saveCrop = useCallback(
@@ -180,7 +269,9 @@ export const MediaPicker = ({
         const cropped = new File([blob], `crop-${Date.now()}.${ext}`, { type: blob.type });
         const media = await uploader(cropped, setProgress);
         setLocalPreview(media.url || null);
-        onChange(returns === 'id' ? media.id : media.url);
+        const next = returns === 'id' ? media.id : media.url;
+        rememberKind(next, media.file_type || 'IMAGE');
+        onChange(next);
         setCropOpen(false);
         toast.success('Crop tersimpan. Berkas asli tetap ada di Media Library.');
       } catch (e) {
@@ -192,7 +283,6 @@ export const MediaPicker = ({
     },
     [onChange, returns, uploader]
   );
-
   return (
     <div className="space-y-3" data-testid={`${testId}-picker`}>
       <div
@@ -219,15 +309,36 @@ export const MediaPicker = ({
             Mengunggah… {progress}%
           </span>
         ) : preview ? (
-          <img src={preview} alt="" className="max-h-[160px] w-auto rounded-[var(--radius-sm)] object-contain" data-testid={`${testId}-preview`} />
+          isVideo ? (
+            <div className="relative w-full" data-testid={`${testId}-preview-video`}>
+              <video
+                src={preview}
+                className="mx-auto max-h-[160px] w-auto rounded-[var(--radius-sm)] bg-black"
+                controls
+                muted
+                playsInline
+                preload="metadata"
+              />
+              <span
+                className="absolute left-2 top-2 flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white"
+                style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+              >
+                <Film className="h-3 w-3" aria-hidden="true" /> Video
+              </span>
+            </div>
+          ) : (
+            <img src={preview} alt="" className="max-h-[160px] w-auto rounded-[var(--radius-sm)] object-contain" data-testid={`${testId}-preview`} />
+          )
         ) : value ? (
           <span className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid={`${testId}-selected`}>
             Media terpilih
           </span>
         ) : (
           <span className="flex flex-col items-center gap-1.5 text-center text-xs" style={{ color: 'var(--muted-fg)' }}>
-            <ImageIcon className="h-6 w-6" />
-            Tarik gambar ke sini, atau gunakan tombol di bawah
+            {allowsVideo ? <Film className="h-6 w-6" /> : <ImageIcon className="h-6 w-6" />}
+            {allowsVideo
+              ? 'Tarik foto atau video ke sini, atau gunakan tombol di bawah'
+              : 'Tarik gambar ke sini, atau gunakan tombol di bawah'}
           </span>
         )}
       </div>
@@ -252,7 +363,7 @@ export const MediaPicker = ({
           data-testid={`${testId}-upload-button`}
         >
           <Upload className="mr-2 h-3.5 w-3.5" />
-          Upload dari Perangkat
+          {allowsVideo ? 'Upload Foto / Video' : 'Upload dari Perangkat'}
         </Button>
         {libraryEnabled ? (
           <Button type="button" variant="outline" size="sm" onClick={() => setLibraryOpen(true)} data-testid={`${testId}-library-button`}>
@@ -260,7 +371,7 @@ export const MediaPicker = ({
             Pilih dari Media Library
           </Button>
         ) : null}
-        {value && spec?.aspect ? (
+        {value && spec?.aspect && !isVideo ? (
           <Button
             type="button"
             variant="outline"
@@ -282,6 +393,7 @@ export const MediaPicker = ({
             size="sm"
             onClick={() => {
               setLocalPreview(null);
+              setKind(null);
               onChange('');
             }}
             data-testid={`${testId}-clear-button`}
@@ -302,9 +414,15 @@ export const MediaPicker = ({
             Rekomendasi:
           </span>{' '}
           <span className="font-semibold">
-            {spec.ratio} · {spec.size}
+            {isVideo ? `${spec.ratio} · MP4 / WEBM / MOV` : `${spec.ratio} · ${spec.size}`}
           </span>
-          {spec.note ? <span className="mt-0.5 block">{spec.note}</span> : null}
+          {isVideo ? (
+            <span className="mt-0.5 block">
+              Video ditampilkan utuh dalam frame {spec.ratio} — tanpa dipotong atau diregangkan.
+            </span>
+          ) : spec.note ? (
+            <span className="mt-0.5 block">{spec.note}</span>
+          ) : null}
         </div>
       ) : null}
 
@@ -320,10 +438,17 @@ export const MediaPicker = ({
           onOpenChange={setLibraryOpen}
           testId={testId}
           onPick={(item) => {
+            if (!allowsVideo && item.file_type && item.file_type !== 'IMAGE') {
+              toast.error('Kolom ini hanya menerima gambar.');
+              return;
+            }
             setLocalPreview(item.url);
-            onChange(returns === 'id' ? item.id : item.url);
+            const next = returns === 'id' ? item.id : item.url;
+            rememberKind(next, item.file_type || guessKindFromUrl(item.url) || 'IMAGE');
+            onChange(next);
             setLibraryOpen(false);
-            if (spec?.aspect) {
+            // Video tidak pernah masuk ImageCropper.
+            if (spec?.aspect && item.file_type !== 'VIDEO') {
               setCropSource(resolveMediaUrl(item.url));
               setCropOpen(true);
             }

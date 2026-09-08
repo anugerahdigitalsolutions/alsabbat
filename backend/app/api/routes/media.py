@@ -1,10 +1,11 @@
 """Media module — metadata in MongoDB, binaries in storage/CDN."""
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, Response
+from pydantic import Field
 
 from app.api.crud_factory import Repository, build_crud_router
 from app.api.deps import require_permission
@@ -16,7 +17,8 @@ from app.models.auth import AuthContext
 from app.models.domain import MediaBase, MediaUpdate
 from app.models.enums import StorageProvider
 from app.models.media_direct import DirectUploadCompleteRequest, DirectUploadSignRequest
-from app.services.media_service import detect_media_type, media_service
+from app.models.base import AppBaseModel
+from app.services.media_service import detect_media_type, media_service, resolve_media_refs
 
 router = APIRouter(tags=["media"])
 repo = Repository(Collections.MEDIA)
@@ -67,6 +69,21 @@ def _file_headers() -> dict:
 @router.get("/storage/status", summary="Media storage architecture status")
 async def storage_status(_user: AuthContext = Depends(require_permission("media:read"))):
     return media_service.status()
+
+
+class MediaResolveRequest(AppBaseModel):
+    """Referensi media bisa berupa id Media Library atau URL media."""
+
+    refs: List[str] = Field(min_length=1, max_length=24)
+
+
+@router.post("/resolve", summary="Resolve id/URL media ke metadata tipe (IMAGE/VIDEO)")
+async def resolve_media(
+    payload: MediaResolveRequest,
+    _user: AuthContext = Depends(require_permission("media:read")),
+):
+    """Dipakai galeri produk agar foto & video dibedakan dari MIME tersimpan."""
+    return {"items": await resolve_media_refs(payload.refs)}
 
 
 @router.post(

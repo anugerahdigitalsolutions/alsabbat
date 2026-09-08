@@ -16,8 +16,21 @@ import { Button } from '../ui/button';
  * nyata, berurutan, tanpa duplikat — jadi tidak ada media ganda hanya karena
  * ditampilkan di beberapa slot. Duplikat dicegah di UI dengan pesan yang jelas.
  */
-export const MediaGalleryField = ({ value, onChange, max = 3, spec, testId, label = 'Galeri Foto' }) => {
+export const MediaGalleryField = ({
+  value,
+  onChange,
+  max = 3,
+  spec,
+  testId,
+  label = 'Galeri Foto',
+  // Fase 1B: galeri produk boleh berisi foto + video (MediaPicker yang sama).
+  accept,
+  videoMaxSizeMb,
+  resolveTypes = false,
+  hint,
+}) => {
   const stored = Array.isArray(value) ? value : value ? [value] : [];
+  const mediaNoun = String(accept || '').includes('video') ? 'Media' : 'Foto';
   // Selalu render `max` slot tetap.
   const slots = Array.from({ length: max }, (_, i) => stored[i] || '');
   const used = slots.filter(Boolean).length;
@@ -32,7 +45,7 @@ export const MediaGalleryField = ({ value, onChange, max = 3, spec, testId, labe
 
   const setSlot = (index, next) => {
     if (next && slots.some((s, i) => i !== index && s === next)) {
-      toast.error('Foto itu sudah dipakai di slot lain. Pilih foto yang berbeda.');
+      toast.error(`${mediaNoun} itu sudah dipakai di slot lain. Pilih berkas yang berbeda.`);
       return;
     }
     const list = [...slots];
@@ -61,7 +74,7 @@ export const MediaGalleryField = ({ value, onChange, max = 3, spec, testId, labe
           {label} — {used}/{max}
         </p>
         <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>
-          {max} slot terpisah. Foto pertama menjadi foto utama; urutan slot = urutan slider publik.
+          {hint || `${max} slot terpisah. Foto pertama menjadi foto utama; urutan slot = urutan slider publik.`}
         </p>
       </div>
 
@@ -125,6 +138,9 @@ export const MediaGalleryField = ({ value, onChange, max = 3, spec, testId, labe
               onChange={(next) => setSlot(index, next)}
               testId={`${testId}-gallery-${index}`}
               spec={spec}
+              accept={accept}
+              videoMaxSizeMb={videoMaxSizeMb}
+              resolveTypes={resolveTypes}
             />
           </div>
         ))}
