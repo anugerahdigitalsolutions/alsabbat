@@ -16,6 +16,10 @@ from app.core.database import close_db
 from app.core.errors import register_exception_handlers
 from app.core.logging_config import get_logger, setup_logging
 from app.services.startup_tasks import run_startup_tasks_once
+from app.services.broadcast_scheduler import (
+    start_scheduler as start_broadcast_scheduler,
+    stop_scheduler as stop_broadcast_scheduler,
+)
 
 setup_logging()
 logger = get_logger("alsabbat.api")
@@ -33,7 +37,10 @@ async def lifespan(_: FastAPI):
     # ensure_indexes() + run_bootstrap() TETAP dijalankan, tetapi lewat runner
     # yang aman untuk cold start & concurrent invocation di serverless.
     await run_startup_tasks_once()
+    # Scheduler broadcast terjadwal (task asyncio internal; nonaktif di serverless).
+    start_broadcast_scheduler()
     yield
+    await stop_broadcast_scheduler()
     if not settings.is_serverless:
         # Di serverless client sengaja dibiarkan hidup agar dipakai ulang oleh
         # invocation berikutnya selama instance masih hangat.

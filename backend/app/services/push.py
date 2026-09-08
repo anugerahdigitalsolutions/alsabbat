@@ -141,3 +141,79 @@ async def send_to_customer(
         "devices": len(tokens),
         "accepted": delivered,
     }
+
+
+
+async def send_to_customers(
+    *,
+    customer_ids: List[str],
+    title: str,
+    body: str,
+    data: Optional[Dict[str, str]] = None,
+) -> Dict[str, Any]:
+    """Push massal (broadcast) — additive, memakai koleksi & format pesan yang
+    sama dengan `send_to_customer`. Best-effort: kegagalan push tidak boleh
+    membatalkan notifikasi in-app (pusat notifikasi tetap sumber riwayat).
+    """
+    ids = [cid for cid in (customer_ids or []) if cid]
+    if not ids:
+        return {"delivered": False, "provider": "EXPO", "reason": "NO_RECIPIENT", "devices": 0}
+
+    tokens: List[str] = []
+    for start in range(0, len(ids), 500):
+        chunk = ids[start : start + 500]
+        cursor = repo.coll.find({"customer_id": {"$in": chunk}}, {"token": 1})
+        async for device in cursor:
+            token = device.get("token") or ""
+            if is_expo_token(token) and token not in tokens:
+                tokens.append(token)
+
+    if not tokens:
+        return {"delivered": False, "provider": "EXPO", "reason": "NO_DEVICE", "devices": 0}
+
+    delivered = 0
+    errors = 0
+    for start in range(0, len(tokens), 100):
+        batch = tokens[start : start + 100]
+        messages = [
+            {
+                "to": token,
+                "title": title,
+                "body": body,
+                "sound": "default",
+                "priority": "high",
+                "channelId": "default",
+                "data": data or {},
+            }
+            for token in batch
+        ]
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+                response = await client.post(
+                    EXPO_PUSH_URL,
+                    json=messages,
+                    headers={"accept": "application/json", "content-type": "application/json"},
+                )
+            response.raise_for_status()
+            results = response.json().get("data") or []
+        except Exception as exc:
+            errors += len(batch)
+            logger.error("push.bulk_send_failed error=%s", type(exc).__name__)
+            continue
+
+        for token, result in zip(batch, results if isinstance(results, list) else []):
+            if isinstance(result, dict) and result.get("status") == "ok":
+                delivered += 1
+                continue
+            details = (result or {}).get("details") or {}
+            if details.get("error") == "DeviceNotRegistered":
+                await _drop_invalid(token)
+
+    logger.info("push.bulk_sent delivered=%s devices=%s errors=%s", delivered, len(tokens), errors)
+    return {
+        "delivered": delivered > 0,
+        "provider": "EXPO",
+        "devices": len(tokens),
+        "accepted": delivered,
+        "errors": errors,
+    }

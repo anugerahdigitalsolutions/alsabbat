@@ -4,4 +4,4 @@ Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /cart
-Sitemap: https://mobile-alsabbat.preview.emergentagent.com/api/seo/sitemap.xml
+Sitemap: https://mass-notify-3.preview.emergentagent.com/api/seo/sitemap.xml

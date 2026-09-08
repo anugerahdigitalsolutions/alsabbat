@@ -5,6 +5,7 @@ from app.api.routes import (
     achievements,
     analytics,
     auth,
+    broadcasts,
     club,
     competitions,
     content,
@@ -50,6 +51,7 @@ api_router.include_router(sponsors.router, prefix="/sponsors")
 api_router.include_router(achievements.router, prefix="/achievements")
 api_router.include_router(analytics.router, prefix="/analytics")
 api_router.include_router(notifications.router, prefix="/notifications")
+api_router.include_router(broadcasts.router, prefix="/broadcasts")
 api_router.include_router(seo.router, prefix="/seo")
 api_router.include_router(social.router, prefix="/social")
 api_router.include_router(merchandise.router, prefix="/merchandise")

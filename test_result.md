@@ -1554,3 +1554,32 @@ agent_communication:
       Results: 14/17 PASS, 3 SKIP (rate limited).
       
       Bug fix confirmed working. Ready for production.
+
+agent_communication:
+    -agent: "main"
+    -message: |
+      FITUR BARU — BROADCAST (Admin Panel), staging only (Sep 2026).
+
+      Additive, tanpa mengubah sistem notifikasi/OTP/login/membership/player/staff existing.
+      - Koleksi baru `broadcasts` HANYA untuk jadwal + riwayat.
+      - Pengiriman memakai pusat notifikasi EXISTING (koleksi `notifications`,
+        audience=CUSTOMER, type=BROADCAST, reference_type=broadcast) sehingga muncul
+        di GET /api/baraya/notifications (icon lonceng) yang sudah dipakai user.
+      - Filter penerima memakai field peran existing pada `customers`
+        (`role` + `roles`, backward compatible untuk akun lama tanpa `roles`):
+        ALL_MEMBERS (semua akun Baraya aktif), MEMBERS_ONLY (belum Pemain/Staff),
+        PLAYERS_ONLY (PEMAIN), PLAYERS_AND_STAFF (PEMAIN dan/atau STAFF).
+      - Scheduler: task asyncio internal (interval 60s, BROADCAST_SCHEDULER_*),
+        nonaktif di serverless → pakai POST /api/broadcasts/process-due.
+      - Anti-duplikasi 2 lapis: klaim atomik SCHEDULED→SENDING + upsert notifikasi
+        idempoten per (penerima, broadcast).
+      - RBAC memakai permission existing: member:read (baca) & member:write (tulis).
+
+      API: GET /api/broadcasts, GET /api/broadcasts/recipient-counts,
+      POST /api/broadcasts, POST /api/broadcasts/process-due, GET /api/broadcasts/{id}.
+      UI: /admin/broadcast (menu "Broadcast" di grup Sistem).
+
+      Verifikasi (Testing Agent DILARANG oleh user — memakai skrip sandbox + screenshot):
+      `cd /app/backend && PYTHONPATH=/app/backend python /app/scripts/broadcast_verify.py`
+      → 29/29 PASS (database sandbox `alsabbat_broadcast_sandbox` dibuat lalu di-DROP;
+      nol tulisan ke database preview/staging/produksi).

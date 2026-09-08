@@ -296,7 +296,7 @@ dibangun dengan mode **NOT_CONFIGURED yang jujur** (tanpa dummy/hard-code).
 ### BLOCKER (menunggu user)
 - `SMTP2GO_API_KEY` + `SMTP2GO_SENDER_EMAIL` → tanpa ini email OTP TIDAK terkirim (sistem melaporkan jujur).
 - `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` → tombol "Masuk dengan Google" disembunyikan sampai diisi.
-  Redirect URI wajib: `https://mobile-alsabbat.preview.emergentagent.com/auth/google`).
+  Redirect URI wajib: `https://mass-notify-3.preview.emergentagent.com/auth/google`).
 - Kunci hanya ditulis ke `backend/.env` (sudah ada placeholder kosong) + `backend/.env.example` terdokumentasi.
 
 
@@ -1870,3 +1870,24 @@ tetap butuh `EXPO_TOKEN` user untuk EAS.
   `/me` → 401); register mobile-style tetap mencatat versi 2026-09-07; `/hapus-akun`,
   `/syarat-ketentuan`, `/kebijakan-privasi`, `/daftar` → 200; `expo lint` 0 error. Semua akun uji
   dibersihkan (customers/sessions/applications/push = 0).
+
+### [8 Sep 2026] Fitur Broadcast (Admin Panel) — staging, additive
+- Menu baru **Broadcast** (`/admin/broadcast`, grup Sistem) untuk mengirim notifikasi ke Baraya.
+  Mode: **Kirim Sekarang** & **Jadwalkan** (tanggal + waktu), dengan konfirmasi sebelum eksekusi,
+  kartu jumlah penerima per kelompok, filter status, dan riwayat (judul, kelompok, mode, jadwal,
+  dibuat, terkirim, status SCHEDULED/SENT/FAILED, dibuat oleh).
+- Kelompok penerima memakai field peran EXISTING pada `customers` (`role` + `roles`):
+  `ALL_MEMBERS` (semua akun Baraya aktif), `MEMBERS_ONLY` (belum Pemain/Staff),
+  `PLAYERS_ONLY` (PEMAIN), `PLAYERS_AND_STAFF` (PEMAIN dan/atau STAFF). Akun admin tidak termasuk.
+- Pengiriman memakai pusat notifikasi EXISTING (koleksi `notifications`, `audience=CUSTOMER`,
+  `type=BROADCAST`, `reference_type=broadcast`) → muncul di `GET /api/baraya/notifications`
+  (icon lonceng) dengan status read/unread yang sama. Push Expo best-effort memakai judul & isi
+  yang sama (`push.send_to_customers`, additive).
+- Koleksi baru `broadcasts` hanya untuk jadwal & riwayat. Scheduler = task asyncio internal
+  (`BROADCAST_SCHEDULER_ENABLED`, `BROADCAST_SCHEDULER_INTERVAL_SECONDS`, default 60s; nonaktif di
+  serverless → `POST /api/broadcasts/process-due`). Tanpa Redis/Celery/RabbitMQ.
+- Anti-duplikasi 2 lapis: klaim atomik `SCHEDULED → SENDING` + upsert notifikasi idempoten per
+  (penerima, broadcast). Dokumen `SENDING` macet >10 menit boleh diproses ulang dengan aman.
+- RBAC memakai permission existing `member:read` / `member:write` (tanpa role/permission baru).
+- Verifikasi: `python /app/scripts/broadcast_verify.py` → 29/29 PASS (DB sandbox, di-DROP di akhir),
+  plus screenshot `/admin/broadcast` (halaman + form) tanpa horizontal overflow.

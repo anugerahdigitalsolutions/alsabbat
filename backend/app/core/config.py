@@ -84,6 +84,14 @@ class Settings:
     STARTUP_TASKS_MIN_INTERVAL_MINUTES: int = int(
         os.environ.get("STARTUP_TASKS_MIN_INTERVAL_MINUTES", "360")
     )
+    # Broadcast terjadwal — task asyncio internal (tanpa Redis/Celery).
+    # Di serverless loop tidak dijalankan; pakai POST /api/broadcasts/process-due.
+    BROADCAST_SCHEDULER_ENABLED: bool = _bool(
+        os.environ.get("BROADCAST_SCHEDULER_ENABLED"), True
+    )
+    BROADCAST_SCHEDULER_INTERVAL_SECONDS: int = int(
+        os.environ.get("BROADCAST_SCHEDULER_INTERVAL_SECONDS", "60")
+    )
 
     # --------------------------------------------------------------- auth
     JWT_SECRET: str = os.environ.get("JWT_SECRET") or os.environ.get("SECRET_KEY") or ""

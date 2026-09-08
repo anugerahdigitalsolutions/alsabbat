@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   ListChecks,
+  Megaphone,
   Newspaper,
   Shield,
   Swords,
@@ -79,6 +80,7 @@ export const ADMIN_NAV = [
     items: [
       { id: 'users', to: '/admin/users', label: 'Admin Users', Icon: UserCog, permission: 'user:write' },
       { id: 'baraya', to: '/admin/baraya', label: 'Baraya AL SABBAT', Icon: UserCog, permission: 'member:read' },
+      { id: 'broadcast', to: '/admin/broadcast', label: 'Broadcast', Icon: Megaphone, permission: 'member:read' },
       { id: 'system', to: '/admin/system', label: 'System Status', Icon: Activity, permission: 'system:read' },
     ],
   },

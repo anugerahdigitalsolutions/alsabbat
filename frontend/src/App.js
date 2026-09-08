@@ -42,6 +42,7 @@ import BarayaOrderDetailPage from './pages/public/BarayaOrderDetailPage';
 import { BarayaAuthProvider } from './context/BarayaAuthContext';
 import { BarayaRoute } from './components/public/BarayaRoute';
 import AdminBarayaPage from './pages/admin/AdminBarayaPage';
+import AdminBroadcastPage from './pages/admin/AdminBroadcastPage';
 
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -225,6 +226,7 @@ function App() {
               <Route path="achievements" element={<AdminAchievementsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="baraya" element={<AdminBarayaPage />} />
+              <Route path="broadcast" element={<AdminBroadcastPage />} />
               <Route path="system" element={<AdminSystemPage />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>

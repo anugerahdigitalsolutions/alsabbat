@@ -54,6 +54,9 @@ class Collections:
     BANNERS = "banners"
     SITE_CONTENT = "site_content"
     NOTIFICATIONS = "notifications"
+    # Additive: jadwal & riwayat broadcast admin (pengiriman tetap memakai
+    # koleksi `notifications` existing).
+    BROADCASTS = "broadcasts"
     # Additive: token push per device milik akun Baraya/member (mobile native).
     PUSH_DEVICES = "customer_push_devices"
 
@@ -313,6 +316,16 @@ async def ensure_indexes() -> None:
             [("audience", ASCENDING), ("recipient_id", ASCENDING), ("created_at", DESCENDING)]
         )
         await db[Collections.NOTIFICATIONS].create_index([("read", ASCENDING)])
+        # Broadcast (additive) — lookup idempoten per (penerima, broadcast) +
+        # pencarian broadcast yang jatuh tempo.
+        await db[Collections.NOTIFICATIONS].create_index(
+            [("reference_type", ASCENDING), ("reference_id", ASCENDING), ("recipient_id", ASCENDING)]
+        )
+        await db[Collections.BROADCASTS].create_index([("id", ASCENDING)], unique=True)
+        await db[Collections.BROADCASTS].create_index(
+            [("status", ASCENDING), ("scheduled_at", ASCENDING)]
+        )
+        await db[Collections.BROADCASTS].create_index([("created_at", DESCENDING)])
         # Push device token mobile (additive) — satu dokumen per device.
         await db[Collections.PUSH_DEVICES].create_index([("id", ASCENDING)], unique=True)
         await db[Collections.PUSH_DEVICES].create_index([("token", ASCENDING)], unique=True)
