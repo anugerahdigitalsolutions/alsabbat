@@ -123,3 +123,10 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
 - Alur uji ulang: register (`accepted_terms: true`) → ambil kode dari
   `grep "otp.debug_code" /var/log/supervisor/backend.out.log | tail -1` → `/api/baraya/otp/verify`
   → `DELETE /api/baraya/me/account` dengan Bearer token akun tersebut.
+
+## Sandbox Baraya (hanya dibuat di database sandbox, sudah di-DROP)
+- Email    : visual.baraya@sandbox-alsabbat.dev
+- Password : Sandbox123
+- Dipakai untuk verifikasi UI Fase 5/6 (terima barang, tolak + bukti, ajukan refund).
+- Akun ini TIDAK ada di database staging/produksi (database sandbox `alsabbat_merch_p3_visual`
+  sudah dihapus). Buat ulang dengan `python /app/scripts/merch_phase3_visual_sandbox.py seed`.

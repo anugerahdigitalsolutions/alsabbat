@@ -65,6 +65,7 @@ import AdminSponsorsPage from './pages/admin/AdminSponsorsPage';
 import AdminSocialPage from './pages/admin/AdminSocialPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import AdminSalesReportPage from './pages/admin/AdminSalesReportPage';
 import { AdminProductCategoriesPage, AdminProductVariantsPage } from './pages/admin/AdminProductTaxonomyPages';
 import MerchandisePage from './pages/public/MerchandisePage';
 import ProductDetailPage from './pages/public/ProductDetailPage';
@@ -223,6 +224,7 @@ function App() {
               <Route path="product-categories" element={<AdminProductCategoriesPage />} />
               <Route path="product-variants" element={<AdminProductVariantsPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
+              <Route path="sales-report" element={<AdminSalesReportPage />} />
               <Route path="achievements" element={<AdminAchievementsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="baraya" element={<AdminBarayaPage />} />

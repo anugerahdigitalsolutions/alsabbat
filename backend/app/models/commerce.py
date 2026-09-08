@@ -18,10 +18,34 @@ class ProductStatus(str, Enum):
 class OrderStatus(str, Enum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
+    # Fase 3 — langkah fulfilment tambahan (additive, pesanan lama tetap valid).
+    PACKED = "PACKED"
+    READY_TO_SHIP = "READY_TO_SHIP"
     SHIPPED = "SHIPPED"
     COMPLETED = "COMPLETED"
+    # Fase 5 — pelanggan menolak barang saat diterima (masuk workflow refund).
+    REJECTED = "REJECTED"
     CANCELLED = "CANCELLED"
     REFUNDED = "REFUNDED"
+
+
+class PaymentMethodChoice(str, Enum):
+    """Metode pembayaran yang dipilih pelanggan (Fase 4)."""
+
+    MIDTRANS = "MIDTRANS"
+    COD = "COD"
+
+
+class RefundStatus(str, Enum):
+    """Lifecycle refund (Fase 6)."""
+
+    REQUESTED = "REQUESTED"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 class PaymentStatus(str, Enum):
@@ -150,10 +174,73 @@ class CheckoutRequest(AppBaseModel):
     items: List[CheckoutItem] = Field(min_length=1, max_length=30)
     customer: CustomerInfo
     shipping: ShippingInfo
+    # Default MIDTRANS agar pesanan/klien lama tetap kompatibel.
+    payment_method: PaymentMethodChoice = PaymentMethodChoice.MIDTRANS
+
+
+class OrderRejectRequest(AppBaseModel):
+    """Pelanggan menolak barang saat diterima (Fase 5)."""
+
+    reason: str = Field(min_length=3, max_length=80)
+    detail: str = Field(min_length=5, max_length=1000)
+    evidence_urls: List[str] = Field(default_factory=list, max_length=5)
+
+
+class RefundRequestCreate(AppBaseModel):
+    reason: str = Field(min_length=3, max_length=80)
+    detail: str = Field(min_length=5, max_length=1000)
+    evidence_urls: List[str] = Field(default_factory=list, max_length=5)
+    bank_account: Optional[str] = Field(default=None, max_length=120)
+
+
+class RefundReview(AppBaseModel):
+    decision: RefundStatus
+    note: Optional[str] = Field(default=None, max_length=500)
+
+    @field_validator("decision")
+    @classmethod
+    def _decision(cls, value):
+        if value not in (RefundStatus.APPROVED, RefundStatus.REJECTED, RefundStatus.UNDER_REVIEW):
+            raise ValueError("Keputusan hanya boleh UNDER_REVIEW, APPROVED, atau REJECTED.")
+        return value
+
+
+class RefundManualTransfer(AppBaseModel):
+    """Refund COD/manual — dicatat admin setelah transfer benar-benar dilakukan."""
+
+    amount: int = Field(ge=1)
+    transfer_reference: str = Field(min_length=3, max_length=120)
+    transferred_at: Optional[str] = Field(default=None, max_length=40)
+    note: Optional[str] = Field(default=None, max_length=500)
 
 
 class OrderStatusUpdate(AppBaseModel):
     order_status: OrderStatus
+    note: Optional[str] = Field(default=None, max_length=300)
+
+
+class OrderFulfilmentUpdate(AppBaseModel):
+    """Data pengiriman yang diisi admin (Fase 3).
+
+    Disimpan terpisah dari snapshot checkout supaya histori pesanan tidak
+    berubah. Semua field opsional agar admin bisa melengkapi bertahap, tetapi
+    resi tidak boleh berupa string kosong.
+    """
+
+    courier_code: Optional[str] = Field(default=None, max_length=24)
+    courier_name: Optional[str] = Field(default=None, max_length=80)
+    service_code: Optional[str] = Field(default=None, max_length=40)
+    service_name: Optional[str] = Field(default=None, max_length=80)
+    awb_number: Optional[str] = Field(default=None, min_length=4, max_length=60)
+    shipping_note: Optional[str] = Field(default=None, max_length=300)
+
+    @field_validator("awb_number", "courier_code", "service_code", mode="before")
+    @classmethod
+    def _trim(cls, value):
+        if isinstance(value, str):
+            trimmed = value.strip()
+            return trimmed or None
+        return value
 
 
 ProductCategoryUpdate = make_update_model("ProductCategoryUpdate", ProductCategoryBase)

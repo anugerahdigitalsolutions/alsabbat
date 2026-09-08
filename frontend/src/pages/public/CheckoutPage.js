@@ -45,12 +45,24 @@ export default function CheckoutPage() {
   const [quote, setQuote] = useState(null);
   const [quoting, setQuoting] = useState(false);
   const [selectedKey, setSelectedKey] = useState('');
+  // Fase 4 — metode pembayaran (COD hanya bila layanan mendukung menurut penyedia)
+  const [paymentMethod, setPaymentMethod] = useState('MIDTRANS');
+  const [codConfig, setCodConfig] = useState(null);
 
-  const options = quote?.options || [];
+  const allOptions = quote?.options || [];
+  const options = paymentMethod === 'COD' ? allOptions.filter((o) => o.cod_available) : allOptions;
+  const codBlockedNote = (allOptions.find((o) => o.cod_note) || {}).cod_note;
   const selectedOption = options.find((o) => `${o.courier_code}|${o.service_code}` === selectedKey) || null;
   const subtotal = summary?.subtotal || 0;
   const shippingCost = selectedOption?.cost || 0;
-  const grandTotal = subtotal + shippingCost;
+  const codFee =
+    paymentMethod === 'COD' && selectedOption
+      ? selectedOption.cod_fee ??
+        (selectedOption.cod_fee_percent != null
+          ? Math.round((subtotal * selectedOption.cod_fee_percent) / 100)
+          : 0)
+      : 0;
+  const grandTotal = subtotal + shippingCost + codFee;
   const shippingEnabled = Boolean(shippingConfig?.configured);
 
   const searchDestination = async () => {
@@ -122,8 +134,12 @@ export default function CheckoutPage() {
           toast.error(apiErrorMessage(err, 'Produk di keranjang tidak lagi tersedia.'));
         }
         try {
-          const ship = await api.get('/merchandise/shipping/config');
+          const [ship, cod] = await Promise.all([
+            api.get('/merchandise/shipping/config'),
+            api.get('/merchandise/cod/status'),
+          ]);
           setShippingConfig(ship.data);
+          setCodConfig(cod.data);
         } catch (err) {
           setShippingConfig({ configured: false, status: 'SHIPPING_NOT_CONFIGURED' });
         }
@@ -159,6 +175,7 @@ export default function CheckoutPage() {
       const client = customer ? barayaApi : api;
       const { data } = await client.post('/merchandise/checkout', {
         items: payload,
+        payment_method: paymentMethod,
         customer: form.customer,
         shipping: {
           ...form.shipping,
@@ -335,10 +352,53 @@ export default function CheckoutPage() {
                     Hitung Ongkir
                   </Button>
 
+                  {quote ? (
+                    <div className="space-y-2" data-testid="checkout-payment-method">
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+                        Metode Pembayaran
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {['MIDTRANS', 'COD'].map((method) => {
+                          const codReady = allOptions.some((o) => o.cod_available);
+                          const disabled = method === 'COD' && !codReady;
+                          return (
+                            <button
+                              key={method}
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => {
+                                setPaymentMethod(method);
+                                setSelectedKey('');
+                              }}
+                              className="als-focus rounded-[var(--radius-sm)] px-3 py-2 text-sm font-semibold disabled:opacity-50"
+                              style={{
+                                border: paymentMethod === method ? '2px solid var(--club-primary)' : '1px solid var(--border-soft)',
+                                backgroundColor: paymentMethod === method ? 'rgba(252,207,43,0.12)' : 'white',
+                              }}
+                              data-testid={`checkout-method-${method}`}
+                            >
+                              {method === 'COD' ? 'COD (Bayar di Tempat)' : 'Transfer / Midtrans'}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {!allOptions.some((o) => o.cod_available) ? (
+                        <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="checkout-cod-unavailable">
+                          COD belum tersedia untuk tujuan ini
+                          {codBlockedNote ? `: ${codBlockedNote}` : '.'}
+                          {codConfig && !codConfig.shipment_configured
+                            ? ' Admin juga belum mengaktifkan pembuatan pengiriman COD.'
+                            : ''}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   {options.length ? (
                     <div className="space-y-2" data-testid="checkout-courier-options">
                       <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>
-                        Berat kiriman {(quote.shipment_weight_grams / 1000).toFixed(2)} kg · pilih layanan pengiriman:
+                        Berat kiriman {(quote.shipment_weight_grams / 1000).toFixed(2)} kg · pilih layanan pengiriman
+                        {paymentMethod === 'COD' ? ' yang mendukung COD' : ''}:
                       </p>
                       {options.map((option) => {
                         const key = `${option.courier_code}|${option.service_code}`;
@@ -408,6 +468,14 @@ export default function CheckoutPage() {
                     {selectedOption ? formatIDR(shippingCost) : shippingEnabled ? 'Belum dihitung' : formatIDR(0)}
                   </span>
                 </div>
+                {paymentMethod === 'COD' ? (
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--muted-fg)' }}>Biaya COD</span>
+                    <span className="tabular-nums" data-testid="checkout-cod-fee">
+                      {selectedOption ? formatIDR(codFee) : 'Belum dihitung'}
+                    </span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between pt-2">
                   <span className="font-display font-bold">Total</span>
                   <span className="font-display text-lg font-bold tabular-nums" data-testid="checkout-total">
@@ -423,7 +491,9 @@ export default function CheckoutPage() {
                 </p>
               ) : paymentConfig ? (
                 <p className="mt-4 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="checkout-payment-status">
-                  Pembayaran diproses oleh {paymentConfig.label} ({paymentConfig.environment}).
+                  {paymentMethod === 'COD'
+                  ? 'Pembayaran COD dilakukan saat barang diterima kurir/penerima.'
+                  : `Pembayaran diproses oleh ${paymentConfig.label} (${paymentConfig.environment}).`}
                 </p>
               ) : null}
 
@@ -435,7 +505,7 @@ export default function CheckoutPage() {
                 data-testid="checkout-submit"
               >
                 {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Buat Pesanan &amp; Bayar
+                {paymentMethod === 'COD' ? 'Buat Pesanan (COD)' : 'Buat Pesanan & Bayar'}
               </Button>
             </div>
           </div>

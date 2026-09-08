@@ -1,5 +1,69 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## MERCHANDISE FASE 3 — ADMIN ORDER MANAGEMENT · 8 Jun 2026 · SELESAI (PASS)
+Additive di atas Fase 1/1B/2. Tanpa koleksi baru, tanpa RBAC baru, tanpa Testing Agent,
+tanpa data dummy permanen (semua uji di database sekali-pakai yang di-DROP).
+
+### Lifecycle yang dipakai (enum `OrderStatus` existing + 2 status additive)
+PENDING → PROCESSING → PACKED → READY_TO_SHIP → SHIPPED → COMPLETED
+CANCELLED dari PENDING/PROCESSING/PACKED/READY_TO_SHIP. COMPLETED/CANCELLED/REFUNDED = terminal.
+REFUNDED tetap ada untuk pesanan lama tetapi **tidak bisa diset manual** (alur refund di luar Fase 3).
+Guard tambahan: PROCESSING butuh `payment_status=PAID` bila gateway dikonfigurasi (bila gateway belum
+dikonfigurasi, admin mengonfirmasi manual — perilaku staging); READY_TO_SHIP & SHIPPED butuh
+kurir + layanan + **AWB**.
+
+### Backend
+- BARU `services/order_fulfilment.py`: `ORDER_STATUS_FLOW`, `transition_blocker`, `allowed_transitions`
+  (+`blocked_reason` untuk UI), `timeline_entry`, `read_timeline`, `customer_timeline`,
+  `effective_shipment`, `notify_customer_status`.
+- `models/commerce.py`: `OrderStatus` +PACKED +READY_TO_SHIP; `OrderStatusUpdate` +`note`;
+  BARU `OrderFulfilmentUpdate` (courier/service/awb_number min 4 char + trim).
+- `api/routes/merchandise.py`: checkout menulis `timeline[ORDER_CREATED]` + `fulfilment:{}`;
+  `_apply_payment_status` menambah PAYMENT_STATUS_CHANGED (+PROCESSING) & notifikasi;
+  list order **diurutkan terbaru** + pencarian nomor order/nama/email/AWB; detail & list memakai
+  `_admin_order` (shipment, timeline, allowed_transitions, item_count); `PATCH /orders/{id}/status`
+  divalidasi server + update atomik (filter status lama) + timestamp per status; BARU
+  `PATCH /orders/{id}/fulfilment` (kurir/layanan/AWB, ditolak bila order final).
+- `api/routes/customers.py`: respons pesanan Baraya memakai timeline & shipment versi pelanggan.
+- Snapshot: `order["shipping"]` (checkout) TIDAK pernah ditimpa; data admin disimpan di
+  `order["fulfilment"]`. Harga histori tidak pernah dihitung ulang.
+- Timeline immutable (`$push` saja). Pesanan lama tanpa `timeline` mendapat ORDER_CREATED
+  **turunan saat dibaca** (tanpa menulis DB / tanpa migrasi).
+- Notifikasi: memakai `notification_center` existing (audience CUSTOMER) — tidak ada sistem
+  notifikasi baru, tidak ada email/SMS/push dengan kredensial palsu.
+
+### Frontend
+- `pages/admin/AdminOrdersPage.js`: daftar (badge status ID, tanggal, pembeli, item, subtotal,
+  ongkir, total, resi) + filter status order/pembayaran + pencarian + loading/empty/error state,
+  dan **dialog "Kelola pesanan"**: data pembeli, alamat + tujuan RajaOngkir, kurir/layanan/ongkir,
+  item dengan harga saat order, pembayaran (provider/metode/status/referensi), form kurir+layanan+AWB,
+  tombol aksi HANYA untuk transisi valid (+alasan bila terblokir), dan timeline dengan actor.
+- BARU `components/shared/OrderTimeline.js` (dipakai admin & pelanggan) + `orderStatusLabel`.
+- `pages/public/OrderTrackPage.js` & `BarayaOrderDetailPage.js`: progres pesanan + kurir + nomor resi
+  (halaman existing diperluas, tidak ada halaman baru). Timeline pelanggan tanpa email admin/catatan internal.
+
+### Verifikasi (tanpa Testing Agent)
+- `scripts/merch_phase3_verify.py` **48/48 PASS** (sandbox `alsabbat_merch_p3_sandbox`, di-DROP):
+  timeline saat checkout, list terurut + pencarian + filter, detail snapshot, transisi tidak valid
+  ditolak (PENDING→SHIPPED/COMPLETED, PACKED→SHIPPED, status sama, REFUNDED manual, enum salah),
+  transisi valid + timestamp + actor, AWB (kosong/spasi/terlalu pendek ditolak), snapshot tidak
+  tertimpa, order final tidak bisa diubah, cancel, gating pembayaran saat gateway aktif,
+  tampilan pelanggan tersanitasi, order lama tanpa timeline, harga histori tetap, notifikasi in-app,
+  regresi Fase 1/1B/2.
+- Regresi `scripts/merch_phase2_verify.py` **29/29 PASS**. `yarn build` sukses (356.3 kB gz).
+- UI live memakai fixture visual di database sekali-pakai `alsabbat_merch_p3_visual`
+  (`scripts/merch_phase3_visual_sandbox.py`, sudah **di-DROP**; database staging kembali orders 0):
+  1920px & 390px — daftar 3 order, dialog detail, tombol READY_TO_SHIP disabled + alasan resi,
+  simpan AWB lalu Tandai Siap Dikirim berhasil (toast sukses, timeline 4→6 entri), halaman
+  Lacak Pesanan menampilkan 7 entri progres + resi tanpa membocorkan email admin.
+  **0 console error**, overflow horizontal **0 px** (hanya wrapper toaster/splash fixed existing).
+  Empty state Admin Orders di staging terverifikasi.
+
+### Tidak dikerjakan (sesuai batasan Fase 3)
+COD, refund, customer reject/return, Delivery API/tracking otomatis, free shipping rule,
+integrasi payment/kurir baru, perubahan production, migrasi database.
+
+
 ## MERCHANDISE FASE 2 — VERIFIKASI FRONTEND CHECKOUT (ONGKIR RAJAONGKIR) · 8 Jun 2026 · SELESAI (terbatas)
 Backend Fase 2 sudah SELESAI sebelumnya (`scripts/merch_phase2_verify.py` 29/29 PASS). Sesi ini hanya
 menuntaskan verifikasi visual halaman Checkout. Tanpa Testing Agent, tanpa data uji di database,
@@ -1993,3 +2057,5 @@ tetap butuh `EXPO_TOKEN` user untuk EAS.
   media /tmp, keduanya dibersihkan) dan `merch_phase1_verify.py` → tetap 40/40 PASS. UI diuji
   dengan stub jaringan Playwright (tanpa menulis data): video 960x540 diputar di frame 644x805
   (letterbox, tanpa distorsi), urutan FOTO/VIDEO/FOTO/VIDEO utuh.
+
+> **Riwayat lanjutan (Merchandise Fase 2, 3, dan 4–7) ada di `/app/memory/CHANGELOG.md`.**

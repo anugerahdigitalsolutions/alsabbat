@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Badge } from '../../components/ui/badge';
 import { formatIDR } from '../../context/CartContext';
+import { OrderTimeline, orderStatusLabel } from '../../components/shared/OrderTimeline';
 import { usePageSeo } from '../../hooks/usePageSeo';
 
 export default function OrderTrackPage() {
@@ -90,7 +91,7 @@ export default function OrderTrackPage() {
           <div className="als-card mt-6 max-w-xl p-6" data-testid="track-result">
             <div className="flex flex-wrap items-center gap-3">
               <p className="font-display text-lg font-bold">{order.order_number}</p>
-              <Badge variant="outline">{order.order_status}</Badge>
+              <Badge variant="outline">{orderStatusLabel(order.order_status)}</Badge>
               <Badge variant="outline" style={{ backgroundColor: 'rgba(252,207,43,0.16)' }}>
                 {order.payment_status}
               </Badge>
@@ -110,6 +111,27 @@ export default function OrderTrackPage() {
               <span className="font-display font-bold">Total</span>
               <span className="font-display font-bold tabular-nums">{formatIDR(order.total)}</span>
             </div>
+            {order.shipment?.awb_number || order.shipment?.courier_code ? (
+              <div className="mt-4 border-t pt-4 text-sm" style={{ borderColor: 'var(--border-soft)' }} data-testid="track-shipment">
+                <p className="als-section-label mb-2">Pengiriman</p>
+                <p style={{ color: 'var(--muted-fg)' }}>
+                  {[order.shipment.courier_name || order.shipment.courier_code, order.shipment.service_code]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+                {order.shipment.awb_number ? (
+                  <p className="mt-1 font-semibold" data-testid="track-awb">
+                    Nomor resi: {order.shipment.awb_number}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="mt-4 border-t pt-4" style={{ borderColor: 'var(--border-soft)' }} data-testid="track-timeline">
+              <p className="als-section-label mb-3">Progres Pesanan</p>
+              <OrderTimeline entries={order.timeline} testId="track-timeline-list" />
+            </div>
+
             {order.payment_redirect_url && order.payment_status === 'PENDING' ? (
               <a
                 href={order.payment_redirect_url}

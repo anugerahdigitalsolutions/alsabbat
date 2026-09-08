@@ -166,6 +166,131 @@ async def search_destinations(query: str, limit: int = 20) -> List[Dict[str, Any
     return items
 
 
+def _cod_capability(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Kapabilitas COD HANYA dari balasan API (tidak pernah dikarang).
+
+    Bila penyedia tidak mengirim informasi COD (atau tidak mengirim biaya COD),
+    layanan tersebut dianggap TIDAK mendukung COD dan alasannya dijelaskan —
+    tanpa daftar kurir hardcoded dan tanpa biaya karangan.
+    """
+    raw = row.get("cod")
+    if raw is None:
+        raw = row.get("cod_available")
+    supported: Optional[bool] = None
+    if isinstance(raw, bool):
+        supported = raw
+    elif isinstance(raw, str):
+        supported = raw.strip().upper() in {"YES", "Y", "TRUE", "1", "AVAILABLE"}
+    fee_raw = row.get("cod_fee")
+    if fee_raw is None:
+        fee_raw = row.get("cod_service_fee")
+    fee: Optional[int] = None
+    try:
+        if fee_raw is not None:
+            fee = int(round(float(fee_raw)))
+    except (TypeError, ValueError):
+        fee = None
+    fee_percent: Optional[float] = None
+    percent_raw = row.get("cod_fee_percent") or row.get("cod_percent")
+    try:
+        if percent_raw is not None:
+            fee_percent = float(percent_raw)
+    except (TypeError, ValueError):
+        fee_percent = None
+    if supported is None:
+        return {"cod_available": False, "cod_fee": None, "cod_fee_percent": None,
+                "cod_note": "Penyedia ongkir tidak mengirim data kapabilitas COD untuk layanan ini."}
+    if not supported:
+        return {"cod_available": False, "cod_fee": None, "cod_fee_percent": None,
+                "cod_note": "Layanan ini tidak mendukung COD menurut penyedia ongkir."}
+    if fee is None and fee_percent is None:
+        return {"cod_available": False, "cod_fee": None, "cod_fee_percent": None,
+                "cod_note": "Penyedia ongkir tidak mengirim biaya COD, jadi COD tidak ditawarkan."}
+    return {"cod_available": True, "cod_fee": fee, "cod_fee_percent": fee_percent, "cod_note": None}
+
+
+def cod_fee_for(option: Dict[str, Any], subtotal: int) -> int:
+    """Biaya COD dari nilai resmi penyedia (nominal menang atas persentase)."""
+    if option.get("cod_fee") is not None:
+        return max(0, int(option["cod_fee"]))
+    percent = option.get("cod_fee_percent")
+    if percent is None:
+        raise ValidationFailedError("Biaya COD tidak tersedia dari penyedia ongkir.")
+    return max(0, int(round(int(subtotal) * float(percent) / 100.0)))
+
+
+def cod_status() -> Dict[str, Any]:
+    """Status konfigurasi COD (tanpa rahasia) — dipakai checkout & admin."""
+    missing = [
+        key
+        for key in ("RAJAONGKIR_COST_API_KEY", "SHIPPING_ORIGIN_DESTINATION_ID")
+        if not resolve(key)
+    ]
+    delivery_missing = [] if resolve("RAJAONGKIR_DELIVERY_API_KEY") else ["RAJAONGKIR_DELIVERY_API_KEY"]
+    return {
+        "provider": "RAJAONGKIR",
+        # Ketersediaan COD tetap ditentukan per layanan oleh API ongkir.
+        "quote_configured": not missing,
+        "shipment_configured": not delivery_missing,
+        "configured": not missing and not delivery_missing,
+        "status": "READY" if not missing and not delivery_missing else "COD_NOT_CONFIGURED",
+        "missing_config": missing + delivery_missing,
+    }
+
+
+async def create_cod_shipment(order: Dict[str, Any], shipment: Dict[str, Any]) -> Dict[str, Any]:
+    """Buat shipment COD lewat Delivery API resmi (butuh kunci Delivery terpisah).
+
+    Tanpa kredensial Delivery API, fungsi ini TIDAK memalsukan respons: ia
+    mengembalikan galat jujur sehingga status pesanan tidak pernah berubah
+    seolah-olah paket sudah diserahkan ke kurir.
+    """
+    key = resolve("RAJAONGKIR_DELIVERY_API_KEY")
+    if not key:
+        raise ValidationFailedError(
+            "Pembuatan pengiriman COD belum aktif. Admin belum mengisi RajaOngkir/Komerce "
+            "Delivery API Key."
+        )
+    await ensure_fresh()
+    payload = {
+        "order_number": order["order_number"],
+        "origin": origin_destination_id(),
+        "destination": str((order.get("shipping") or {}).get("destination_id") or ""),
+        "weight": _grams_for_api(int(order.get("shipment_weight_grams") or 0)),
+        "courier": str(shipment.get("courier_code") or ""),
+        "service": str(shipment.get("service_code") or ""),
+        "cod_value": int(order.get("total") or 0),
+        "receiver_name": (order.get("shipping") or {}).get("recipient"),
+        "receiver_phone": (order.get("customer") or {}).get("phone"),
+        "receiver_address": (order.get("shipping") or {}).get("address"),
+    }
+    headers = {"key": key, "accept": "application/json"}
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+            response = await client.post(f"{BASE_URL}/delivery/order", headers=headers, data=payload)
+    except httpx.HTTPError as exc:
+        logger.warning("rajaongkir.cod_shipment_transport_error error=%s", type(exc).__name__)
+        raise ValidationFailedError("Layanan pengiriman COD tidak dapat dihubungi. Coba lagi.")
+    if response.status_code >= 400:
+        logger.warning("rajaongkir.cod_shipment_http_error status=%s", response.status_code)
+        raise ValidationFailedError(
+            "Penyedia menolak pembuatan pengiriman COD. Periksa data pesanan lalu coba lagi."
+        )
+    try:
+        body = response.json()
+    except ValueError:
+        raise ValidationFailedError("Balasan layanan pengiriman COD tidak dapat dibaca.")
+    data = body.get("data") if isinstance(body, dict) else None
+    data = data if isinstance(data, dict) else {}
+    awb = str(data.get("awb") or data.get("waybill") or "").strip()
+    if not awb:
+        raise ValidationFailedError(
+            "Penyedia tidak mengembalikan nomor resi COD, pengiriman dianggap gagal."
+        )
+    logger.info("rajaongkir.cod_shipment_created order=%s", order["order_number"])
+    return {"awb_number": awb, "shipment_reference": str(data.get("order_no") or "") or None}
+
+
 def _normalise_option(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     cost = row.get("cost")
     try:
@@ -187,6 +312,7 @@ def _normalise_option(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "cost": cost_value,
         "etd": (str(row.get("etd")).strip() or None) if row.get("etd") is not None else None,
         "available": True,
+        **_cod_capability(row),
     }
 
 

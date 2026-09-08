@@ -62,6 +62,11 @@ class Collections:
     BROADCASTS = "broadcasts"
     # Additive: token push per device milik akun Baraya/member (mobile native).
     PUSH_DEVICES = "customer_push_devices"
+    # Additive (Fase 6): pengajuan & keputusan refund (lifecycle terpisah dari
+    # order supaya riwayat pengajuan tidak menimpa snapshot pesanan).
+    REFUNDS = "refunds"
+    # Additive (Fase 7): jejak notifikasi webhook pembayaran (idempotency + audit).
+    PAYMENT_WEBHOOK_LOGS = "payment_webhook_logs"
 
 
 def _assert_safe_db_config() -> None:
@@ -337,6 +342,20 @@ async def ensure_indexes() -> None:
         await db[Collections.PUSH_DEVICES].create_index([("id", ASCENDING)], unique=True)
         await db[Collections.PUSH_DEVICES].create_index([("token", ASCENDING)], unique=True)
         await db[Collections.PUSH_DEVICES].create_index([("customer_id", ASCENDING)])
+        # Refund (Fase 6)
+        await db[Collections.REFUNDS].create_index([("id", ASCENDING)], unique=True)
+        await db[Collections.REFUNDS].create_index([("order_id", ASCENDING), ("created_at", DESCENDING)])
+        await db[Collections.REFUNDS].create_index([("status", ASCENDING), ("created_at", DESCENDING)])
+        await db[Collections.REFUNDS].create_index([("customer_id", ASCENDING)])
+        # Webhook pembayaran (Fase 7) — dedup per event + audit
+        await db[Collections.PAYMENT_WEBHOOK_LOGS].create_index([("id", ASCENDING)], unique=True)
+        await db[Collections.PAYMENT_WEBHOOK_LOGS].create_index([("event_key", ASCENDING)], unique=True)
+        await db[Collections.PAYMENT_WEBHOOK_LOGS].create_index([("created_at", DESCENDING)])
+        # Laporan penjualan (Fase 7B) — agregasi berdasarkan tanggal & status
+        await db[Collections.ORDERS].create_index([("created_at", DESCENDING)])
+        await db[Collections.ORDERS].create_index([("order_status", ASCENDING), ("created_at", DESCENDING)])
+        await db[Collections.ORDERS].create_index([("payment_status", ASCENDING)])
+        await db[Collections.ORDERS].create_index([("payment_method_choice", ASCENDING)])
         logger.info("MongoDB indexes ensured")
     except Exception as exc:  # pragma: no cover
         logger.warning("Index creation skipped/failed: %s", exc)

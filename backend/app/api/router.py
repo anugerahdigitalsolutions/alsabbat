@@ -17,6 +17,7 @@ from app.api.routes import (
     media,
     membership,
     merchandise,
+    sales_reports,
     notifications,
     players,
     seasons,
@@ -57,6 +58,7 @@ api_router.include_router(integrations.router, prefix="/settings/integrations")
 api_router.include_router(seo.router, prefix="/seo")
 api_router.include_router(social.router, prefix="/social")
 api_router.include_router(merchandise.router, prefix="/merchandise")
+api_router.include_router(sales_reports.router, prefix="/reports")
 api_router.include_router(customers.router, prefix="/baraya")
 api_router.include_router(membership.router, prefix="/baraya")
 api_router.include_router(customers.member_router, prefix="/member")

@@ -47,9 +47,12 @@ from app.models.customer import (
 )
 from app.models.base import new_id, utcnow
 from app.models.enums import MediaType
+from app.models.commerce import OrderRejectRequest, RefundRequestCreate
 from app.models.media_direct import DirectUploadSignRequest
 from app.services.mailer import send_customer_password_reset_email
 from app.services.account_deletion import delete_customer_account
+from app.services import order_fulfilment
+from app.services import refunds as refund_service
 from app.services.otp import PURPOSE_REGISTER, issue_otp
 from app.services.media_service import media_service
 from app.services.membership import (
@@ -109,11 +112,16 @@ def _public_customer(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _public_order(order: Dict[str, Any]) -> Dict[str, Any]:
-    return {
+    payload = {
         key: value
         for key, value in order.items()
         if key not in {"payment_raw", "payment_provider_payload", "_id"}
     }
+    # Fase 3 — progres pesanan untuk pelanggan (tanpa identitas admin/catatan internal).
+    payload["shipment"] = order_fulfilment.effective_shipment(order)
+    payload["timeline"] = order_fulfilment.customer_timeline(order)
+    payload.pop("fulfilment", None)
+    return payload
 
 
 async def _issue_session(customer: Dict[str, Any], request: Request) -> Dict[str, Any]:
@@ -492,14 +500,183 @@ async def my_orders(
     }
 
 
+async def _own_order(order_id: str, customer: CustomerAuthContext) -> Dict[str, Any]:
+    """Otorisasi kepemilikan pesanan (server-side, tidak pernah dari klien)."""
+    order = await orders.get_by({"id": order_id, "customer_id": customer.customer_id})
+    if not order:
+        raise NotFoundError("Pesanan tidak ditemukan.")
+    return order
+
+
+async def _order_payload(order: Dict[str, Any]) -> Dict[str, Any]:
+    payload = _public_order(order)
+    refund = await refund_service.latest_for_order(order["id"])
+    payload["refund"] = refund_service.public_refund(refund, for_customer=True) if refund else None
+    payload["can_confirm_received"] = order.get("order_status") == "SHIPPED"
+    payload["can_reject"] = order.get("order_status") == "SHIPPED"
+    payload["can_request_refund"] = (
+        order.get("order_status") in refund_service.ELIGIBLE_ORDER_STATUS
+        and order.get("payment_status") != "REFUNDED"
+        and refund is None
+    )
+    return payload
+
+
 @router.get("/orders/{order_id}", summary="Detail pesanan milik Baraya yang login")
 async def my_order_detail(
     order_id: str, customer: CustomerAuthContext = Depends(get_current_customer)
 ) -> Dict[str, Any]:
-    order = await orders.get_by({"id": order_id, "customer_id": customer.customer_id})
-    if not order:
-        raise NotFoundError("Pesanan tidak ditemukan.")
-    return _public_order(order)
+    return await _order_payload(await _own_order(order_id, customer))
+
+
+@router.post("/orders/{order_id}/evidence", summary="Unggah bukti foto untuk pesanan sendiri")
+async def upload_order_evidence(
+    order_id: str,
+    request: Request,
+    file: UploadFile = File(...),
+    customer: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    """Memakai Media Library existing; hanya pemilik pesanan yang boleh mengunggah."""
+    write_rate_limit(request)
+    await _own_order(order_id, customer)
+    content = await file.read()
+    stored, media_type = await media_service.store(
+        file.filename or "bukti", content, file.content_type or "application/octet-stream"
+    )
+    if media_type != MediaType.IMAGE:
+        await media_service.remove(stored.storage_key)
+        raise ValidationFailedError("Hanya berkas gambar yang diizinkan sebagai bukti.")
+    logger.info("baraya.order_evidence.upload customer=%s order=%s", customer.customer_id, order_id)
+    return {"success": True, "url": stored.url}
+
+
+@router.post("/orders/{order_id}/receive", summary="Konfirmasi barang diterima (sekali saja)")
+async def confirm_order_received(
+    order_id: str, request: Request, customer: CustomerAuthContext = Depends(get_current_customer)
+) -> Dict[str, Any]:
+    write_rate_limit(request)
+    order = await _own_order(order_id, customer)
+    blocker = order_fulfilment.transition_blocker(order, "COMPLETED", payment_configured=True)
+    if blocker:
+        raise ValidationFailedError(blocker)
+    now = jsonable_encoder(utcnow())
+    result = await orders.coll.update_one(
+        {"id": order_id, "order_status": "SHIPPED"},
+        {
+            "$set": {
+                "order_status": "COMPLETED",
+                "completed_at": now,
+                "delivery": {**(order.get("delivery") or {}), "received_at": now, "received_by": customer.customer_id},
+                **({"payment_status": "PAID", "paid_at": now} if str(order.get("payment_method_choice")) == "COD" else {}),
+            },
+            "$push": {
+                "timeline": {
+                    "$each": [
+                        order_fulfilment.timeline_entry(
+                            event="RECEIVED_CONFIRMED",
+                            status="COMPLETED",
+                            from_status="SHIPPED",
+                            actor=customer.customer_id,
+                            actor_type="CUSTOMER",
+                            note="Pembeli mengonfirmasi barang diterima.",
+                        ),
+                        order_fulfilment.timeline_entry(
+                            event="COMPLETED",
+                            status="COMPLETED",
+                            from_status="SHIPPED",
+                            actor=customer.customer_id,
+                            actor_type="CUSTOMER",
+                        ),
+                    ]
+                }
+            },
+        },
+    )
+    if not result.modified_count:
+        raise ValidationFailedError("Pesanan ini sudah dikonfirmasi sebelumnya.")
+    fresh = await orders.get(order_id)
+    await order_fulfilment.notify_customer_status(fresh, "COMPLETED")
+    return await _order_payload(fresh)
+
+
+@router.post("/orders/{order_id}/reject", summary="Tolak barang saat diterima (masuk workflow admin)")
+async def reject_order(
+    order_id: str,
+    payload: OrderRejectRequest,
+    request: Request,
+    customer: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    """Reject TIDAK otomatis berarti refund — refund tetap diajukan & ditinjau admin."""
+    write_rate_limit(request)
+    order = await _own_order(order_id, customer)
+    blocker = order_fulfilment.transition_blocker(order, "REJECTED", payment_configured=True)
+    if blocker:
+        raise ValidationFailedError(blocker)
+    now = jsonable_encoder(utcnow())
+    result = await orders.coll.update_one(
+        {"id": order_id, "order_status": "SHIPPED"},
+        {
+            "$set": {
+                "order_status": "REJECTED",
+                "rejected_at": now,
+                "delivery": {
+                    **(order.get("delivery") or {}),
+                    "rejected_at": now,
+                    "rejected_by": customer.customer_id,
+                    "reject_reason": payload.reason,
+                    "reject_detail": payload.detail,
+                    "evidence_urls": payload.evidence_urls[:5],
+                },
+            },
+            "$push": {
+                "timeline": {
+                    "$each": [
+                        order_fulfilment.timeline_entry(
+                            event="REJECTED_BY_CUSTOMER",
+                            status="REJECTED",
+                            from_status="SHIPPED",
+                            actor=customer.customer_id,
+                            actor_type="CUSTOMER",
+                            note=payload.reason,
+                        ),
+                        order_fulfilment.timeline_entry(
+                            event="REJECTED",
+                            status="REJECTED",
+                            from_status="SHIPPED",
+                            actor=customer.customer_id,
+                            actor_type="CUSTOMER",
+                        ),
+                    ]
+                }
+            },
+        },
+    )
+    if not result.modified_count:
+        raise ValidationFailedError("Pesanan ini sudah dikonfirmasi atau ditolak sebelumnya.")
+    fresh = await orders.get(order_id)
+    await order_fulfilment.notify_customer_status(fresh, "REJECTED")
+    return await _order_payload(fresh)
+
+
+@router.post("/orders/{order_id}/refund", summary="Ajukan refund untuk pesanan sendiri")
+async def request_order_refund(
+    order_id: str,
+    payload: RefundRequestCreate,
+    request: Request,
+    customer: CustomerAuthContext = Depends(get_current_customer),
+) -> Dict[str, Any]:
+    write_rate_limit(request)
+    order = await _own_order(order_id, customer)
+    refund = await refund_service.request_refund(
+        order,
+        actor=customer.customer_id,
+        actor_type="CUSTOMER",
+        reason=payload.reason,
+        detail=payload.detail,
+        evidence_urls=payload.evidence_urls,
+        bank_account=payload.bank_account,
+    )
+    return refund_service.public_refund(refund, for_customer=True)
 
 
 # --------------------------------------------------- admin customer console

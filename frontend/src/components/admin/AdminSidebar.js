@@ -73,6 +73,7 @@ export const ADMIN_NAV = [
       { id: 'product-categories', to: '/admin/product-categories', label: 'Kategori Produk', Icon: Tags, permission: 'merchandise:write' },
       { id: 'product-variants', to: '/admin/product-variants', label: 'Varian Produk', Icon: Layers, permission: 'merchandise:write' },
       { id: 'orders', to: '/admin/orders', label: 'Orders', Icon: Receipt, permission: 'order:read' },
+      { id: 'sales-report', to: '/admin/sales-report', label: 'Sales Report', Icon: Receipt, permission: 'order:read' },
     ],
   },
   {

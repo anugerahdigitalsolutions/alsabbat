@@ -58,6 +58,10 @@ class PaymentProvider(ABC):
     @abstractmethod
     def map_status(self, payload: Dict[str, Any]) -> str: ...
 
+    async def refund(self, order: Dict[str, Any], amount: int, reason: str) -> Dict[str, Any]:
+        """Refund lewat API resmi provider. Default: tidak didukung."""
+        raise NotImplementedError
+
 
 class MidtransProvider(PaymentProvider):
     name = "MIDTRANS"
@@ -189,6 +193,58 @@ class MidtransProvider(PaymentProvider):
             logger.warning("Midtrans status response failed signature verification")
             return None
         return payload
+
+    async def refund(self, order: Dict[str, Any], amount: int, reason: str) -> Dict[str, Any]:
+        """Refund resmi Midtrans (`/v2/{order_id}/refund`).
+
+        Status akhir HANYA berasal dari balasan provider; permintaan yang
+        terkirim TIDAK pernah dianggap sukses dengan sendirinya.
+        """
+        await ensure_settings_fresh()
+        if not self.is_configured():
+            return {
+                "ok": False,
+                "status": "NOT_CONFIGURED",
+                "message": (
+                    "Refund Midtrans belum bisa dijalankan. Variabel yang belum diisi: "
+                    + ", ".join(self.missing_env())
+                ),
+            }
+        body = {
+            "refund_key": f"{order['order_number']}-refund",
+            "amount": int(amount),
+            "reason": (reason or "Refund")[:255],
+        }
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                response = await client.post(
+                    f"{self._api_base()}/v2/{order['order_number']}/refund",
+                    auth=(resolve_setting("MIDTRANS_SERVER_KEY") or "", ""),
+                    headers={"Accept": "application/json", "Content-Type": "application/json"},
+                    json=body,
+                )
+        except httpx.HTTPError:
+            logger.warning("Midtrans transport error while requesting a refund")
+            return {"ok": False, "status": "TRANSPORT_ERROR", "message": "Gagal menghubungi Midtrans."}
+        try:
+            payload = response.json()
+        except ValueError:
+            return {"ok": False, "status": "INVALID_RESPONSE", "message": "Balasan Midtrans tidak dapat dibaca."}
+        transaction_status = str(payload.get("transaction_status") or "").lower()
+        status_code = str(payload.get("status_code") or response.status_code)
+        ok = status_code == "200" and transaction_status in {"refund", "partial_refund"}
+        logger.info(
+            "midtrans.refund order=%s status_code=%s transaction_status=%s",
+            order["order_number"],
+            status_code,
+            transaction_status or "-",
+        )
+        return {
+            "ok": ok,
+            "status": transaction_status.upper() or status_code,
+            "reference": str(payload.get("refund_key") or payload.get("transaction_id") or "") or None,
+            "message": str(payload.get("status_message") or "")[:300] or None,
+        }
 
     def map_status(self, payload: Dict[str, Any]) -> str:
         status = str(payload.get("transaction_status") or "").lower()
