@@ -109,6 +109,7 @@ module.exports = () => ({
       ],
       'expo-font',
       'expo-image',
+      'expo-video',
       'expo-web-browser',
     ],
     extra: {

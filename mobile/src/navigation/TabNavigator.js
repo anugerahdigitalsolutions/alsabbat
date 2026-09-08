@@ -7,11 +7,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, shadow } from '../theme';
 import Txt from '../components/Txt';
 import HomeScreen from '../screens/HomeScreen';
+import StoreScreen from '../screens/StoreScreen';
 import MatchesScreen from '../screens/MatchesScreen';
 import NewsScreen from '../screens/NewsScreen';
 import MediaScreen from '../screens/MediaScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -20,6 +22,7 @@ const TABS = {
   Match: { label: 'MATCH', icon: 'football', iconOutline: 'football-outline' },
   News: { label: 'NEWS', icon: 'newspaper', iconOutline: 'newspaper-outline' },
   Media: { label: 'MEDIA', icon: 'images', iconOutline: 'images-outline' },
+  Store: { label: 'TOKO', icon: 'bag-handle', iconOutline: 'bag-handle-outline' },
   Profile: { label: 'PROFILE', icon: 'person', iconOutline: 'person-outline' },
 };
 
@@ -27,6 +30,7 @@ const TABS = {
 function ClubTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const { unreadCount } = useAuth();
+  const { count: cartCount } = useCart();
 
   return (
     <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]}>
@@ -34,7 +38,9 @@ function ClubTabBar({ state, navigation }) {
         {state.routes.map((route, index) => {
           const focused = state.index === index;
           const meta = TABS[route.name] || { label: route.name, icon: 'ellipse', iconOutline: 'ellipse-outline' };
-          const badge = route.name === 'Profile' && unreadCount > 0;
+          const badge =
+            (route.name === 'Profile' && unreadCount > 0) ||
+            (route.name === 'Store' && cartCount > 0);
           return (
             <Pressable
               key={route.key}
@@ -55,7 +61,12 @@ function ClubTabBar({ state, navigation }) {
                 />
                 {badge ? <View style={styles.badge} /> : null}
               </View>
-              <Txt variant="label" tone={focused ? 'accent' : 'dim'} numberOfLines={1}>
+              <Txt
+                variant="label"
+                tone={focused ? 'accent' : 'dim'}
+                numberOfLines={1}
+                style={styles.tabLabel}
+              >
                 {meta.label}
               </Txt>
             </Pressable>
@@ -81,6 +92,7 @@ export default function TabNavigator() {
       <Tab.Screen name="Match" component={MatchesScreen} />
       <Tab.Screen name="News" component={NewsScreen} />
       <Tab.Screen name="Media" component={MediaScreen} />
+      <Tab.Screen name="Store" component={StoreScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -106,10 +118,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 6,
   },
-  tab: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 2 },
+  tab: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 2, minWidth: 0 },
+  // 6 tab harus tetap utuh pada layar 320px (tanpa teks terpotong).
+  tabLabel: { letterSpacing: 0.2, textAlign: 'center', width: '100%' },
   iconWrap: {
-    width: 42,
-    height: 30,
+    width: 36,
+    height: 28,
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -118,7 +132,7 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: 2,
-    right: 8,
+    right: 5,
     width: 8,
     height: 8,
     borderRadius: 4,

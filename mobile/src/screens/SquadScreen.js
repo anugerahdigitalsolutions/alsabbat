@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { gutter } from '../theme';
+import { colors, gutter } from '../theme';
 import Screen from '../components/Screen';
 import TopBar, { SectionHeader } from '../components/TopBar';
 import Txt from '../components/Txt';
@@ -47,7 +48,22 @@ export default function SquadScreen({ navigation }) {
   return (
     <Screen
       testID="squad-screen"
-      header={<TopBar title="Skuad" onBack={() => navigation.goBack()} />}
+      header={
+        <TopBar
+          title="Skuad"
+          onBack={() => navigation.goBack()}
+          right={
+            <Pressable
+              onPress={() => navigation.navigate('Teams')}
+              hitSlop={10}
+              style={styles.teamsButton}
+              testID="squad-teams"
+            >
+              <Ionicons name="shield-half-outline" size={19} color={colors.text} />
+            </Pressable>
+          }
+        />
+      }
       onRefresh={refresh}
       refreshing={players.refreshing}
       bottomInset={40}
@@ -114,6 +130,16 @@ export default function SquadScreen({ navigation }) {
 const styles = StyleSheet.create({
   intro: { marginBottom: 12 },
   chips: { marginHorizontal: -gutter, marginBottom: 16 },
+  teamsButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   gridItem: { width: '47.6%' },
   staffStack: { gap: 10 },

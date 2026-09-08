@@ -19,6 +19,9 @@ const ICONS = {
   MEMBERSHIP: 'card-outline',
   APPLICATION: 'document-text-outline',
   ORDER: 'bag-handle-outline',
+  ORDER_STATUS: 'bag-handle-outline',
+  REFUND: 'cash-outline',
+  REFUND_STATUS: 'cash-outline',
   SYSTEM: 'information-circle-outline',
 };
 
@@ -54,6 +57,13 @@ export default function NotificationsScreen({ navigation }) {
         navigation.navigate('MatchDetail', { matchId: item.reference_id });
       } else if (item.reference_type === 'POST' && item.reference_id) {
         navigation.navigate('NewsDetail', { postId: item.reference_id });
+      } else if (item.reference_type === 'ORDER' && item.reference_id) {
+        navigation.navigate('OrderDetail', { orderId: item.reference_id });
+      } else if (item.reference_type === 'REFUND') {
+        // Notifikasi refund menunjuk pesanan lewat `link` (/akun/pesanan/{orderId}).
+        const match = /\/akun\/pesanan\/([^/?#]+)/.exec(String(item.link || ''));
+        if (match) navigation.navigate('OrderDetail', { orderId: match[1] });
+        else navigation.navigate('Orders');
       }
     },
     [notifications, refreshUnread, navigation]

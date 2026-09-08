@@ -12,6 +12,7 @@ import { QuickLinks } from '../components/QuickLinks';
 import { MatchCard } from '../components/MatchCard';
 import { NewsCard } from '../components/NewsCard';
 import { PlayerCard, AlbumCard } from '../components/PlayerCard';
+import { ProductCard } from '../components/ProductCard';
 import { Avatar } from '../components/Crest';
 import { EmptyState, ErrorState, Loading, RestrictedNotice } from '../components/States';
 import { useResourceList } from '../hooks/useResource';
@@ -36,6 +37,9 @@ export default function HomeScreen({ navigation }) {
   const matches = useResourceList(() => endpoints.getMatches({ limit: 40 }), []);
   const news = useResourceList(() => endpoints.getPosts({ limit: 6, status: 'PUBLISHED' }), []);
   const players = useResourceList(() => endpoints.getPlayers({ limit: 10, status: 'ACTIVE' }), []);
+  // Merchandise: bagian ini otomatis tersembunyi bila toko kosong atau bila
+  // backend yang terpasang belum memiliki modul merchandise.
+  const products = useResourceList(() => endpoints.getProducts({ limit: 8 }), []);
   const albums = useResourceList(() => endpoints.getAlbums({ limit: 6 }), [canViewGallery], {
     enabled: canViewGallery,
   });
@@ -57,8 +61,9 @@ export default function HomeScreen({ navigation }) {
     matches.refresh();
     news.refresh();
     players.refresh();
+    products.refresh();
     if (canViewGallery) albums.refresh();
-  }, [banners, matches, news, players, albums, canViewGallery]);
+  }, [banners, matches, news, players, products, albums, canViewGallery]);
 
   const quickLinks = useMemo(
     () => [
@@ -66,6 +71,7 @@ export default function HomeScreen({ navigation }) {
       { key: 'news', label: 'Berita', icon: 'newspaper-outline', onPress: () => navigation.navigate('News') },
       { key: 'media', label: 'Media', icon: 'images-outline', onPress: () => navigation.navigate('Media') },
       { key: 'squad', label: 'Skuad', icon: 'people-outline', onPress: () => navigation.navigate('Squad') },
+      { key: 'store', label: 'Toko', icon: 'bag-handle-outline', onPress: () => navigation.navigate('Store') },
       { key: 'club', label: 'Klub', icon: 'shield-outline', onPress: () => navigation.navigate('ClubInfo') },
       {
         key: 'card',
@@ -153,6 +159,7 @@ export default function HomeScreen({ navigation }) {
         <MatchCard
           match={nextMatch}
           variant="featured"
+          countdown
           onPress={() => navigation.navigate('MatchDetail', { matchId: nextMatch.id })}
           testID="home-next-match"
         />
@@ -190,6 +197,39 @@ export default function HomeScreen({ navigation }) {
               />
             ))}
           </View>
+        </>
+      ) : null}
+
+      {/* ------------------------------------------------- merchandise */}
+      {products.items.length ? (
+        <>
+          <SectionHeader
+            title="Merchandise Resmi"
+            actionLabel="Buka toko"
+            onAction={() => navigation.navigate('Store')}
+            testID="home-store-header"
+          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.hscroll}
+            style={styles.hscrollWrap}
+            testID="home-products"
+          >
+            {products.items.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                width={148}
+                onPress={() =>
+                  navigation.navigate('ProductDetail', {
+                    slug: product.slug || product.id,
+                    name: product.name,
+                  })
+                }
+              />
+            ))}
+          </ScrollView>
         </>
       ) : null}
 

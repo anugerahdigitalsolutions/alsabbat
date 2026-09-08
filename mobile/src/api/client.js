@@ -31,10 +31,34 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 });
 
+/** Deteksi FormData yang aman di runtime React Native. */
+const isFormData = (value) =>
+  typeof FormData !== 'undefined' && value instanceof FormData;
+
+/**
+ * Hapus header Content-Type untuk request multipart.
+ *
+ * PENTING: boundary multipart HANYA bisa dibuat oleh runtime (XHR React
+ * Native). Kalau klien menetapkan `Content-Type` sendiri — baik
+ * `application/json` (default instance ini) maupun `multipart/form-data`
+ * tanpa boundary — body terkirim tanpa boundary dan backend menolak upload.
+ * `AxiosHeaders` menyimpan key ternormalisasi, jadi `delete obj['Content-Type']`
+ * saja tidak selalu cukup → pakai API `headers.delete()` bila tersedia.
+ */
+const stripContentType = (headers) => {
+  if (!headers) return;
+  if (typeof headers.delete === 'function') {
+    headers.delete('Content-Type');
+    return;
+  }
+  delete headers['Content-Type'];
+  delete headers['content-type'];
+};
+
 api.interceptors.request.use(async (config) => {
   const token = tokenStore.peek() || (await tokenStore.get());
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  if (config.data instanceof FormData) delete config.headers['Content-Type'];
+  if (isFormData(config.data)) stripContentType(config.headers);
   return config;
 });
 
@@ -90,5 +114,12 @@ export function apiErrorMessage(error, fallback = 'Terjadi kendala. Coba lagi.')
 }
 
 export const errorStatus = (error) => error?.response?.status || null;
+
+/**
+ * Endpoint belum tersedia di backend yang terpasang (mis. server produksi
+ * belum di-deploy ke versi terbaru). Dipakai untuk fallback ke endpoint
+ * existing lain / menyembunyikan fitur — tanpa data palsu.
+ */
+export const isEndpointMissing = (error) => [404, 405, 501].includes(errorStatus(error));
 
 export default api;

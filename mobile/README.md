@@ -30,11 +30,12 @@ mobile/                     ← aplikasi Expo (React Native)
     screens/                ← seluruh layar aplikasi
 ```
 
-Bottom navigation native: **HOME · MATCH · NEWS · MEDIA · PROFILE**.
+Bottom navigation native: **HOME · MATCH · NEWS · MEDIA · TOKO · PROFILE**.
 
 Layar lain (stack): Onboarding, Login, Register, OTP, Lupa Sandi, Detail
 Pertandingan, Detail Berita, Detail Album + image viewer, Skuad, Detail Pemain,
-Notifikasi, Kartu Member, Profil Klub.
+Tim & Detail Tim, Notifikasi, Kartu Member, Profil Klub, Detail Produk,
+Keranjang, Checkout, Pesanan Saya, Detail Pesanan, Lacak Pesanan.
 
 ### Admin Panel
 Admin Panel **tetap aplikasi web yang sudah ada** dan tidak dimasukkan ke
@@ -64,6 +65,41 @@ Seluruh data dinamis berasal dari API ALSABBAT yang sudah ada:
 | Klub & prestasi | `GET /api/achievements`, `GET /api/sponsors` |
 | Auth | `POST /api/baraya/login`, `/register`, `/otp/request`, `/otp/verify`, `/google/login`, `/forgot-password`, `/reset-password-otp`, `/logout` |
 | Akun | `GET/PATCH /api/baraya/me`, `GET /api/baraya/member-card`, `GET /api/baraya/notifications` (+ read / read-all / unread-count) |
+| Foto (profil / pengajuan / bukti) | `POST /api/baraya/me/photo`, `DELETE /api/baraya/me/photo`, `POST /api/baraya/uploads/photo`, `POST /api/baraya/me/upload`, `POST /api/baraya/orders/{id}/evidence` |
+| Tim | `GET /api/teams`, `GET /api/teams/{id}` (+ `/players?team_id=`, `/staff?team_id=`) |
+| Toko / katalog | `GET /api/merchandise/products`, `/categories/public`, `/products/by-slug/{slug}` |
+| Keranjang & ongkir | `POST /api/merchandise/cart/revalidate`, `GET /shipping/config`, `GET /cod/status`, `GET /shipping/destinations`, `POST /shipping/quote`, `GET /payment/status` |
+| Checkout & pesanan | `POST /api/merchandise/checkout`, `GET /api/merchandise/orders/track`, `GET /api/baraya/orders`, `GET /api/baraya/orders/{id}` |
+| Delivery & refund pelanggan | `POST /api/baraya/orders/{id}/receive`, `/reject`, `/evidence`, `/refund` |
+| Maintenance Mode | `GET /api/system/maintenance` |
+
+### Toko / Merchandise (mobile)
+Katalog (kategori, presentasi 4:5, galeri foto **dan** video, varian/ukuran,
+stok), keranjang (AsyncStorage + revalidasi server), checkout (data pembeli,
+tujuan & ongkir real-time, kurir/layanan, biaya COD, total server-side,
+Midtrans / COD), pesanan (status, timeline, kurir, resi/AWB), delivery
+pelanggan (Barang Diterima / Tolak + alasan + bukti foto) dan refund
+(pengajuan + status review admin). Semua angka & transisi status berasal dari
+backend; COD hanya ditampilkan bila backend menyatakan tersedia.
+
+### Countdown "Pertandingan Terdekat"
+Hitungan mundur HARI/JAM/MENIT/DETIK dihitung dari kickoff nyata
+(`match.date` + `match.time`, diperlakukan sebagai WIB/+07:00 lewat
+`src/lib/countdown.js`), update tiap detik, satu interval per kartu, dibersihkan
+saat unmount, dan re-sync saat aplikasi kembali aktif. Bila laga sudah dimulai
+→ label status ("SEDANG BERLANGSUNG"/status existing), tanpa angka negatif.
+
+### Maintenance Mode
+Status hanya dari `GET /api/system/maintenance`. Bila aktif, seluruh aplikasi
+diganti layar **"SEDANG MAINTENANCE SISTEM"** (render langsung, tanpa redirect
+sehingga tidak ada loop). Bila endpoint tidak tersedia/putus jaringan, aplikasi
+tetap normal (tidak ada layar maintenance palsu).
+
+### Kompatibilitas server
+Aplikasi mendeteksi endpoint yang belum tersedia di server terpasang
+(HTTP 404/405) dan menampilkan status jujur atau memakai endpoint existing
+lain — tidak pernah data palsu. Contoh: upload foto memakai
+`/api/baraya/uploads/photo` dan otomatis mundur ke `/api/baraya/me/upload`.
 
 Bila API kosong, layar menampilkan **empty state** yang jujur — tidak ada
 pertandingan, berita, pemain, banner, atau statistik yang di-hardcode.

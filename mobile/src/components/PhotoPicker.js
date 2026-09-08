@@ -12,7 +12,7 @@ import { apiErrorMessage, resolveMediaUrl } from '../api/client';
  * Ambil/pilih foto → preview → upload ke media infrastructure existing.
  * `onChange(url)` dipanggil dengan URL foto tersimpan (atau null bila dihapus).
  */
-export function PhotoPicker({ label = 'FOTO', value, onChange, hint, testID }) {
+export function PhotoPicker({ label = 'FOTO', value, onChange, hint, testID, uploader }) {
   const [localUri, setLocalUri] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -29,17 +29,20 @@ export function PhotoPicker({ label = 'FOTO', value, onChange, hint, testID }) {
       setLocalUri(result.asset.uri);
       setBusy(true);
       try {
-        const stored = await uploadPhoto(result.asset.uri);
-        onChange(stored?.url || null);
+        // Asset lengkap dikirim (uri + mime + nama) agar multipart valid.
+        const stored = uploader ? await uploader(result.asset) : await uploadPhoto(result.asset);
+        const url = stored?.url || stored?.photo_url || null;
+        if (!url) throw new Error('Server tidak mengembalikan URL foto.');
+        onChange(url);
       } catch (e) {
         setLocalUri(null);
         onChange(null);
-        setError(apiErrorMessage(e, 'Foto gagal diunggah. Coba lagi.'));
+        setError(apiErrorMessage(e, e?.message || 'Foto gagal diunggah. Coba lagi.'));
       } finally {
         setBusy(false);
       }
     },
-    [onChange]
+    [onChange, uploader]
   );
 
   const remove = useCallback(() => {

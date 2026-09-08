@@ -1,7 +1,7 @@
 # Cloudinary Direct-Upload Signing & Diagnostics Verification Report
 
 **Date**: 2026-09-01
-**Environment**: Staging Preview (https://mass-notify-3.preview.emergentagent.com)
+**Environment**: Staging Preview (https://feature-complete-app-13.preview.emergentagent.com)
 **Scope**: Limited to Cloudinary direct-upload signing & diagnostics only
 
 ## A. BASIC REGRESSION TESTS

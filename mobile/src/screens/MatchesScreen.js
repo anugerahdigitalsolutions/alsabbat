@@ -8,7 +8,7 @@ import { MatchCard } from '../components/MatchCard';
 import { ChipRow, EmptyState, ErrorState, Loading } from '../components/States';
 import { useResourceList } from '../hooks/useResource';
 import * as endpoints from '../api/endpoints';
-import { hasScore, isUpcomingStatus, kickoffAt } from '../lib/matchUtils';
+import { hasScore, isUpcomingStatus, kickoffAt, pickNextMatch } from '../lib/matchUtils';
 
 const FILTERS = [
   { value: 'upcoming', label: 'Jadwal' },
@@ -39,6 +39,9 @@ export default function MatchesScreen({ navigation }) {
     return items.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
   }, [matches.items, filter]);
 
+  // Countdown hanya pada pertandingan terdekat yang belum dimulai.
+  const nextMatchId = useMemo(() => pickNextMatch(matches.items)?.id || null, [matches.items]);
+
   const openMatch = useCallback(
     (match) => navigation.navigate('MatchDetail', { matchId: match.id }),
     [navigation]
@@ -67,6 +70,7 @@ export default function MatchesScreen({ navigation }) {
             <MatchCard
               key={match.id}
               match={match}
+              countdown={match.id === nextMatchId}
               onPress={() => openMatch(match)}
               testID={`match-card-${match.id}`}
             />

@@ -12,6 +12,7 @@ import {
 
 import { AuthProvider } from './src/context/AuthContext';
 import { ClubProvider } from './src/context/ClubContext';
+import { CartProvider } from './src/context/CartContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import SplashScreenView from './src/screens/SplashScreenView';
 
@@ -51,7 +52,9 @@ export default function App() {
       <StatusBar style="light" />
       <ClubProvider>
         <AuthProvider>
-          <RootNavigator onReady={onNavigationReady} />
+          <CartProvider>
+            <RootNavigator onReady={onNavigationReady} />
+          </CartProvider>
         </AuthProvider>
       </ClubProvider>
     </SafeAreaProvider>

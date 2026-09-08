@@ -6,6 +6,7 @@
  */
 import { resolveMediaUrl } from '../api/client';
 import { formatDateShort } from './format';
+import { kickoffDate } from './countdown';
 
 export const UPCOMING_STATUS = ['SCHEDULED', 'UPCOMING', 'LIVE', 'POSTPONED'];
 
@@ -24,14 +25,14 @@ export const hasScore = (match) => match?.home_score !== null && match?.home_sco
 
 export const isLive = (match) => match?.status === 'LIVE';
 
-/** Kick-off timestamp from `date` (+ optional `time`, WIB local device time). */
-export const kickoffAt = (match) => {
-  if (!match?.date) return null;
-  const date = String(match.date).slice(0, 10);
-  const time = match.time ? String(match.time).slice(0, 5) : '00:00';
-  const parsed = new Date(`${date}T${time}:00`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
+/**
+ * Kick-off timestamp dari `date` (+ `time` opsional).
+ *
+ * Jadwal klub disimpan sebagai waktu lokal WIB, jadi parsing dilakukan dengan
+ * offset Asia/Jakarta (+07:00) agar identik di device zona waktu apa pun.
+ * Waktu device hanya dipakai untuk menghitung selisih (countdown).
+ */
+export const kickoffAt = (match) => kickoffDate(match);
 
 export const matchTime = (match) => (match?.time ? String(match.time).slice(0, 5).replace(':', '.') : null);
 

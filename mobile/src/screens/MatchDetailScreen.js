@@ -10,6 +10,8 @@ import Txt from '../components/Txt';
 import { Badge, Divider } from '../components/Card';
 import { Crest } from '../components/Crest';
 import { MatchTimeline } from '../components/MatchTimeline';
+import { Countdown } from '../components/Countdown';
+import { kickoffIso } from '../lib/countdown';
 import { NewsCard } from '../components/NewsCard';
 import { ChipRow, EmptyState, ErrorState, Loading } from '../components/States';
 import { useResource } from '../hooks/useResource';
@@ -57,6 +59,8 @@ export default function MatchDetailScreen({ navigation, route }) {
   const h2h = data?.head_to_head;
   const live = isLive(match || {});
   const scored = hasScore(match || {});
+  // Kickoff nyata dari backend untuk hitungan mundur laga yang belum dimulai.
+  const kickoff = useMemo(() => (match ? kickoffIso(match) : null), [match]);
 
   const openNews = useCallback(
     (post) => navigation.navigate('NewsDetail', { slug: post.slug, postId: post.id }),
@@ -140,6 +144,15 @@ export default function MatchDetailScreen({ navigation, route }) {
               </Txt>
             </View>
           </View>
+          {!scored && kickoff ? (
+            <Countdown
+              target={kickoff}
+              startedLabel={
+                live ? 'SEDANG BERLANGSUNG' : (STATUS_LABEL[match.status] || 'SEDANG BERLANGSUNG').toUpperCase()
+              }
+              testID="match-detail-countdown"
+            />
+          ) : null}
           {match.venue ? (
             <View style={styles.venue}>
               <Ionicons name="location-outline" size={13} color={colors.textMuted} />

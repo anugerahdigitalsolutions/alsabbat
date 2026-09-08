@@ -11,6 +11,9 @@ import { Badge, Card, Divider } from '../components/Card';
 import { Avatar } from '../components/Crest';
 import Field from '../components/Field';
 import { GhostButton, PrimaryButton } from '../components/Buttons';
+import PhotoPicker from '../components/PhotoPicker';
+import { uploadProfilePhoto } from '../lib/photoUpload';
+import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
 import { useClub } from '../context/ClubContext';
 import { apiErrorMessage, resolveMediaUrl } from '../api/client';
@@ -90,6 +93,9 @@ export default function ProfileScreen({ navigation }) {
             { icon: 'football-outline', label: 'Pertandingan & hasil', target: 'Match' },
             { icon: 'newspaper-outline', label: 'Berita resmi klub', target: 'News' },
             { icon: 'people-outline', label: 'Skuad & profil pemain', target: 'Squad' },
+            { icon: 'shield-half-outline', label: 'Tim AL SABBAT', target: 'Teams' },
+            { icon: 'bag-handle-outline', label: 'Toko merchandise resmi', target: 'Store' },
+            { icon: 'search-outline', label: 'Lacak pesanan', target: 'OrderTrack' },
             { icon: 'shield-outline', label: 'Profil klub & prestasi', target: 'ClubInfo' },
           ].map((item, index, rows) => (
             <View key={item.label}>
@@ -146,6 +152,26 @@ export default function ProfileScreen({ navigation }) {
             onPress: () => navigation.navigate('Membership'),
           },
           {
+            icon: 'receipt-outline',
+            label: 'Pesanan Saya',
+            onPress: () => navigation.navigate('Orders'),
+          },
+          {
+            icon: 'bag-handle-outline',
+            label: 'Toko AL SABBAT',
+            onPress: () => navigation.navigate('Store'),
+          },
+          {
+            icon: 'search-outline',
+            label: 'Lacak Pesanan',
+            onPress: () => navigation.navigate('OrderTrack'),
+          },
+          {
+            icon: 'shield-half-outline',
+            label: 'Tim AL SABBAT',
+            onPress: () => navigation.navigate('Teams'),
+          },
+          {
             icon: 'shield-outline',
             label: 'Info Klub',
             onPress: () => navigation.navigate('ClubInfo'),
@@ -184,6 +210,25 @@ export default function ProfileScreen({ navigation }) {
         <>
           <SectionHeader title="Ubah Profil" />
           <Card>
+            <PhotoPicker
+              label="FOTO PROFIL"
+              value={customer?.photo_url}
+              uploader={uploadProfilePhoto}
+              onChange={async (url) => {
+                // Endpoint existing: POST /api/baraya/me/photo (upload) &
+                // DELETE /api/baraya/me/photo (hapus) — keduanya milik sendiri.
+                if (!url) {
+                  try {
+                    await endpoints.deleteMyPhoto();
+                  } catch (e) {
+                    /* galat ditampilkan oleh PhotoPicker bila upload gagal */
+                  }
+                }
+                refreshProfile();
+              }}
+              hint="Foto langsung tersimpan pada akun AL SABBAT Anda."
+              testID="profile-photo"
+            />
             <Field
               label="NAMA LENGKAP"
               value={form.full_name}

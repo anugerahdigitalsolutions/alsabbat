@@ -25,6 +25,16 @@ import ApplicationFormScreen from '../screens/ApplicationFormScreen';
 import MemberScannerScreen from '../screens/MemberScannerScreen';
 import LegalScreen from '../screens/LegalScreen';
 import DeleteAccountScreen from '../screens/DeleteAccountScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import CartScreen from '../screens/CartScreen';
+import CheckoutScreen from '../screens/CheckoutScreen';
+import OrdersScreen from '../screens/OrdersScreen';
+import OrderDetailScreen from '../screens/OrderDetailScreen';
+import OrderTrackScreen from '../screens/OrderTrackScreen';
+import TeamsScreen from '../screens/TeamsScreen';
+import TeamDetailScreen from '../screens/TeamDetailScreen';
+import MaintenanceScreen from '../screens/MaintenanceScreen';
+import { useMaintenance } from '../lib/maintenance';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +53,7 @@ const navTheme = {
 export default function RootNavigator({ onReady }) {
   const [initialRoute, setInitialRoute] = useState(null);
   const { isAuthenticated, refreshUnread } = useAuth();
+  const maintenance = useMaintenance();
 
   // Daftarkan token push Expo saat user login (multi-device didukung backend).
   usePushRegistration({ isAuthenticated, onNotification: refreshUnread });
@@ -57,6 +68,18 @@ export default function RootNavigator({ onReady }) {
       alive = false;
     };
   }, []);
+
+  // Maintenance Mode global (status dari backend). Layar dirender langsung —
+  // tanpa navigasi/redirect sehingga tidak mungkin terjadi redirect loop.
+  if (maintenance.enabled) {
+    return (
+      <MaintenanceScreen
+        message={maintenance.message}
+        onRetry={maintenance.refresh}
+        busy={maintenance.loading}
+      />
+    );
+  }
 
   if (!initialRoute) return null;
 
@@ -84,6 +107,8 @@ export default function RootNavigator({ onReady }) {
         <Stack.Screen name="NewsDetail" component={NewsDetailScreen} />
         <Stack.Screen name="AlbumDetail" component={AlbumDetailScreen} />
         <Stack.Screen name="Squad" component={SquadScreen} />
+        <Stack.Screen name="Teams" component={TeamsScreen} />
+        <Stack.Screen name="TeamDetail" component={TeamDetailScreen} />
         <Stack.Screen name="PlayerDetail" component={PlayerDetailScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="MemberCard" component={MemberCardScreen} />
@@ -92,6 +117,14 @@ export default function RootNavigator({ onReady }) {
         {/* keanggotaan: Member -> Pemain -> Staf (alur & endpoint website) */}
         <Stack.Screen name="Membership" component={MembershipScreen} />
         <Stack.Screen name="ApplicationForm" component={ApplicationFormScreen} />
+
+        {/* toko / merchandise (API merchandise existing) */}
+        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
+        <Stack.Screen name="Orders" component={OrdersScreen} />
+        <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+        <Stack.Screen name="OrderTrack" component={OrderTrackScreen} />
 
         {/* pengaturan akun: syarat & ketentuan, kebijakan privasi, hapus akun */}
         <Stack.Screen name="Legal" component={LegalScreen} />

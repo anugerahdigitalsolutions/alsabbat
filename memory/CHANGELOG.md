@@ -145,3 +145,63 @@ refunds/customers/notifications = 0).
   (chart + tabel) → Products (dialog form) → Club → System; toggle Maintenance ON/OFF tetap bekerja;
   logout kembali ke `/admin/login`. Sidebar mobile sheet tetap 27 item. Desktop 1920px & mobile 390px
   tanpa horizontal overflow, console error kosong. `yarn build` sukses (hanya warning lama).
+
+## [8 Sep 2026] Mobile (Expo) — sinkronisasi fitur Web/Backend, fix upload foto, countdown
+**Hanya folder `/app/mobile` + dokumentasi.** ZERO perubahan backend, database, schema,
+RBAC, atau frontend web. Tidak ada endpoint/koleksi baru, tidak ada data dummy,
+tidak ada deploy produksi.
+
+### Fitur baru di mobile (memakai API existing)
+- **Merchandise lengkap**: `StoreScreen` (katalog + kategori + kartu 4:5),
+  `ProductDetailScreen` (galeri campuran foto+video 4:5 lewat `MediaGallery` +
+  `expo-video`, zoom foto via ImageViewer existing, varian/ukuran, stok, jumlah),
+  `CartContext` (AsyncStorage) + `CartScreen` (revalidasi server, ubah jumlah, hapus),
+  `CheckoutScreen` (data pembeli, alamat, pencarian tujuan RajaOngkir, quote ongkir,
+  pilih kurir/layanan, biaya COD, total server-side, Midtrans lewat `expo-web-browser`,
+  COD hanya bila backend menyatakan tersedia), `OrdersScreen`, `OrderDetailScreen`
+  (status, ringkasan, kurir/AWB, timeline, Barang Diterima, Tolak + alasan + detail +
+  bukti foto, Ajukan Refund, kartu status refund), `OrderTrackScreen` (guest tracking).
+- **Tim**: `TeamsScreen` + `TeamDetailScreen` (skuad & staf per tim).
+- **Foto profil akun** di ProfileScreen (`POST/DELETE /api/baraya/me/photo`).
+- **Maintenance Mode global**: `lib/maintenance.js` + `MaintenanceScreen`
+  ("SEDANG MAINTENANCE SISTEM"), status hanya dari `GET /api/system/maintenance`,
+  render langsung tanpa redirect (tidak ada loop), 404/offline → app tetap normal.
+- **Countdown pertandingan terdekat**: `lib/countdown.js` + `components/Countdown.js`
+  (HARI/JAM/MENIT/DETIK) pada kartu Home, kartu laga terdekat di MatchesScreen, dan
+  MatchDetail. Kickoff dari backend, naive timestamp diperlakukan WIB (+07:00),
+  1 interval per kartu, cleanup di unmount, re-sync via AppState, tanpa nilai negatif.
+- Navigasi: tab **TOKO** (badge jumlah keranjang), quicklink Toko di Home, menu
+  Pesanan Saya / Lacak Pesanan / Toko / Tim di Profile (login & tanpa login).
+
+### BUG UPLOAD FOTO PEMAIN — root cause & fix
+1. `lib/photoUpload.js` mengirim `headers: { 'Content-Type': 'multipart/form-data' }`.
+   Header manual tanpa boundary membuat backend menolak: dibuktikan nyata →
+   `HTTP 400 {"detail":"Missing boundary in multipart."}` (skrip verifikasi).
+2. Aplikasi mobile menunjuk **API produksi** (`eas.json`/fallback `api.alsabbat.com`)
+   yang **belum punya** `POST /api/baraya/uploads/photo` → `HTTP 404` (diverifikasi
+   dengan curl read-only ke produksi).
+**Fix**: header multipart tidak pernah diset (interceptor `api/client.js` kini memakai
+`AxiosHeaders.delete('Content-Type')` yang case-insensitive), MIME + nama berkas
+diturunkan dari asset picker, dan upload otomatis mundur ke endpoint existing
+`POST /api/baraya/me/upload` bila endpoint baru belum ada di server (404/405).
+Verifikasi: `python3 scripts/mobile_photo_upload_verify.py` → **13/13 PASS**
+(akun sandbox dibuat lewat OTP lalu DIHAPUS; database kembali 0 di semua koleksi).
+
+### Verifikasi
+- `npx eslint src App.js` → **0 error** (hanya warning gaya lama).
+- `npx expo export --platform android --no-bytecode` → **bundle sukses** (1478 modul,
+  2.9 MB). Langkah `hermesc` gagal hanya karena binari Hermes tidak bisa dieksekusi di
+  container ini (batasan environment, bukan kode).
+- Audit kontrak API: **69/69** panggilan `api.*` di mobile cocok dengan OpenAPI backend.
+- Logika countdown diuji unit (11/11 PASS: parsing WIB, ISO berzona, tanggal invalid,
+  breakdown, clamp negatif, started).
+- Tidak ada secret provider (Midtrans/RajaOngkir/Resend/Cloudinary/Mongo) di kode mobile.
+
+### BLOCKED (bukan kode mobile)
+- Server produksi masih versi lama: `/api/system/maintenance`,
+  `/api/merchandise/shipping/*`, `/api/merchandise/cod/status`, dan
+  `/api/baraya/uploads/photo` → 404. Fitur terkait tampil sebagai status jujur sampai
+  backend baru di-deploy (deploy TIDAK dilakukan sesuai instruksi).
+- Ongkir/COD/Midtrans/refund provider tetap **BLOCKED BY CREDENTIALS** (sama seperti web).
+- Verifikasi visual di device/emulator belum dilakukan (tidak ada emulator/Expo Go di
+  container ini; `react-native-web` tidak dipasang).

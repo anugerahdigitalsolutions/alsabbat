@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { useClub } from '../context/ClubContext';
 import Txt from './Txt';
 import { Badge } from './Card';
 import { Crest } from './Crest';
+import { Countdown } from './Countdown';
+import { kickoffIso } from '../lib/countdown';
 import {
   STATUS_LABEL,
   clubResult,
@@ -26,7 +28,7 @@ import { formatDateShort } from '../lib/format';
  *  - variant="row": dark list card.
  * No line-up, formation or player-selection affordance exists here by design.
  */
-export function MatchCard({ match, variant = 'row', onPress, testID }) {
+export function MatchCard({ match, variant = 'row', onPress, countdown = false, testID }) {
   const { club, shortName } = useClub();
   const { home, away } = matchSides(match, club, shortName);
   const live = isLive(match);
@@ -34,6 +36,13 @@ export function MatchCard({ match, variant = 'row', onPress, testID }) {
   const time = matchTime(match);
   const competition = competitionLabel(match);
   const result = clubResult(match);
+
+  // Timestamp kickoff nyata dari backend (`date` + `time`, zona WIB).
+  const kickoff = useMemo(() => kickoffIso(match), [match]);
+  const showCountdown = countdown && !scored && Boolean(kickoff);
+  const startedLabel = live
+    ? 'SEDANG BERLANGSUNG'
+    : (STATUS_LABEL[match?.status] || 'SEDANG BERLANGSUNG').toUpperCase();
 
   if (variant === 'featured') {
     return (
@@ -78,6 +87,14 @@ export function MatchCard({ match, variant = 'row', onPress, testID }) {
                 {match.venue}
               </Txt>
             </View>
+          ) : null}
+          {showCountdown ? (
+            <Countdown
+              target={kickoff}
+              tone="light"
+              startedLabel={startedLabel}
+              testID={testID ? `${testID}-countdown` : 'match-countdown'}
+            />
           ) : null}
         </LinearGradient>
       </Pressable>
@@ -138,6 +155,14 @@ export function MatchCard({ match, variant = 'row', onPress, testID }) {
             {match.venue}
           </Txt>
         </View>
+      ) : null}
+      {showCountdown ? (
+        <Countdown
+          target={kickoff}
+          tone="dark"
+          startedLabel={startedLabel}
+          testID={testID ? `${testID}-countdown` : 'match-countdown'}
+        />
       ) : null}
     </Pressable>
   );

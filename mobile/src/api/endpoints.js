@@ -102,6 +102,57 @@ export const markNotificationRead = (id) =>
 export const markAllNotificationsRead = () =>
   api.post('/baraya/notifications/read-all').then(({ data }) => data);
 
+/* ------------------------------------------------- maintenance (existing) */
+export const getMaintenance = () => api.get('/system/maintenance').then(({ data }) => data);
+
+/* --------------------------------------------------------- teams & staf */
+export const getTeam = (teamId) => api.get(`/teams/${teamId}`).then(({ data }) => data);
+export const getStaffMember = (staffId) => api.get(`/staff/${staffId}`).then(({ data }) => data);
+
+/* -------------------------------------------- merchandise / toko (public) */
+export const getProducts = (params = { limit: 24 }) =>
+  api.get('/merchandise/products', { params }).then(unwrapList);
+export const getProductCategories = () =>
+  api.get('/merchandise/categories/public').then(unwrapList);
+export const getProduct = (slugOrId) =>
+  api.get(`/merchandise/products/by-slug/${encodeURIComponent(slugOrId)}`).then(({ data }) => data);
+export const revalidateCart = (items) =>
+  api.post('/merchandise/cart/revalidate', { items }).then(({ data }) => data);
+export const getShippingConfig = () =>
+  api.get('/merchandise/shipping/config').then(({ data }) => data);
+export const getCodStatus = () => api.get('/merchandise/cod/status').then(({ data }) => data);
+export const getPaymentStatus = () =>
+  api.get('/merchandise/payment/status').then(({ data }) => data);
+export const searchShippingDestinations = (search, limit = 20) =>
+  api.get('/merchandise/shipping/destinations', { params: { search, limit } }).then(unwrapList);
+export const getShippingQuote = (payload) =>
+  api.post('/merchandise/shipping/quote', payload).then(({ data }) => data);
+export const checkout = (payload) =>
+  api.post('/merchandise/checkout', payload).then(({ data }) => data);
+export const trackOrder = (orderNumber, email) =>
+  api
+    .get('/merchandise/orders/track', { params: { order_number: orderNumber, email } })
+    .then(({ data }) => data);
+
+/* ------------------------------------------- pesanan milik akun (Baraya) */
+export const getMyOrders = (params = { limit: 20 }) =>
+  api.get('/baraya/orders', { params }).then(unwrapList);
+export const getMyOrder = (orderId) =>
+  api.get(`/baraya/orders/${orderId}`).then(({ data }) => data);
+export const confirmOrderReceived = (orderId) =>
+  api.post(`/baraya/orders/${orderId}/receive`).then(({ data }) => data);
+export const rejectOrderDelivery = (orderId, payload) =>
+  api.post(`/baraya/orders/${orderId}/reject`, payload).then(({ data }) => data);
+export const requestOrderRefund = (orderId, payload) =>
+  api.post(`/baraya/orders/${orderId}/refund`, payload).then(({ data }) => data);
+export const uploadOrderEvidence = (orderId, form) =>
+  api.post(`/baraya/orders/${orderId}/evidence`, form, { timeout: 60000 }).then(({ data }) => data);
+
+/* ------------------------------------------------------ foto profil akun */
+export const uploadMyPhoto = (form) =>
+  api.post('/baraya/me/photo', form, { timeout: 60000 }).then(({ data }) => data);
+export const deleteMyPhoto = () => api.delete('/baraya/me/photo').then(({ data }) => data);
+
 export default {
   getActiveClub,
   getSiteContent,

@@ -130,3 +130,12 @@ Environment preview/staging sekarang diselaraskan dengan deployment aaPanel stag
 - Dipakai untuk verifikasi UI Fase 5/6 (terima barang, tolak + bukti, ajukan refund).
 - Akun ini TIDAK ada di database staging/produksi (database sandbox `alsabbat_merch_p3_visual`
   sudah dihapus). Buat ulang dengan `python /app/scripts/merch_phase3_visual_sandbox.py seed`.
+
+## Update — verifikasi upload foto mobile (8 Sep 2026)
+- Skrip: `python3 scripts/mobile_photo_upload_verify.py [base_url]` (default http://127.0.0.1:8001).
+  Membuat akun sandbox `mobile.upload.<timestamp>@sandbox-alsabbat.dev` / `Sandbox123`
+  lewat register + OTP (kode dibaca dari log server), menguji upload multipart, lalu
+  **menghapus akun itu sendiri** (`DELETE /api/baraya/me/account`). Database kembali bersih
+  (media/customers/orders = 0) — tidak ada kredensial atau berkas uji yang ditinggalkan.
+- Admin tetap `admin@alsabbat.com` / `Alsabbat2026!` (SUPER_ADMIN) di web `/admin/login`.
+  Admin Panel TIDAK ada di aplikasi mobile (termasuk Sales Report — fitur khusus admin web).
