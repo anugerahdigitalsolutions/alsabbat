@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Search, UserRound, LogOut, Receipt, ChevronDown } from 'lucide-react';
+import { Menu, Search, ShoppingCart, UserRound, LogOut, Receipt, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,7 @@ import { ClubCrestMark } from '../shared/ClubCrestMark';
 import { NotificationBell } from '../shared/NotificationBell';
 import { barayaApi } from '../../lib/api';
 import { SearchDialog } from './SearchDialog';
+import { useCart } from '../../context/CartContext';
 import { UserNotificationAlert } from './UserNotificationAlert';
 import { useClub } from '../../context/ClubContext';
 
@@ -69,6 +70,8 @@ export const PublicHeader = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // Jumlah item (total quantity) dari CartContext existing — bukan total harga.
+  const { count: cartCount } = useCart();
   const [scrolled, setScrolled] = useState(false);
   // Notifikasi in-app Baraya: data dibagi dari NotificationBell (satu sumber fetch).
   const [notifications, setNotifications] = useState([]);
@@ -190,6 +193,24 @@ export const PublicHeader = () => {
           >
             <Search className="h-[18px] w-[18px]" style={{ color: 'var(--club-secondary)' }} />
           </button>
+
+          <Link
+            to="/cart"
+            className="als-focus relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-200 hover:bg-[color:rgba(1,40,145,0.07)]"
+            aria-label={cartCount > 0 ? `Keranjang (${cartCount} item)` : 'Keranjang belanja'}
+            data-testid="public-header-cart"
+          >
+            <ShoppingCart className="h-[18px] w-[18px]" style={{ color: 'var(--club-secondary)' }} />
+            {cartCount > 0 ? (
+              <span
+                className="font-display absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-bold leading-none"
+                style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
+                data-testid="public-header-cart-count"
+              >
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            ) : null}
+          </Link>
 
           {customer ? (
             <>

@@ -361,6 +361,7 @@ export const ResourceManager = ({
   extraActions = null,
   rowActions = null,
   formPreview = null,
+  formExtra = null,
   onChanged,
 }) => {
   const { hasPermission } = useAuth();
@@ -744,6 +745,14 @@ export const ResourceManager = ({
                 Preview Hero (real-time)
               </Label>
               {formPreview(values)}
+            </div>
+          ) : null}
+
+          {/* Blok tambahan opsional di dalam form (mis. editor Varian Produk).
+              Menerima nilai form saat ini + record yang sedang diedit. */}
+          {formExtra ? (
+            <div className="mt-4" data-testid={`${testPrefix}-form-extra`}>
+              {formExtra(values, editing)}
             </div>
           ) : null}
 

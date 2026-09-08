@@ -339,8 +339,8 @@ export default function HomePage() {
             ) : (
               <EmptyState
                 icon={ShoppingBag}
-                title="Merchandise segera hadir"
-                description="Produk resmi klub akan tampil di sini."
+                title="Belum ada produk"
+                description="Toko resmi klub sudah aktif — produk akan tampil di sini begitu dipublikasikan."
                 testId="home-store-empty"
               />
             )}

@@ -93,6 +93,15 @@ async def _enrich_product(product: Dict[str, Any], with_variants: bool = False) 
     available = sum(int(v.get("stock_quantity") or 0) for v in variant_items) if variant_items else int(
         product.get("stock_quantity") or 0
     )
+    # Rentang harga efektif (aditif, tanpa perubahan skema): dipakai katalog
+    # Website/Mobile agar produk bervarian tidak menampilkan satu harga yang
+    # menyesatkan ("Mulai dari ..."). Harga tetap dihitung ulang server saat
+    # revalidate/checkout.
+    base_price = int(product.get("price") or 0)
+    variant_prices = [
+        int(v.get("price_override")) if v.get("price_override") is not None else base_price
+        for v in variant_items
+    ] or [base_price]
     enriched = {
         **product,
         "cover_url": (cover or {}).get("url"),
@@ -102,6 +111,9 @@ async def _enrich_product(product: Dict[str, Any], with_variants: bool = False) 
         "variant_count": len(variant_items),
         "available_stock": available,
         "in_stock": available > 0,
+        "price_min": min(variant_prices),
+        "price_max": max(variant_prices),
+        "price_varies": min(variant_prices) != max(variant_prices),
     }
     if with_variants:
         enriched["variants"] = variant_items

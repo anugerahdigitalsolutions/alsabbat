@@ -35,7 +35,10 @@ export default function ProductDetailPage() {
     try {
       const { data } = await api.get(`/merchandise/products/by-slug/${slug}`);
       setProduct(data);
-      setVariantId(data?.variants?.[0]?.id || '');
+      const list = data?.variants || [];
+      const firstAvailable = list.find((v) => Number(v.stock_quantity || 0) > 0) || list[0];
+      setVariantId(firstAvailable?.id || '');
+      setQuantity(1);
     } catch (e) {
       setError(apiErrorMessage(e, 'Produk tidak ditemukan.'));
     } finally {
@@ -74,18 +77,32 @@ export default function ProductDetailPage() {
   }, [product?.id]);
   const active = mediaItems[activeMedia] || mediaItems[0] || null;
   const price = selected?.price_override ?? product?.price ?? 0;
-  const stock = selected ? selected.stock_quantity : product?.stock_quantity ?? 0;
+  const stock = Number(selected ? selected.stock_quantity : product?.stock_quantity ?? 0) || 0;
+  const sku = selected?.sku || product?.sku || null;
   const outOfStock = !product?.in_stock || stock <= 0;
+  // Kuantitas tidak boleh melebihi stok varian yang dipilih (server tetap
+  // memvalidasi ulang saat revalidate/checkout).
+  const maxQuantity = Math.max(1, Math.min(50, stock || 0));
+  const effectiveQuantity = Math.min(quantity, maxQuantity);
+
+  const chooseVariant = (variant) => {
+    setVariantId(variant.id);
+    setQuantity((current) => Math.min(current, Math.max(1, Number(variant.stock_quantity || 0) || 1)));
+  };
 
   const addToCart = () => {
     if (variants.length && !variantId) {
       toast.error('Pilih varian terlebih dahulu.');
       return;
     }
+    if (stock <= 0) {
+      toast.error('Varian ini sedang habis.');
+      return;
+    }
     addItem({
       product_id: product.id,
       variant_id: variantId || null,
-      quantity,
+      quantity: effectiveQuantity,
       name: product.name,
       variant_name: selected?.name || null,
       unit_price: price,
@@ -197,6 +214,17 @@ export default function ProductDetailPage() {
                   {formatIDR(product.compare_at_price)}
                 </p>
               ) : null}
+              {product.price_varies ? (
+                <p className="mt-1 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="product-price-range">
+                  Harga per varian {formatIDR(product.price_min)} – {formatIDR(product.price_max)} · harga di atas
+                  mengikuti varian yang dipilih.
+                </p>
+              ) : null}
+              {sku ? (
+                <p className="mt-1 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="product-sku">
+                  SKU: {sku}
+                </p>
+              ) : null}
 
               <p className="mt-5 whitespace-pre-line text-sm leading-relaxed" style={{ color: 'var(--muted-fg)' }}>
                 {product.description || 'Deskripsi produk belum tersedia.'}
@@ -210,8 +238,8 @@ export default function ProductDetailPage() {
                       <button
                         key={v.id}
                         type="button"
-                        onClick={() => setVariantId(v.id)}
-                        disabled={v.stock_quantity <= 0}
+                        onClick={() => chooseVariant(v)}
+                        disabled={Number(v.stock_quantity || 0) <= 0}
                         className="als-focus min-h-[44px] rounded-[var(--radius-sm)] px-4 text-sm font-semibold transition-colors duration-200 disabled:opacity-40"
                         style={{
                           backgroundColor: variantId === v.id ? 'var(--club-primary)' : 'var(--surface-2)',
@@ -233,9 +261,15 @@ export default function ProductDetailPage() {
                     <Minus className="h-4 w-4" />
                   </Button>
                   <span className="font-display w-10 text-center text-base font-bold tabular-nums" data-testid="product-qty">
-                    {quantity}
+                    {effectiveQuantity}
                   </span>
-                  <Button variant="outline" size="icon" onClick={() => setQuantity((q) => Math.min(50, q + 1))} data-testid="product-qty-plus">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={effectiveQuantity >= maxQuantity}
+                    onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                    data-testid="product-qty-plus"
+                  >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>

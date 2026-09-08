@@ -37,12 +37,27 @@ export default function ProductDetailScreen({ route, navigation }) {
    * dengan web) tanpa setState di dalam effect.
    */
   const [choice, setChoice] = useState({ productId: null, variantId: '', quantity: 1, added: false });
+  const defaultVariantId = useMemo(() => {
+    const available = variants.find((item) => Number(item.stock_quantity || 0) > 0);
+    return (available || variants[0])?.id || '';
+  }, [variants]);
   const current =
     choice.productId && choice.productId === data?.id
       ? choice
-      : { productId: data?.id || null, variantId: variants[0]?.id || '', quantity: 1, added: false };
+      : { productId: data?.id || null, variantId: defaultVariantId, quantity: 1, added: false };
   const { variantId, quantity, added } = current;
-  const setVariantId = (value) => setChoice({ ...current, variantId: value, added: false });
+  // Ganti varian: kuantitas dijepit ke stok varian baru (server tetap otoritas).
+  const setVariantId = (value) => {
+    const variantStock = Number(
+      variants.find((item) => item.id === value)?.stock_quantity || 0
+    );
+    setChoice({
+      ...current,
+      variantId: value,
+      quantity: Math.max(1, Math.min(current.quantity, variantStock || 1)),
+      added: false,
+    });
+  };
   const setQuantity = (updater) =>
     setChoice({
       ...current,
@@ -53,8 +68,11 @@ export default function ProductDetailScreen({ route, navigation }) {
   const selected = variants.find((item) => item.id === variantId) || null;
   const price = selected?.price_override ?? data?.price ?? 0;
   const stock = selected ? Number(selected.stock_quantity || 0) : Number(data?.stock_quantity || 0);
+  const sku = selected?.sku || data?.sku || null;
   const outOfStock = data?.in_stock === false || stock <= 0;
   const needVariant = variants.length > 0 && !variantId;
+  const maxQuantity = Math.max(1, Math.min(50, stock || 0));
+  const effectiveQuantity = Math.min(quantity, maxQuantity);
 
   const media = useMemo(() => {
     const list = [];
@@ -75,7 +93,7 @@ export default function ProductDetailScreen({ route, navigation }) {
     addItem({
       product_id: data.id,
       variant_id: variantId || null,
-      quantity,
+      quantity: effectiveQuantity,
       name: data.name,
       variant_name: selected?.name || null,
       unit_price: price,
@@ -121,9 +139,20 @@ export default function ProductDetailScreen({ route, navigation }) {
                 </Txt>
               ) : null}
             </View>
+            {data?.price_varies ? (
+              <Txt variant="meta" tone="muted" testID="product-price-range">
+                Harga per varian {formatIDR(data.price_min)} – {formatIDR(data.price_max)} · harga di atas
+                mengikuti varian yang dipilih.
+              </Txt>
+            ) : null}
             <Txt variant="small" tone={outOfStock ? 'lose' : 'muted'} testID="product-stock">
               {outOfStock ? 'Stok habis' : `Stok tersedia: ${stock}`}
             </Txt>
+            {sku ? (
+              <Txt variant="meta" tone="dim" testID="product-sku">
+                SKU: {sku}
+              </Txt>
+            ) : null}
           </View>
 
           {variants.length ? (
@@ -172,13 +201,12 @@ export default function ProductDetailScreen({ route, navigation }) {
                   <Ionicons name="remove" size={18} color={colors.text} />
                 </Pressable>
                 <Txt variant="h3" style={styles.qtyValue} testID="product-qty">
-                  {quantity}
+                  {effectiveQuantity}
                 </Txt>
                 <Pressable
-                  onPress={() =>
-                    setQuantity((value) => Math.min(50, Math.max(1, stock || 50), value + 1))
-                  }
-                  style={styles.stepButton}
+                  onPress={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}
+                  disabled={effectiveQuantity >= maxQuantity}
+                  style={[styles.stepButton, effectiveQuantity >= maxQuantity ? styles.stepDisabled : null]}
                   testID="product-qty-plus"
                 >
                   <Ionicons name="add" size={18} color={colors.text} />
@@ -260,6 +288,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   qtyValue: { minWidth: 34, textAlign: 'center' },
+  stepDisabled: { opacity: 0.45 },
   secondary: { marginTop: 10 },
   addedNote: { marginTop: 8 },
   description: { marginTop: 8 },

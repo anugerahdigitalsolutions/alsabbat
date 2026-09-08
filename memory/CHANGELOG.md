@@ -224,3 +224,56 @@ logo in-app/fitur/backend/API/database/navigasi/logic/endpoint/konfigurasi produ
   byte-identik. Validasi: eslint 0 error, `expo export --platform android` sukses,
   `app.config.js` termuat valid, pratinjau 48/96/192 px + simulasi adaptive bulat jelas.
 
+## [8 Sep 2026] Merchandise — finalisasi Varian Produk (Admin + Website + Mobile)
+Memakai modul merchandise EXISTING. Tidak ada endpoint/collection baru, tidak ada
+perubahan skema/database, tidak ada data dummy yang ditinggalkan, tanpa deploy.
+
+### Backend (aditif, 1 file)
+- `_enrich_product()` menambah `price_min`, `price_max`, `price_varies` (dihitung dari
+  varian ACTIVE). Dipakai katalog Website/Mobile agar produk bervarian tampil
+  "Mulai dari ..." dan tidak menampilkan satu harga yang menyesatkan. Logic harga/stok/
+  checkout TIDAK diubah — `_price_and_stock()` tetap satu-satunya otoritas harga.
+
+### Admin Panel
+- BARU `components/admin/ProductVariantsEditor.js`: bagian **VARIAN PRODUK** di dalam
+  form Create/Edit Produk — tabel Varian | Harga | Stok | SKU | Berat | Status | Aksi,
+  tombol **+ Tambah Varian** & **Simpan Varian**, hapus per baris (produk utama tetap
+  ada), ringkasan rentang harga + total stok. Validasi: nama wajib, harga/stok/berat
+  valid & tidak negatif, nama varian tidak boleh duplikat dalam satu produk.
+  Endpoint: `GET/POST/PATCH/DELETE /api/merchandise/catalog/variants` (existing).
+- `ResourceManager.js`: prop opsional `formExtra` (blok tambahan di dalam form).
+- `AdminProductsPage.js`: memasang editor varian + catatan stok tanpa varian.
+- `AdminDashboardPage.js`: teks cakupan fase diperbarui (merchandise/cart/checkout/
+  order/refund sudah aktif) — sebelumnya menyatakan "sengaja belum dibangun".
+
+### Website
+- `MerchandisePage.js`: card "TOKO RESMI AL SABBAT — SEGERA HADIR" DIHAPUS (komponen
+  dibuang, bukan disembunyikan CSS); empty state jujur; kartu katalog menampilkan
+  "Mulai dari" + jumlah varian bila harga varian berbeda.
+- `PublicHeader.js`: ikon keranjang + badge JUMLAH ITEM (CartContext existing,
+  badge hilang saat kosong).
+- `ProductDetailPage.js`: varian awal = varian pertama yang masih ada stok, harga/stok/
+  SKU mengikuti varian, kuantitas dijepit stok varian, rentang harga per varian.
+- `CartPage.js`: harga & nama varian mengikuti hasil revalidasi SERVER + notifikasi
+  bila harga diubah admin setelah item masuk keranjang.
+- `HomePage.js`: empty state toko jujur (toko aktif).
+
+### Mobile
+- Tab **TOKO** memakai badge angka jumlah item keranjang (CartContext existing, tanpa
+  cart kedua). `ProductDetailScreen`: varian awal yang ada stok, SKU, rentang harga,
+  kuantitas dijepit stok varian saat ganti varian. `ProductCard`: "Mulai dari".
+
+### Verifikasi
+- `scripts/merch_variant_verify.py` → **14/14 PASS** (Jersey S/M/L/XL: harga per varian,
+  katalog price_min/max/varies, detail publik + SKU, cart membedakan varian & subtotal
+  server 320.000, qty > stok varian ditolak (tersisa 2), produk bervarian wajib pilih
+  varian, ubah harga admin langsung sinkron ke API, varian stok 0 tidak bisa dibeli,
+  **order menyimpan variant_id/variant_name/harga**). Semua data sandbox dihapus →
+  products/product_variants/orders/customers/media/counters = 0.
+- UI nyata (screenshot): card "Segera Hadir" hilang, ikon keranjang + badge (XL x2 → 2,
+  +S x2 → 4), pilih L → Rp110.000/stok 3/JSY-L, XL → Rp120.000/stok 2/JSY-XL, qty
+  maksimal 2, keranjang memisahkan XL & S, Admin: 4 baris varian termuat + tambah 2XL
+  (130.000/4) tersimpan & langsung tampil di API publik. Tidak ada overflow di 390px.
+- Lint: eslint mobile 0 error; web build `yarn build` sukses (hanya 1 warning lama di
+  MediaPicker); mobile `expo export` sukses; ruff backend bersih.
+

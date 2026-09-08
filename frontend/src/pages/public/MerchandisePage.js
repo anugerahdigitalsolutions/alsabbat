@@ -52,37 +52,6 @@ export default function MerchandisePage() {
         breadcrumb={[{ label: 'Beranda', to: '/' }, { label: 'Merchandise' }]}
       />
       <div className="als-container py-10 sm:py-14">
-        <Reveal className="als-card mb-8 overflow-hidden" data-testid="merchandise-development-notice">
-          <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
-            <span
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-[var(--radius-md)]"
-              style={{ backgroundColor: 'var(--club-secondary)', color: 'var(--club-primary)' }}
-              aria-hidden="true"
-            >
-              <ShoppingBag className="h-6 w-6" />
-            </span>
-            <div className="min-w-0">
-              <p
-                className="font-display text-base font-bold uppercase tracking-wide sm:text-lg"
-                style={{ color: 'var(--club-secondary)' }}
-              >
-                Toko Resmi AL SABBAT
-              </p>
-              <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted-fg)' }}>
-                Sedang dalam tahap pengembangan.
-                <br className="hidden sm:block" /> Toko resmi dan merchandise AL SABBAT akan segera hadir.
-              </p>
-            </div>
-            <span
-              className="font-display shrink-0 self-start rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] sm:self-center"
-              style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-            >
-              Segera Hadir
-            </span>
-          </div>
-          <span className="block h-1 w-full" style={{ backgroundColor: 'var(--club-primary)' }} aria-hidden="true" />
-        </Reveal>
-
         {loading ? (
           <LoadingState rows={6} testId="merchandise-loading" />
         ) : error ? (
@@ -90,8 +59,8 @@ export default function MerchandisePage() {
         ) : items.length === 0 ? (
           <EmptyState
             icon={ShoppingBag}
-            title="Merchandise segera hadir"
-            description="Produk resmi AL SABBAT akan tampil di sini setelah dirilis."
+            title="Belum ada produk"
+            description="Katalog merchandise resmi AL SABBAT akan tampil di sini begitu produk dipublikasikan admin."
             testId="merchandise-empty"
           />
         ) : (
@@ -125,8 +94,22 @@ export default function MerchandisePage() {
                     ) : null}
                     <h3 className="font-display mt-1 line-clamp-2 text-base font-semibold">{product.name}</h3>
                     <p className="font-display mt-auto pt-3 text-lg font-bold" style={{ color: 'var(--club-secondary)' }}>
-                      {formatIDR(product.price)}
+                      {product.price_varies ? (
+                        <>
+                          <span className="mr-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted-fg)' }}>
+                            Mulai dari
+                          </span>
+                          {formatIDR(product.price_min)}
+                        </>
+                      ) : (
+                        formatIDR(product.price_min ?? product.price)
+                      )}
                     </p>
+                    {product.variant_count > 0 ? (
+                      <p className="mt-1 text-xs" style={{ color: 'var(--muted-fg)' }}>
+                        {product.variant_count} varian tersedia
+                      </p>
+                    ) : null}
                   </div>
                 </Link>
               </Reveal>

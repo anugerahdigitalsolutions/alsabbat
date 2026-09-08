@@ -36,6 +36,18 @@ export default function CartPage() {
     revalidate();
   }, [revalidate]);
 
+  /**
+   * Harga yang ditampilkan mengikuti hasil revalidasi SERVER (bukan harga yang
+   * tersimpan di keranjang). Bila admin mengubah harga varian setelah item
+   * masuk keranjang, perubahan itu ditampilkan terbuka ke pembeli.
+   */
+  const serverLine = (line) =>
+    (summary?.items || []).find(
+      (item) =>
+        item.product_id === line.product_id &&
+        (item.variant_id || null) === (line.variant_id || null)
+    ) || null;
+
   return (
     <div data-testid="page-cart">
       <PublicPageHeader
@@ -66,14 +78,19 @@ export default function CartPage() {
                     <Link to={`/merchandise/${line.slug || line.product_id}`} className="font-display block truncate text-sm font-semibold">
                       {line.name}
                     </Link>
-                    {line.variant_name ? (
-                      <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>
-                        {line.variant_name}
+                    {(serverLine(line)?.variant_name || line.variant_name) ? (
+                      <p className="text-xs" style={{ color: 'var(--muted-fg)' }} data-testid={`cart-variant-${index}`}>
+                        {serverLine(line)?.variant_name || line.variant_name}
                       </p>
                     ) : null}
-                    <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--club-secondary)' }}>
-                      {formatIDR(line.unit_price)}
+                    <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--club-secondary)' }} data-testid={`cart-price-${index}`}>
+                      {formatIDR(serverLine(line)?.unit_price ?? line.unit_price)}
                     </p>
+                    {serverLine(line) && Number(serverLine(line).unit_price) !== Number(line.unit_price || 0) ? (
+                      <p className="mt-0.5 text-xs" style={{ color: '#991B1B' }} data-testid={`cart-price-changed-${index}`}>
+                        Harga diperbarui toko (sebelumnya {formatIDR(line.unit_price)}).
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" onClick={() => updateQuantity(index, line.quantity - 1)} data-testid={`cart-minus-${index}`}>

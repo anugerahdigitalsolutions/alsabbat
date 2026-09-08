@@ -16,7 +16,10 @@ import { formatIDR } from '../lib/format';
 export function ProductCard({ product, onPress, width, testID }) {
   const cover = resolveMediaUrl(product?.cover_url);
   const outOfStock = product?.in_stock === false;
-  const price = product?.price ?? 0;
+  // Harga katalog: bila tiap varian beda harga, tampilkan "Mulai dari" (tidak
+  // menampilkan satu harga yang menyesatkan). Nilai dari backend.
+  const priceVaries = Boolean(product?.price_varies);
+  const price = product?.price_min ?? product?.price ?? 0;
 
   return (
     <Pressable
@@ -52,6 +55,11 @@ export function ProductCard({ product, onPress, width, testID }) {
         <Txt variant="smallStrong" numberOfLines={2}>
           {product?.name || 'Produk'}
         </Txt>
+        {priceVaries ? (
+          <Txt variant="meta" tone="dim" numberOfLines={1}>
+            Mulai dari
+          </Txt>
+        ) : null}
         <Txt variant="title" tone="accent" numberOfLines={1}>
           {formatIDR(price)}
         </Txt>

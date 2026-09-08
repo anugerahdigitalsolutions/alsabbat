@@ -38,9 +38,9 @@ function ClubTabBar({ state, navigation }) {
         {state.routes.map((route, index) => {
           const focused = state.index === index;
           const meta = TABS[route.name] || { label: route.name, icon: 'ellipse', iconOutline: 'ellipse-outline' };
-          const badge =
-            (route.name === 'Profile' && unreadCount > 0) ||
-            (route.name === 'Store' && cartCount > 0);
+          // Titik notifikasi (Profil) & badge JUMLAH ITEM keranjang (Toko).
+          const badge = route.name === 'Profile' && unreadCount > 0;
+          const cartBadge = route.name === 'Store' && cartCount > 0;
           return (
             <Pressable
               key={route.key}
@@ -60,6 +60,13 @@ function ClubTabBar({ state, navigation }) {
                   color={focused ? colors.onAccent : colors.textMuted}
                 />
                 {badge ? <View style={styles.badge} /> : null}
+                {cartBadge ? (
+                  <View style={styles.countBadge} testID="tab-store-cart-count">
+                    <Txt variant="label" tone="onAccent" numberOfLines={1} style={styles.countBadgeText}>
+                      {cartCount > 99 ? '99+' : String(cartCount)}
+                    </Txt>
+                  </View>
+                ) : null}
               </View>
               <Txt
                 variant="label"
@@ -129,6 +136,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrapActive: { backgroundColor: colors.accent },
+  countBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.accent,
+    borderWidth: 1,
+    borderColor: colors.surfaceSolid,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countBadgeText: { letterSpacing: 0, fontSize: 9, lineHeight: 12 },
   badge: {
     position: 'absolute',
     top: 2,

@@ -192,8 +192,9 @@ export default function AdminDashboardPage() {
                 )}
               </div>
               <p className="mt-4 text-xs" style={{ color: 'var(--muted-fg)' }}>
-                Sengaja belum dibangun: merchandise, cart, checkout, payment, order, membership, ticketing,
-                statistik lanjutan, live match, dan social/YouTube auto publishing.
+                Sudah aktif di luar Fase 1: merchandise (produk, varian, kategori), keranjang,
+                checkout, pembayaran, order, refund, dan keanggotaan Baraya. Belum dibangun:
+                ticketing, statistik lanjutan, live match, dan social/YouTube auto publishing.
               </p>
             </div>
           </div>

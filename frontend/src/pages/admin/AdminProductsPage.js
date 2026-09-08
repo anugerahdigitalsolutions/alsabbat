@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { ResourceManager } from '../../components/admin/ResourceManager';
+import { ProductVariantsEditor } from '../../components/admin/ProductVariantsEditor';
 import { Badge } from '../../components/ui/badge';
 import { MEDIA_SPECS } from '../../lib/mediaHints';
 
@@ -10,7 +11,7 @@ export default function AdminProductsPage() {
   return (
     <ResourceManager
       title="Produk Merchandise"
-      description="Katalog merchandise resmi AL SABBAT. Harga dalam rupiah (tanpa desimal) dan divalidasi server saat checkout."
+      description="Katalog merchandise resmi AL SABBAT. Harga dalam rupiah (tanpa desimal) dan divalidasi server saat checkout. Produk bisa punya banyak varian (mis. S/M/L/XL) dengan harga & stok masing-masing."
       endpoint="/merchandise/catalog/products"
       writePermission="merchandise:write"
       testPrefix="admin-products"
@@ -26,6 +27,13 @@ export default function AdminProductsPage() {
         { key: 'stock_quantity', label: 'Stok' },
         { key: 'status', label: 'Status', render: (r) => <Badge variant="outline">{r.status}</Badge> },
       ]}
+      formExtra={(values, editing) => (
+        <ProductVariantsEditor
+          productId={editing?.id || values?.id || null}
+          productName={values?.name}
+          basePrice={values?.price}
+        />
+      )}
       fields={[
         { name: 'name', label: 'Nama Produk', type: 'text', required: true, full: true },
         { name: 'slug', label: 'Slug (opsional)', type: 'text' },
@@ -39,7 +47,12 @@ export default function AdminProductsPage() {
         { name: 'status', label: 'Status', type: 'select', options: STATUS, required: true },
         { name: 'price', label: 'Harga (Rp)', type: 'number', required: true },
         { name: 'compare_at_price', label: 'Harga Sebelum Diskon (Rp)', type: 'number' },
-        { name: 'stock_quantity', label: 'Stok (tanpa varian)', type: 'number' },
+        {
+          name: 'stock_quantity',
+          label: 'Stok (tanpa varian)',
+          type: 'number',
+          help: 'Dipakai hanya bila produk TIDAK memiliki varian. Bila ada varian, stok diambil dari masing-masing varian di bawah.',
+        },
         { name: 'display_order', label: 'Urutan', type: 'number' },
         {
           name: 'cover_media_id',
