@@ -47,7 +47,9 @@ module.exports = () => ({
       versionCode: 1,
       icon: './assets/icon.png',
       adaptiveIcon: {
-        backgroundColor: NAVY,
+        // Fallback bila launcher tidak memakai `backgroundImage`: pakai hitam
+        // pekat mengikuti latar app icon baru (gradasi hitam -> biru klub).
+        backgroundColor: '#02050E',
         foregroundImage: './assets/android-icon-foreground.png',
         backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',

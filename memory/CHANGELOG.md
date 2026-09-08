@@ -205,3 +205,22 @@ Verifikasi: `python3 scripts/mobile_photo_upload_verify.py` → **13/13 PASS**
 - Ongkir/COD/Midtrans/refund provider tetap **BLOCKED BY CREDENTIALS** (sama seperti web).
 - Verifikasi visual di device/emulator belum dilakukan (tidak ada emulator/Expo Go di
   container ini; `react-native-web` tidak dipasang).
+
+## [8 Sep 2026] Mobile — App icon: latar solid navy -> gradasi HITAM ke BIRU (visual only)
+Perubahan **hanya app/launcher icon**. Tidak ada perubahan UI/halaman/navbar/splash/
+logo in-app/fitur/backend/API/database/navigasi/logic/endpoint/konfigurasi produksi.
+
+- `mobile/assets/icon.png` & `mobile/assets/android-icon-background.png` di-generate
+  ulang dari generator existing `mobile/scripts/prepare-native-assets.py` dengan
+  `icon_gradient()`: gradasi diagonal `#02050E` (hitam pekat, dominan) → `#012891`
+  (biru resmi klub, aksen kanan-bawah), easing per-piksel (power 1.65) supaya halus.
+- Logo dipakai apa adanya dari `assets/source/alsabbat-logo.png` (fit 820, center) —
+  **tidak di-redraw**. Verifikasi piksel: 286.082 piksel logo opak dibanding icon lama
+  → **0 perbedaan**; hanya latar (745.261 piksel) yang berubah.
+- `mobile/app.config.js`: satu baris — `android.adaptiveIcon.backgroundColor`
+  `#012891` → `#02050E` (fallback launcher agar konsisten dengan latar baru).
+  Splash (`splash-icon.png` + `#012891`) dan warna notifikasi TIDAK diubah.
+- Asset lain (logo.png, splash-icon.png, favicon.png, monochrome, onboarding) tetap
+  byte-identik. Validasi: eslint 0 error, `expo export --platform android` sukses,
+  `app.config.js` termuat valid, pratinjau 48/96/192 px + simulasi adaptive bulat jelas.
+
