@@ -97,3 +97,26 @@ refunds/customers/notifications = 0).
 - Overflow mobile pada header publik (`max-w-[190px]` tombol Baraya) sudah ada sebelum fase ini
   (muncul juga di `/merchandise`) — tidak diubah karena di luar cakupan.
 - Testing Agent tidak digunakan (sesuai larangan user).
+
+## [8 Sep 2026] Global Maintenance Mode
+- **Storage**: memakai key/value store existing `site_content` (key `maintenance_mode`, group
+  `system`, value `{enabled, updated_at, updated_by}`). Tidak ada koleksi/model baru, tidak ada
+  migrasi, tidak ada data yang dihapus.
+- **Endpoint**: `GET /api/system/maintenance` (publik — hanya `enabled`, `message`, `updated_at`;
+  `updated_by` TIDAK diekspos) dan `PUT /api/system/maintenance` (RBAC `system:write`).
+- **RBAC**: permission baru `system:write` ditambahkan ke daftar `P` di `app/core/rbac.py`;
+  hanya SUPER_ADMIN yang memilikinya (via WILDCARD). Role lain (mis. STORE_MANAGER) → False.
+- **Frontend**: `pages/public/MaintenancePage.js` (layar branded biru klub, judul persis
+  "SEDANG MAINTENANCE SISTEM"), `lib/maintenance.js` (hook + aksi API; sumber kebenaran backend,
+  bukan localStorage), gate di `components/public/PublicLayout.js` (render layar, TANPA redirect →
+  tidak ada loop), dan `components/admin/MaintenanceModePanel.js` di halaman Admin → System Status.
+- **Behavior**: ON → semua rute publik (desktop & mobile shell) menampilkan layar maintenance;
+  rute `/admin/*` tidak melewati PublicLayout sehingga admin tetap bisa login & mematikan mode.
+  Endpoint backend TIDAK diblokir (keputusan sadar) agar auth, media, merchandise, order, payment,
+  shipping, refund, notifications, dan sales report tetap utuh saat maintenance.
+- **Verifikasi**: OFF→normal; PUT tanpa token 401; PUT token non-admin (klaim permission palsu) 401;
+  admin ON → publik `/`, `/merchandise`, `/matches`, `/login` semua menampilkan layar maintenance
+  tanpa perubahan URL; refresh tetap ON; admin login & `/admin/system` tetap jalan saat ON;
+  toggle OFF dari UI → publik normal lagi tanpa redeploy. Desktop 1920px & mobile 390px tanpa
+  overflow baru, console error kosong. Regresi Fase 2 `29/29`, Fase 3 `48/48`, Fase 4–7 `69/69`
+  PASS; `yarn build` sukses; `ruff --select E9,F` bersih.

@@ -9,6 +9,8 @@ import { useIsMobileViewport } from '../../mobile/hooks/useIsMobileViewport';
 import { hasMobileScreen } from '../../mobile/shellPaths';
 import { BarayaMobileShell } from '../../mobile/components/BarayaMobileShell';
 import { BarayaAppBoot } from '../../mobile/onboarding/BarayaAppBoot';
+import { useMaintenanceStatus } from '../../lib/maintenance';
+import MaintenancePage from '../../pages/public/MaintenancePage';
 
 export const PublicLayout = () => {
   const { pathname } = useLocation();
@@ -22,11 +24,22 @@ export const PublicLayout = () => {
   // radial-gradient) dimatikan agar pilihan Admin tidak tertimpa. Bila OFF,
   // background default AL SABBAT tetap dipakai sebagai fallback.
   const customBackground = !!background?.enabled;
+  // Maintenance Mode global: hanya menutup area publik. Rute /admin tidak
+  // melewati layout ini, jadi admin tetap bisa login & mematikan maintenance.
+  const maintenance = useMaintenanceStatus();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
     trackPageView(pathname);
   }, [pathname]);
+
+  if (maintenance.loading) {
+    return <div className="min-h-screen" style={{ backgroundColor: '#012891' }} data-testid="maintenance-loading" />;
+  }
+
+  if (maintenance.enabled) {
+    return <MaintenancePage />;
+  }
 
   if (mobileMode) {
     return (

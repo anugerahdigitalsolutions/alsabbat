@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { RolePermissionMatrix } from '../../components/admin/RolePermissionMatrix';
 import { CommerceIntegrationPanel } from '../../components/admin/CommerceIntegrationPanel';
+import { MaintenanceModePanel } from '../../components/admin/MaintenanceModePanel';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { useAuth } from '../../context/AuthContext';
@@ -66,6 +67,8 @@ export default function AdminSystemPage() {
         <ErrorState message={error} onRetry={load} testId="system-error" />
       ) : (
         <>
+          <MaintenanceModePanel />
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="als-card p-5" data-testid="system-card-database">
               <Database className="mb-3 h-5 w-5" style={{ color: 'var(--club-secondary)' }} />

@@ -1,8 +1,11 @@
 """System module — health check, status, platform metadata."""
 from __future__ import annotations
 
+import logging
 import platform
 import time
+from datetime import datetime, timezone
+from typing import Any, Dict
 
 from fastapi import APIRouter, Depends
 
@@ -12,6 +15,7 @@ from app.core.config import settings
 from app.core.database import Collections, ping
 from app.core.rbac import ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_PERMISSIONS, SELECTABLE_ROLES
 from app.models.auth import AuthContext
+from app.models.base import AppBaseModel
 from app.models.enums import (
     AnalyticsEventType,
     CompetitionType,
@@ -34,6 +38,7 @@ from app.models.enums import (
 from app.services.media_service import media_service
 from app.models.staff_structure import meta_departments
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["system"])
 STARTED_AT = time.time()
 
@@ -140,3 +145,56 @@ async def status(_user: AuthContext = Depends(require_permission("system:read"))
         },
         "counts": counts,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Global Maintenance Mode
+# Memakai key/value store `site_content` yang sudah ada (tanpa koleksi baru,
+# tanpa migrasi). Nilai bukan rahasia: hanya flag + waktu perubahan.
+# --------------------------------------------------------------------------- #
+MAINTENANCE_KEY = "maintenance_mode"
+MAINTENANCE_MESSAGE = "SEDANG MAINTENANCE SISTEM"
+
+
+class MaintenanceUpdateRequest(AppBaseModel):
+    enabled: bool
+
+
+async def _read_maintenance() -> Dict[str, Any]:
+    doc = await Repository(Collections.SITE_CONTENT).coll.find_one(
+        {"key": MAINTENANCE_KEY}, {"_id": 0, "value": 1}
+    )
+    value = (doc or {}).get("value") or {}
+    return {
+        "enabled": bool(value.get("enabled")),
+        "message": MAINTENANCE_MESSAGE,
+        "updated_at": value.get("updated_at"),
+    }
+
+
+@router.get("/maintenance", summary="Status Maintenance Mode (publik, tanpa data sensitif)")
+async def maintenance_status() -> Dict[str, Any]:
+    return await _read_maintenance()
+
+
+@router.put("/maintenance", summary="Aktif/nonaktifkan Maintenance Mode (RBAC system:write)")
+async def set_maintenance(
+    payload: MaintenanceUpdateRequest,
+    user: AuthContext = Depends(require_permission("system:write")),
+) -> Dict[str, Any]:
+    now = datetime.now(timezone.utc).isoformat()
+    await Repository(Collections.SITE_CONTENT).coll.update_one(
+        {"key": MAINTENANCE_KEY},
+        {
+            "$set": {
+                "key": MAINTENANCE_KEY,
+                "group": "system",
+                "value": {"enabled": payload.enabled, "updated_at": now, "updated_by": user.email},
+                "updated_at": now,
+            },
+            "$setOnInsert": {"created_at": now},
+        },
+        upsert=True,
+    )
+    logger.info("system.maintenance_mode enabled=%s actor=%s", payload.enabled, user.email)
+    return await _read_maintenance()

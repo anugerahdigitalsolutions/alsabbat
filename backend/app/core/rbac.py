@@ -50,6 +50,8 @@ P = {
     "user_write": "user:write",
     "analytics_read": "analytics:read",
     "system_read": "system:read",
+    # Maintenance Mode global (hanya SUPER_ADMIN lewat WILDCARD)
+    "system_write": "system:write",
     # Reserved for later phases (architecture ready, features not built)
     # Social publishing (Phase 8)
     "social_read": "social:read",
