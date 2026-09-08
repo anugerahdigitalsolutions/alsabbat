@@ -16,6 +16,7 @@ from app.core.database import close_db
 from app.core.errors import register_exception_handlers
 from app.core.logging_config import get_logger, setup_logging
 from app.services.startup_tasks import run_startup_tasks_once
+from app.services.integration_settings import refresh_cache as refresh_integration_settings_cache
 from app.services.broadcast_scheduler import (
     start_scheduler as start_broadcast_scheduler,
     stop_scheduler as stop_broadcast_scheduler,
@@ -37,6 +38,13 @@ async def lifespan(_: FastAPI):
     # ensure_indexes() + run_bootstrap() TETAP dijalankan, tetapi lewat runner
     # yang aman untuk cold start & concurrent invocation di serverless.
     await run_startup_tasks_once()
+    # Integration settings (Merchandise Fase 1) — muat cache sekali saat start.
+    # Gagal memuat tidak boleh mematikan aplikasi: resolver otomatis memakai
+    # environment variable seperti sebelumnya.
+    try:
+        await refresh_integration_settings_cache()
+    except Exception:  # noqa: BLE001 - startup harus tetap lanjut
+        logger.warning("integration settings cache tidak bisa dimuat saat startup")
     # Scheduler broadcast terjadwal (task asyncio internal; nonaktif di serverless).
     start_broadcast_scheduler()
     yield

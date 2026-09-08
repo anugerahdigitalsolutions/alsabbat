@@ -1891,3 +1891,30 @@ tetap butuh `EXPO_TOKEN` user untuk EAS.
 - RBAC memakai permission existing `member:read` / `member:write` (tanpa role/permission baru).
 - Verifikasi: `python /app/scripts/broadcast_verify.py` → 29/29 PASS (DB sandbox, di-DROP di akhir),
   plus screenshot `/admin/broadcast` (halaman + form) tanpa horizontal overflow.
+
+### [8 Sep 2026] Merchandise Fase 1 — integration settings aman + data kirim produk + gambar 4:5
+- **Integration settings aman** (`GET/PUT /api/settings/integrations`, permission existing
+  `store:manage`): Midtrans (server key, client key, mode produksi), RajaOngkir (Shipping Cost API
+  key, Delivery API key), dan alamat asal pengiriman (destination id, lat, long, nama, telepon).
+  Disimpan di koleksi baru `integration_settings` (index unik `key`) — BUKAN `site_content` yang
+  publik. Rahasia bersifat write-only: respons hanya memuat `configured`, `source`, dan
+  `masked_value` (12 bullet + 4 karakter terakhir); plaintext tidak pernah dikirim ke browser dan
+  tidak pernah masuk log (hanya nama key).
+- **Prioritas konfigurasi**: Admin setting → environment variable → NOT CONFIGURED. Perilaku
+  Midtrans lama tidak berubah (Snap, webhook, verifikasi SHA-512, mapping status, pengurangan stok
+  semua tetap sama); hanya resolusi kredensial yang dialihkan ke resolver ber-cache
+  (`app/services/integration_settings.py`, cache 30s + refresh saat startup & setiap penyimpanan).
+- **Data pengiriman produk** (opsional/nullable, tanpa nilai default palsu): produk
+  `weight_grams`, `length_cm`, `width_cm`, `height_cm`; varian `weight_grams`. Belum dipakai untuk
+  kalkulasi apa pun (RajaOngkir/COD/ongkir masih fase berikutnya).
+- **Standar gambar katalog 4:5**: `MEDIA_SPECS.productImage` 4:3 → **4:5 (1200 × 1500 px)**;
+  frame publik `h-52` (kartu) dan `h-80/sm:h-[420px]` (detail) + thumbnail `h-20` → `aspect-[4/5]`.
+  ImageCropper TIDAK diubah — alur upload → editor crop/zoom/pan → simpan → Media Library tetap
+  sama, berkas asli tetap utuh.
+- **Galeri produk di Admin**: field `media_ids` memakai `MediaGalleryField`/`MediaPicker` existing
+  (6 slot berurutan, slot 1 = tampil pertama; gambar utama tetap `cover_media_id`). `_resolve_media`
+  di merchandise.py kini menerima id Media Library ATAU URL (kompatibel dengan produk lama yang
+  menyimpan id).
+- Verifikasi: `python /app/scripts/merch_phase1_verify.py` → 40/40 PASS (DB sandbox, di-DROP di
+  akhir; nol tulisan ke database bisnis) + pemeriksaan UI via screenshot. Tidak ada produk/order
+  dummy; koleksi `integration_settings` di staging masih kosong (hanya index yang dibuat).

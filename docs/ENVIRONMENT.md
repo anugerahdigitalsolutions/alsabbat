@@ -33,6 +33,16 @@ Three stages are supported through environment variables only: **development**,
 > Compatibility: when `MONGODB_URI` / `MONGODB_DB_NAME` are absent the backend falls back
 > to `MONGO_URL` / `DB_NAME`, which keeps managed development environments working.
 
+> Merchandise integration settings (Fase 1): `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`,
+> `MIDTRANS_IS_PRODUCTION`, `RAJAONGKIR_COST_API_KEY`, `RAJAONGKIR_DELIVERY_API_KEY`,
+> `SHIPPING_ORIGIN_DESTINATION_ID`, `SHIPPING_ORIGIN_PINPOINT_LAT`,
+> `SHIPPING_ORIGIN_PINPOINT_LONG`, `SHIPPING_ORIGIN_NAME`, `SHIPPING_ORIGIN_PHONE` juga bisa
+> diisi dari Admin Panel (System → Integrations, permission `store:manage`). Prioritas
+> pembacaan: **Admin setting → environment variable → belum dikonfigurasi**, sehingga
+> konfigurasi env yang sudah ada tetap bekerja tanpa perubahan. Nilai rahasia disimpan di
+> koleksi `integration_settings` (bukan `site_content`), tidak pernah dikembalikan sebagai
+> plaintext, dan tidak pernah masuk log.
+
 ## Frontend (aaPanel static build / local)
 
 | Variable | Notes |

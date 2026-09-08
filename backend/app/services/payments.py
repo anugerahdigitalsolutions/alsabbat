@@ -16,6 +16,11 @@ from typing import Any, Dict, Optional
 import httpx
 
 from app.core.logging_config import get_logger
+from app.services.integration_settings import (
+    ensure_fresh as ensure_settings_fresh,
+    resolve as resolve_setting,
+    resolve_bool as resolve_setting_bool,
+)
 
 logger = get_logger(__name__)
 
@@ -61,7 +66,7 @@ class MidtransProvider(PaymentProvider):
 
     @staticmethod
     def _production() -> bool:
-        return os.environ.get("MIDTRANS_IS_PRODUCTION", "").lower() in {"1", "true", "yes"}
+        return resolve_setting_bool("MIDTRANS_IS_PRODUCTION")
 
     def _base(self) -> str:
         return "https://app.midtrans.com" if self._production() else "https://app.sandbox.midtrans.com"
@@ -70,12 +75,14 @@ class MidtransProvider(PaymentProvider):
         return "https://api.midtrans.com" if self._production() else "https://api.sandbox.midtrans.com"
 
     def missing_env(self) -> list[str]:
-        return [key for key in self.ENV if not os.environ.get(key)]
+        # Kredensial diselesaikan lewat resolver: Admin setting → env var → None.
+        return [key for key in self.ENV if not resolve_setting(key)]
 
     def is_configured(self) -> bool:
         return not self.missing_env()
 
     async def create_session(self, order: Dict[str, Any]) -> PaymentSession:
+        await ensure_settings_fresh()
         if not self.is_configured():
             return PaymentSession(
                 configured=False,
@@ -115,7 +122,7 @@ class MidtransProvider(PaymentProvider):
             async with httpx.AsyncClient(timeout=20) as client:
                 response = await client.post(
                     f"{self._base()}/snap/v1/transactions",
-                    auth=(os.environ["MIDTRANS_SERVER_KEY"], ""),
+                    auth=(resolve_setting("MIDTRANS_SERVER_KEY") or "", ""),
                     headers={"Accept": "application/json"},
                     json=payload,
                 )
@@ -144,7 +151,7 @@ class MidtransProvider(PaymentProvider):
             )
 
     def verify_notification(self, payload: Dict[str, Any]) -> bool:
-        server_key = os.environ.get("MIDTRANS_SERVER_KEY", "")
+        server_key = resolve_setting("MIDTRANS_SERVER_KEY") or ""
         if not server_key:
             return False
         required = ("order_id", "status_code", "gross_amount", "signature_key")
@@ -162,13 +169,14 @@ class MidtransProvider(PaymentProvider):
         A frontend redirect is never trusted: the payment state is always read
         back from the provider (or received through the verified webhook).
         """
+        await ensure_settings_fresh()
         if not self.is_configured():
             return None
         try:
             async with httpx.AsyncClient(timeout=20) as client:
                 response = await client.get(
                     f"{self._api_base()}/v2/{order_number}/status",
-                    auth=(os.environ["MIDTRANS_SERVER_KEY"], ""),
+                    auth=(resolve_setting("MIDTRANS_SERVER_KEY") or "", ""),
                     headers={"Accept": "application/json"},
                 )
         except httpx.HTTPError:

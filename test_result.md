@@ -1583,3 +1583,29 @@ agent_communication:
       `cd /app/backend && PYTHONPATH=/app/backend python /app/scripts/broadcast_verify.py`
       → 29/29 PASS (database sandbox `alsabbat_broadcast_sandbox` dibuat lalu di-DROP;
       nol tulisan ke database preview/staging/produksi).
+
+agent_communication:
+    -agent: "main"
+    -message: |
+      MERCHANDISE FASE 1 — staging only, additive (Sep 2026).
+
+      1) Integration settings aman: koleksi baru `integration_settings` (index unik `key`),
+         endpoint `GET/PUT /api/settings/integrations` dengan permission EXISTING `store:manage`.
+         Rahasia write-only: respons hanya `configured`/`source`/`masked_value`; plaintext tidak
+         pernah dikirim ke browser & tidak pernah di-log. `site_content` (publik) TIDAK dipakai.
+      2) Prioritas konfigurasi: Admin setting → env var → NOT CONFIGURED. Midtrans lama tetap
+         berfungsi (Snap/webhook/SHA-512/mapping status/stok tidak diubah), hanya resolusi
+         kredensial memakai resolver ber-cache.
+      3) Produk: `weight_grams`, `length_cm`, `width_cm`, `height_cm` (opsional); varian
+         `weight_grams` (opsional). Belum ada kalkulasi ongkir/COD.
+      4) Gambar katalog 4:5: MEDIA_SPECS.productImage → 4:5 (1200×1500), frame publik memakai
+         `aspect-[4/5]`. ImageCropper tidak diubah (crop/zoom/pan tetap jalan).
+      5) Galeri produk di Admin Panel: `media_ids` via MediaGalleryField/MediaPicker existing
+         (6 slot); `_resolve_media` menerima id ATAU URL.
+
+      Verifikasi (Testing Agent DILARANG oleh user):
+      `cd /app/backend && PYTHONPATH=/app/backend python /app/scripts/merch_phase1_verify.py`
+      → 40/40 PASS (DB sandbox dibuat lalu di-DROP; nol tulisan ke DB staging/produksi),
+      plus screenshot Admin (form produk 4:5 + 6 slot galeri + berat/dimensi, panel Integrasi
+      dengan input password & badge status) dan storefront (halaman merchandise & detail produk
+      tetap render; utilitas Tailwind `aspect-[4/5]` terverifikasi = "4 / 5").

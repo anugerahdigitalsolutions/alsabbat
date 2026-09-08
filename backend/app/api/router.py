@@ -11,6 +11,7 @@ from app.api.routes import (
     content,
     customers,
     gallery,
+    integrations,
     match_events,
     matches,
     media,
@@ -52,6 +53,7 @@ api_router.include_router(achievements.router, prefix="/achievements")
 api_router.include_router(analytics.router, prefix="/analytics")
 api_router.include_router(notifications.router, prefix="/notifications")
 api_router.include_router(broadcasts.router, prefix="/broadcasts")
+api_router.include_router(integrations.router, prefix="/settings/integrations")
 api_router.include_router(seo.router, prefix="/seo")
 api_router.include_router(social.router, prefix="/social")
 api_router.include_router(merchandise.router, prefix="/merchandise")

@@ -37,8 +37,8 @@ export const MEDIA_SPECS = {
   authorPhoto: { aspect: 1, ratio: '1:1', size: '800 × 800 px', note: 'Dirender sebagai avatar.' },
   // Cover album: frame tinggi 176px, lebar kartu ±313px
   albumCover: { aspect: 16 / 9, ratio: '16:9', size: '1600 × 900 px', note: CROP_NOTE },
-  // Kartu produk: frame tinggi 208px
-  productImage: { aspect: 4 / 3, ratio: '4:3', size: '1600 × 1200 px', note: `Latar polos membuat produk lebih menonjol. ${CROP_NOTE}` },
+  // Kartu produk & galeri produk: frame potret 4:5 (standar katalog merchandise)
+  productImage: { aspect: 4 / 5, ratio: '4:5 (portrait)', size: '1200 × 1500 px', note: `Latar polos membuat produk lebih menonjol. ${CROP_NOTE}` },
   // Kartu member digital: 440 × 288 px (≈ 3:2 landscape)
   memberCardBackground: { aspect: 3 / 2, ratio: '3:2 (landscape)', size: '1200 × 800 px', note: `Sisakan area kosong di tengah/kanan agar nama, nomor, dan QR tetap terbaca. ${CROP_NOTE}` },
   barayaPhoto: { aspect: 1, ratio: '1:1', size: '1000 × 1000 px', note: `Foto wajah, terang, dan jelas. ${CROP_NOTE}` },

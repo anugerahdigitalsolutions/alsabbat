@@ -50,6 +50,9 @@ class Collections:
     MEMBER_APPLICATIONS = "member_applications"
     RATE_LIMITS = "rate_limits"
     SETTINGS = "site_settings"
+    # Additive (Merchandise Fase 1): kredensial integrasi commerce.
+    # TIDAK pernah dibaca endpoint publik; rahasia hanya ditulis/di-mask.
+    INTEGRATION_SETTINGS = "integration_settings"
     COUNTERS = "counters"
     BANNERS = "banners"
     SITE_CONTENT = "site_content"
@@ -303,6 +306,10 @@ async def ensure_indexes() -> None:
         await db[Collections.BANNERS].create_index([("status", ASCENDING), ("display_order", ASCENDING)])
         await db[Collections.SITE_CONTENT].create_index([("key", ASCENDING)], unique=True)
         await db[Collections.SITE_CONTENT].create_index([("group", ASCENDING)])
+        # Integration settings (Merchandise Fase 1) — satu dokumen per key
+        await db[Collections.INTEGRATION_SETTINGS].create_index(
+            [("key", ASCENDING)], unique=True
+        )
         await db[Collections.ACHIEVEMENTS].create_index([("year", DESCENDING)])
         await db[Collections.ACHIEVEMENTS].create_index([("display_order", ASCENDING)])
         await db[Collections.ANALYTICS_EVENTS].create_index([("created_at", DESCENDING)])

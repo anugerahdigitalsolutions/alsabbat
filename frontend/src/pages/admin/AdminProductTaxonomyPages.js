@@ -71,6 +71,7 @@ export const AdminProductVariantsPage = () => (
       { name: 'name', label: 'Nama Varian', type: 'text', required: true },
       { name: 'sku', label: 'SKU', type: 'text' },
       { name: 'price_override', label: 'Harga Khusus (Rp)', type: 'number' },
+      { name: 'weight_grams', label: 'Berat (gram, opsional)', type: 'number', help: 'Kosongkan bila memakai berat produk.' },
       { name: 'stock_quantity', label: 'Stok', type: 'number', required: true },
       { name: 'status', label: 'Status', type: 'select', options: STATUS, required: true },
       { name: 'display_order', label: 'Urutan', type: 'number' },

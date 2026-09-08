@@ -49,9 +49,22 @@ SHIPPING_FLAT = 0  # real shipping tariffs are configured by the club, not inven
 
 # ------------------------------------------------------------------ helpers
 async def _resolve_media(ids: List[str]) -> List[Dict[str, Any]]:
+    """Resolve galeri produk.
+
+    `media_ids` menerima id Media Library ATAU URL media (konvensi galeri yang
+    sudah dipakai komponen galeri admin existing). Id dicoba lebih dulu supaya
+    dokumen produk lama yang menyimpan id tetap tampil sama seperti sebelumnya.
+    """
     items = []
-    for media_id in ids:
-        doc = await media.get(media_id)
+    for value in ids:
+        if not value:
+            continue
+        doc = await media.get(value)
+        if not doc and str(value).startswith(("http", "/")):
+            doc = await media.get_by({"url": value})
+            if not doc:
+                items.append({"id": value, "url": value, "alt_text": None})
+                continue
         if doc:
             items.append({"id": doc["id"], "url": doc.get("url"), "alt_text": doc.get("alt_text")})
     return items

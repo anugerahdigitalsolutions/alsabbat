@@ -103,7 +103,7 @@ export default function MerchandisePage() {
                   className="als-card als-zoom als-lift als-focus flex h-full flex-col overflow-hidden"
                   data-testid={`product-card-${product.id}`}
                 >
-                  <div className="relative h-52" style={{ backgroundColor: 'var(--surface-3)' }}>
+                  <div className="relative aspect-[4/5] w-full" style={{ backgroundColor: 'var(--surface-3)' }}>
                     {product.cover_url ? (
                       <img src={resolveMediaUrl(product.cover_url)} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
                     ) : (

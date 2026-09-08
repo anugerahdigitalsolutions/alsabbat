@@ -90,7 +90,7 @@ export default function ProductDetailPage() {
         ) : (
           <div className="grid gap-10 lg:grid-cols-2">
             <div className="space-y-4">
-              <div className="als-card als-zoom h-80 overflow-hidden sm:h-[420px]" style={{ backgroundColor: 'var(--surface-3)' }}>
+              <div className="als-card als-zoom aspect-[4/5] w-full overflow-hidden" style={{ backgroundColor: 'var(--surface-3)' }}>
                 {product.cover_url ? (
                   <img src={resolveMediaUrl(product.cover_url)} alt={product.name} className="h-full w-full object-cover" loading="eager" />
                 ) : (
@@ -102,7 +102,7 @@ export default function ProductDetailPage() {
               {(product.gallery || []).length ? (
                 <div className="grid grid-cols-4 gap-3">
                   {product.gallery.map((m) => (
-                    <img key={m.id} src={resolveMediaUrl(m.url)} alt={m.alt_text || product.name} className="h-20 w-full rounded-[8px] object-cover" loading="lazy" />
+                    <img key={m.id} src={resolveMediaUrl(m.url)} alt={m.alt_text || product.name} className="aspect-[4/5] w-full rounded-[8px] object-cover" loading="lazy" />
                   ))}
                 </div>
               ) : null}

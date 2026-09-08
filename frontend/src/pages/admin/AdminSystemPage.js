@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { RolePermissionMatrix } from '../../components/admin/RolePermissionMatrix';
+import { CommerceIntegrationPanel } from '../../components/admin/CommerceIntegrationPanel';
 import { LoadingState } from '../../components/shared/LoadingState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { useAuth } from '../../context/AuthContext';
@@ -237,7 +238,7 @@ export default function AdminSystemPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="integrations" className="mt-6">
+            <TabsContent value="integrations" className="mt-6 space-y-6">
               <div className="als-card space-y-4 p-5" data-testid="system-integrations-panel">
                 <div className="flex items-center gap-2">
                   <Plug className="h-4 w-4" style={{ color: 'var(--club-secondary)' }} />
@@ -262,6 +263,7 @@ export default function AdminSystemPage() {
                   {status?.integrations?.note}
                 </p>
               </div>
+              {hasPermission('store:manage') ? <CommerceIntegrationPanel /> : null}
             </TabsContent>
           </Tabs>
         </>

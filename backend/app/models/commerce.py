@@ -67,6 +67,13 @@ class ProductBase(AppBaseModel):
     currency: str = Field(default="IDR", max_length=3)
     sku: Optional[str] = Field(default=None, max_length=60)
     stock_quantity: int = Field(default=0, ge=0)  # used when product has no variants
+    # --- Data pengiriman (Merchandise Fase 1) -----------------------------
+    # Opsional & nullable: produk lama tanpa data ini tetap valid dan tidak
+    # diberi nilai default palsu. Belum dipakai untuk kalkulasi apa pun.
+    weight_grams: Optional[int] = Field(default=None, ge=0, le=1_000_000)
+    length_cm: Optional[float] = Field(default=None, ge=0, le=500)
+    width_cm: Optional[float] = Field(default=None, ge=0, le=500)
+    height_cm: Optional[float] = Field(default=None, ge=0, le=500)
     cover_media_id: Optional[str] = None
     media_ids: List[str] = Field(default_factory=list, max_length=12)
     display_order: int = Field(default=0, ge=0, le=9999)
@@ -91,6 +98,8 @@ class ProductVariantBase(AppBaseModel):
     name: str = Field(min_length=1, max_length=80)
     sku: Optional[str] = Field(default=None, max_length=60)
     price_override: Optional[int] = Field(default=None, ge=0)
+    # Berat khusus varian (opsional). Bila kosong, berat produk yang dipakai.
+    weight_grams: Optional[int] = Field(default=None, ge=0, le=1_000_000)
     stock_quantity: int = Field(default=0, ge=0)
     status: ProductStatus = ProductStatus.ACTIVE
     display_order: int = Field(default=0, ge=0, le=9999)
