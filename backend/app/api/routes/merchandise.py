@@ -30,9 +30,11 @@ from app.models.commerce import (
     ProductUpdate,
     ProductVariantBase,
     ProductVariantUpdate,
+    ShippingQuoteRequest,
 )
 from app.services.payments import active_provider, provider_status
 from app.services.media_service import resolve_media_refs
+from app.services import shipping_rajaongkir as shipping
 
 logger = get_logger(__name__)
 
@@ -121,6 +123,16 @@ async def _price_and_stock(item: Dict[str, Any]) -> Dict[str, Any]:
         raise ValidationFailedError(
             f"Stok {product['name']}{' - ' + variant['name'] if variant else ''} tersisa {stock}."
         )
+    # Berat kirim efektif (Fase 2): berat varian menang bila valid, jika tidak
+    # memakai berat produk. Tidak pernah diberi nilai default palsu.
+    variant_weight = (variant or {}).get("weight_grams")
+    product_weight = product.get("weight_grams")
+    weight_grams: Optional[int] = None
+    weight_source: Optional[str] = None
+    if isinstance(variant_weight, (int, float)) and variant_weight > 0:
+        weight_grams, weight_source = int(variant_weight), "VARIANT"
+    elif isinstance(product_weight, (int, float)) and product_weight > 0:
+        weight_grams, weight_source = int(product_weight), "PRODUCT"
     return {
         "product_id": product["id"],
         "variant_id": (variant or {}).get("id"),
@@ -130,7 +142,25 @@ async def _price_and_stock(item: Dict[str, Any]) -> Dict[str, Any]:
         "unit_price": unit_price,
         "subtotal": unit_price * quantity,
         "currency": product.get("currency") or "IDR",
+        "weight_grams": weight_grams,
+        "weight_source": weight_source,
     }
+
+
+def _shipment_weight(items: List[Dict[str, Any]]) -> int:
+    """Total berat kiriman (gram) = Σ (jumlah × berat efektif item).
+
+    Bila ada item tanpa berat, ongkir TIDAK dihitung dengan angka karangan —
+    checkout mengembalikan galat yang jelas.
+    """
+    missing = [item["product_name"] for item in items if not item.get("weight_grams")]
+    if missing:
+        raise ValidationFailedError(
+            "Berat kirim belum diatur untuk: "
+            + ", ".join(sorted(set(missing)))
+            + ". Ongkir belum bisa dihitung — hubungi admin toko."
+        )
+    return sum(int(item["weight_grams"]) * int(item["quantity"]) for item in items)
 
 
 async def _next_order_number() -> str:
@@ -272,6 +302,45 @@ async def revalidate_cart(payload: Dict[str, Any], request: Request) -> Dict[str
     }
 
 
+# ---------------------------------------------------------------- shipping
+@router.get("/shipping/config", summary="Status konfigurasi ongkir (tanpa rahasia)")
+async def shipping_configuration() -> Dict[str, Any]:
+    """Hanya status; API key RajaOngkir TIDAK pernah dikirim ke frontend."""
+    return shipping.status()
+
+
+@router.get("/shipping/destinations", summary="Cari tujuan pengiriman (proxy server-side)")
+async def shipping_destinations(
+    request: Request,
+    search: str = Query(..., min_length=3, max_length=80),
+    limit: int = Query(20, ge=1, le=50),
+) -> Dict[str, Any]:
+    public_rate_limit(request)
+    items = await shipping.search_destinations(search, limit=limit)
+    return {"items": items, "total": len(items)}
+
+
+@router.post("/shipping/quote", summary="Hitung ongkir real-time (server-side authority)")
+async def shipping_quote(
+    payload: ShippingQuoteRequest,
+    request: Request,
+    _customer: Optional[CustomerAuthContext] = Depends(optional_customer),
+) -> Dict[str, Any]:
+    """Harga & berat dihitung ulang di server; input klien hanya referensi."""
+    write_rate_limit(request)
+    items = [await _price_and_stock(item.model_dump()) for item in payload.items]
+    subtotal = sum(item["subtotal"] for item in items)
+    weight_grams = _shipment_weight(items)
+    options = await shipping.calculate_cost(payload.destination_id, weight_grams, payload.couriers)
+    return {
+        "destination_id": str(payload.destination_id),
+        "shipment_weight_grams": weight_grams,
+        "subtotal": subtotal,
+        "currency": "IDR",
+        "options": options,
+    }
+
+
 @router.get("/payment/status", summary="Payment gateway configuration state (secret-free)")
 async def payment_configuration() -> Dict[str, Any]:
     return provider_status()
@@ -287,17 +356,65 @@ async def checkout(
     await checkout_guard(request)
     items = [await _price_and_stock(item.model_dump()) for item in payload.items]
     subtotal = sum(item["subtotal"] for item in items)
+
+    # --- Otoritas ongkir (Fase 2) ---------------------------------------
+    # Biaya kirim SELALU dihitung ulang di server dari kombinasi
+    # origin + destination + berat + layanan terpilih. Nilai dari frontend
+    # hanya dipakai untuk mendeteksi perubahan harga.
+    shipping_data = payload.shipping.model_dump()
+    shipping_cost = SHIPPING_FLAT
+    shipment_weight_grams: Optional[int] = None
+    selection = (
+        shipping_data.get("destination_id"),
+        shipping_data.get("courier_code"),
+        shipping_data.get("service_code"),
+    )
+    if all(selection):
+        shipment_weight_grams = _shipment_weight(items)
+        option = await shipping.find_option(
+            destination_id=selection[0],
+            weight_grams=shipment_weight_grams,
+            courier_code=selection[1],
+            service_code=selection[2],
+        )
+        client_cost = shipping_data.get("shipping_cost")
+        if client_cost is not None and int(client_cost) != option["cost"]:
+            raise ValidationFailedError(
+                "Biaya kirim berubah sejak Anda memilih layanan. Muat ulang halaman checkout "
+                "dan hitung ongkir kembali sebelum melanjutkan pembayaran."
+            )
+        shipping_cost = option["cost"]
+        shipping_data.update(
+            {
+                "courier_code": option["courier_code"],
+                "courier_name": option["courier_name"],
+                "service_code": option["service_code"],
+                "service_name": option["service_name"],
+                "shipping_cost": option["cost"],
+                "shipping_etd": option["etd"],
+                "shipment_weight_grams": shipment_weight_grams,
+            }
+        )
+    elif shipping.is_configured():
+        # Ongkir aktif: pelanggan wajib memilih tujuan + layanan pengiriman.
+        raise ValidationFailedError(
+            "Pilih tujuan pengiriman dan layanan kurir terlebih dahulu untuk menghitung ongkir."
+        )
+    else:
+        # Kompatibilitas: bila ongkir belum dikonfigurasi, perilaku lama dipakai.
+        shipping_data["shipping_cost"] = SHIPPING_FLAT
+
     order_number = await _next_order_number()
     order = await orders.create(
         {
             "order_number": order_number,
             "customer_id": customer.customer_id if customer else None,
             "customer": payload.customer.model_dump(),
-            "shipping": payload.shipping.model_dump(),
+            "shipping": shipping_data,
             "items": items,
             "subtotal": subtotal,
-            "shipping_cost": SHIPPING_FLAT,
-            "total": subtotal + SHIPPING_FLAT,
+            "shipping_cost": shipping_cost,
+            "total": subtotal + shipping_cost,
             "currency": "IDR",
             "order_status": "PENDING",
             "payment_status": "PENDING",

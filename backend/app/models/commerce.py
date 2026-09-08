@@ -124,6 +124,26 @@ class ShippingInfo(AppBaseModel):
     province: str = Field(min_length=2, max_length=120)
     postal_code: str = Field(min_length=3, max_length=12)
     notes: Optional[str] = Field(default=None, max_length=400)
+    # --- Pengiriman RajaOngkir (Fase 2) ---------------------------------
+    # Opsional agar pesanan lama & alur lama (saat ongkir belum dikonfigurasi)
+    # tetap valid. `shipping_cost` hanya PETUNJUK dari klien untuk mendeteksi
+    # perubahan harga; harga yang dipakai selalu dihitung ulang di server.
+    destination_id: Optional[str] = Field(default=None, max_length=24)
+    destination_label: Optional[str] = Field(default=None, max_length=240)
+    courier_code: Optional[str] = Field(default=None, max_length=24)
+    courier_name: Optional[str] = Field(default=None, max_length=80)
+    service_code: Optional[str] = Field(default=None, max_length=40)
+    service_name: Optional[str] = Field(default=None, max_length=80)
+    shipping_cost: Optional[int] = Field(default=None, ge=0)
+    shipping_etd: Optional[str] = Field(default=None, max_length=40)
+
+
+class ShippingQuoteRequest(AppBaseModel):
+    """Permintaan hitung ongkir — hanya referensi keranjang + tujuan."""
+
+    items: List["CheckoutItem"] = Field(min_length=1, max_length=30)
+    destination_id: str = Field(min_length=1, max_length=24)
+    couriers: Optional[List[str]] = Field(default=None, max_length=12)
 
 
 class CheckoutRequest(AppBaseModel):

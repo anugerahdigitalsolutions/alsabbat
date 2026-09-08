@@ -1,5 +1,54 @@
 # ALSABBAT Football Club — PRD (living document)
 
+## MERCHANDISE FASE 2 — VERIFIKASI FRONTEND CHECKOUT (ONGKIR RAJAONGKIR) · 8 Jun 2026 · SELESAI (terbatas)
+Backend Fase 2 sudah SELESAI sebelumnya (`scripts/merch_phase2_verify.py` 29/29 PASS). Sesi ini hanya
+menuntaskan verifikasi visual halaman Checkout. Tanpa Testing Agent, tanpa data uji di database,
+tanpa perubahan backend.
+
+### Temuan kondisi staging (read-only, DB `alsabbat_platform`)
+- `integration_settings` **kosong** dan ENV juga kosong → `GET /api/merchandise/shipping/config` =
+  `{configured:false, status:"SHIPPING_NOT_CONFIGURED", missing_config:[RAJAONGKIR_COST_API_KEY, SHIPPING_ORIGIN_DESTINATION_ID]}`.
+- `GET /api/merchandise/shipping/destinations?search=cicendo` → 422 jujur ("Admin belum mengisi RajaOngkir
+  Shipping Cost API Key"), **tidak** membocorkan nilai rahasia.
+- Katalog **0 produk** (`/api/merchandise/products` → total 0), `product_variants` 0 → tidak ada produk nyata
+  untuk dimasukkan ke keranjang. Sesuai instruksi user: TIDAK membuat produk sementara.
+- Midtrans juga belum dikonfigurasi (`PAYMENT_NOT_CONFIGURED`).
+
+### Verifikasi UI (Playwright, 1920×800 & 390×844)
+- Keranjang kosong → empty state `checkout-empty` ("Keranjang Anda kosong") tampil benar.
+- Keranjang berisi (baris disuntik di `localStorage` sisi browser saja — 0 tulisan ke database) → form
+  Data Pembeli & Pengiriman, Ringkasan Pesanan, Subtotal/Ongkir/Total, dan tombol submit dirender.
+- Karena ongkir belum dikonfigurasi: blok `checkout-shipping-block` (pencarian tujuan + kurir) **tidak
+  dirender**, yang tampil adalah `checkout-shipping-not-configured` ("Perhitungan ongkir otomatis belum
+  aktif. Admin akan mengonfirmasi biaya kirim setelah pesanan dibuat."), Ongkir Rp 0, tombol
+  "Buat Pesanan & Bayar" disabled. **Tidak ada kurir/harga palsu.**
+- Overflow horizontal 0 px di 1920 & 390 (hanya wrapper toaster fixed). Tidak ada console error selain
+  422 dari item keranjang uji yang memang tidak ada di katalog.
+
+### PERBAIKAN UI (hanya Checkout, terkait Fase 2)
+`frontend/src/pages/public/CheckoutPage.js`:
+1. `Promise.all` sebelumnya membuat **kegagalan revalidasi keranjang menggagalkan seluruh pemuatan**
+   → status pembayaran & ongkir tidak pernah termuat dan ringkasan menampilkan "Pembayaran diproses oleh ()".
+   Kini status pembayaran dimuat mandiri; revalidasi keranjang punya penanganan galat sendiri
+   ("Produk di keranjang tidak lagi tersedia.").
+2. Baris status pembayaran hanya dirender bila `paymentConfig` sudah ada (tidak lagi mencetak tanda kurung kosong).
+Sesudah perbaikan: baris status menampilkan "PEMBAYARAN BELUM DIKONFIGURASI (MIDTRANS) …" secara jujur.
+`yarn build` sukses.
+
+### BELUM TERVERIFIKASI (blocker eksternal, bukan bug)
+Alur **konfigurasi aktif** (pencarian tujuan → daftar kurir/layanan → ongkir masuk Grand Total → tersimpan
+di snapshot order) belum bisa diuji live karena `RAJAONGKIR_COST_API_KEY` + `SHIPPING_ORIGIN_DESTINATION_ID`
+belum diisi di Admin → Integration Settings, dan katalog belum berisi produk ber-`weight_grams`.
+Logika sisi server untuk alur ini sudah lulus 29/29 di `scripts/merch_phase2_verify.py`.
+
+### Backlog Merchandise berikutnya (tidak dikerjakan di sesi ini)
+- P1 Fase 3: Admin order management (pack/fulfil, input AWB, timeline order).
+- P1 Fase 4: Pelanggan terima/tolak pesanan + unggah bukti.
+- P1 Fase 5: Refund (online & manual/COD).
+- P2 Fase 6: COD end-to-end (Komerce Delivery API + biaya COD).
+- P2: Opsi varian terstruktur (matriks ukuran/warna), buku alamat pelanggan.
+
+
 ## FASE 4B — SATU AKUN, DUA PROFIL (PEMAIN + STAFF) · 29 Agu 2026 · SELESAI
 Additive & backward-compatible; tidak menyentuh Fase 1/2/4 dan tidak mengulang Fase 5.
 

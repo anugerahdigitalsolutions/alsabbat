@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Loader2, ShoppingCart, UserRound } from 'lucide-react';
+import { AlertTriangle, Loader2, Search, ShoppingCart, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { apiErrorMessage, barayaApi } from '../../lib/api';
 import { useBaraya } from '../../context/BarayaAuthContext';
@@ -36,16 +36,97 @@ export default function CheckoutPage() {
     customer: { name: '', email: '', phone: '' },
     shipping: { recipient: '', address: '', city: '', province: '', postal_code: '', notes: '' },
   });
+  // Fase 2 — ongkir real-time (semua perhitungan di server)
+  const [shippingConfig, setShippingConfig] = useState(null);
+  const [destQuery, setDestQuery] = useState('');
+  const [destResults, setDestResults] = useState(null);
+  const [destLoading, setDestLoading] = useState(false);
+  const [destination, setDestination] = useState(null);
+  const [quote, setQuote] = useState(null);
+  const [quoting, setQuoting] = useState(false);
+  const [selectedKey, setSelectedKey] = useState('');
+
+  const options = quote?.options || [];
+  const selectedOption = options.find((o) => `${o.courier_code}|${o.service_code}` === selectedKey) || null;
+  const subtotal = summary?.subtotal || 0;
+  const shippingCost = selectedOption?.cost || 0;
+  const grandTotal = subtotal + shippingCost;
+  const shippingEnabled = Boolean(shippingConfig?.configured);
+
+  const searchDestination = async () => {
+    if (destQuery.trim().length < 3) {
+      toast.error('Kata kunci pencarian minimal 3 karakter.');
+      return;
+    }
+    setDestLoading(true);
+    try {
+      const { data } = await api.get('/merchandise/shipping/destinations', { params: { search: destQuery.trim() } });
+      setDestResults(data.items || []);
+      if (!(data.items || []).length) toast.error('Tujuan tidak ditemukan. Coba nama kecamatan/kota lain.');
+    } catch (e) {
+      toast.error(apiErrorMessage(e, 'Gagal mencari tujuan pengiriman.'));
+    } finally {
+      setDestLoading(false);
+    }
+  };
+
+  const chooseDestination = (item) => {
+    setDestination(item);
+    setDestResults(null);
+    setQuote(null);
+    setSelectedKey('');
+    setForm((f) => ({
+      ...f,
+      shipping: {
+        ...f.shipping,
+        city: item.city || item.district || f.shipping.city,
+        province: item.province || f.shipping.province,
+        postal_code: item.postal_code || f.shipping.postal_code,
+      },
+    }));
+  };
+
+  const calculateShipping = async () => {
+    if (!destination) {
+      toast.error('Pilih tujuan pengiriman terlebih dahulu.');
+      return;
+    }
+    setQuoting(true);
+    setSelectedKey('');
+    try {
+      const { data } = await api.post('/merchandise/shipping/quote', {
+        items: payload,
+        destination_id: destination.destination_id,
+      });
+      setQuote(data);
+    } catch (e) {
+      setQuote(null);
+      toast.error(apiErrorMessage(e, 'Gagal menghitung ongkir.'));
+    } finally {
+      setQuoting(false);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [cfg, revalidated] = await Promise.all([
-          api.get('/merchandise/payment/status'),
-          payload.length ? api.post('/merchandise/cart/revalidate', { items: payload }) : Promise.resolve({ data: null }),
-        ]);
+        const cfg = await api.get('/merchandise/payment/status');
         setPaymentConfig(cfg.data);
-        setSummary(revalidated.data);
+        try {
+          const revalidated = payload.length
+            ? await api.post('/merchandise/cart/revalidate', { items: payload })
+            : { data: null };
+          setSummary(revalidated.data);
+        } catch (err) {
+          setSummary(null);
+          toast.error(apiErrorMessage(err, 'Produk di keranjang tidak lagi tersedia.'));
+        }
+        try {
+          const ship = await api.get('/merchandise/shipping/config');
+          setShippingConfig(ship.data);
+        } catch (err) {
+          setShippingConfig({ configured: false, status: 'SHIPPING_NOT_CONFIGURED' });
+        }
       } catch (e) {
         toast.error(apiErrorMessage(e, 'Gagal memuat data checkout.'));
       }
@@ -79,7 +160,23 @@ export default function CheckoutPage() {
       const { data } = await client.post('/merchandise/checkout', {
         items: payload,
         customer: form.customer,
-        shipping: form.shipping,
+        shipping: {
+          ...form.shipping,
+          ...(selectedOption && destination
+            ? {
+                destination_id: destination.destination_id,
+                destination_label: destination.label,
+                courier_code: selectedOption.courier_code,
+                courier_name: selectedOption.courier_name,
+                service_code: selectedOption.service_code,
+                service_name: selectedOption.service_name,
+                // Petunjuk untuk deteksi perubahan harga; server tetap
+                // menghitung ulang ongkir dan menjadi sumber harga.
+                shipping_cost: selectedOption.cost,
+                shipping_etd: selectedOption.etd,
+              }
+            : {}),
+        },
       });
       setResult(data);
       clear();
@@ -87,7 +184,12 @@ export default function CheckoutPage() {
         window.location.href = data.payment.redirect_url;
       }
     } catch (e) {
-      toast.error(apiErrorMessage(e, 'Checkout gagal.'));
+      const message = apiErrorMessage(e, 'Checkout gagal.');
+      if (/ongkir|biaya kirim/i.test(message)) {
+        setQuote(null);
+        setSelectedKey('');
+      }
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -177,6 +279,109 @@ export default function CheckoutPage() {
                 <Label className="mb-1.5 block">Catatan (opsional)</Label>
                 <Textarea rows={2} value={form.shipping.notes} onChange={(e) => setField('shipping.notes', e.target.value)} data-testid="checkout-shipping-notes" />
               </div>
+
+              {shippingEnabled ? (
+                <div className="space-y-3 border-t pt-4" style={{ borderColor: 'var(--border-soft)' }} data-testid="checkout-shipping-block">
+                  <p className="als-section-label">Pengiriman</p>
+                  <div>
+                    <Label className="mb-1.5 block">Cari Tujuan (kecamatan / kota)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Input
+                        value={destQuery}
+                        onChange={(e) => setDestQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            searchDestination();
+                          }
+                        }}
+                        placeholder="Contoh: Cicendo Bandung"
+                        className="min-w-[200px] flex-1"
+                        data-testid="checkout-destination-search"
+                      />
+                      <Button variant="outline" onClick={searchDestination} disabled={destLoading} data-testid="checkout-destination-search-button">
+                        {destLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                        Cari
+                      </Button>
+                    </div>
+                  </div>
+
+                  {destResults?.length ? (
+                    <div className="max-h-56 space-y-1 overflow-y-auto rounded-[var(--radius-sm)] p-2" style={{ backgroundColor: 'var(--surface-2)' }} data-testid="checkout-destination-results">
+                      {destResults.map((item) => (
+                        <button
+                          key={item.destination_id}
+                          type="button"
+                          onClick={() => chooseDestination(item)}
+                          className="als-focus block w-full rounded-[6px] px-3 py-2 text-left text-sm hover:bg-white"
+                          data-testid={`checkout-destination-option-${item.destination_id}`}
+                        >
+                          {item.label}
+                          {item.postal_code ? ` · ${item.postal_code}` : ''}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {destination ? (
+                    <div className="rounded-[var(--radius-sm)] p-3 text-sm" style={{ backgroundColor: 'rgba(1,40,145,0.05)' }} data-testid="checkout-destination-selected">
+                      <span className="font-semibold">Tujuan terpilih:</span> {destination.label}
+                      {destination.postal_code ? ` · ${destination.postal_code}` : ''}
+                    </div>
+                  ) : null}
+
+                  <Button variant="outline" onClick={calculateShipping} disabled={!destination || quoting} data-testid="checkout-calculate-shipping">
+                    {quoting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
+                    Hitung Ongkir
+                  </Button>
+
+                  {options.length ? (
+                    <div className="space-y-2" data-testid="checkout-courier-options">
+                      <p className="text-xs" style={{ color: 'var(--muted-fg)' }}>
+                        Berat kiriman {(quote.shipment_weight_grams / 1000).toFixed(2)} kg · pilih layanan pengiriman:
+                      </p>
+                      {options.map((option) => {
+                        const key = `${option.courier_code}|${option.service_code}`;
+                        const active = key === selectedKey;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setSelectedKey(key)}
+                            className="als-focus flex w-full flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm"
+                            style={{
+                              border: active ? '2px solid var(--club-primary)' : '1px solid var(--border-soft)',
+                              backgroundColor: active ? 'rgba(252,207,43,0.10)' : 'white',
+                            }}
+                            data-testid={`checkout-courier-${key}`}
+                          >
+                            <span className="min-w-0">
+                              <span className="font-semibold">
+                                {option.courier_name} · {option.service_code}
+                              </span>
+                              {option.description ? (
+                                <span className="block text-xs" style={{ color: 'var(--muted-fg)' }}>
+                                  {option.description}
+                                  {option.etd ? ` · estimasi ${option.etd}` : ''}
+                                </span>
+                              ) : option.etd ? (
+                                <span className="block text-xs" style={{ color: 'var(--muted-fg)' }}>
+                                  Estimasi {option.etd}
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="font-display font-bold tabular-nums">{formatIDR(option.cost)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="border-t pt-4 text-xs" style={{ borderColor: 'var(--border-soft)', color: 'var(--muted-fg)' }} data-testid="checkout-shipping-not-configured">
+                  Perhitungan ongkir otomatis belum aktif. Admin akan mengonfirmasi biaya kirim setelah pesanan dibuat.
+                </p>
+              )}
             </div>
 
             <div className="als-card h-fit p-5" data-testid="checkout-summary">
@@ -190,11 +395,25 @@ export default function CheckoutPage() {
                   <span className="tabular-nums">{formatIDR(item.subtotal)}</span>
                 </div>
               ))}
-              <div className="mt-4 flex justify-between border-t pt-4" style={{ borderColor: 'var(--border-soft)' }}>
-                <span className="font-display font-bold">Total</span>
-                <span className="font-display text-lg font-bold tabular-nums" data-testid="checkout-total">
-                  {formatIDR(summary?.total || 0)}
-                </span>
+              <div className="mt-4 space-y-1 border-t pt-4 text-sm" style={{ borderColor: 'var(--border-soft)' }}>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--muted-fg)' }}>Subtotal</span>
+                  <span className="tabular-nums" data-testid="checkout-subtotal">{formatIDR(subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--muted-fg)' }}>
+                    Ongkir{selectedOption ? ` · ${selectedOption.courier_name} ${selectedOption.service_code}` : ''}
+                  </span>
+                  <span className="tabular-nums" data-testid="checkout-shipping-cost">
+                    {selectedOption ? formatIDR(shippingCost) : shippingEnabled ? 'Belum dihitung' : formatIDR(0)}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-2">
+                  <span className="font-display font-bold">Total</span>
+                  <span className="font-display text-lg font-bold tabular-nums" data-testid="checkout-total">
+                    {formatIDR(grandTotal)}
+                  </span>
+                </div>
               </div>
 
               {paymentConfig && !paymentConfig.configured ? (
@@ -202,16 +421,16 @@ export default function CheckoutPage() {
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   PEMBAYARAN BELUM DIKONFIGURASI ({paymentConfig.provider}). Pesanan tetap tercatat sebagai PENDING dan admin akan menghubungi Anda.
                 </p>
-              ) : (
+              ) : paymentConfig ? (
                 <p className="mt-4 text-xs" style={{ color: 'var(--muted-fg)' }} data-testid="checkout-payment-status">
-                  Pembayaran diproses oleh {paymentConfig?.label} ({paymentConfig?.environment}).
+                  Pembayaran diproses oleh {paymentConfig.label} ({paymentConfig.environment}).
                 </p>
-              )}
+              ) : null}
 
               <Button
                 className="mt-5 w-full min-h-[44px] font-semibold"
                 style={{ backgroundColor: 'var(--club-primary)', color: '#000000' }}
-                disabled={submitting || !summary}
+                disabled={submitting || !summary || (shippingEnabled && !selectedOption)}
                 onClick={submit}
                 data-testid="checkout-submit"
               >
