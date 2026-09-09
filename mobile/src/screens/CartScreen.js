@@ -61,7 +61,7 @@ export default function CartScreen({ navigation }) {
           testID="cart-empty"
           action={
             <PrimaryButton
-              label="Buka Toko"
+              label="Kunjungi Toko"
               icon="bag-handle-outline"
               onPress={() => navigation.navigate('Main', { screen: 'Store' })}
               style={styles.emptyButton}

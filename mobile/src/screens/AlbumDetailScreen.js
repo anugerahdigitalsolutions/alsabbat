@@ -29,6 +29,12 @@ export default function AlbumDetailScreen({ navigation, route }) {
   });
   const hasDrive = Boolean(album.data?.drive_folder_url);
 
+  // Total foto Google Drive dari API (`total` pada /drive-photos, sudah di-cache
+  // server 5 menit) — dipakai HANYA untuk badge jumlah media, bukan rendering.
+  const driveCount = useResource(() => endpoints.getAlbumDrivePhotos(albumId), [albumId], {
+    enabled: canViewGallery && hasDrive,
+  });
+
   const media = useMemo(
     () =>
       (album.data?.media || []).map((item) => ({
@@ -48,7 +54,8 @@ export default function AlbumDetailScreen({ navigation, route }) {
 
   const refresh = useCallback(() => {
     album.refresh();
-  }, [album]);
+    driveCount.refresh();
+  }, [album, driveCount]);
 
   return (
     <Screen
@@ -71,7 +78,7 @@ export default function AlbumDetailScreen({ navigation, route }) {
       ) : (
         <>
           <View style={styles.metaRow}>
-            <Badge label={`${media.length} media`} tone="accent" />
+            <Badge label={`${media.length + (driveCount.data?.total || 0)} media`} tone="accent" />
             {formatDateMedium(album.data.date || album.data.published_at) ? (
               <Badge label={formatDateMedium(album.data.date || album.data.published_at)} />
             ) : null}

@@ -345,7 +345,7 @@ export default function CheckoutScreen({ navigation }) {
           testID="checkout-empty"
           action={
             <PrimaryButton
-              label="Buka Toko"
+              label="Kunjungi Toko"
               onPress={() => navigation.navigate('Main', { screen: 'Store' })}
               style={styles.resultButton}
             />

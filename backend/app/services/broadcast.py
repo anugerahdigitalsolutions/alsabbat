@@ -150,12 +150,15 @@ async def _create_notifications(doc: Dict[str, Any]) -> Dict[str, Any]:
             push_result = {"delivered": False, "error": type(exc).__name__}
 
     logger.info(
-        "broadcast.delivered id=%s group=%s recipients=%s notifications=%s push=%s",
+        "broadcast.delivered id=%s group=%s recipients=%s notifications=%s push=%s devices=%s accepted=%s reason=%s",
         doc["id"],
         doc["recipient_group"],
         len(recipient_ids),
         created,
         push_result.get("delivered"),
+        push_result.get("devices"),
+        push_result.get("accepted"),
+        push_result.get("reason") or push_result.get("error"),
     )
     return {
         "recipient_count": len(recipient_ids),

@@ -80,12 +80,6 @@ export default function HomeScreen({ navigation }) {
         onPress: () => navigation.navigate(isAuthenticated ? 'MemberCard' : 'Login'),
       },
       {
-        key: 'notif',
-        label: 'Notifikasi',
-        icon: 'notifications-outline',
-        onPress: () => navigation.navigate(isAuthenticated ? 'Notifications' : 'Login'),
-      },
-      {
         key: 'membership',
         label: 'Keanggotaan',
         icon: 'ribbon-outline',
@@ -205,7 +199,7 @@ export default function HomeScreen({ navigation }) {
         <>
           <SectionHeader
             title="Merchandise Resmi"
-            actionLabel="Buka toko"
+            actionLabel="Kunjungi toko"
             onAction={() => navigation.navigate('Store')}
             testID="home-store-header"
           />

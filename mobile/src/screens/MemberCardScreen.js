@@ -34,7 +34,10 @@ const qrValue = (memberCode) =>
 /** Digital member card — `/api/baraya/member-card` (existing endpoint). */
 export default function MemberCardScreen({ navigation }) {
   const { isAuthenticated } = useAuth();
-  const { clubName, clubLogo } = useClub();
+  const { clubName, clubLogo, siteContent } = useClub();
+  // Latar kartu memakai SUMBER YANG SAMA dengan website: site content
+  // `member.card.background_url` (dikelola admin), tanpa asset baru.
+  const cardBackground = resolveMediaUrl(siteContent?.['member.card.background_url'] || null);
   const card = useResource(() => endpoints.getMemberCard(), [], {
     enabled: isAuthenticated,
     fallbackMessage: 'Kartu member belum tersedia.',
@@ -63,12 +66,47 @@ export default function MemberCardScreen({ navigation }) {
         <ErrorState message={card.error || 'Kartu member belum tersedia.'} onRetry={card.reload} />
       ) : (
         <>
-          <LinearGradient
-            colors={[colors.navy, colors.navyDeep, '#000814']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.card, shadow.card]}
-          >
+          <View style={[styles.card, shadow.card]}>
+            {cardBackground ? (
+              <>
+                <Image
+                  source={{ uri: cardBackground }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                  testID="member-card-background"
+                />
+                {/* Overlay identik website: navy 90% → navy 62% (46%) → hitam 68% */}
+                <LinearGradient
+                  colors={['rgba(1,40,145,0.90)', 'rgba(1,40,145,0.62)', 'rgba(0,0,0,0.68)']}
+                  locations={[0, 0.46, 1]}
+                  start={{ x: 0, y: 0.12 }}
+                  end={{ x: 1, y: 0.88 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              </>
+            ) : (
+              <>
+                <LinearGradient
+                  colors={[colors.navy, colors.navyDeep, '#000814']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                {/* Pola garis lapangan + kilau emas seperti kartu member website */}
+                <View style={styles.pitchLines} pointerEvents="none">
+                  {Array.from({ length: 7 }).map((_, index) => (
+                    <View key={`line-${index}`} style={styles.pitchLine} />
+                  ))}
+                </View>
+                <LinearGradient
+                  colors={['rgba(252,207,43,0.28)', 'transparent']}
+                  start={{ x: 1, y: 0 }}
+                  end={{ x: 0.25, y: 0.7 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              </>
+            )}
+            <View style={styles.cardInner}>
             <View style={styles.cardTop}>
               <Image
                 source={clubLogo ? { uri: clubLogo } : LOGO}
@@ -108,7 +146,8 @@ export default function MemberCardScreen({ navigation }) {
               </View>
               <Badge label={data.status || 'ACTIVE'} tone={data.status === 'ACTIVE' ? 'win' : 'default'} />
             </View>
-          </LinearGradient>
+            </View>
+          </View>
 
           {qrValue(data.member_code) ? (
             <View style={styles.qrCard} testID="member-card-qr">
@@ -180,10 +219,18 @@ const styles = StyleSheet.create({
     // Latar solid di bawah gradient: outline shadow Android mengikuti sudut
     // membulat seperti iOS (tanpa ini Android menggambar kotak).
     backgroundColor: colors.navyDeep,
+    overflow: 'hidden',
     padding: 18,
-    gap: 18,
     marginTop: 10,
   },
+  cardInner: { gap: 18 },
+  pitchLines: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  pitchLine: { width: 1, height: '100%', backgroundColor: 'rgba(254,254,254,0.07)' },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   cardLogo: { width: 46, height: 46 },
   cardBody: { flexDirection: 'row', alignItems: 'center', gap: 14 },

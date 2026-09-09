@@ -171,7 +171,8 @@ export function MatchCard({ match, variant = 'row', onPress, countdown = false, 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   featured: { borderRadius: radii.card, overflow: 'hidden', backgroundColor: colors.accentTo },
-  fill: { paddingTop: 26, paddingBottom: 14, paddingHorizontal: 12 },
+  // Blok waktu/skor diberi jarak lebih dari pill di tepi atas kartu.
+  fill: { paddingTop: 40, paddingBottom: 12, paddingHorizontal: 12 },
   pill: {
     position: 'absolute',
     top: 0,
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
   sideName: { textAlign: 'center', width: '100%' },
   middle: { width: 100, alignItems: 'center', gap: 2 },
   middleMeta: { color: 'rgba(8,18,46,0.68)', textAlign: 'center' },
-  venueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10 },
+  venueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 8 },
   row: {
     backgroundColor: colors.surfaceSolid,
     borderRadius: radii.card,

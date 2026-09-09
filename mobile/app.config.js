@@ -46,6 +46,12 @@ module.exports = () => ({
       package: 'com.alsabbat.mobile',
       versionCode: 1,
       icon: './assets/icon.png',
+      // Kredensial FCM (wajib untuk push Android) diinjeksikan lewat env/EAS
+      // secret `GOOGLE_SERVICES_JSON`. Bila belum diisi, build tetap berjalan
+      // seperti sebelumnya (tanpa push Android).
+      ...(process.env.GOOGLE_SERVICES_JSON
+        ? { googleServicesFile: process.env.GOOGLE_SERVICES_JSON }
+        : {}),
       adaptiveIcon: {
         // Fallback bila launcher tidak memakai `backgroundImage`: pakai hitam
         // pekat mengikuti latar app icon baru (gradasi hitam -> biru klub).

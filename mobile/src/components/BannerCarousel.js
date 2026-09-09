@@ -17,7 +17,9 @@ export function BannerCarousel({ banners = [], onCta, testID }) {
   const [index, setIndex] = useState(0);
   const listRef = useRef(null);
   const width = Dimensions.get('window').width - gutter * 2;
-  const height = Math.round(Math.min(width * 0.62, 260));
+  // Banner sedikit lebih tinggi supaya foto pemain tetap terlihat penuh
+  // walau seluruh teks kini berada di bagian bawah banner.
+  const height = Math.round(Math.min(width * 0.78, 320));
 
   const onScrollEnd = useCallback(
     (event) => {
@@ -66,8 +68,9 @@ export function BannerCarousel({ banners = [], onCta, testID }) {
                 <LinearGradient colors={[colors.navy, colors.navyDeep]} style={StyleSheet.absoluteFill} />
               )}
               <LinearGradient
-                colors={['rgba(4,9,26,0.05)', 'rgba(4,9,26,0.55)', 'rgba(4,9,26,0.92)']}
-                style={StyleSheet.absoluteFill}
+                colors={['transparent', 'rgba(4,9,26,0.55)', 'rgba(4,9,26,0.94)']}
+                locations={[0, 0.45, 1]}
+                style={styles.scrim}
               />
               <View style={styles.slideBody}>
                 {item.eyebrow ? (
@@ -81,15 +84,16 @@ export function BannerCarousel({ banners = [], onCta, testID }) {
                   lines.map((line, lineIndex) => (
                     <Txt
                       key={`${item.id}-line-${lineIndex}`}
-                      variant="h1"
+                      variant="h2"
                       tone={lines.length > 1 && lineIndex === lines.length - 1 ? 'accent' : 'default'}
                       numberOfLines={1}
+                      style={styles.headline}
                     >
                       {line}
                     </Txt>
                   ))
                 ) : item.subheadline ? (
-                  <Txt variant="h2" numberOfLines={2}>
+                  <Txt variant="h2" numberOfLines={2} style={styles.headline}>
                     {item.subheadline}
                   </Txt>
                 ) : null}
@@ -128,7 +132,11 @@ export function BannerCarousel({ banners = [], onCta, testID }) {
 const styles = StyleSheet.create({
   list: { gap: 12 },
   slide: { borderRadius: radii.lg, overflow: 'hidden', backgroundColor: colors.surfaceSolid },
-  slideBody: { flex: 1, justifyContent: 'flex-end', padding: 16, gap: 2 },
+  // Gradient hanya menutup bagian bawah banner (transparan di area foto).
+  scrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '58%' },
+  // Blok teks menempel di bawah (± 35–40% tinggi banner), foto tetap focal point.
+  slideBody: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 14, gap: 0 },
+  headline: { lineHeight: 22 },
   eyebrow: {
     alignSelf: 'flex-start',
     backgroundColor: colors.accent,
@@ -137,13 +145,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginBottom: 8,
   },
-  sub: { marginTop: 4 },
+  sub: { marginTop: 6 },
   cta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-start',
-    marginTop: 12,
+    marginTop: 10,
     backgroundColor: colors.accent,
     borderRadius: radii.pill,
     paddingHorizontal: 14,

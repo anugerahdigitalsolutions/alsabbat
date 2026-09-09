@@ -127,6 +127,11 @@ async def send_to_customer(
             delivered += 1
             continue
         details = (result or {}).get("details") or {}
+        logger.warning(
+            "push.rejected error=%s message=%s",
+            details.get("error"),
+            (result or {}).get("message"),
+        )
         if details.get("error") == "DeviceNotRegistered":
             await _drop_invalid(token)
 
@@ -206,6 +211,11 @@ async def send_to_customers(
                 delivered += 1
                 continue
             details = (result or {}).get("details") or {}
+            logger.warning(
+                "push.bulk_rejected error=%s message=%s",
+                details.get("error"),
+                (result or {}).get("message"),
+            )
             if details.get("error") == "DeviceNotRegistered":
                 await _drop_invalid(token)
 
