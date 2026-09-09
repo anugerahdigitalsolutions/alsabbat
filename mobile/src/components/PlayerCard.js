@@ -8,6 +8,7 @@ import { colors, radii } from '../theme';
 import { resolveMediaUrl } from '../api/client';
 import { formatDateMedium, initials } from '../lib/format';
 import Txt from './Txt';
+import { RemoteImage } from './RemoteImage';
 
 const POSITION_LABEL = {
   GOALKEEPER: 'Kiper',
@@ -100,7 +101,7 @@ export function PlayerCard({ player, onPress, variant = 'tile', testID }) {
 
 /** Album card — `/api/gallery/public/albums`. */
 export function AlbumCard({ album, onPress, width, testID }) {
-  const cover = resolveMediaUrl(album.cover_url);
+  const cover = resolveMediaUrl(album.cover_url_resolved || album.cover_url);
   return (
     <Pressable
       onPress={onPress}
@@ -108,7 +109,7 @@ export function AlbumCard({ album, onPress, width, testID }) {
       style={({ pressed }) => [styles.album, width ? { width } : null, pressed ? styles.pressed : null]}
     >
       {cover ? (
-        <Image source={{ uri: cover }} style={styles.albumCover} contentFit="cover" transition={200} />
+        <RemoteImage uri={cover} style={styles.albumCover} contentFit="cover" transition={200} />
       ) : (
         <LinearGradient colors={[colors.navy, colors.navyDeep]} style={[styles.albumCover, styles.fallback]}>
           <Ionicons name="images-outline" size={24} color={colors.accent} />
@@ -121,7 +122,7 @@ export function AlbumCard({ album, onPress, width, testID }) {
         </Txt>
         <Txt variant="meta" tone="dim" numberOfLines={1}>
           {[
-            album.media_count ? `${album.media_count} media` : null,
+            album.media_count || album.media_total ? `${album.media_count || album.media_total} media` : null,
             formatDateMedium(album.date || album.published_at),
           ]
             .filter(Boolean)

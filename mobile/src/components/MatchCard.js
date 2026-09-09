@@ -170,7 +170,7 @@ export function MatchCard({ match, variant = 'row', onPress, countdown = false, 
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  featured: { borderRadius: radii.card, overflow: 'hidden' },
+  featured: { borderRadius: radii.card, overflow: 'hidden', backgroundColor: colors.accentTo },
   fill: { paddingTop: 26, paddingBottom: 14, paddingHorizontal: 12 },
   pill: {
     position: 'absolute',

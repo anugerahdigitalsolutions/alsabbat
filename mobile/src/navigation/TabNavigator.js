@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -91,7 +91,8 @@ export default function TabNavigator() {
         headerShown: false,
         tabBarHideOnKeyboard: true,
         sceneStyle: { backgroundColor: colors.bg },
-        animation: Platform.OS === 'android' ? 'shift' : 'fade',
+        // Transisi tab sama di kedua platform (sebelumnya Android memakai 'shift').
+        animation: 'fade',
       }}
       tabBar={(props) => <ClubTabBar {...props} />}
     >

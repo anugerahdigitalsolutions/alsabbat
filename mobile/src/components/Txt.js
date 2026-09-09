@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text as RNText } from 'react-native';
 
-import { colors, font } from '../theme';
+import { androidTextFix, colors, font } from '../theme';
 
 /**
  * Single typography primitive so every screen shares the Poppins scale and
@@ -36,7 +36,16 @@ const TONES = {
 
 export function Txt({ variant = 'body', tone = 'default', style, children, ...rest }) {
   return (
-    <RNText style={[VARIANTS[variant] || VARIANTS.body, { color: TONES[tone] || tone }, style]} {...rest}>
+    <RNText
+      allowFontScaling={false}
+      style={[
+        VARIANTS[variant] || VARIANTS.body,
+        androidTextFix,
+        { color: TONES[tone] || tone },
+        style,
+      ]}
+      {...rest}
+    >
       {children}
     </RNText>
   );

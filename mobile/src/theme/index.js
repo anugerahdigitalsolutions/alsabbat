@@ -2,6 +2,8 @@
  * AL SABBAT design tokens (ported 1:1 from the official web palette so the
  * native app and the website stay visually identical).
  */
+import { Platform } from 'react-native';
+
 export const colors = {
   navy: '#012891',
   navyDeep: '#011A5E',
@@ -57,13 +59,22 @@ export const shadow = {
     shadowOffset: { width: 0, height: -6 },
     elevation: 14,
   },
+  // Glow emas hanya bisa dirender iOS. Di Android `elevation` memakai outline
+  // kotak view sehingga tombol pill tampak seperti kotak abu — jadi dimatikan
+  // agar bentuk tombol Android sama dengan iOS.
   accent: {
     shadowColor: colors.accent,
     shadowOpacity: 0.35,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    elevation: Platform.OS === 'android' ? 0 : 8,
   },
+};
+
+/** Metrik teks Android disamakan dengan iOS (props ini no-op di iOS). */
+export const androidTextFix = {
+  includeFontPadding: false,
+  textAlignVertical: 'center',
 };
 
 export const gradients = {
@@ -73,4 +84,4 @@ export const gradients = {
   fade: ['transparent', 'rgba(4,9,26,0.35)', 'rgba(4,9,26,0.94)'],
 };
 
-export default { colors, radii, spacing, gutter, font, shadow, gradients };
+export default { colors, radii, spacing, gutter, font, shadow, gradients, androidTextFix };

@@ -16,6 +16,7 @@ export function PrimaryButton({ label, onPress, loading, disabled, icon, style, 
       testID={testID}
       style={({ pressed }) => [
         styles.wrap,
+        styles.wrapAccent,
         shadow.accent,
         style,
         pressed && !isDisabled ? styles.pressed : null,
@@ -90,6 +91,9 @@ export function LinkButton({ label, onPress, style, testID, tone = 'accent' }) {
 
 const styles = StyleSheet.create({
   wrap: { borderRadius: radii.pill, overflow: 'hidden' },
+  // Latar solid membuat outline (dan clipping radius) Android mengikuti bentuk
+  // pill seperti di iOS, bukan kotak view.
+  wrapAccent: { backgroundColor: colors.accentTo },
   fill: {
     minHeight: 50,
     alignItems: 'center',

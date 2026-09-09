@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors, gutter, radii } from '../theme';
@@ -9,6 +8,8 @@ import TopBar from '../components/TopBar';
 import Txt from '../components/Txt';
 import { Badge } from '../components/Card';
 import { ImageViewer } from '../components/ImageViewer';
+import { RemoteImage } from '../components/RemoteImage';
+import { DriveFolderBrowser } from '../components/DriveFolderBrowser';
 import { EmptyState, ErrorState, Loading, RestrictedNotice } from '../components/States';
 import { useResource } from '../hooks/useResource';
 import * as endpoints from '../api/endpoints';
@@ -26,26 +27,19 @@ export default function AlbumDetailScreen({ navigation, route }) {
     enabled: canViewGallery,
     fallbackMessage: 'Album tidak ditemukan.',
   });
-  const drive = useResource(() => endpoints.getAlbumDrivePhotos(albumId), [albumId], {
-    enabled: canViewGallery && Boolean(album.data?.drive_folder_id),
-  });
+  const hasDrive = Boolean(album.data?.drive_folder_url);
 
-  const media = useMemo(() => {
-    const own = (album.data?.media || []).map((item) => ({
-      id: item.id,
-      caption: item.caption,
-      file_name: item.file_name,
-      url: resolveMediaUrl(item.url),
-      thumbnail_url: resolveMediaUrl(item.thumbnail_url || item.url),
-    }));
-    const fromDrive = (drive.data?.items || []).map((item) => ({
-      id: item.id,
-      file_name: item.name,
-      url: item.url,
-      thumbnail_url: item.thumbnail_url || item.url,
-    }));
-    return [...own, ...fromDrive];
-  }, [album.data, drive.data]);
+  const media = useMemo(
+    () =>
+      (album.data?.media || []).map((item) => ({
+        id: item.id,
+        caption: item.caption,
+        file_name: item.file_name,
+        url: resolveMediaUrl(item.url),
+        thumbnail_url: resolveMediaUrl(item.thumbnail_url || item.url),
+      })),
+    [album.data]
+  );
 
   const size = useMemo(() => {
     const width = Dimensions.get('window').width - gutter * 2;
@@ -54,8 +48,7 @@ export default function AlbumDetailScreen({ navigation, route }) {
 
   const refresh = useCallback(() => {
     album.refresh();
-    drive.refresh();
-  }, [album, drive]);
+  }, [album]);
 
   return (
     <Screen
@@ -103,8 +96,8 @@ export default function AlbumDetailScreen({ navigation, route }) {
                   testID={`album-media-${index}`}
                 >
                   {item.thumbnail_url ? (
-                    <Image
-                      source={{ uri: item.thumbnail_url }}
+                    <RemoteImage
+                      uri={item.thumbnail_url}
                       style={StyleSheet.absoluteFill}
                       contentFit="cover"
                       transition={180}
@@ -117,17 +110,36 @@ export default function AlbumDetailScreen({ navigation, route }) {
                 </Pressable>
               ))}
             </View>
-          ) : (
+          ) : hasDrive ? null : (
             <EmptyState
               icon="images-outline"
               title="Album masih kosong"
               description="Belum ada foto pada album ini."
             />
           )}
+
+          {hasDrive ? (
+            <View style={styles.driveSection}>
+              <Txt variant="label" tone="muted" style={styles.driveLabel}>
+                FOLDER GOOGLE DRIVE
+              </Txt>
+              <DriveFolderBrowser
+                albumId={albumId}
+                albumTitle={album.data.title || title}
+                testID="album-drive-browser"
+              />
+            </View>
+          ) : null}
         </>
       )}
 
-      <ImageViewer items={media} index={viewerIndex} onClose={() => setViewerIndex(-1)} />
+      <ImageViewer
+        items={media}
+        index={viewerIndex}
+        onClose={() => setViewerIndex(-1)}
+        albumTitle={album.data?.title || title}
+        actions
+      />
     </Screen>
   );
 }
@@ -144,5 +156,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   cellFallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  driveSection: { marginTop: 22 },
+  driveLabel: { marginBottom: 10 },
   pressed: { opacity: 0.85 },
 });

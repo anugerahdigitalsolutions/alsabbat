@@ -40,6 +40,13 @@ export const getAlbum = (albumId) =>
   api.get(`/gallery/public/albums/${albumId}`).then(({ data }) => data);
 export const getAlbumDrivePhotos = (albumId) =>
   api.get(`/gallery/public/albums/${albumId}/drive-photos`).then(unwrapList);
+/** Satu batch isi folder Drive (folder + foto) — endpoint yang sama dengan web. */
+export const getAlbumDriveBrowse = (albumId, { folderId, pageToken, pageSize } = {}) =>
+  api
+    .get(`/gallery/public/albums/${albumId}/drive-browse`, {
+      params: { folder_id: folderId || undefined, page_token: pageToken || undefined, page_size: pageSize },
+    })
+    .then(({ data }) => data);
 export const getMedia = (params = { limit: 30, file_type: 'IMAGE' }) =>
   api.get('/media', { params }).then(unwrapList);
 

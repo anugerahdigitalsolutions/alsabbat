@@ -177,6 +177,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: 'rgba(252,207,43,0.28)',
+    // Latar solid di bawah gradient: outline shadow Android mengikuti sudut
+    // membulat seperti iOS (tanpa ini Android menggambar kotak).
+    backgroundColor: colors.navyDeep,
     padding: 18,
     gap: 18,
     marginTop: 10,

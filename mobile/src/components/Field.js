@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { colors, font, radii } from '../theme';
+import { androidTextFix, colors, font, radii } from '../theme';
 import Txt from './Txt';
 
 export function Field({
@@ -48,6 +48,8 @@ export function Field({
           autoFocus={autoFocus}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          allowFontScaling={false}
+          underlineColorAndroid="transparent"
           style={[styles.input, inputStyle]}
           testID={testID}
           {...rest}
@@ -92,6 +94,8 @@ const styles = StyleSheet.create({
     fontFamily: font.medium,
     fontSize: 14.5,
     paddingVertical: 12,
+    // Android menambah font padding sendiri sehingga tinggi input berbeda dari iOS.
+    ...androidTextFix,
   },
   leftIcon: { marginRight: 10 },
   rightIcon: { marginLeft: 10 },

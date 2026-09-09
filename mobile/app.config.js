@@ -113,6 +113,17 @@ module.exports = () => ({
       'expo-image',
       'expo-video',
       'expo-web-browser',
+      'expo-sharing',
+      [
+        'expo-media-library',
+        {
+          photosPermission:
+            'AL SABBAT memerlukan akses galeri untuk menyimpan foto pertandingan ke perangkat Anda.',
+          savePhotosPermission:
+            'AL SABBAT memerlukan izin menyimpan foto pertandingan ke galeri perangkat Anda.',
+          isAccessMediaLocationEnabled: false,
+        },
+      ],
     ],
     extra: {
       apiUrl: API_URL,

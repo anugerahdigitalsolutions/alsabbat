@@ -271,6 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.card,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.surfaceSolid,
     padding: 16,
   },
   statusRow: { alignItems: 'center', marginBottom: 12 },
